@@ -16,6 +16,11 @@
   --success:#22c55e;--warn:#f59e0b;--danger:#ef4444;
   --nav-h:60px;--topbar-h:56px;
 }
+/* Disable pull-to-refresh in WebView */
+html, body {
+  overscroll-behavior-y: none;
+  overscroll-behavior: none;
+}
 .light{
   --bg:#f5f5f5;--card:#ffffff;--text:#1a1a1a;--muted:#666666;--border:#e0e0e0;
 }
@@ -383,7 +388,7 @@ input,textarea{font:inherit;color:inherit}
 .hamburger{font-size:22px;color:var(--text);line-height:1}
 
 /* ═══ LOCATION MAP SCREEN ═══ */
-.loc-screen{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;flex-direction:column}
+.loc-screen{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;flex-direction:column;overscroll-behavior:none;touch-action:pan-x pan-y;}
 .loc-topbar{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border)}
 .loc-topbar-title{font-size:16px;font-weight:700;flex:1}
 #locMap{flex:1;position:relative;z-index:1}
@@ -1963,8 +1968,23 @@ document.addEventListener('keydown', e => {
 // ═══════════════════════════════════════════
 //  Swipe-back gesture (basic)
 // ═══════════════════════════════════════════
-let touchStartX = 0;
-document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive:true});
+// Disable pull-to-refresh in WebView
+document.addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+}, { passive: true });
+
+// Prevent pull-to-refresh when at top of page
+let lastTouchY = 0;
+document.addEventListener('touchstart', e => { lastTouchY = e.touches[0].clientY; }, { passive: true });
+document.addEventListener('touchmove', e => {
+  const el = e.target;
+  const scrollTop = el.scrollTop || document.documentElement.scrollTop || 0;
+  const dy = e.touches[0].clientY - lastTouchY;
+  // If pulling down at top of page — prevent
+  if (dy > 0 && scrollTop <= 0) {
+    e.preventDefault();
+  }
+}, { passive: false });
 document.addEventListener('touchend', e => {
   const dx = e.changedTouches[0].clientX - touchStartX;
   if (dx > 80 && SCREEN_HISTORY.length > 1) {
@@ -2065,28 +2085,57 @@ function closeLocMap() {
 
 function centerOnGPS() {
   if (!navigator.geolocation) {
-    showToast('GPS not supported', 'error'); return;
+    showToast('GPS not supported — search your area below', '', 3000);
+    document.getElementById('locSearchInput').focus();
+    return;
   }
   const btn = document.getElementById('locGpsBtn');
-  btn.innerHTML = '<span style="font-size:18px">⏳</span><span>Detecting...</span>';
+  btn.innerHTML = '<span style="font-size:18px">⏳</span><span>Detecting GPS...</span>';
   btn.disabled = true;
 
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const { latitude, longitude } = pos.coords;
-      _map.setView([latitude, longitude], 17, { animate: true });
-      btn.innerHTML = '<span style="font-size:18px">🎯</span><span>Use my current location</span>';
-      btn.disabled = false;
-      showToast('📍 Location found!', 'success', 2000);
-    },
+  let watchId = null;
+  let done = false;
+
+  const finish = (lat, lon) => {
+    if (done) return;
+    done = true;
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    _map.setView([lat, lon], 17, { animate: true });
+    btn.innerHTML = '<span style="font-size:18px">🎯</span><span>Use my current location</span>';
+    btn.disabled = false;
+    showToast('📍 Location found!', 'success', 2000);
+  };
+
+  const fail = () => {
+    if (done) return;
+    done = true;
+    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+    btn.innerHTML = '<span style="font-size:18px">🎯</span><span>Use my current location</span>';
+    btn.disabled = false;
+    showToast('GPS unavailable — search your area below 👇', '', 3000);
+    // Auto-focus search box
+    setTimeout(() => document.getElementById('locSearchInput').focus(), 300);
+  };
+
+  watchId = navigator.geolocation.watchPosition(
+    (pos) => finish(pos.coords.latitude, pos.coords.longitude),
     (err) => {
-      btn.innerHTML = '<span style="font-size:18px">🎯</span><span>Use my current location</span>';
-      btn.disabled = false;
-      const msgs = { 1: 'Location permission denied', 2: 'GPS unavailable on device', 3: 'GPS timed out — use search or manual address below' };
-      showToast(msgs[err.code] || 'GPS error', 'error', 3500);
+      if (err.code === 1) {
+        // Permission denied — show message
+        done = true;
+        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+        btn.innerHTML = '<span style="font-size:18px">🎯</span><span>Use my current location</span>';
+        btn.disabled = false;
+        showToast('Location permission denied. Enable in phone Settings → Apps → Location', 'error', 4000);
+        setTimeout(() => document.getElementById('locSearchInput').focus(), 300);
+      }
+      // For timeout/unavailable, let the setTimeout handle it
     },
-    { timeout: 20000, enableHighAccuracy: false, maximumAge: 0 }
+    { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
   );
+
+  // Hard timeout fallback — 16 sec
+  setTimeout(() => fail(), 16000);
 }
 
 async function reverseGeocode(lat, lon) {
