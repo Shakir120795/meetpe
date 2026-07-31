@@ -656,6 +656,158 @@ app.get('/api/location/reverse', async (req, res) => {
   }
 });
 
+// GET /admin/customers?key=X - list all customers with order count + wallet
+app.get('/admin/customers', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
+  const search = req.query.search || '';
+  let sql = `SELECT c.*, 
+    COUNT(o.id) as order_count,
+    COALESCE(SUM(o.total),0) as lifetime_value,
+    MAX(o.created_at) as last_order
+    FROM customers c
+    LEFT JOIN orders o ON o.phone = c.phone
+    ${search ? "WHERE c.phone LIKE ? OR c.name LIKE ?" : ""}
+    GROUP BY c.phone
+    ORDER BY last_order DESC LIMIT ?`;
+  const params = search ? [`%${search}%`, `%${search}%`, limit] : [limit];
+  const customers = db.prepare(sql).all(...params);
+  res.json({ ok: true, customers });
+});
+
+// PUT /admin/customers/:phone/wallet?key=X - add/set wallet balance
+app.put('/admin/customers/:phone/wallet', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const phone = decodeURIComponent(req.params.phone);
+  const { amount, action } = req.body || {}; // action: 'add' | 'set'
+  const val = parseInt(amount, 10) || 0;
+  if (action === 'add') {
+    db.prepare('UPDATE customers SET wallet_balance = wallet_balance + ? WHERE phone = ?').run(val, phone);
+  } else {
+    db.prepare('UPDATE customers SET wallet_balance = ? WHERE phone = ?').run(val, phone);
+  }
+  const c = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(phone);
+  res.json({ ok: true, wallet: c ? c.wallet_balance : 0 });
+});
+
+// GET /admin/analytics?key=X - comprehensive analytics
+app.get('/admin/analytics', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  
+  // Revenue by day (last 30 days)
+  const daily = db.prepare(`
+    SELECT date(created_at, 'localtime') as day,
+    COUNT(*) as orders, COALESCE(SUM(total),0) as revenue
+    FROM orders WHERE status != 'cancelled'
+    AND created_at >= datetime('now', '-30 days')
+    GROUP BY day ORDER BY day ASC
+  `).all();
+
+  // Top selling items
+  const allOrders = db.prepare(`SELECT items_json FROM orders WHERE status != 'cancelled'`).all();
+  const itemSales = {};
+  for (const o of allOrders) {
+    try {
+      const items = JSON.parse(o.items_json || '[]');
+      for (const i of items) {
+        if (!itemSales[i.name]) itemSales[i.name] = { qty: 0, revenue: 0 };
+        itemSales[i.name].qty += i.qty;
+        itemSales[i.name].revenue += i.price * i.qty;
+      }
+    } catch {}
+  }
+  const topItems = Object.entries(itemSales)
+    .map(([name, d]) => ({ name, ...d }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 10);
+
+  // Orders by hour
+  const byHour = db.prepare(`
+    SELECT strftime('%H', created_at, 'localtime') as hour, COUNT(*) as count
+    FROM orders GROUP BY hour ORDER BY hour
+  `).all();
+
+  // Summary stats
+  const summary = db.prepare(`
+    SELECT COUNT(*) as total_orders,
+    COALESCE(SUM(CASE WHEN status!='cancelled' THEN total ELSE 0 END),0) as total_revenue,
+    COUNT(DISTINCT phone) as unique_customers,
+    COALESCE(AVG(CASE WHEN status!='cancelled' THEN total END),0) as avg_order_value
+    FROM orders
+  `).get();
+
+  // This week vs last week
+  const thisWeek = db.prepare(`SELECT COUNT(*) as orders, COALESCE(SUM(total),0) as revenue FROM orders WHERE status!='cancelled' AND created_at >= datetime('now', '-7 days')`).get();
+  const lastWeek = db.prepare(`SELECT COUNT(*) as orders, COALESCE(SUM(total),0) as revenue FROM orders WHERE status!='cancelled' AND created_at BETWEEN datetime('now', '-14 days') AND datetime('now', '-7 days')`).get();
+
+  res.json({ ok: true, daily, topItems, byHour, summary, thisWeek, lastWeek });
+});
+
+// ===== Admin: customers list =====
+app.get('/admin/customers', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
+  const search = req.query.search || '';
+  let sql, params;
+  if (search) {
+    sql = `SELECT c.*, COUNT(o.id) as order_count, COALESCE(SUM(o.total),0) as lifetime_value, MAX(o.created_at) as last_order
+      FROM customers c LEFT JOIN orders o ON o.phone = c.phone
+      WHERE c.phone LIKE ? OR c.name LIKE ?
+      GROUP BY c.phone ORDER BY last_order DESC LIMIT ?`;
+    params = [`%${search}%`, `%${search}%`, limit];
+  } else {
+    sql = `SELECT c.*, COUNT(o.id) as order_count, COALESCE(SUM(o.total),0) as lifetime_value, MAX(o.created_at) as last_order
+      FROM customers c LEFT JOIN orders o ON o.phone = c.phone
+      GROUP BY c.phone ORDER BY last_order DESC LIMIT ?`;
+    params = [limit];
+  }
+  const customers = db.prepare(sql).all(...params);
+  res.json({ ok: true, customers });
+});
+
+// ===== Admin: update customer wallet =====
+app.put('/admin/customers/:phone/wallet', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const phone = decodeURIComponent(req.params.phone);
+  const { amount, action } = req.body || {};
+  const val = parseInt(amount, 10) || 0;
+  if (action === 'add') {
+    db.prepare('UPDATE customers SET wallet_balance = wallet_balance + ? WHERE phone = ?').run(val, phone);
+  } else {
+    db.prepare('UPDATE customers SET wallet_balance = ? WHERE phone = ?').run(Math.max(0, val), phone);
+  }
+  const c = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(phone);
+  res.json({ ok: true, wallet: c ? c.wallet_balance : 0 });
+});
+
+// ===== Admin: analytics =====
+app.get('/admin/analytics', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const daily = db.prepare(`
+    SELECT date(created_at, 'localtime') as day,
+    COUNT(*) as orders, COALESCE(SUM(total),0) as revenue
+    FROM orders WHERE status != 'cancelled' AND created_at >= datetime('now', '-30 days')
+    GROUP BY day ORDER BY day ASC
+  `).all();
+  const allOrders = db.prepare(`SELECT items_json FROM orders WHERE status != 'cancelled'`).all();
+  const itemSales = {};
+  for (const o of allOrders) {
+    try {
+      for (const i of JSON.parse(o.items_json || '[]')) {
+        if (!itemSales[i.name]) itemSales[i.name] = { qty: 0, revenue: 0 };
+        itemSales[i.name].qty += i.qty;
+        itemSales[i.name].revenue += i.price * i.qty;
+      }
+    } catch {}
+  }
+  const topItems = Object.entries(itemSales).map(([name, d]) => ({ name, ...d })).sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+  const byHour = db.prepare(`SELECT strftime('%H', created_at, 'localtime') as hour, COUNT(*) as count FROM orders GROUP BY hour ORDER BY hour`).all();
+  const summary = db.prepare(`SELECT COUNT(*) as total_orders, COALESCE(SUM(CASE WHEN status!='cancelled' THEN total ELSE 0 END),0) as total_revenue, COUNT(DISTINCT phone) as unique_customers, COALESCE(AVG(CASE WHEN status!='cancelled' THEN total END),0) as avg_order_value FROM orders`).get();
+  const thisWeek = db.prepare(`SELECT COUNT(*) as orders, COALESCE(SUM(total),0) as revenue FROM orders WHERE status!='cancelled' AND created_at >= datetime('now', '-7 days')`).get();
+  const lastWeek = db.prepare(`SELECT COUNT(*) as orders, COALESCE(SUM(total),0) as revenue FROM orders WHERE status!='cancelled' AND created_at BETWEEN datetime('now', '-14 days') AND datetime('now', '-7 days')`).get();
+  res.json({ ok: true, daily, topItems, byHour, summary, thisWeek, lastWeek });
+});
+
 app.listen(PORT, () => {
   console.log(`🥩 MeatPe server listening on :${PORT}`);
 });
