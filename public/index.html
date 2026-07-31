@@ -398,10 +398,23 @@ input,textarea{font:inherit;color:inherit}
 .loc-confirm-btn{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;
   font-size:15px;font-weight:700;cursor:pointer}
 .loc-confirm-btn:active{opacity:.85}
+.loc-search-row{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:10px;padding:8px 12px;margin-bottom:8px;border:1px solid var(--border)}
+.loc-search-input{flex:1;background:none;border:none;color:var(--text);font-size:13px;outline:none}
+.loc-search-input::placeholder{color:var(--muted)}
+.loc-search-results{background:var(--card);border-radius:10px;margin-bottom:8px;max-height:160px;overflow-y:auto;border:1px solid var(--border)}
+.loc-result-item{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;color:var(--text)}
+.loc-result-item:last-child{border-bottom:none}
+.loc-result-item:active{background:var(--border)}
+.loc-result-name{font-weight:600}
+.loc-result-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.loc-manual-toggle{font-size:12px;color:var(--accent);padding:6px 0 8px;cursor:pointer;font-weight:600}
+.loc-manual-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;
+  padding:10px 12px;color:var(--text);font-size:13px;outline:none;margin-bottom:8px;box-sizing:border-box}
+.loc-manual-save{width:100%;padding:10px;background:var(--border);color:var(--text);border:none;
+  border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px}
 .loc-loading{position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:500;border-radius:0}
 .loc-spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-</style>
+@keyframes spin{to{transform:rotate(360deg)}}</style>
 
 </head>
 <body>
@@ -450,6 +463,22 @@ input,textarea{font:inherit;color:inherit}
           <span style="font-size:18px">🎯</span>
           <span>Use my current location</span>
         </button>
+        <!-- Manual address search -->
+        <div class="loc-search-row">
+          <span style="font-size:16px">🔍</span>
+          <input id="locSearchInput" class="loc-search-input" placeholder="Search area, street, colony..."
+            oninput="locSearchDebounce(this.value)" autocomplete="off"/>
+          <button onclick="clearLocSearch()" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer">✕</button>
+        </div>
+        <div id="locSearchResults" class="loc-search-results" style="display:none"></div>
+        <!-- OR manual fill -->
+        <div class="loc-manual-toggle" onclick="toggleManualAddr()">
+          ✏️ Enter address manually <span id="manualToggleArrow">▼</span>
+        </div>
+        <div id="manualAddrBox" style="display:none">
+          <input id="manualAddrInput" class="loc-manual-input" placeholder="House no, street, area, city..." />
+          <button class="loc-manual-save" onclick="saveManualAddr()">Use this address</button>
+        </div>
         <div class="loc-address-box">
           <div class="loc-address-area" id="locAddrArea">Move map to set location</div>
           <div class="loc-address-full" id="locAddrFull">Drag the map to adjust pin</div>
@@ -2041,20 +2070,45 @@ function centerOnGPS() {
   const btn = document.getElementById('locGpsBtn');
   btn.innerHTML = '<span style="font-size:18px">⏳</span><span>Detecting...</span>';
   btn.disabled = true;
+
+  // Try high accuracy first, fallback to low accuracy
+  function tryLowAccuracy() {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        _map.setView([latitude, longitude], 17, { animate: true });
+        btn.innerHTML = '<span style="font-size:18px">🎯</span><span>Use my current location</span>';
+        btn.disabled = false;
+        showToast('📍 Location found!', 'success', 2000);
+      },
+      (err) => {
+        btn.innerHTML = '<span style="font-size:18px">🎯</span><span>Use my current location</span>';
+        btn.disabled = false;
+        showToast('Could not detect. Enter address manually below.', '', 3000);
+      },
+      { timeout: 15000, enableHighAccuracy: false, maximumAge: 60000 }
+    );
+  }
+
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       const { latitude, longitude } = pos.coords;
       _map.setView([latitude, longitude], 17, { animate: true });
       btn.innerHTML = '<span style="font-size:18px">🎯</span><span>Use my current location</span>';
       btn.disabled = false;
+      showToast('📍 Location found!', 'success', 2000);
     },
     (err) => {
-      btn.innerHTML = '<span style="font-size:18px">🎯</span><span>Use my current location</span>';
-      btn.disabled = false;
-      const msgs = { 1: 'Permission denied', 2: 'GPS unavailable', 3: 'Timed out' };
-      showToast(msgs[err.code] || 'GPS error', 'error', 3000);
+      if (err.code === 3) { // timeout — try low accuracy
+        tryLowAccuracy();
+      } else {
+        btn.innerHTML = '<span style="font-size:18px">🎯</span><span>Use my current location</span>';
+        btn.disabled = false;
+        const msgs = { 1: 'Permission denied', 2: 'GPS unavailable' };
+        showToast(msgs[err.code] || 'GPS error. Enter address manually.', 'error', 3000);
+      }
     },
-    { timeout: 10000, enableHighAccuracy: true }
+    { timeout: 8000, enableHighAccuracy: true, maximumAge: 30000 }
   );
 }
 
@@ -2091,12 +2145,10 @@ async function reverseGeocode(lat, lon) {
 }
 
 function confirmLocation() {
-  if (!_pendingLat) { showToast('Move map to select location', '', 2000); return; }
-  // Save
+  if (!_pendingLat && !_pendingLabel) { showToast('Move map or enter address', '', 2000); return; }
   localStorage.setItem('now_location', JSON.stringify({
     label: _pendingLabel, full: _pendingFull, lat: _pendingLat, lon: _pendingLon
   }));
-  // Update pill
   const txt = document.getElementById('locText');
   txt.textContent = _pendingLabel.length > 22 ? _pendingLabel.slice(0,20)+'…' : _pendingLabel;
   showToast('📍 Location saved!', 'success', 2000);
@@ -2105,6 +2157,69 @@ function confirmLocation() {
 
 function getSavedLocation() {
   try { return JSON.parse(localStorage.getItem('now_location')); } catch { return null; }
+}
+
+// ── Address Search (Nominatim) ──
+let _searchTimer = null;
+function locSearchDebounce(val) {
+  clearTimeout(_searchTimer);
+  if (!val.trim()) { document.getElementById('locSearchResults').style.display='none'; return; }
+  _searchTimer = setTimeout(() => locSearch(val), 600);
+}
+async function locSearch(q) {
+  const res_el = document.getElementById('locSearchResults');
+  res_el.style.display = 'block';
+  res_el.innerHTML = '<div class="loc-result-item" style="color:var(--muted)">Searching...</div>';
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=5&countrycodes=in`, {headers:{'Accept-Language':'en'}});
+    const data = await r.json();
+    if (!data.length) { res_el.innerHTML = '<div class="loc-result-item" style="color:var(--muted)">No results found</div>'; return; }
+    res_el.innerHTML = data.map(d => {
+      const addr = d.address || {};
+      const name = d.namedetails && d.namedetails.name ? d.namedetails.name : (addr.road || addr.suburb || d.display_name.split(',')[0]);
+      const sub = d.display_name;
+      return `<div class="loc-result-item" onclick="selectSearchResult(${d.lat},${d.lon},'${(name+'').replace(/'/g,"\\'")}','${(sub+'').replace(/'/g,"\\'").slice(0,80)}')">
+        <div class="loc-result-name">${name}</div>
+        <div class="loc-result-sub">${sub.length>60?sub.slice(0,58)+'…':sub}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    res_el.innerHTML = '<div class="loc-result-item" style="color:var(--muted)">Search failed. Try manual address.</div>';
+  }
+}
+function selectSearchResult(lat, lon, name, full) {
+  document.getElementById('locSearchResults').style.display = 'none';
+  document.getElementById('locSearchInput').value = '';
+  _map.setView([lat, lon], 17, {animate:true});
+  _pendingLat = parseFloat(lat); _pendingLon = parseFloat(lon);
+  _pendingLabel = name; _pendingFull = full;
+  document.getElementById('locAddrArea').textContent = name;
+  document.getElementById('locAddrFull').textContent = full;
+}
+function clearLocSearch() {
+  document.getElementById('locSearchInput').value = '';
+  document.getElementById('locSearchResults').style.display = 'none';
+}
+
+// ── Manual Address ──
+function toggleManualAddr() {
+  const box = document.getElementById('manualAddrBox');
+  const arrow = document.getElementById('manualToggleArrow');
+  const open = box.style.display === 'none';
+  box.style.display = open ? 'block' : 'none';
+  arrow.textContent = open ? '▲' : '▼';
+  if (open) document.getElementById('manualAddrInput').focus();
+}
+function saveManualAddr() {
+  const val = document.getElementById('manualAddrInput').value.trim();
+  if (!val) { showToast('Please enter an address', 'error', 2000); return; }
+  _pendingLabel = val.length > 40 ? val.slice(0,38)+'…' : val;
+  _pendingFull = val;
+  document.getElementById('locAddrArea').textContent = _pendingLabel;
+  document.getElementById('locAddrFull').textContent = val;
+  showToast('Address set! Tap Confirm to save.', 'success', 2000);
+  document.getElementById('manualAddrBox').style.display = 'none';
+  document.getElementById('manualToggleArrow').textContent = '▼';
 }
 
 function initLocation() {
