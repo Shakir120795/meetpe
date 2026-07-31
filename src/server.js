@@ -560,6 +560,71 @@ if (process.env.IG_ACCESS_TOKEN && process.env.IG_USER_ID) {
   console.log('📅 IG auto-post scheduled (11:00 AM IST daily)');
 }
 
+// ===== Location proxy — bypasses CORS/WebView restrictions =====
+// GET /api/location/search?q=kamla+nagar+agra
+app.get('/api/location/search', async (req, res) => {
+  const q = String(req.query.q || '').trim();
+  if (!q) return res.json([]);
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=6&countrycodes=in`;
+    const r = await axios.get(url, {
+      headers: {
+        'User-Agent': 'NowDeliveryApp/1.0 (contact@nowapp.in)',
+        'Accept-Language': 'en'
+      },
+      timeout: 8000
+    });
+    const results = (r.data || []).map(d => {
+      const addr = d.address || {};
+      const name = addr.road || addr.suburb || addr.neighbourhood ||
+                   addr.village || addr.town || addr.city ||
+                   (d.display_name || '').split(',')[0];
+      const city = addr.city || addr.town || addr.county || '';
+      const state = addr.state || '';
+      return {
+        lat: parseFloat(d.lat),
+        lon: parseFloat(d.lon),
+        name: name || 'Location',
+        city,
+        state,
+        display: d.display_name || ''
+      };
+    });
+    res.json(results);
+  } catch (e) {
+    console.warn('location search error:', e.message);
+    res.json([]);
+  }
+});
+
+// GET /api/location/reverse?lat=27.17&lon=78.00
+app.get('/api/location/reverse', async (req, res) => {
+  const lat = parseFloat(req.query.lat);
+  const lon = parseFloat(req.query.lon);
+  if (isNaN(lat) || isNaN(lon)) return res.json({ ok: false });
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`;
+    const r = await axios.get(url, {
+      headers: {
+        'User-Agent': 'NowDeliveryApp/1.0 (contact@nowapp.in)',
+        'Accept-Language': 'en'
+      },
+      timeout: 8000
+    });
+    const addr = r.data.address || {};
+    const area = addr.suburb || addr.neighbourhood || addr.quarter || addr.village || addr.road || '';
+    const city = addr.city || addr.town || addr.county || addr.state_district || '';
+    const state = addr.state || '';
+    const stateAbbr = state.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 3);
+    const shortLabel = area && city && area !== city ? `${area}, ${city}` : (city || 'My Location');
+    const label = stateAbbr ? `${shortLabel}, ${stateAbbr}` : shortLabel;
+    res.json({ ok: true, label, full: r.data.display_name || '', area, city, state });
+  } catch (e) {
+    console.warn('reverse geocode error:', e.message);
+    res.json({ ok: false, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, full: '' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🥩 MeatPe server listening on :${PORT}`);
 });

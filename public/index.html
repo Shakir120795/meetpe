@@ -2097,19 +2097,10 @@ async function reverseGeocode(lat, lon) {
   clearTimeout(_geocodeTimer);
   _geocodeTimer = setTimeout(async () => {
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`,
-        { headers: { 'Accept-Language': 'en' } }
-      );
-      const data = await res.json();
-      const addr = data.address || {};
-      const area = addr.suburb || addr.neighbourhood || addr.quarter || addr.village || addr.road || '';
-      const city = addr.city || addr.town || addr.county || addr.state_district || '';
-      const state = addr.state || '';
-      const stateAbbr = state.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,3);
-      const shortLabel = area && city && area !== city ? `${area}, ${city}` : (city || 'Selected Location');
-      _pendingLabel = stateAbbr ? `${shortLabel}, ${stateAbbr}` : shortLabel;
-      _pendingFull = data.display_name || '';
+      const r = await fetch(`/api/location/reverse?lat=${lat}&lon=${lon}`);
+      const data = await r.json();
+      _pendingLabel = data.label || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+      _pendingFull = data.full || '';
       document.getElementById('locAddrArea').textContent = _pendingLabel;
       document.getElementById('locAddrFull').textContent = _pendingFull.length > 80 ? _pendingFull.slice(0,78)+'…' : _pendingFull;
     } catch(e) {
@@ -2118,7 +2109,7 @@ async function reverseGeocode(lat, lon) {
       document.getElementById('locAddrArea').textContent = _pendingLabel;
       document.getElementById('locAddrFull').textContent = 'Tap confirm to use this location';
     }
-  }, 600); // debounce 600ms
+  }, 700);
 }
 
 function confirmLocation() {
@@ -2148,33 +2139,23 @@ async function locSearch(q) {
   res_el.style.display = 'block';
   res_el.innerHTML = '<div class="loc-result-item" style="color:var(--muted)">Searching...</div>';
   try {
-    const r = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=6&countrycodes=in`,
-      { headers: { 'Accept-Language': 'en' } }
-    );
+    const r = await fetch(`/api/location/search?q=${encodeURIComponent(q)}`);
     const data = await r.json();
     if (!data.length) {
       res_el.innerHTML = '<div class="loc-result-item" style="color:var(--muted)">No results. Try different keyword.</div>';
       return;
     }
     res_el.innerHTML = data.map(d => {
-      const addr = d.address || {};
-      // Build clean name
-      const name = addr.road || addr.suburb || addr.neighbourhood ||
-                   addr.village || addr.town || addr.city ||
-                   d.display_name.split(',')[0];
-      const city = addr.city || addr.town || addr.county || '';
-      const state = addr.state || '';
-      const sub = [city, state].filter(Boolean).join(', ');
-      const safeName = (name+'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-      const safeFull = (d.display_name+'').replace(/'/g,"\\'").replace(/"/g,'&quot;').slice(0,100);
+      const sub = [d.city, d.state].filter(Boolean).join(', ') || d.display.slice(0,50);
+      const safeName = (d.name+'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      const safeFull = (d.display+'').replace(/'/g,"\\'").replace(/"/g,'&quot;').slice(0,100);
       return `<div class="loc-result-item" onclick="selectSearchResult(${d.lat},${d.lon},'${safeName}','${safeFull}')">
-        <div class="loc-result-name">${name}</div>
-        <div class="loc-result-sub">${sub || d.display_name.slice(0,50)}</div>
+        <div class="loc-result-name">${d.name}</div>
+        <div class="loc-result-sub">${sub}</div>
       </div>`;
     }).join('');
   } catch(e) {
-    res_el.innerHTML = '<div class="loc-result-item" style="color:var(--danger)">Search failed. Use manual address.</div>';
+    res_el.innerHTML = '<div class="loc-result-item" style="color:var(--danger)">Search failed. Use manual address below.</div>';
   }
 }
 function selectSearchResult(lat, lon, name, full) {
