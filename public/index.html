@@ -6,6 +6,9 @@
 <title>NOW — Fresh Meat Delivered Fast</title>
 <meta name="description" content="Fresh chicken & mutton delivered in 30 min across Agra"/>
 <link rel="icon" type="image/png" href="/logo.png"/>
+<!-- Leaflet Map -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{
   --bg:#0f0f0f;--card:#1a1a1a;--accent:#ff4d00;--accent2:#ff6a2f;
@@ -378,6 +381,26 @@ input,textarea{font:inherit;color:inherit}
 /* Hamburger icon */
 .drawer-trigger{background:transparent !important}
 .hamburger{font-size:22px;color:var(--text);line-height:1}
+
+/* ═══ LOCATION MAP SCREEN ═══ */
+.loc-screen{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;flex-direction:column}
+.loc-topbar{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border)}
+.loc-topbar-title{font-size:16px;font-weight:700;flex:1}
+#locMap{flex:1;position:relative;z-index:1}
+.map-pin-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-100%);z-index:1000;pointer-events:none;font-size:40px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+.map-pin-center::after{content:'';display:block;width:8px;height:8px;background:var(--accent);border-radius:50%;margin:0 auto;margin-top:-4px}
+.loc-bottom{background:var(--card);border-top:1px solid var(--border);padding:14px 16px;z-index:2}
+.loc-address-box{background:var(--bg);border-radius:12px;padding:12px 14px;margin-bottom:12px;min-height:48px}
+.loc-address-area{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.loc-address-full{font-size:11px;color:var(--muted);line-height:1.4}
+.loc-gps-btn{display:flex;align-items:center;gap:8px;background:var(--border);border:none;color:var(--text);
+  padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;width:100%}
+.loc-confirm-btn{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;
+  font-size:15px;font-weight:700;cursor:pointer}
+.loc-confirm-btn:active{opacity:.85}
+.loc-loading{position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:500;border-radius:0}
+.loc-spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 
 </head>
@@ -404,6 +427,36 @@ input,textarea{font:inherit;color:inherit}
             <a href="#" onclick="guestLogin()">Continue as guest</a>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- ═══ LOCATION MAP SCREEN ═══ -->
+    <div class="loc-screen" id="locMapScreen" style="display:none">
+      <div class="loc-topbar">
+        <button class="icon-btn" onclick="closeLocMap()" style="background:var(--border)">←</button>
+        <div class="loc-topbar-title">Set Delivery Location</div>
+      </div>
+      <div style="position:relative;flex:1;display:flex;flex-direction:column">
+        <div id="locMap" style="flex:1"></div>
+        <!-- Fixed center pin -->
+        <div class="map-pin-center">📍</div>
+        <!-- Loading overlay -->
+        <div class="loc-loading" id="locLoading" style="display:none">
+          <div class="loc-spinner"></div>
+        </div>
+      </div>
+      <div class="loc-bottom">
+        <button class="loc-gps-btn" id="locGpsBtn" onclick="centerOnGPS()">
+          <span style="font-size:18px">🎯</span>
+          <span>Use my current location</span>
+        </button>
+        <div class="loc-address-box">
+          <div class="loc-address-area" id="locAddrArea">Move map to set location</div>
+          <div class="loc-address-full" id="locAddrFull">Drag the map to adjust pin</div>
+        </div>
+        <button class="loc-confirm-btn" id="locConfirmBtn" onclick="confirmLocation()">
+          Confirm Location
+        </button>
       </div>
     </div>
 
@@ -472,7 +525,7 @@ input,textarea{font:inherit;color:inherit}
         </button>
         <div class="topbar-logo">NOW</div>
         <div style="flex:1;display:flex;justify-content:flex-end;align-items:center;gap:6px">
-          <button class="topbar-loc" id="locPill" onclick="detectLocation()" title="Detect my location">📍 <span id="locText">Detecting...</span></button>
+          <button class="topbar-loc" id="locPill" onclick="openLocMap()" title="Set delivery location">📍 <span id="locText">Set Location</span></button>
           <button class="icon-btn" onclick="showScreen('screen-basket')" title="Cart" style="position:relative">
             🛒<span class="cart-dot" id="cartDot" style="display:none">0</span>
           </button>
@@ -1936,72 +1989,132 @@ function showSavedAddresses() {
 // ═══════════════════════════════════════════
 //  GPS Location Detection
 // ═══════════════════════════════════════════
-function detectLocation() {
-  const pill = document.getElementById('locPill');
-  const txt = document.getElementById('locText');
-  if (!navigator.geolocation) {
-    txt.textContent = 'Agra, UP';
-    showToast('GPS not supported on this device', 'error');
-    return;
+// ═══════════════════════════════════════════
+//  Location Map (Leaflet + OpenStreetMap)
+// ═══════════════════════════════════════════
+let _map = null;
+let _mapMarker = null;
+let _geocodeTimer = null;
+let _pendingLat = null, _pendingLon = null;
+let _pendingLabel = '', _pendingFull = '';
+
+function openLocMap() {
+  const screen = document.getElementById('locMapScreen');
+  screen.style.display = 'flex';
+  screen.style.flexDirection = 'column';
+
+  // Init map once
+  if (!_map) {
+    setTimeout(() => {
+      const saved = getSavedLocation();
+      const lat = saved ? saved.lat : 27.1767;  // Agra default
+      const lon = saved ? saved.lon : 78.0081;
+
+      _map = L.map('locMap', { zoomControl: true, attributionControl: false }).setView([lat, lon], 16);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+      }).addTo(_map);
+
+      // Reverse geocode on map move end
+      _map.on('moveend', () => {
+        const c = _map.getCenter();
+        reverseGeocode(c.lat, c.lng);
+      });
+
+      // Initial reverse geocode
+      reverseGeocode(lat, lon);
+    }, 100);
+  } else {
+    setTimeout(() => _map.invalidateSize(), 100);
   }
-  pill.classList.add('detecting');
-  txt.textContent = 'Detecting...';
+}
+
+function closeLocMap() {
+  document.getElementById('locMapScreen').style.display = 'none';
+}
+
+function centerOnGPS() {
+  if (!navigator.geolocation) {
+    showToast('GPS not supported', 'error'); return;
+  }
+  const btn = document.getElementById('locGpsBtn');
+  btn.innerHTML = '<span style="font-size:18px">⏳</span><span>Detecting...</span>';
+  btn.disabled = true;
   navigator.geolocation.getCurrentPosition(
-    async (pos) => {
+    (pos) => {
       const { latitude, longitude } = pos.coords;
-      try {
-        // Use OpenStreetMap reverse geocoding (free, no API key)
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
-          { headers: { 'Accept-Language': 'en' } }
-        );
-        const data = await res.json();
-        const addr = data.address || {};
-        // Build short label: suburb/neighbourhood + city/town/village + state_abbr
-        const area = addr.suburb || addr.neighbourhood || addr.quarter || addr.village || addr.town || '';
-        const city = addr.city || addr.town || addr.county || addr.state_district || '';
-        const state = addr.state || '';
-        // Abbreviate state to 2-3 chars
-        const stateAbbr = state.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,3);
-        let label = '';
-        if (area && city && area !== city) label = `${area}, ${city}`;
-        else if (city) label = city;
-        else label = 'My Location';
-        const fullLabel = stateAbbr ? `${label}, ${stateAbbr}` : label;
-        // Cap at 22 chars for pill display
-        txt.textContent = fullLabel.length > 22 ? fullLabel.slice(0, 20) + '…' : fullLabel;
-        // Save to localStorage
-        localStorage.setItem('now_location', JSON.stringify({ label: fullLabel, lat: latitude, lon: longitude }));
-        showToast('📍 Location updated', 'success', 2000);
-      } catch (e) {
-        // Fallback: show coords if reverse geocoding fails
-        txt.textContent = `${latitude.toFixed(3)}, ${longitude.toFixed(3)}`;
-        showToast('Location detected', 'success', 2000);
-      }
-      pill.classList.remove('detecting');
+      _map.setView([latitude, longitude], 17, { animate: true });
+      btn.innerHTML = '<span style="font-size:18px">🎯</span><span>Use my current location</span>';
+      btn.disabled = false;
     },
     (err) => {
-      pill.classList.remove('detecting');
-      const msgs = {
-        1: 'Location permission denied. Tap to try again.',
-        2: 'Location unavailable. Check GPS.',
-        3: 'Location request timed out.'
-      };
-      txt.textContent = 'Set Location';
-      showToast(msgs[err.code] || 'Could not get location', 'error', 3000);
+      btn.innerHTML = '<span style="font-size:18px">🎯</span><span>Use my current location</span>';
+      btn.disabled = false;
+      const msgs = { 1: 'Permission denied', 2: 'GPS unavailable', 3: 'Timed out' };
+      showToast(msgs[err.code] || 'GPS error', 'error', 3000);
     },
     { timeout: 10000, enableHighAccuracy: true }
   );
 }
 
-// Auto-detect on home load or restore saved location
+async function reverseGeocode(lat, lon) {
+  _pendingLat = lat;
+  _pendingLon = lon;
+  document.getElementById('locAddrArea').textContent = 'Fetching address...';
+  document.getElementById('locAddrFull').textContent = '';
+  clearTimeout(_geocodeTimer);
+  _geocodeTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      const data = await res.json();
+      const addr = data.address || {};
+      const area = addr.suburb || addr.neighbourhood || addr.quarter || addr.village || addr.road || '';
+      const city = addr.city || addr.town || addr.county || addr.state_district || '';
+      const state = addr.state || '';
+      const stateAbbr = state.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,3);
+      const shortLabel = area && city && area !== city ? `${area}, ${city}` : (city || 'Selected Location');
+      _pendingLabel = stateAbbr ? `${shortLabel}, ${stateAbbr}` : shortLabel;
+      _pendingFull = data.display_name || '';
+      document.getElementById('locAddrArea').textContent = _pendingLabel;
+      document.getElementById('locAddrFull').textContent = _pendingFull.length > 80 ? _pendingFull.slice(0,78)+'…' : _pendingFull;
+    } catch(e) {
+      _pendingLabel = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+      _pendingFull = '';
+      document.getElementById('locAddrArea').textContent = _pendingLabel;
+      document.getElementById('locAddrFull').textContent = 'Tap confirm to use this location';
+    }
+  }, 600); // debounce 600ms
+}
+
+function confirmLocation() {
+  if (!_pendingLat) { showToast('Move map to select location', '', 2000); return; }
+  // Save
+  localStorage.setItem('now_location', JSON.stringify({
+    label: _pendingLabel, full: _pendingFull, lat: _pendingLat, lon: _pendingLon
+  }));
+  // Update pill
+  const txt = document.getElementById('locText');
+  txt.textContent = _pendingLabel.length > 22 ? _pendingLabel.slice(0,20)+'…' : _pendingLabel;
+  showToast('📍 Location saved!', 'success', 2000);
+  closeLocMap();
+}
+
+function getSavedLocation() {
+  try { return JSON.parse(localStorage.getItem('now_location')); } catch { return null; }
+}
+
 function initLocation() {
   const txt = document.getElementById('locText');
-  // Always detect fresh — don't use cached location
-  if (navigator.geolocation) {
-    detectLocation();
+  const saved = getSavedLocation();
+  if (saved && saved.label) {
+    txt.textContent = saved.label.length > 22 ? saved.label.slice(0,20)+'…' : saved.label;
   } else {
     txt.textContent = 'Set Location';
+    // Auto open map after short delay
+    setTimeout(() => openLocMap(), 800);
   }
 }
 
