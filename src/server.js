@@ -560,6 +560,19 @@ if (process.env.IG_ACCESS_TOKEN && process.env.IG_USER_ID) {
   console.log('📅 IG auto-post scheduled (11:00 AM IST daily)');
 }
 
+// ===== Location debug (temp) =====
+app.get('/api/location/debug', async (req, res) => {
+  const key = process.env.GOOGLE_MAPS_KEY;
+  if (!key) return res.json({ error: 'GOOGLE_MAPS_KEY not set' });
+  try {
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=agra&region=in&key=${key}`;
+    const r = await axios.get(url, { timeout: 8000 });
+    res.json({ status: r.data.status, count: (r.data.results||[]).length, error_message: r.data.error_message || null });
+  } catch(e) {
+    res.json({ error: e.message });
+  }
+});
+
 // ===== Location proxy — Google Maps Geocoding =====
 app.get('/api/location/search', async (req, res) => {
   const q = String(req.query.q || '').trim();
