@@ -6,6 +6,7 @@ const path = require('path');
 const express = require('express');
 const cron = require('node-cron');
 const multer = require('multer');
+const axios = require('axios');
 
 // File upload config — saves to public/photos/
 const uploadDir = path.join(__dirname, '..', 'public', 'photos');
