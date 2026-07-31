@@ -76,7 +76,10 @@ input,textarea{font:inherit;color:inherit}
 .topbar-logo{font-size:22px;font-weight:900;letter-spacing:-1px;flex:1;text-align:center;
   background:linear-gradient(135deg,#ff4d00,#ff9a3c);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .topbar-loc{display:flex;align-items:center;gap:4px;background:var(--border);
-  padding:5px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
+  padding:5px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;
+  border:none;color:var(--text);cursor:pointer;max-width:130px;overflow:hidden;text-overflow:ellipsis}
+.topbar-loc:active{opacity:0.7}
+.topbar-loc.detecting{opacity:0.6}
 .topbar-right{display:flex;align-items:center;gap:8px}
 .icon-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;
   border-radius:10px;font-size:18px;background:var(--border);position:relative}
@@ -341,6 +344,40 @@ input,textarea{font:inherit;color:inherit}
 .modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
 .modal-title{font-size:18px;font-weight:800;margin-bottom:6px}
 .modal-sub{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+/* ═══ SIDE DRAWER ═══ */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;opacity:0;pointer-events:none;transition:opacity .3s}
+.drawer-overlay.open{opacity:1;pointer-events:all}
+.side-drawer{position:fixed;top:0;left:0;bottom:0;width:82%;max-width:300px;background:var(--card);z-index:201;
+  transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:4px 0 24px rgba(0,0,0,.3)}
+.side-drawer.open{transform:translateX(0)}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:20px 16px 16px;border-bottom:1px solid var(--border)}
+.drawer-user-info{display:flex;align-items:center;gap:12px}
+.drawer-avatar{width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700}
+.drawer-username{font-size:15px;font-weight:700;color:var(--text)}
+.drawer-phone{font-size:12px;color:var(--muted);margin-top:2px}
+.drawer-close-btn{width:32px;height:32px;border-radius:50%;background:var(--border);border:none;color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.drawer-body-scroll{flex:1;overflow-y:auto;padding:12px 0}
+.drawer-wallet-card{margin:12px;border-radius:14px;background:linear-gradient(135deg,#ff4d00,#ff8c42);
+  padding:16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.drawer-wallet-label{color:rgba(255,255,255,.85);font-size:12px;font-weight:600}
+.drawer-wallet-bal{color:#fff;font-size:22px;font-weight:800;margin-top:2px}
+.drawer-wallet-arrow{color:#fff;font-size:24px;opacity:.8}
+.drawer-section-title{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;padding:14px 16px 6px}
+.drawer-item{width:100%;display:flex;align-items:center;gap:14px;padding:13px 16px;background:none;border:none;
+  color:var(--text);cursor:pointer;text-align:left;transition:background .15s}
+.drawer-item:active{background:var(--border)}
+.di-icon{font-size:20px;width:28px;text-align:center}
+.di-label{flex:1;font-size:14px;font-weight:500}
+.di-arrow{color:var(--muted);font-size:18px}
+.drawer-divider{height:1px;background:var(--border);margin:8px 16px}
+.drawer-logout .di-label{color:#ef4444}
+.drawer-footer{padding:16px;text-align:center;font-size:11px;color:var(--muted);border-top:1px solid var(--border)}
+/* Theme toggle — small, right side */
+.theme-toggle-btn{width:28px;height:28px;border-radius:8px;background:var(--border);border:none;
+  font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text)}
+/* Hamburger icon */
+.drawer-trigger{background:transparent !important}
+.hamburger{font-size:22px;color:var(--text);line-height:1}
 </style>
 
 </head>
@@ -370,17 +407,76 @@ input,textarea{font:inherit;color:inherit}
       </div>
     </div>
 
+    <!-- ═══ SIDE DRAWER ═══ -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+    <div class="side-drawer" id="sideDrawer">
+      <div class="drawer-head">
+        <div class="drawer-user-info" id="drawerUserInfo">
+          <div class="drawer-avatar" id="drawerAvatar">👤</div>
+          <div>
+            <div class="drawer-username" id="drawerUsername">Guest</div>
+            <div class="drawer-phone" id="drawerPhone">Login to access all features</div>
+          </div>
+        </div>
+        <button class="drawer-close-btn" onclick="closeDrawer()">✕</button>
+      </div>
+      <div class="drawer-body-scroll">
+        <!-- Wallet Card -->
+        <div class="drawer-wallet-card" onclick="showScreen('screen-profile');closeDrawer()">
+          <div>
+            <div class="drawer-wallet-label">💳 NOW Wallet</div>
+            <div class="drawer-wallet-bal" id="drawerWalletBal">₹0</div>
+          </div>
+          <div class="drawer-wallet-arrow">›</div>
+        </div>
+        <!-- Menu Items -->
+        <div class="drawer-section-title">MY ACCOUNT</div>
+        <button class="drawer-item" onclick="showScreen('screen-orders');closeDrawer()">
+          <span class="di-icon">📦</span><span class="di-label">My Orders</span><span class="di-arrow">›</span>
+        </button>
+        <button class="drawer-item" onclick="showScreen('screen-profile');closeDrawer()">
+          <span class="di-icon">👤</span><span class="di-label">Profile</span><span class="di-arrow">›</span>
+        </button>
+        <button class="drawer-item" onclick="showSavedAddresses();closeDrawer()">
+          <span class="di-icon">📍</span><span class="di-label">Saved Addresses</span><span class="di-arrow">›</span>
+        </button>
+        <button class="drawer-item" onclick="showCouponsModal();closeDrawer()">
+          <span class="di-icon">🎁</span><span class="di-label">Coupons &amp; Rewards</span><span class="di-arrow">›</span>
+        </button>
+        <div class="drawer-section-title">MORE</div>
+        <button class="drawer-item" onclick="closeDrawer()">
+          <span class="di-icon">⭐</span><span class="di-label">Rate the App</span><span class="di-arrow">›</span>
+        </button>
+        <button class="drawer-item" onclick="closeDrawer()">
+          <span class="di-icon">🤝</span><span class="di-label">Refer &amp; Earn</span><span class="di-arrow">›</span>
+        </button>
+        <button class="drawer-item" onclick="closeDrawer()">
+          <span class="di-icon">❓</span><span class="di-label">Help &amp; Support</span><span class="di-arrow">›</span>
+        </button>
+        <button class="drawer-item" onclick="closeDrawer()">
+          <span class="di-icon">ℹ️</span><span class="di-label">About NOW</span><span class="di-arrow">›</span>
+        </button>
+        <div class="drawer-divider"></div>
+        <button class="drawer-item drawer-logout" id="drawerLogoutBtn" onclick="logout();closeDrawer()" style="display:none">
+          <span class="di-icon">⎋</span><span class="di-label">Logout</span>
+        </button>
+      </div>
+      <div class="drawer-footer">NOW — Fresh Meat Delivered Fast 🥩</div>
+    </div>
+
     <!-- ═══ HOME SCREEN ═══ -->
     <div class="screen" id="screen-home">
       <div class="home-topbar">
-        <button class="icon-btn" onclick="toggleTheme()" id="themeBtn" title="Toggle theme">🌙</button>
+        <button class="icon-btn drawer-trigger" onclick="openDrawer()" title="Menu">
+          <span class="hamburger">☰</span>
+        </button>
         <div class="topbar-logo">NOW</div>
-        <div style="flex:1;display:flex;justify-content:flex-end;align-items:center;gap:8px">
-          <div class="topbar-loc">📍 Agra, UP</div>
-          <button class="icon-btn" onclick="showScreen('screen-profile')" title="Profile">👤</button>
+        <div style="flex:1;display:flex;justify-content:flex-end;align-items:center;gap:6px">
+          <button class="topbar-loc" id="locPill" onclick="detectLocation()" title="Detect my location">📍 <span id="locText">Detecting...</span></button>
           <button class="icon-btn" onclick="showScreen('screen-basket')" title="Cart" style="position:relative">
             🛒<span class="cart-dot" id="cartDot" style="display:none">0</span>
           </button>
+          <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeBtn" title="Toggle theme">🌙</button>
         </div>
       </div>
 
@@ -736,6 +832,9 @@ let CURRENT_CAT = 'all';
 let SEARCH_Q = '';
 let SCREEN_HISTORY = ['screen-login'];
 let CURRENT_PRODUCT = null;
+let SELECTED_WEIGHT = null;
+let SELECTED_PRICE = 0;
+let MENU_CUSTOM = {}; // stores custom weight variants added from product detail
 let PAYMENT = 'cod';
 let COUPON = null;       // { code, discount }
 let WALLET_APPLIED = false;
@@ -927,6 +1026,7 @@ function loginSuccess() {
   document.getElementById('cartBar').style.display = '';
   loadMenu();
   showScreen('screen-home');
+  initLocation();
   showToast('Welcome to NOW! 🥩','success');
 }
 
@@ -1102,7 +1202,7 @@ function cartCount() {
 
 function cartSubtotal() {
   return Object.entries(CART).reduce((s,[code,qty]) => {
-    const item = MENU.find(i => i.code === code);
+    const item = MENU.find(i => i.code === code) || (MENU_CUSTOM && MENU_CUSTOM[code]);
     return s + (item ? item.price * qty : 0);
   }, 0);
 }
@@ -1167,6 +1267,8 @@ function openProduct(code) {
   if (!item) return;
   CURRENT_PRODUCT = item;
   ADDONS = { 1: true, 2: false };
+  SELECTED_WEIGHT = item.unit; // default = base unit
+  SELECTED_PRICE = item.price; // default = base price
 
   document.getElementById('pdTitle').textContent = item.name;
   document.getElementById('pdName').textContent = item.name;
@@ -1188,14 +1290,25 @@ function openProduct(code) {
       <div class="pd-temp">❄️ Temp Locked at -4°C</div>`;
   }
 
-  // Weight chips
-  const weights = item.cat === 'mutton' ? ['500g','1 kg','2 kg'] :
-                  item.cat === 'chicken' ? ['500g','1 kg','1.5 kg','2 kg'] :
-                  item.cat === 'fish' ? ['500g','1 kg'] : ['1 unit','2 units','3 units'];
+  // Weight chips — based on base unit of item
+  const baseGrams = parseUnitGrams(item.unit);
+  let weights;
+  if (item.cat === 'family_pack' || item.cat === 'ready_to_cook') {
+    weights = [item.unit]; // fixed weight, no selector
+  } else if (baseGrams <= 250) {
+    weights = ['250g','500g','1 kg','2 kg'];
+  } else if (baseGrams <= 500) {
+    weights = ['500g','1 kg','1.5 kg','2 kg'];
+  } else {
+    weights = ['1 kg','1.5 kg','2 kg','3 kg'];
+  }
+
   const wc = document.getElementById('weightChips');
-  wc.innerHTML = weights.map((w,i) =>
-    `<div class="wchip${i===0?' active':''}" onclick="selectWeight(this,'${w}')">${w}</div>`
-  ).join('');
+  // First chip = base unit = item.unit, mark active
+  wc.innerHTML = weights.map((w, i) => {
+    const isBase = parseUnitGrams(w) === baseGrams || (i === 0 && !weights.some(x => parseUnitGrams(x) === baseGrams));
+    return `<div class="wchip${isBase && i===0 ? ' active':''}" onclick="selectWeight(this,'${w}')">${w}</div>`;
+  }).join('');
 
   // Reset addons
   document.getElementById('addon1').className = 'addon-check checked';
@@ -1207,9 +1320,36 @@ function openProduct(code) {
   showScreen('screen-product');
 }
 
+// Parse grams from unit string like "500g", "1kg", "1.5 kg", "2 kg", "250g"
+function parseUnitGrams(unit) {
+  if (!unit) return 0;
+  const s = String(unit).toLowerCase().replace(/\s/g,'');
+  const kg = s.match(/^([\d.]+)kg$/);
+  if (kg) return parseFloat(kg[1]) * 1000;
+  const g = s.match(/^([\d.]+)g$/);
+  if (g) return parseFloat(g[1]);
+  const u = s.match(/^([\d.]+)unit/);
+  if (u) return parseFloat(u[1]) * 100;
+  return 0;
+}
+
 function selectWeight(el, w) {
   document.querySelectorAll('.wchip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
+  SELECTED_WEIGHT = w;
+
+  // Recalculate price based on weight ratio vs base item unit
+  const baseGrams = parseUnitGrams(CURRENT_PRODUCT.unit);
+  const selectedGrams = parseUnitGrams(w);
+  const multiplier = (baseGrams > 0 && selectedGrams > 0) ? selectedGrams / baseGrams : 1;
+  SELECTED_PRICE = Math.round(CURRENT_PRODUCT.price * multiplier);
+  const mrp = Math.round(SELECTED_PRICE * 1.1);
+  const save = Math.round(((mrp - SELECTED_PRICE) / mrp) * 100);
+
+  document.getElementById('pdPrice').textContent = '₹' + SELECTED_PRICE;
+  document.getElementById('pdMrp').textContent = '₹' + mrp;
+  document.getElementById('pdSaveTag').textContent = 'Save ' + save + '%';
+  updatePdBtn();
 }
 
 function toggleAddon(num) {
@@ -1240,7 +1380,28 @@ function updatePdBtn() {
 
 function addFromDetail() {
   if (!CURRENT_PRODUCT) return;
-  addToCart(CURRENT_PRODUCT.code);
+  const item = CURRENT_PRODUCT;
+  const price = SELECTED_PRICE > 0 ? SELECTED_PRICE : item.price;
+  const weight = SELECTED_WEIGHT || item.unit;
+  // Use a composite key if weight differs from base unit
+  const baseGrams = parseUnitGrams(item.unit);
+  const selGrams = parseUnitGrams(weight);
+  if (Math.abs(selGrams - baseGrams) < 1) {
+    // Same as base — use item code directly
+    addToCart(item.code);
+  } else {
+    // Add as custom weight item to cart
+    const cartKey = item.code + '_' + weight.replace(/\s/g,'');
+    if (!CART[cartKey]) {
+      // Store custom item in MENU-like object for subtotal calc
+      MENU_CUSTOM = MENU_CUSTOM || {};
+      MENU_CUSTOM[cartKey] = { ...item, code: cartKey, price, unit: weight, name: item.name + ' (' + weight + ')' };
+    }
+    CART[cartKey] = (CART[cartKey] || 0) + 1;
+    saveCart();
+    updateCartBar();
+    showToast('Added: ' + item.name + ' ' + weight);
+  }
   updatePdBtn();
 }
 
@@ -1277,7 +1438,7 @@ function renderBasket() {
   // Items list
   const list = document.getElementById('basketList');
   const cartItems = Object.entries(CART).map(([code,qty]) => {
-    const item = MENU.find(i => i.code === code);
+    const item = MENU.find(i => i.code === code) || (MENU_CUSTOM && MENU_CUSTOM[code]);
     return item ? {...item, qty} : null;
   }).filter(Boolean);
 
@@ -1731,6 +1892,118 @@ document.addEventListener('touchend', e => {
     }
   }
 }, {passive:true});
+
+// ═══════════════════════════════════════════
+//  Side Drawer
+// ═══════════════════════════════════════════
+function openDrawer() {
+  document.getElementById('sideDrawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
+  // Update drawer user info
+  const avatar = document.getElementById('drawerAvatar');
+  const username = document.getElementById('drawerUsername');
+  const phone = document.getElementById('drawerPhone');
+  const logoutBtn = document.getElementById('drawerLogoutBtn');
+  const walletBal = document.getElementById('drawerWalletBal');
+  if (USER && USER.phone) {
+    avatar.textContent = (USER.name || USER.phone)[0].toUpperCase();
+    username.textContent = USER.name || 'User';
+    phone.textContent = '+91 ' + USER.phone;
+    logoutBtn.style.display = 'flex';
+    // Load wallet balance
+    fetch('/api/customer/' + USER.phone)
+      .then(r => r.json())
+      .then(d => { if (d.ok) walletBal.textContent = '₹' + (d.customer.wallet || 0); })
+      .catch(() => {});
+  } else {
+    avatar.textContent = '👤';
+    username.textContent = 'Guest';
+    phone.textContent = 'Login to access all features';
+    logoutBtn.style.display = 'none';
+    walletBal.textContent = '₹0';
+  }
+}
+
+function closeDrawer() {
+  document.getElementById('sideDrawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+}
+
+function showSavedAddresses() {
+  showToast('Saved addresses coming soon!', '', 2000);
+}
+
+// ═══════════════════════════════════════════
+//  GPS Location Detection
+// ═══════════════════════════════════════════
+function detectLocation() {
+  const pill = document.getElementById('locPill');
+  const txt = document.getElementById('locText');
+  if (!navigator.geolocation) {
+    txt.textContent = 'Agra, UP';
+    showToast('GPS not supported on this device', 'error');
+    return;
+  }
+  pill.classList.add('detecting');
+  txt.textContent = 'Detecting...';
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      try {
+        // Use OpenStreetMap reverse geocoding (free, no API key)
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`,
+          { headers: { 'Accept-Language': 'en' } }
+        );
+        const data = await res.json();
+        const addr = data.address || {};
+        // Build short label: suburb/neighbourhood + city/town/village + state_abbr
+        const area = addr.suburb || addr.neighbourhood || addr.quarter || addr.village || addr.town || '';
+        const city = addr.city || addr.town || addr.county || addr.state_district || '';
+        const state = addr.state || '';
+        // Abbreviate state to 2-3 chars
+        const stateAbbr = state.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,3);
+        let label = '';
+        if (area && city && area !== city) label = `${area}, ${city}`;
+        else if (city) label = city;
+        else label = 'My Location';
+        const fullLabel = stateAbbr ? `${label}, ${stateAbbr}` : label;
+        // Cap at 22 chars for pill display
+        txt.textContent = fullLabel.length > 22 ? fullLabel.slice(0, 20) + '…' : fullLabel;
+        // Save to localStorage
+        localStorage.setItem('now_location', JSON.stringify({ label: fullLabel, lat: latitude, lon: longitude }));
+        showToast('📍 Location updated', 'success', 2000);
+      } catch (e) {
+        // Fallback: show coords if reverse geocoding fails
+        txt.textContent = `${latitude.toFixed(3)}, ${longitude.toFixed(3)}`;
+        showToast('Location detected', 'success', 2000);
+      }
+      pill.classList.remove('detecting');
+    },
+    (err) => {
+      pill.classList.remove('detecting');
+      const msgs = {
+        1: 'Location permission denied. Tap to try again.',
+        2: 'Location unavailable. Check GPS.',
+        3: 'Location request timed out.'
+      };
+      txt.textContent = 'Set Location';
+      showToast(msgs[err.code] || 'Could not get location', 'error', 3000);
+    },
+    { timeout: 10000, enableHighAccuracy: true }
+  );
+}
+
+// Auto-detect on home load or restore saved location
+function initLocation() {
+  const txt = document.getElementById('locText');
+  // Always detect fresh — don't use cached location
+  if (navigator.geolocation) {
+    detectLocation();
+  } else {
+    txt.textContent = 'Set Location';
+  }
+}
 
 </script>
 </body>
