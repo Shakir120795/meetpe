@@ -2011,8 +2011,9 @@ function openLocMap() {
       const lon = saved ? saved.lon : 78.0081;
 
       _map = L.map('locMap', { zoomControl: true, attributionControl: false }).setView([lat, lon], 16);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         maxZoom: 19,
+        subdomains: 'abcd',
       }).addTo(_map);
 
       // Reverse geocode on map move end
