@@ -1,393 +1,1737 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MeatPe — Fresh Meat in 30 Minutes | Agra</title>
-  <meta name="description" content="Premium fresh chicken, mutton & fish delivered in 30 minutes across Agra. Cleaned, cut, and ready. Order on WhatsApp." />
-  <meta property="og:title" content="MeatPe — Fresh Meat in 30 Minutes" />
-  <meta property="og:description" content="Taaza, Tezz, Trusted. Chicken, mutton & fish home delivery in Agra." />
-  <link rel="icon" type="image/png" href="/logo.png" />
-  <link rel="apple-touch-icon" href="/logo.png" />
-  <link rel="stylesheet" href="/style.css" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>NOW — Fresh Meat Delivered Fast</title>
+<meta name="description" content="Fresh chicken & mutton delivered in 30 min across Agra"/>
+<link rel="icon" type="image/png" href="/logo.png"/>
+<style>
+:root{
+  --bg:#0f0f0f;--card:#1a1a1a;--accent:#ff4d00;--accent2:#ff6a2f;
+  --text:#ffffff;--muted:#888888;--border:#2a2a2a;
+  --success:#22c55e;--warn:#f59e0b;--danger:#ef4444;
+  --nav-h:60px;--topbar-h:56px;
+}
+.light{
+  --bg:#f5f5f5;--card:#ffffff;--text:#1a1a1a;--muted:#666666;--border:#e0e0e0;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;overflow:hidden}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;border:none;background:none;color:inherit;font:inherit}
+input,textarea{font:inherit;color:inherit}
+
+/* ── App shell ── */
+#app{position:fixed;inset:0;overflow:hidden;display:flex;flex-direction:column}
+.screens{flex:1;overflow:hidden;position:relative}
+.screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;background:var(--bg);
+  transform:translateX(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);will-change:transform;
+  padding-bottom:calc(var(--nav-h) + 8px)}
+.screen.active{transform:translateX(0)}
+.screen.slide-left{transform:translateX(-30%)}
+#screen-login{transform:translateX(0);padding-bottom:0}
+
+/* ── Bottom nav ── */
+.bottom-nav{height:var(--nav-h);background:var(--card);border-top:1px solid var(--border);
+  display:flex;align-items:stretch;flex-shrink:0;z-index:100}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  font-size:11px;color:var(--muted);transition:color .2s;padding:4px 0;position:relative}
+.nav-btn.active{color:var(--accent)}
+.nav-btn .nav-icon{font-size:22px;line-height:1}
+.nav-badge{position:absolute;top:4px;right:calc(50% - 16px);background:var(--accent);color:#fff;
+  font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;padding:0 3px}
+
+/* ── Login screen ── */
+#screen-login{background:linear-gradient(160deg,#1a0a00 0%,#0f0f0f 50%,#000 100%)}
+.login-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:32px 24px;gap:24px}
+.login-logo{width:80px;height:80px;border-radius:20px;object-fit:contain;
+  background:#1a1a1a;padding:8px;box-shadow:0 8px 32px rgba(255,77,0,.3)}
+.login-brand{font-size:36px;font-weight:900;letter-spacing:-1px;
+  background:linear-gradient(135deg,#ff4d00,#ff9a3c);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent}
+.login-tagline{color:var(--muted);font-size:14px;text-align:center;line-height:1.5}
+.login-card{width:100%;max-width:360px;background:var(--card);border-radius:20px;
+  padding:28px 24px;border:1px solid var(--border);box-shadow:0 16px 48px rgba(0,0,0,.4)}
+.login-card h2{font-size:20px;font-weight:700;margin-bottom:6px}
+.login-card p{color:var(--muted);font-size:13px;margin-bottom:20px}
+.phone-row{display:flex;border:1.5px solid var(--border);border-radius:12px;overflow:hidden;
+  background:var(--bg);transition:border-color .2s}
+.phone-row:focus-within{border-color:var(--accent)}
+.phone-prefix{padding:0 12px;display:flex;align-items:center;color:var(--muted);
+  font-size:15px;font-weight:600;border-right:1.5px solid var(--border);white-space:nowrap}
+.phone-input{flex:1;padding:14px 12px;font-size:16px;background:none;border:none;outline:none}
+.btn-accent{width:100%;padding:15px;background:var(--accent);color:#fff;font-size:16px;
+  font-weight:700;border-radius:12px;margin-top:14px;transition:opacity .2s,transform .1s}
+.btn-accent:active{transform:scale(.98);opacity:.9}
+.btn-accent:disabled{opacity:.5}
+.login-guest{color:var(--muted);font-size:13px;text-align:center;margin-top:14px}
+.login-guest a{color:var(--accent);font-weight:600}
+
+/* ── Home screen ── */
+.home-topbar{position:sticky;top:0;z-index:50;background:var(--card);
+  border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px}
+.topbar-logo{font-size:22px;font-weight:900;letter-spacing:-1px;flex:1;text-align:center;
+  background:linear-gradient(135deg,#ff4d00,#ff9a3c);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar-loc{display:flex;align-items:center;gap:4px;background:var(--border);
+  padding:5px 10px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.icon-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  border-radius:10px;font-size:18px;background:var(--border);position:relative}
+.cart-dot{position:absolute;top:-2px;right:-2px;background:var(--accent);color:#fff;
+  font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;padding:0 3px}
+.search-bar{margin:10px 14px;display:flex;align-items:center;gap:8px;
+  background:var(--card);border:1.5px solid var(--border);border-radius:12px;
+  padding:10px 14px;transition:border-color .2s}
+.search-bar:focus-within{border-color:var(--accent)}
+.search-bar input{flex:1;background:none;border:none;outline:none;font-size:14px}
+.hero-banner{margin:0 14px 14px;background:linear-gradient(120deg,#1a0800,#2d1200);
+  border-radius:16px;padding:18px 18px;border:1px solid #3d1800;
+  display:flex;align-items:center;justify-content:space-between;overflow:hidden;position:relative}
+.hero-banner::before{content:'';position:absolute;top:-20px;right:-20px;width:120px;height:120px;
+  background:radial-gradient(circle,rgba(255,77,0,.3) 0%,transparent 70%)}
+.hero-txt h3{font-size:16px;font-weight:800;line-height:1.3;margin-bottom:4px}
+.hero-txt p{color:var(--muted);font-size:12px}
+.hero-pill{background:var(--accent);color:#fff;font-size:11px;font-weight:700;
+  padding:4px 10px;border-radius:20px;margin-top:8px;display:inline-block}
+.hero-emoji-big{font-size:48px;line-height:1}
+.cat-strip{display:flex;gap:8px;overflow-x:auto;padding:0 14px 10px;scrollbar-width:none}
+.cat-strip::-webkit-scrollbar{display:none}
+.cat-chip{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 14px;
+  background:var(--card);border:1.5px solid var(--border);border-radius:14px;
+  font-size:12px;font-weight:600;white-space:nowrap;transition:all .2s;cursor:pointer;min-width:64px}
+.cat-chip .chip-icon{font-size:22px}
+.cat-chip.active{border-color:var(--accent);background:rgba(255,77,0,.1);color:var(--accent)}
+.section-title{font-size:16px;font-weight:700;padding:0 14px;margin-bottom:10px}
+.product-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px 10px}
+
+/* ── Product card ── */
+.prod-card{background:var(--card);border-radius:16px;border:1px solid var(--border);
+  overflow:hidden;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.prod-card:active{transform:scale(.97)}
+.prod-img{position:relative;background:linear-gradient(135deg,#1a1a1a,#252525);
+  aspect-ratio:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.prod-img img{width:100%;height:100%;object-fit:cover}
+.prod-img .emoji-bg{font-size:52px;opacity:.8}
+.badge-temp{position:absolute;top:6px;left:6px;background:rgba(0,120,255,.85);
+  color:#fff;font-size:9px;font-weight:700;padding:3px 6px;border-radius:6px;backdrop-filter:blur(4px)}
+.badge-best{position:absolute;top:6px;right:6px;background:rgba(255,77,0,.9);
+  color:#fff;font-size:9px;font-weight:700;padding:3px 6px;border-radius:6px}
+.badge-oos{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;
+  align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
+.prod-body{padding:10px}
+.prod-name{font-size:13px;font-weight:600;line-height:1.3;margin-bottom:2px;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prod-unit{font-size:11px;color:var(--muted)}
+.prod-pricing{display:flex;align-items:center;gap:6px;margin:6px 0 4px}
+.prod-price{font-size:15px;font-weight:800}
+.prod-mrp{font-size:11px;color:var(--muted);text-decoration:line-through}
+.prod-save{font-size:10px;color:var(--success);font-weight:600}
+.prod-footer{display:flex;align-items:center;justify-content:space-between}
+.prod-inspect{font-size:10px;color:var(--muted);margin-top:4px}
+.add-btn{background:var(--card);border:1.5px solid var(--accent);color:var(--accent);
+  font-size:13px;font-weight:700;padding:5px 14px;border-radius:8px;transition:all .2s}
+.add-btn:active{background:var(--accent);color:#fff}
+.stepper{display:flex;align-items:center;gap:0;border:1.5px solid var(--accent);border-radius:8px;overflow:hidden}
+.step-btn{width:30px;height:30px;font-size:18px;font-weight:700;display:flex;
+  align-items:center;justify-content:center;background:var(--accent);color:#fff;transition:opacity .2s}
+.step-btn:active{opacity:.8}
+.step-qty{width:32px;text-align:center;font-size:14px;font-weight:700;background:var(--card)}
+
+/* ── Floating cart bar ── */
+.cart-bar{position:fixed;bottom:calc(var(--nav-h) + 8px);left:50%;transform:translateX(-50%) translateY(100px);
+  background:var(--accent);color:#fff;border-radius:16px;padding:14px 20px;
+  display:flex;align-items:center;justify-content:space-between;width:calc(100% - 28px);
+  max-width:452px;box-shadow:0 8px 32px rgba(255,77,0,.4);transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+  z-index:90;cursor:pointer}
+.cart-bar.visible{transform:translateX(-50%) translateY(0)}
+.cart-bar-left{font-size:13px;font-weight:600}
+.cart-bar-right{font-size:14px;font-weight:800;display:flex;align-items:center;gap:6px}
+
+/* ── Product detail screen ── */
+.screen-header{display:flex;align-items:center;gap:12px;padding:14px 14px 10px;
+  position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid var(--border)}
+.back-btn{width:36px;height:36px;background:var(--card);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.screen-title{font-size:16px;font-weight:700;flex:1}
+.pd-img{aspect-ratio:4/3;background:linear-gradient(135deg,#1a1a1a,#252525);
+  display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.pd-img img{width:100%;height:100%;object-fit:cover}
+.pd-img .emoji-lg{font-size:96px;opacity:.85}
+.pd-temp{position:absolute;top:12px;left:12px;background:rgba(0,120,255,.85);
+  color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;backdrop-filter:blur(4px)}
+.pd-body{padding:16px 14px}
+.pd-name{font-size:20px;font-weight:800;margin-bottom:4px}
+.pd-rating{color:var(--warn);font-size:13px;margin-bottom:12px}
+.pd-price-row{display:flex;align-items:baseline;gap:10px;margin-bottom:16px}
+.pd-price{font-size:26px;font-weight:800;color:var(--accent)}
+.pd-mrp{font-size:15px;color:var(--muted);text-decoration:line-through}
+.pd-save-tag{background:rgba(34,197,94,.15);color:var(--success);
+  font-size:12px;font-weight:700;padding:3px 8px;border-radius:6px}
+.pd-section{margin-bottom:16px}
+.pd-section-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.5px;margin-bottom:8px}
+.weight-chips{display:flex;gap:8px;flex-wrap:wrap}
+.wchip{padding:8px 16px;border:1.5px solid var(--border);border-radius:10px;
+  font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.wchip.active{border-color:var(--accent);background:rgba(255,77,0,.1);color:var(--accent)}
+.addon-row{display:flex;align-items:center;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--border)}
+.addon-row:last-child{border-bottom:none}
+.addon-check{width:20px;height:20px;border:2px solid var(--border);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .2s}
+.addon-check.checked{background:var(--accent);border-color:var(--accent);color:#fff;font-size:12px}
+.addon-label{flex:1;font-size:13px}
+.addon-price{font-size:13px;font-weight:700;color:var(--accent)}
+.pd-add-btn{position:sticky;bottom:0;background:var(--bg);padding:12px 14px;
+  border-top:1px solid var(--border)}
+.pd-add-btn button{width:100%;padding:16px;background:var(--accent);color:#fff;
+  font-size:16px;font-weight:700;border-radius:14px;transition:opacity .2s,transform .1s}
+.pd-add-btn button:active{opacity:.9;transform:scale(.98)}
+
+/* ── Basket screen ── */
+.delivery-bar{margin:12px 14px;background:var(--card);border-radius:12px;
+  padding:12px 14px;border:1px solid var(--border)}
+.del-bar-txt{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}
+.del-progress{background:var(--border);border-radius:4px;height:6px;overflow:hidden}
+.del-progress-fill{background:var(--success);height:100%;border-radius:4px;transition:width .5s}
+.basket-list{padding:0 14px}
+.basket-item{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)}
+.basket-item:last-child{border-bottom:none}
+.basket-img{width:52px;height:52px;border-radius:10px;background:var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;overflow:hidden}
+.basket-img img{width:100%;height:100%;object-fit:cover}
+.basket-info{flex:1;min-width:0}
+.basket-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.basket-price{font-size:12px;color:var(--muted);margin-top:2px}
+.section-box{margin:10px 14px;background:var(--card);border-radius:14px;
+  border:1px solid var(--border);overflow:hidden}
+.section-box-title{padding:12px 14px;font-size:13px;font-weight:700;border-bottom:1px solid var(--border)}
+.pay-option{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer}
+.pay-option:last-child{border-bottom:none}
+.pay-radio{width:18px;height:18px;border:2px solid var(--border);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.pay-radio.checked{border-color:var(--accent)}
+.pay-radio.checked::after{content:'';width:8px;height:8px;background:var(--accent);border-radius:50%}
+.pay-label{flex:1}
+.pay-label strong{font-size:13px;display:block}
+.pay-label small{font-size:11px;color:var(--muted)}
+.wallet-row{display:flex;align-items:center;gap:10px;padding:12px 14px}
+.wallet-toggle{width:44px;height:24px;background:var(--border);border-radius:12px;
+  position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.wallet-toggle.on{background:var(--accent)}
+.wallet-toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;
+  background:#fff;border-radius:50%;transition:transform .2s}
+.wallet-toggle.on::after{transform:translateX(20px)}
+.coupon-box{display:flex;gap:8px;padding:12px 14px}
+.coupon-box input{flex:1;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:10px;padding:10px 12px;outline:none;transition:border-color .2s}
+.coupon-box input:focus{border-color:var(--accent)}
+.coupon-apply-btn{padding:10px 16px;background:var(--accent);color:#fff;
+  border-radius:10px;font-size:13px;font-weight:700;transition:opacity .2s}
+.coupon-apply-btn:active{opacity:.8}
+.coupon-msg-row{padding:0 14px 10px;font-size:12px}
+.coupon-ok{color:var(--success)}
+.coupon-err{color:var(--danger)}
+.price-row{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 14px;font-size:13px}
+.price-row.total{font-size:16px;font-weight:800;padding:12px 14px;
+  border-top:1px solid var(--border);margin-top:4px}
+.price-row .strike{text-decoration:line-through;color:var(--muted)}
+.price-row .green{color:var(--success)}
+.checkout-btn{margin:12px 14px;width:calc(100% - 28px);padding:16px;
+  background:var(--accent);color:#fff;font-size:16px;font-weight:700;
+  border-radius:14px;transition:opacity .2s,transform .1s;display:block}
+.checkout-btn:active{opacity:.9;transform:scale(.98)}
+.checkout-btn:disabled{opacity:.5}
+
+/* ── Orders screen ── */
+.order-card{background:var(--card);border-radius:14px;border:1px solid var(--border);
+  padding:14px;margin:0 14px 10px;cursor:pointer;transition:transform .2s}
+.order-card:active{transform:scale(.98)}
+.order-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.order-id{font-size:13px;font-weight:700}
+.order-date{font-size:11px;color:var(--muted)}
+.order-status{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px}
+.status-placed{background:rgba(245,158,11,.15);color:var(--warn)}
+.status-preparing{background:rgba(99,102,241,.15);color:#818cf8}
+.status-out_for_delivery{background:rgba(34,197,94,.15);color:var(--success)}
+.status-delivered{background:rgba(34,197,94,.2);color:var(--success)}
+.status-cancelled{background:rgba(239,68,68,.15);color:var(--danger)}
+.order-items{font-size:12px;color:var(--muted);margin-bottom:6px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.order-total{font-size:14px;font-weight:700}
+
+/* order detail / tracking */
+.tracking-wrap{padding:14px}
+.track-steps{display:flex;flex-direction:column;gap:0}
+.track-step{display:flex;align-items:flex-start;gap:12px;padding:10px 0;position:relative}
+.track-line{position:absolute;left:11px;top:28px;bottom:-10px;width:2px;background:var(--border);z-index:0}
+.track-step:last-child .track-line{display:none}
+.track-dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--border);
+  background:var(--bg);display:flex;align-items:center;justify-content:center;
+  font-size:11px;z-index:1;flex-shrink:0;transition:all .3s}
+.track-dot.done{background:var(--success);border-color:var(--success);color:#fff}
+.track-dot.current{background:var(--accent);border-color:var(--accent);color:#fff;
+  box-shadow:0 0 0 4px rgba(255,77,0,.2)}
+.track-txt{flex:1}
+.track-label{font-size:13px;font-weight:600}
+.track-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ── Profile screen ── */
+.profile-top{padding:24px 14px 14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.avatar{width:72px;height:72px;border-radius:50%;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff}
+.profile-name{font-size:18px;font-weight:700}
+.profile-phone{font-size:13px;color:var(--muted)}
+.wallet-card{margin:0 14px 12px;background:linear-gradient(135deg,#1a0800,#2d1200);
+  border-radius:16px;padding:18px;border:1px solid #3d1800}
+.wallet-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.wallet-card-title{font-size:12px;font-weight:600;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.5px}
+.wallet-balance{font-size:28px;font-weight:800;color:#fff}
+.wallet-sub{font-size:12px;color:rgba(255,255,255,.6)}
+.wallet-add-btn{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.2);
+  padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;backdrop-filter:blur(4px)}
+.profile-menu{margin:0 14px}
+.pm-item{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.pm-item:last-child{border-bottom:none}
+.pm-icon{width:36px;height:36px;background:var(--card);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:18px}
+.pm-label{flex:1;font-size:14px;font-weight:500}
+.pm-arrow{color:var(--muted);font-size:18px}
+.logout-btn{margin:14px;width:calc(100% - 28px);padding:14px;background:rgba(239,68,68,.1);
+  color:var(--danger);border:1px solid rgba(239,68,68,.2);border-radius:12px;
+  font-size:14px;font-weight:700;transition:all .2s}
+.logout-btn:active{background:rgba(239,68,68,.2)}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:calc(var(--nav-h) + 16px);left:50%;transform:translateX(-50%) translateY(20px);
+  background:#333;color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;
+  white-space:nowrap;max-width:calc(100% - 28px);text-align:center;
+  opacity:0;transition:all .3s;z-index:9999;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.success{background:var(--success)}
+.toast.error{background:var(--danger)}
+
+/* ── Skeleton ── */
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.skel{background:linear-gradient(90deg,var(--border) 25%,var(--card) 50%,var(--border) 75%);
+  background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
+
+/* ── Empty state ── */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:60px 24px;gap:12px;text-align:center}
+.empty-icon{font-size:56px}
+.empty h3{font-size:16px;font-weight:700}
+.empty p{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* ── Misc ── */
+.divider{height:8px;background:var(--bg);margin:0 -14px}
+.chip-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(255,77,0,.1);
+  color:var(--accent);font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;margin-bottom:8px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;
+  display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal-box{background:var(--card);border-radius:20px 20px 0 0;padding:24px 20px 36px;
+  width:100%;max-height:85vh;overflow-y:auto;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.modal-overlay.show .modal-box{transform:translateY(0)}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-size:18px;font-weight:800;margin-bottom:6px}
+.modal-sub{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+</style>
+
 </head>
 <body>
+<div id="app">
+  <div class="screens">
 
-<!-- ===== Top bar ===== -->
-<div class="topbar">
-  <span>🚚 Free delivery on orders ₹699+ • 30-min delivery in Agra</span>
+    <!-- ═══ LOGIN SCREEN ═══ -->
+    <div class="screen active" id="screen-login">
+      <div class="login-wrap">
+        <img src="/logo.png" alt="NOW" class="login-logo" onerror="this.style.display='none'"/>
+        <div class="login-brand">NOW</div>
+        <div class="login-tagline">Fresh chicken &amp; mutton,<br/>delivered fast in Agra</div>
+        <div class="login-card">
+          <h2>Welcome to NOW 👋</h2>
+          <p>Enter your phone number to continue</p>
+          <div class="phone-row">
+            <span class="phone-prefix">🇮🇳 +91</span>
+            <input class="phone-input" id="phoneInput" type="tel" maxlength="10"
+              inputmode="numeric" pattern="[0-9]*" placeholder="Enter 10-digit number"/>
+          </div>
+          <button class="btn-accent" id="loginBtn" onclick="handleLogin()">Continue →</button>
+          <div class="login-guest">
+            <a href="#" onclick="guestLogin()">Continue as guest</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ HOME SCREEN ═══ -->
+    <div class="screen" id="screen-home">
+      <div class="home-topbar">
+        <button class="icon-btn" onclick="toggleTheme()" id="themeBtn" title="Toggle theme">🌙</button>
+        <div class="topbar-logo">NOW</div>
+        <div style="flex:1;display:flex;justify-content:flex-end;align-items:center;gap:8px">
+          <div class="topbar-loc">📍 Agra, UP</div>
+          <button class="icon-btn" onclick="showScreen('screen-profile')" title="Profile">👤</button>
+          <button class="icon-btn" onclick="showScreen('screen-basket')" title="Cart" style="position:relative">
+            🛒<span class="cart-dot" id="cartDot" style="display:none">0</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <span style="font-size:16px">🔍</span>
+        <input id="searchInput" placeholder="Search for fresh meat..." oninput="searchProducts(this.value)"/>
+        <span style="font-size:16px;cursor:pointer" onclick="clearSearch()">✕</span>
+      </div>
+
+      <div class="hero-banner">
+        <div class="hero-txt">
+          <div class="chip-badge">⚡ 30 min delivery</div>
+          <h3>Fresh Chicken &amp; Mutton</h3>
+          <p>Delivered across Agra</p>
+          <div class="hero-pill">Free cleaning + cutting</div>
+        </div>
+        <div class="hero-emoji-big">🥩</div>
+      </div>
+
+      <div class="cat-strip" id="catStrip">
+        <div class="cat-chip active" data-cat="all" onclick="filterCat('all',this)">
+          <span class="chip-icon">🍖</span><span>All</span>
+        </div>
+        <div class="cat-chip" data-cat="chicken" onclick="filterCat('chicken',this)">
+          <span class="chip-icon">🐔</span><span>Chicken</span>
+        </div>
+        <div class="cat-chip" data-cat="mutton" onclick="filterCat('mutton',this)">
+          <span class="chip-icon">🐐</span><span>Mutton</span>
+        </div>
+        <div class="cat-chip" data-cat="fish" onclick="filterCat('fish',this)">
+          <span class="chip-icon">🐟</span><span>Fish</span>
+        </div>
+        <div class="cat-chip" data-cat="ready_to_cook" onclick="filterCat('ready_to_cook',this)">
+          <span class="chip-icon">🔥</span><span>Ready</span>
+        </div>
+        <div class="cat-chip" data-cat="family_pack" onclick="filterCat('family_pack',this)">
+          <span class="chip-icon">👨‍👩‍👧</span><span>Combos</span>
+        </div>
+      </div>
+
+      <div class="section-title" id="productSectionTitle">All Products</div>
+      <div class="product-grid" id="productGrid">
+        <!-- skeleton -->
+        <div class="prod-card"><div class="prod-img skel" style="aspect-ratio:1"></div><div class="prod-body"><div class="skel" style="height:14px;margin-bottom:6px"></div><div class="skel" style="height:10px;width:60%"></div></div></div>
+        <div class="prod-card"><div class="prod-img skel" style="aspect-ratio:1"></div><div class="prod-body"><div class="skel" style="height:14px;margin-bottom:6px"></div><div class="skel" style="height:10px;width:60%"></div></div></div>
+        <div class="prod-card"><div class="prod-img skel" style="aspect-ratio:1"></div><div class="prod-body"><div class="skel" style="height:14px;margin-bottom:6px"></div><div class="skel" style="height:10px;width:60%"></div></div></div>
+        <div class="prod-card"><div class="prod-img skel" style="aspect-ratio:1"></div><div class="prod-body"><div class="skel" style="height:14px;margin-bottom:6px"></div><div class="skel" style="height:10px;width:60%"></div></div></div>
+      </div>
+      <div style="height:16px"></div>
+    </div>
+
+
+    <!-- ═══ PRODUCT DETAIL SCREEN ═══ -->
+    <div class="screen" id="screen-product">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title" id="pdTitle">Product</div>
+      </div>
+      <div class="pd-img" id="pdImg">
+        <span class="emoji-lg" id="pdEmoji">🥩</span>
+        <div class="pd-temp">❄️ Temp Locked at -4°C</div>
+      </div>
+      <div class="pd-body">
+        <div class="chip-badge" id="pdCatBadge">🐔 Chicken</div>
+        <div class="pd-name" id="pdName">Whole Chicken</div>
+        <div class="pd-rating">★★★★½ <span style="color:var(--muted)">4.5 (128 reviews)</span></div>
+        <div class="pd-price-row">
+          <div class="pd-price" id="pdPrice">₹260</div>
+          <div class="pd-mrp" id="pdMrp">₹286</div>
+          <div class="pd-save-tag" id="pdSaveTag">Save 9%</div>
+        </div>
+        <div class="pd-section">
+          <div class="pd-section-title">Select Weight</div>
+          <div class="weight-chips" id="weightChips"></div>
+        </div>
+        <div class="pd-section">
+          <div class="pd-section-title">Add-ons</div>
+          <div id="addonsList">
+            <div class="addon-row">
+              <div class="addon-check" id="addon1" onclick="toggleAddon(1)">✓</div>
+              <div class="addon-label">🌶️ Masala marinade (tandoor style)</div>
+              <div class="addon-price">+₹30</div>
+            </div>
+            <div class="addon-row">
+              <div class="addon-check" id="addon2" onclick="toggleAddon(2)">☐</div>
+              <div class="addon-label">✂️ Extra cleaning + fine cut</div>
+              <div class="addon-price">+₹20</div>
+            </div>
+          </div>
+        </div>
+        <div class="pd-section">
+          <div class="pd-section-title">Description</div>
+          <div id="pdDesc" style="font-size:13px;color:var(--muted);line-height:1.6">
+            Premium quality, farm-fresh meat. Hygienically cleaned and cut as per your preference. Delivered within 30 minutes.
+          </div>
+        </div>
+      </div>
+      <div class="pd-add-btn">
+        <button id="pdAddBtn" onclick="addFromDetail()">Add to Basket →</button>
+      </div>
+    </div>
+
+    <!-- ═══ BASKET SCREEN ═══ -->
+    <div class="screen" id="screen-basket">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">Your Basket</div>
+      </div>
+
+      <div id="basketEmpty" class="empty" style="display:none">
+        <div class="empty-icon">🛒</div>
+        <h3>Your basket is empty</h3>
+        <p>Add some fresh items from the menu</p>
+        <button class="btn-accent" style="margin-top:8px;max-width:200px" onclick="showScreen('screen-home')">Browse Menu</button>
+      </div>
+
+      <div id="basketContent">
+        <div class="delivery-bar">
+          <div class="del-bar-txt">
+            <span id="delBarMsg">Loading...</span>
+            <span id="delBarAmt"></span>
+          </div>
+          <div class="del-progress"><div class="del-progress-fill" id="delFill" style="width:0%"></div></div>
+        </div>
+
+        <div class="basket-list" id="basketList"></div>
+        <div class="divider"></div>
+
+        <div class="section-box">
+          <div class="section-box-title">💳 Payment Method</div>
+          <div class="pay-option" onclick="selectPayment('cod')">
+            <div class="pay-radio checked" id="pay-cod"></div>
+            <div class="pay-label"><strong>💵 Cash on Delivery</strong><small>Pay when your order arrives</small></div>
+          </div>
+          <div class="pay-option" onclick="selectPayment('pay_online')">
+            <div class="pay-radio" id="pay-pay_online"></div>
+            <div class="pay-label"><strong>📱 Pay Online</strong><small>UPI / Cards via Razorpay</small></div>
+          </div>
+          <div class="pay-option" onclick="selectPayment('upi')">
+            <div class="pay-radio" id="pay-upi"></div>
+            <div class="pay-label"><strong>🏦 UPI Direct</strong><small>Google Pay, PhonePe, Paytm</small></div>
+          </div>
+        </div>
+
+        <div class="section-box" id="walletSection" style="display:none">
+          <div class="section-box-title">💳 NOW Wallet</div>
+          <div class="wallet-row">
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600">Apply NOW Wallet Balance</div>
+              <div style="font-size:12px;color:var(--muted)">Available: ₹<span id="walletBal">0</span></div>
+            </div>
+            <div class="wallet-toggle" id="walletToggle" onclick="toggleWallet()"></div>
+          </div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-box-title">🏷️ Coupon</div>
+          <div class="coupon-box">
+            <input id="couponIn" placeholder="Enter coupon code" autocomplete="off"/>
+            <button class="coupon-apply-btn" onclick="applyCoupon()">Apply</button>
+          </div>
+          <div class="coupon-msg-row" id="couponMsg"></div>
+        </div>
+
+        <div class="section-box">
+          <div class="section-box-title">🧾 Price Breakdown</div>
+          <div class="price-row"><span>Items Subtotal</span><span id="priceSubtotal">₹0</span></div>
+          <div class="price-row" id="priceDeliveryRow"><span>Delivery Charge</span><span id="priceDelivery">₹0</span></div>
+          <div class="price-row" id="priceDiscountRow" style="display:none"><span>Coupon Discount</span><span class="green" id="priceDiscount">-₹0</span></div>
+          <div class="price-row" id="priceWalletRow" style="display:none"><span>Wallet Applied</span><span class="green" id="priceWallet">-₹0</span></div>
+          <div class="price-row total"><span>Total</span><span id="priceTotal">₹0</span></div>
+        </div>
+
+        <div style="margin:10px 14px;padding:10px 14px;background:rgba(34,197,94,.1);border-radius:10px;
+          border:1px solid rgba(34,197,94,.2);font-size:12px;color:var(--success)">
+          ✅ Free cleaning, cutting &amp; marination included
+        </div>
+
+        <button class="checkout-btn" id="checkoutBtn" onclick="showCheckoutModal()">
+          🛵 Place Delivery Order
+        </button>
+        <div style="height:8px"></div>
+      </div>
+    </div>
+
+
+    <!-- ═══ ORDERS SCREEN ═══ -->
+    <div class="screen" id="screen-orders">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title" id="ordersTitle">My Orders</div>
+      </div>
+      <div id="ordersContent">
+        <div class="empty">
+          <div class="empty-icon">📦</div>
+          <h3>No orders yet</h3>
+          <p>Your past orders will appear here</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PROFILE SCREEN ═══ -->
+    <div class="screen" id="screen-profile">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">My Profile</div>
+      </div>
+
+      <div id="profileContent">
+        <div class="profile-top">
+          <div class="avatar" id="profileAvatar">?</div>
+          <div class="profile-name" id="profileName">Guest User</div>
+          <div class="profile-phone" id="profilePhone">Not logged in</div>
+        </div>
+
+        <div class="wallet-card">
+          <div class="wallet-card-top">
+            <div>
+              <div class="wallet-card-title">NOW Wallet Balance</div>
+              <div class="wallet-balance">₹<span id="profileWallet">0</span></div>
+              <div class="wallet-sub">Use at checkout for instant discount</div>
+            </div>
+            <button class="wallet-add-btn" onclick="showToast('Coming soon! 🚀')">+ Add Money</button>
+          </div>
+        </div>
+
+        <div class="section-box" style="margin:0 14px 12px">
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 14px">
+            <span style="font-size:22px">🎖️</span>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:700">NOW Plus Membership</div>
+              <div style="font-size:11px;color:var(--muted)">Free delivery • Priority slots • Member offers</div>
+            </div>
+            <button style="background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700"
+              onclick="showToast('NOW Plus coming soon! 🎖️')">Join ₹99/mo</button>
+          </div>
+        </div>
+
+        <div class="profile-menu">
+          <div class="pm-item" onclick="showScreen('screen-orders')">
+            <div class="pm-icon">📦</div>
+            <div class="pm-label">Order History</div>
+            <div class="pm-arrow">›</div>
+          </div>
+          <div class="pm-item" onclick="showToast('Saved addresses coming soon!')">
+            <div class="pm-icon">📍</div>
+            <div class="pm-label">Saved Addresses</div>
+            <div class="pm-arrow">›</div>
+          </div>
+          <div class="pm-item" onclick="showCouponsModal()">
+            <div class="pm-icon">🎫</div>
+            <div class="pm-label">Coupons &amp; Rewards</div>
+            <div class="pm-arrow">›</div>
+          </div>
+          <div class="pm-item" onclick="showToast('📹 Video inspect available on WhatsApp!')">
+            <div class="pm-icon">📹</div>
+            <div class="pm-label">Video Inspection Request</div>
+            <div class="pm-arrow">›</div>
+          </div>
+        </div>
+
+        <button class="logout-btn" id="logoutBtn" onclick="logout()">Log Out</button>
+        <div style="height:12px"></div>
+      </div>
+    </div>
+
+  </div><!-- /screens -->
+
+  <!-- ── Bottom Nav ── -->
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="nav-btn active" id="nav-home" onclick="navTo('screen-home','nav-home')">
+      <span class="nav-icon">🏠</span><span>Home</span>
+    </button>
+    <button class="nav-btn" id="nav-search" onclick="navTo('screen-home','nav-search');focusSearch()">
+      <span class="nav-icon">🔍</span><span>Search</span>
+    </button>
+    <button class="nav-btn" id="nav-orders" onclick="navTo('screen-orders','nav-orders')">
+      <span class="nav-icon">📦</span><span>Orders</span>
+    </button>
+    <button class="nav-btn" id="nav-profile" onclick="navTo('screen-profile','nav-profile')">
+      <span class="nav-icon">👤</span><span>Profile</span>
+    </button>
+  </nav>
+
+</div><!-- /app -->
+
+<!-- ── Cart bar ── -->
+<div class="cart-bar" id="cartBar" onclick="showScreen('screen-basket')">
+  <div class="cart-bar-left" id="cartBarLeft">0 items</div>
+  <div class="cart-bar-right" id="cartBarRight">View Cart →</div>
 </div>
 
-<!-- ===== Header ===== -->
-<header class="header">
-  <div class="container header-inner">
-    <a href="/" class="logo">
-      <img src="/logo.png" alt="MeatPe" class="logo-img" />
-    </a>
-    <nav class="nav">
-      <a href="#menu">Menu</a>
-      <a href="#packs">Combos</a>
-      <a href="#plus">Plus</a>
-      <a href="#contact">Contact</a>
-    </nav>
-    <div class="header-actions">
-      <a href="tel:+917617555488" class="header-icon" aria-label="Call us" title="Call now">📞</a>
-      <button class="header-icon header-cart" id="headerCart" aria-label="Open cart" title="Cart">
-        🛒<span class="header-cart-badge" id="headerCartBadge" style="display:none">0</span>
-      </button>
-      <a href="#" class="btn btn-primary btn-sm wa-btn" data-msg="hi">
-        <span>💬</span> WhatsApp
-      </a>
-    </div>
-  </div>
-</header>
+<!-- ── Toast ── -->
+<div class="toast" id="toast"></div>
 
-<!-- ===== Hero ===== -->
-<section class="hero">
-  <div class="container hero-inner">
-    <div class="hero-text">
-      <span class="badge">⚡ Fresh • Fast • Trusted</span>
-      <h1>Fresh Meat in <span class="hl">30 Minutes</span></h1>
-      <p class="tagline">Taaza, Tezz, Trusted — direct from our kitchen to your kitchen.</p>
-      <p class="lead">Premium chicken, mutton & fish. Hygienically cleaned, expertly cut, delivered hot-fresh across Agra.</p>
-      <div class="hero-ctas">
-        <a href="#menu" class="btn btn-primary btn-lg">
-          <span>🛒</span> Browse Menu
-        </a>
-        <a href="#" class="btn btn-ghost btn-lg wa-btn" data-msg="hi">
-          <span>💬</span> WhatsApp
-        </a>
-        <a href="tel:+917617555488" class="btn btn-ghost btn-lg">
-          <span>📞</span> Call Now
-        </a>
+<!-- ── Checkout Modal ── -->
+<div class="modal-overlay" id="checkoutModal">
+  <div class="modal-box">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📦 Place Order</div>
+    <div class="modal-sub">Fill in your details and we'll deliver in ~30 minutes 🛵</div>
+    <form id="checkoutForm" onsubmit="submitOrder(event)">
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">Your Name *</label>
+        <input id="oName" required placeholder="Enter your name"
+          style="width:100%;padding:12px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;outline:none;font-size:14px"/>
       </div>
-      <div class="hero-stats">
-        <div><strong>30 min</strong><span>Delivery</span></div>
-        <div><strong>100%</strong><span>Fresh Daily</span></div>
-        <div><strong>Free</strong><span>Cleaning + Cutting</span></div>
-      </div>
-    </div>
-    <div class="hero-visual">
-      <div class="hero-card">
-        <div class="hero-card-visual cat-chicken"><span class="hero-emoji">🐔</span></div>
-        <div class="hero-card-info">
-          <div class="hero-price">₹260<small>/kg</small></div>
-          <div class="hero-label">Premium Chicken</div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">Phone Number *</label>
+        <div style="display:flex;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;background:var(--bg)">
+          <span style="padding:0 10px;display:flex;align-items:center;color:var(--muted);font-size:13px;border-right:1.5px solid var(--border)">+91</span>
+          <input id="oPhone" type="tel" maxlength="10" required placeholder="10-digit number"
+            style="flex:1;padding:12px;background:none;border:none;outline:none;font-size:14px"/>
         </div>
       </div>
-      <div class="hero-card hero-card-2">
-        <div class="hero-card-visual cat-mutton"><span class="hero-emoji">🐐</span></div>
-        <div class="hero-card-info">
-          <div class="hero-price">₹800<small>/kg</small></div>
-          <div class="hero-label">Premium Mutton</div>
-        </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">Delivery Address *</label>
+        <textarea id="oAddress" required rows="3" placeholder="House no, street, area, landmark..."
+          style="width:100%;padding:12px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;outline:none;font-size:14px;resize:none"></textarea>
       </div>
-      <div class="hero-card hero-card-3">
-        <div class="hero-card-visual cat-fish"><span class="hero-emoji">🐟</span></div>
-        <div class="hero-card-info">
-          <div class="hero-price">₹280<small>/kg</small></div>
-          <div class="hero-label">Fresh Rohu</div>
-        </div>
+      <div style="margin-bottom:16px">
+        <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">Notes (optional)</label>
+        <input id="oNotes" placeholder="Cleaning preference, cut style..."
+          style="width:100%;padding:12px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;outline:none;font-size:14px"/>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== Why MeatPe ===== -->
-<section class="why">
-  <div class="container">
-    <div class="why-grid">
-      <div class="why-item"><div class="why-icon">⚡</div><h3>30-Min Delivery</h3><p>Order placed, meat at your door in 30 minutes flat.</p></div>
-      <div class="why-item"><div class="why-icon">✂️</div><h3>Cleaned + Cut Free</h3><p>Tell us how you want it. Curry cut, boneless, keema — sab free.</p></div>
-      <div class="why-item"><div class="why-icon">❄️</div><h3>Daily Fresh</h3><p>Sourced same day. No frozen, no stale, no compromise.</p></div>
-      <div class="why-item"><div class="why-icon">💰</div><h3>MeatPe Cash</h3><p>Order ₹500+ and earn ₹30 cashback on next order.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- ===== Menu ===== -->
-<section id="menu" class="section menu-section">
-  <div class="container">
-    <div class="section-head">
-      <h2>Our Menu</h2>
-      <p>Premium quality. Honest prices. Cleaned + cut included.</p>
-    </div>
-
-    <div class="cat-tabs" id="catTabs">
-      <button class="cat-tab active" data-cat="chicken">🐔 Chicken</button>
-      <button class="cat-tab" data-cat="mutton">🐐 Mutton</button>
-      <button class="cat-tab" data-cat="fish">🐟 Fish</button>
-      <button class="cat-tab" data-cat="ready_to_cook">🔥 Ready to Cook</button>
-      <button class="cat-tab" data-cat="family_pack">👨‍👩‍👧 Combos</button>
-    </div>
-
-    <div id="menuGrid" class="menu-grid"><!-- items injected by JS --></div>
-  </div>
-</section>
-
-<!-- ===== Combos / Packs banner ===== -->
-<section id="packs" class="combo-banner">
-  <div class="container combo-inner">
-    <div>
-      <span class="badge badge-light">🎉 Weekend Special</span>
-      <h2>Party Pack — 3kg Mixed Combo</h2>
-      <p>Chicken + Mutton, cleaned + cut, family-size. Perfect for weekend cooking.</p>
-      <div class="combo-price"><span class="strike">₹2499</span> ₹2199</div>
-      <a href="#" class="btn btn-white btn-lg wa-btn" data-msg="add P3 1">
-        Order Party Pack 💬
-      </a>
-    </div>
-    <div class="combo-emoji">🍗🥩🍖</div>
-  </div>
-</section>
-
-<!-- ===== Delivery + Rewards ===== -->
-<section class="section">
-  <div class="container info-grid">
-    <div class="info-card">
-      <h3>🚚 Delivery Charges</h3>
-      <ul class="clean-list">
-        <li>Orders below ₹399 — <strong>₹29</strong></li>
-        <li>Orders ₹399 to ₹699 — <strong>₹19</strong></li>
-        <li>Orders above ₹699 — <strong>FREE</strong></li>
-      </ul>
-    </div>
-    <div class="info-card">
-      <h3>🎁 MeatPe Cash Rewards</h3>
-      <ul class="clean-list">
-        <li>Order ₹500+ → Get <strong>₹30 cashback</strong></li>
-        <li>Valid for 15 days</li>
-        <li>Auto-applies on next order</li>
-        <li>One reward per order</li>
-      </ul>
-    </div>
-    <div id="plus" class="info-card info-card-plus">
-      <h3>💎 MeatPe Plus — ₹99/month</h3>
-      <ul class="clean-list">
-        <li>✅ Unlimited <strong>FREE</strong> delivery</li>
-        <li>✅ Priority order slots</li>
-        <li>✅ Member-only offers</li>
-        <li>✅ Special weekend deals</li>
-      </ul>
-      <a href="#" class="btn btn-primary wa-btn" data-msg="plus join">Join Plus 💎</a>
-    </div>
-  </div>
-</section>
-
-<!-- ===== How to order ===== -->
-<section class="section how">
-  <div class="container">
-    <div class="section-head"><h2>How to Order</h2><p>3 steps. 30 minutes. Done.</p></div>
-    <div class="how-grid">
-      <div class="how-step"><div class="how-num">1</div><h3>WhatsApp Us</h3><p>Send "hi" on WhatsApp. Browse the live menu.</p></div>
-      <div class="how-step"><div class="how-num">2</div><h3>Add to Cart</h3><p>Pick items, share your address, confirm order.</p></div>
-      <div class="how-step"><div class="how-num">3</div><h3>Receive Fresh</h3><p>Cleaned, cut, delivered in 30 minutes.</p></div>
-    </div>
-    <div class="center">
-      <a href="#" class="btn btn-primary btn-lg wa-btn" data-msg="hi">Start Order on WhatsApp 💬</a>
-    </div>
-  </div>
-</section>
-
-<!-- ===== Footer ===== -->
-<footer id="contact" class="footer">
-  <div class="container footer-inner">
-    <div>
-      <div class="logo logo-light">
-        <img src="/logo.png" alt="MeatPe" class="logo-img logo-img-footer" />
-      </div>
-      <p class="muted">Fresh meat in 30 minutes. Premium quality, doorstep delivery.</p>
-      <!-- Social handles will be added once accounts are live
-      <div class="socials">
-        <a href="https://instagram.com/meatpe" target="_blank" rel="noopener" class="social"><span>📷</span> Instagram</a>
-        <a href="https://facebook.com/meatpe" target="_blank" rel="noopener" class="social"><span>👍</span> Facebook</a>
-        <a href="https://linkedin.com/company/meatpe" target="_blank" rel="noopener" class="social"><span>💼</span> LinkedIn</a>
-        <a href="https://youtube.com/@meatpe" target="_blank" rel="noopener" class="social"><span>▶️</span> YouTube</a>
-      </div>
-      -->
-    </div>
-    <div>
-      <h4>Quick Links</h4>
-      <p><a href="/" class="muted-link">Home</a></p>
-      <p><a href="/#menu" class="muted-link">Menu</a></p>
-      <p><a href="/#packs" class="muted-link">Combo Packs</a></p>
-      <p><a href="/#plus" class="muted-link">MeatPe Plus</a></p>
-    </div>
-    <div>
-      <h4>Company</h4>
-      <p><a href="/about.html" class="muted-link">About Us</a></p>
-      <p><a href="/about.html#safety" class="muted-link">Safety & Quality</a></p>
-      <p><a href="/about.html#privacy" class="muted-link">Privacy Policy</a></p>
-      <p><a href="/about.html#terms" class="muted-link">Terms of Use</a></p>
-    </div>
-    <div>
-      <h4>Reach Us</h4>
-      <p>📞 <a href="tel:+917617555488" class="muted-link">+91 76175 55488</a></p>
-      <p>💬 <a href="#" class="muted-link wa-btn" data-msg="hi">WhatsApp Order</a></p>
-      <p class="muted" style="margin-top:10px"><strong>Hours:</strong> 8:00 AM – 9:30 PM, all days</p>
-      <p class="muted"><strong>Service:</strong> Live now, expanding to all major cities 🚀</p>
-    </div>
-  </div>
-  <div class="copyright">
-    © <span id="yr"></span> MeatPe. All rights reserved. •
-    <a href="/about.html#privacy" class="muted-link">Privacy</a> •
-    <a href="/about.html#terms" class="muted-link">Terms</a>
-  </div>
-</footer>
-
-<!-- ===== Floating WA button ===== -->
-<a href="#" class="fab fab-wa wa-btn" data-msg="hi" aria-label="Order on WhatsApp">
-  <span class="fab-icon">💬</span>
-  <span class="fab-text">WhatsApp</span>
-</a>
-
-<!-- ===== Floating Cart button ===== -->
-<button class="fab fab-cart" id="cartBtn" aria-label="Open cart">
-  <span class="fab-icon">🛒</span>
-  <span class="fab-text">Cart</span>
-  <span class="cart-badge" id="cartBadge" style="display:none">0</span>
-</button>
-
-<!-- ===== Cart Drawer ===== -->
-<div class="drawer-overlay" id="drawerOverlay"></div>
-<aside class="drawer" id="cartDrawer" aria-hidden="true">
-  <div class="drawer-head">
-    <h3>🛒 Your Cart</h3>
-    <button class="drawer-close" id="drawerClose" aria-label="Close">×</button>
-  </div>
-  <div class="drawer-body" id="drawerBody"><!-- cart items --></div>
-  <div class="drawer-foot" id="drawerFoot"><!-- totals + checkout --></div>
-</aside>
-
-<!-- ===== Checkout Modal ===== -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal" role="dialog" aria-modal="true">
-    <button class="modal-close" id="modalClose" aria-label="Close">×</button>
-    <h3>Place Your Order</h3>
-    <p class="modal-sub">Fill below and we'll deliver in 30 minutes 🚚</p>
-    <form id="checkoutForm" novalidate>
-      <label>Name *</label>
-      <input name="name" required placeholder="Your name" />
-      <label>Phone *</label>
-      <input name="phone" required pattern="[0-9]{10}" placeholder="10-digit mobile number" />
-      <label>Delivery Address *</label>
-      <textarea name="address" required rows="3" placeholder="House no, street, area, landmark, pincode"></textarea>
-
-      <label>Coupon Code <span style="color:var(--gray);font-weight:400">(optional)</span></label>
-      <div class="coupon-row">
-        <input name="coupon" id="couponInput" placeholder="e.g. WELCOME50" autocomplete="off" />
-        <button type="button" id="applyCouponBtn" class="btn btn-ghost">Apply</button>
-      </div>
-      <div id="couponMsg" class="coupon-msg"></div>
-      <details class="coupon-hint">
-        <summary>🏷️ View available offers</summary>
-        <div id="couponList" class="coupon-list">Loading...</div>
-      </details>
-
-      <label>Payment</label>
-      <div class="radio-group">
-        <label class="radio">
-          <input type="radio" name="payment" value="cod" checked />
-          <span>💵 Pay on Delivery <small>(Cash / UPI)</small></span>
-        </label>
-        <label class="radio">
-          <input type="radio" name="payment" value="pay_online" />
-          <span>📱 Pay Online via UPI <small>(after order)</small></span>
-        </label>
-      </div>
-      <label>Notes (optional)</label>
-      <input name="notes" placeholder="Cleaning, cutting preference, etc." />
-      <div class="modal-summary" id="modalSummary"></div>
-      <button type="submit" class="btn btn-primary btn-lg modal-submit" id="submitBtn">
-        <span>Place Order</span>
-      </button>
-      <p class="modal-or">Or send us this order on WhatsApp:</p>
-      <button type="button" class="btn btn-ghost modal-wa" id="modalWa">💬 Send via WhatsApp</button>
+      <div id="modalSummary" style="background:var(--bg);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px"></div>
+      <button type="submit" id="submitOrderBtn" class="btn-accent">🛵 Confirm Order</button>
+      <div style="height:8px"></div>
     </form>
   </div>
 </div>
 
-<!-- ===== Order Success Toast ===== -->
-<div class="toast" id="toast"></div>
-
-<!-- ===== Support Chat Widget ===== -->
-<div class="support-widget" id="supportWidget">
-  <button class="support-fab" id="supportFab" aria-label="Need help? Chat with us">
-    <span class="support-icon">💬</span>
-    <span class="support-text">Need Help?</span>
-    <span class="support-dot"></span>
-  </button>
-
-  <div class="support-panel" id="supportPanel" aria-hidden="true">
-    <div class="support-head">
-      <div class="support-avatar">🥩</div>
-      <div>
-        <div class="support-title">MeatPe Support</div>
-        <div class="support-status"><span class="dot-online"></span> Usually replies in a few minutes</div>
-      </div>
-      <button class="support-close" id="supportClose" aria-label="Close">×</button>
-    </div>
-
-    <div class="support-body">
-      <p class="support-intro">Hi! 👋 How can we help you today?</p>
-
-      <div class="support-quick">
-        <button class="quick-btn wa-help" data-msg="Hi MeatPe! 📹 I'd like a video call to see the meat / shop before ordering. Are you available now?">
-          📹 <span><strong>Video Call Request</strong><small>See meat / shop live</small></span>
-        </button>
-        <button class="quick-btn wa-help" data-msg="Hi! I want to check the status of my order. Order #">
-          📦 <span><strong>Order Status</strong><small>Where is my order?</small></span>
-        </button>
-        <button class="quick-btn wa-help" data-msg="Hi! I have a delivery issue with my order. Order #">
-          🛵 <span><strong>Delivery Issue</strong><small>Late, missing, wrong address</small></span>
-        </button>
-        <button class="quick-btn wa-help" data-msg="Hi! I have a complaint about quality / freshness of my order. Order #">
-          ⚠️ <span><strong>Quality Complaint</strong><small>Item not fresh / damaged</small></span>
-        </button>
-        <button class="quick-btn wa-help" data-msg="Hi! I want to cancel my order. Order #">
-          ❌ <span><strong>Cancel Order</strong><small>Cancel a placed order</small></span>
-        </button>
-        <button class="quick-btn wa-help" data-msg="Hi! I have a question about a product / coupon / membership.">
-          ❓ <span><strong>General Question</strong><small>Pricing, coupon, Plus etc.</small></span>
-        </button>
-        <button class="quick-btn wa-help" data-msg="Hi! I want to give feedback / suggestion about MeatPe.">
-          💡 <span><strong>Feedback / Suggestion</strong><small>Share what you think</small></span>
-        </button>
-      </div>
-
-      <div class="support-divider"><span>or contact directly</span></div>
-
-      <div class="support-actions">
-        <a href="tel:+917617555488" class="support-action call">
-          <span class="ic">📞</span>
-          <span>
-            <strong>Call us</strong>
-            <small>+91 76175 55488</small>
-          </span>
-        </a>
-        <a href="https://wa.me/917617555488?text=Hi%20MeatPe%2C%20I%20need%20help" target="_blank" class="support-action wa">
-          <span class="ic">💬</span>
-          <span>
-            <strong>WhatsApp Chat</strong>
-            <small>Live support 8AM–9:30PM</small>
-          </span>
-        </a>
-        <a href="https://wa.me/917617555488?text=Hi%20MeatPe%21%20%F0%9F%93%B9%20Please%20start%20a%20video%20call%20with%20me%20when%20available." target="_blank" class="support-action video">
-          <span class="ic">📹</span>
-          <span>
-            <strong>Video Call (via WhatsApp)</strong>
-            <small>See the meat live before order</small>
-          </span>
-        </a>
-      </div>
-    </div>
-
-    <div class="support-foot">
-      Powered by <strong>MeatPe</strong> Support 🥩
-    </div>
+<!-- ── Coupons Modal ── -->
+<div class="modal-overlay" id="couponsModal">
+  <div class="modal-box">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🎫 Available Offers</div>
+    <div id="couponsModalList" style="font-size:13px;color:var(--muted)">Loading...</div>
+    <button class="btn-accent" style="margin-top:16px" onclick="closeCouponsModal()">Close</button>
   </div>
 </div>
 
-<script src="/app.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════
+   NOW App — Core State
+   ═══════════════════════════════════════════ */
+let MENU = [];
+let CART = {};           // { code: qty }
+let USER = null;         // { phone, name, wallet }
+let THEME = 'dark';
+let CURRENT_CAT = 'all';
+let SEARCH_Q = '';
+let SCREEN_HISTORY = ['screen-login'];
+let CURRENT_PRODUCT = null;
+let PAYMENT = 'cod';
+let COUPON = null;       // { code, discount }
+let WALLET_APPLIED = false;
+let ADDONS = { 1: true, 2: false }; // addon states on product screen
+
+const FREE_ABOVE = 699;
+const FEE_LOW_BELOW = 399;
+const FEE_LOW = 29;
+const FEE_MID = 19;
+
+const CAT_EMOJI = {
+  chicken:'🐔', mutton:'🐐', fish:'🐟',
+  ready_to_cook:'🔥', family_pack:'👨‍👩‍👧', all:'🍖'
+};
+
+// ── Init ──
+(function init() {
+  THEME = localStorage.getItem('now_theme') || 'dark';
+  applyTheme();
+
+  const saved = localStorage.getItem('now_user');
+  if (saved) {
+    try { USER = JSON.parse(saved); } catch(e) {}
+  }
+  const savedCart = localStorage.getItem('now_cart');
+  if (savedCart) {
+    try { CART = JSON.parse(savedCart); } catch(e) {}
+  }
+
+  if (USER) {
+    showScreen('screen-home');
+    loadMenu();
+  } else {
+    // Already on login screen
+    document.getElementById('bottomNav').style.display = 'none';
+    document.getElementById('cartBar').style.display = 'none';
+  }
+})();
+
+// ═══════════════════════════════════════════
+//  Navigation
+// ═══════════════════════════════════════════
+function showScreen(id) {
+  const screens = document.querySelectorAll('.screen');
+  const target = document.getElementById(id);
+  if (!target) return;
+
+  // Slide-left animation on current active
+  screens.forEach(s => {
+    if (s.classList.contains('active')) {
+      s.classList.add('slide-left');
+      s.classList.remove('active');
+    } else {
+      s.classList.remove('slide-left');
+    }
+  });
+
+  target.classList.remove('slide-left');
+  target.classList.add('active');
+  target.scrollTop = 0;
+
+  // Track history (avoid duplicates)
+  if (SCREEN_HISTORY[SCREEN_HISTORY.length - 1] !== id) {
+    SCREEN_HISTORY.push(id);
+  }
+
+  // Show/hide bottom nav & cart bar
+  const hasNav = id !== 'screen-login';
+  document.getElementById('bottomNav').style.display = hasNav ? 'flex' : 'none';
+  updateCartBar();
+
+  // Load data for screen
+  if (id === 'screen-basket') renderBasket();
+  if (id === 'screen-orders') loadOrders();
+  if (id === 'screen-profile') loadProfile();
+
+  // Update nav highlight
+  const navMap = {
+    'screen-home':'nav-home','screen-basket':'nav-home',
+    'screen-product':'nav-home','screen-orders':'nav-orders','screen-profile':'nav-profile'
+  };
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const nb = document.getElementById(navMap[id]);
+  if (nb) nb.classList.add('active');
+}
+
+function goBack() {
+  SCREEN_HISTORY.pop();
+  const prev = SCREEN_HISTORY[SCREEN_HISTORY.length - 1] || 'screen-home';
+  const screens = document.querySelectorAll('.screen');
+  const target = document.getElementById(prev);
+  screens.forEach(s => {
+    s.classList.remove('active','slide-left');
+    s.style.transform = '';
+  });
+  // Come back from right to left
+  const current = document.querySelector('.screen.active');
+  if (current) current.classList.remove('active');
+  target.classList.add('active');
+  target.scrollTop = 0;
+
+  const hasNav = prev !== 'screen-login';
+  document.getElementById('bottomNav').style.display = hasNav ? 'flex' : 'none';
+  updateCartBar();
+
+  if (prev === 'screen-basket') renderBasket();
+}
+
+function navTo(screenId, navId) {
+  showScreen(screenId);
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const nb = document.getElementById(navId);
+  if (nb) nb.classList.add('active');
+}
+
+function focusSearch() {
+  setTimeout(() => {
+    const inp = document.getElementById('searchInput');
+    if (inp) inp.focus();
+  }, 350);
+}
+
+// ═══════════════════════════════════════════
+//  Theme
+// ═══════════════════════════════════════════
+function applyTheme() {
+  document.documentElement.className = THEME === 'light' ? 'light' : '';
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = THEME === 'light' ? '☀️' : '🌙';
+}
+function toggleTheme() {
+  THEME = THEME === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('now_theme', THEME);
+  applyTheme();
+}
+
+// ═══════════════════════════════════════════
+//  Toast
+// ═══════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type='', duration=3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' '+type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ═══════════════════════════════════════════
+//  Auth / Login
+// ═══════════════════════════════════════════
+async function handleLogin() {
+  const phone = document.getElementById('phoneInput').value.replace(/\D/g,'');
+  if (phone.length !== 10) { showToast('Please enter a valid 10-digit number','error'); return; }
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Please wait...';
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ phone })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      USER = data.customer;
+      saveUser();
+      loginSuccess();
+    } else {
+      showToast(data.error || 'Login failed','error');
+      btn.disabled = false; btn.textContent = 'Continue →';
+    }
+  } catch(e) {
+    // Offline fallback — guest mode with phone
+    USER = { phone, name: '', wallet: 0 };
+    saveUser();
+    loginSuccess();
+  }
+}
+
+function guestLogin() {
+  USER = { phone: '', name: 'Guest', wallet: 0 };
+  saveUser();
+  loginSuccess();
+}
+
+function loginSuccess() {
+  document.getElementById('bottomNav').style.display = 'flex';
+  document.getElementById('cartBar').style.display = '';
+  loadMenu();
+  showScreen('screen-home');
+  showToast('Welcome to NOW! 🥩','success');
+}
+
+function logout() {
+  USER = null;
+  CART = {};
+  localStorage.removeItem('now_user');
+  localStorage.removeItem('now_cart');
+  document.getElementById('bottomNav').style.display = 'none';
+  document.getElementById('cartBar').style.display = 'none';
+  // Reset screens
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active','slide-left'));
+  document.getElementById('screen-login').classList.add('active');
+  SCREEN_HISTORY = ['screen-login'];
+  updateCartBar();
+}
+
+function saveUser() {
+  localStorage.setItem('now_user', JSON.stringify(USER));
+}
+
+// Handle phone input enter key
+document.getElementById('phoneInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleLogin();
+});
+
+// ═══════════════════════════════════════════
+//  Menu / Products
+// ═══════════════════════════════════════════
+async function loadMenu() {
+  try {
+    const res = await fetch('/api/menu');
+    MENU = await res.json();
+    renderProducts();
+  } catch(e) {
+    console.warn('Menu load failed:', e);
+    document.getElementById('productGrid').innerHTML =
+      '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:40px 0">Unable to load menu. Please refresh.</div>';
+  }
+}
+
+function filteredItems() {
+  let items = MENU;
+  if (CURRENT_CAT !== 'all') items = items.filter(i => i.cat === CURRENT_CAT);
+  if (SEARCH_Q) {
+    const q = SEARCH_Q.toLowerCase();
+    items = items.filter(i => i.name.toLowerCase().includes(q) || (i.description||'').toLowerCase().includes(q));
+  }
+  return items;
+}
+
+function renderProducts() {
+  const grid = document.getElementById('productGrid');
+  const title = document.getElementById('productSectionTitle');
+  const items = filteredItems();
+
+  const catLabel = CURRENT_CAT === 'all' ? 'All Products' :
+    (CAT_EMOJI[CURRENT_CAT]||'') + ' ' + CURRENT_CAT.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  title.textContent = SEARCH_Q ? `Search: "${SEARCH_Q}"` : catLabel;
+
+  if (!items.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1"><div class="empty"><div class="empty-icon">🔍</div><h3>No items found</h3><p>Try a different category or search</p></div></div>';
+    return;
+  }
+
+  grid.innerHTML = items.map((item, idx) => {
+    const mrp = Math.round(item.price * 1.1);
+    const save = Math.round(((mrp - item.price) / mrp) * 100);
+    const qty = CART[item.code] || 0;
+    const isBest = idx === 0 && CURRENT_CAT !== 'all';
+    const oos = !item.inStock;
+    const img = (item.images && item.images[0]) ? `<img src="${item.images[0]}" alt="${item.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span class="emoji-bg" style="display:none">${catEmoji(item.cat)}</span>` : `<span class="emoji-bg">${catEmoji(item.cat)}</span>`;
+
+    return `<div class="prod-card" onclick="openProduct('${item.code}')">
+      <div class="prod-img">
+        ${img}
+        <div class="badge-temp">❄️ Fresh</div>
+        ${isBest ? '<div class="badge-best">BESTSELLER</div>' : ''}
+        ${oos ? '<div class="badge-oos">Out of Stock</div>' : ''}
+      </div>
+      <div class="prod-body">
+        <div class="prod-name">${item.name}</div>
+        <div class="prod-unit">${item.unit || ''}</div>
+        <div class="prod-pricing">
+          <span class="prod-price">₹${item.price}</span>
+          <span class="prod-mrp">₹${mrp}</span>
+          <span class="prod-save">${save}% off</span>
+        </div>
+        <div class="prod-footer">
+          ${oos ? '<span style="font-size:11px;color:var(--danger);font-weight:600">Unavailable</span>' :
+            qty > 0
+            ? `<div class="stepper" onclick="event.stopPropagation()">
+                <button class="step-btn" onclick="changeCart('${item.code}',-1)">−</button>
+                <span class="step-qty" id="qty-${item.code}">${qty}</span>
+                <button class="step-btn" onclick="changeCart('${item.code}',1)">+</button>
+               </div>`
+            : `<button class="add-btn" onclick="event.stopPropagation();addToCart('${item.code}')">ADD</button>`
+          }
+        </div>
+        <div class="prod-inspect">📹 Ask to inspect live</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function catEmoji(cat) {
+  return CAT_EMOJI[cat] || '🥩';
+}
+
+function filterCat(cat, el) {
+  CURRENT_CAT = cat;
+  SEARCH_Q = '';
+  document.getElementById('searchInput').value = '';
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderProducts();
+}
+
+function searchProducts(q) {
+  SEARCH_Q = q.trim();
+  renderProducts();
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  SEARCH_Q = '';
+  renderProducts();
+}
+
+// ═══════════════════════════════════════════
+//  Cart
+// ═══════════════════════════════════════════
+function addToCart(code) {
+  const item = MENU.find(i => i.code === code);
+  if (!item || !item.inStock) return;
+  CART[code] = (CART[code] || 0) + 1;
+  saveCart();
+  updateCartUI(code);
+  updateCartBar();
+  showToast(`${item.name} added to basket`,'success',1800);
+}
+
+function removeFromCart(code) {
+  if (CART[code] > 0) {
+    CART[code]--;
+    if (CART[code] === 0) delete CART[code];
+  }
+  saveCart();
+  updateCartUI(code);
+  updateCartBar();
+}
+
+function changeCart(code, delta) {
+  const current = CART[code] || 0;
+  const next = current + delta;
+  if (next <= 0) {
+    delete CART[code];
+  } else {
+    CART[code] = next;
+  }
+  saveCart();
+  updateCartUI(code);
+  updateCartBar();
+}
+
+function saveCart() {
+  localStorage.setItem('now_cart', JSON.stringify(CART));
+}
+
+function cartCount() {
+  return Object.values(CART).reduce((s,q) => s+q, 0);
+}
+
+function cartSubtotal() {
+  return Object.entries(CART).reduce((s,[code,qty]) => {
+    const item = MENU.find(i => i.code === code);
+    return s + (item ? item.price * qty : 0);
+  }, 0);
+}
+
+function deliveryFee(subtotal) {
+  if (subtotal >= FREE_ABOVE) return 0;
+  if (subtotal < FEE_LOW_BELOW) return FEE_LOW;
+  return FEE_MID;
+}
+
+function updateCartUI(code) {
+  const qty = CART[code] || 0;
+  const el = document.getElementById(`qty-${code}`);
+  if (!el) {
+    // Re-render product card if no stepper visible
+    renderProducts();
+    return;
+  }
+  el.textContent = qty;
+  if (qty === 0) renderProducts(); // switch stepper back to ADD
+}
+
+function updateCartBar() {
+  const count = cartCount();
+  const sub = cartSubtotal();
+  const fee = deliveryFee(sub);
+  const total = sub + fee;
+  const bar = document.getElementById('cartBar');
+  const dot = document.getElementById('cartDot');
+
+  if (count > 0 && USER) {
+    document.getElementById('cartBarLeft').textContent = `${count} item${count>1?'s':''}  |  ₹${sub}`;
+    document.getElementById('cartBarRight').textContent = `View Cart →`;
+    bar.classList.add('visible');
+  } else {
+    bar.classList.remove('visible');
+  }
+
+  if (dot) {
+    dot.textContent = count;
+    dot.style.display = count > 0 ? 'flex' : 'none';
+  }
+
+  // Update nav badges
+  document.querySelectorAll('.nav-badge').forEach(b => b.remove());
+  if (count > 0) {
+    const homeNav = document.getElementById('nav-home');
+    if (homeNav && !homeNav.querySelector('.nav-badge')) {
+      const badge = document.createElement('span');
+      badge.className = 'nav-badge';
+      badge.textContent = count;
+      homeNav.appendChild(badge);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════
+//  Product Detail Screen
+// ═══════════════════════════════════════════
+function openProduct(code) {
+  const item = MENU.find(i => i.code === code);
+  if (!item) return;
+  CURRENT_PRODUCT = item;
+  ADDONS = { 1: true, 2: false };
+
+  document.getElementById('pdTitle').textContent = item.name;
+  document.getElementById('pdName').textContent = item.name;
+  document.getElementById('pdPrice').textContent = '₹' + item.price;
+  const mrp = Math.round(item.price * 1.1);
+  const save = Math.round(((mrp - item.price) / mrp) * 100);
+  document.getElementById('pdMrp').textContent = '₹' + mrp;
+  document.getElementById('pdSaveTag').textContent = 'Save ' + save + '%';
+  document.getElementById('pdCatBadge').textContent = (CAT_EMOJI[item.cat]||'🥩') + ' ' + (item.cat||'').replace(/_/g,' ');
+  document.getElementById('pdDesc').textContent = item.description || 'Premium quality, farm-fresh meat. Hygienically cleaned and cut. Delivered within 30 minutes.';
+
+  // Image
+  const imgEl = document.getElementById('pdImg');
+  if (item.images && item.images[0]) {
+    imgEl.innerHTML = `<img src="${item.images[0]}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover"/>
+      <div class="pd-temp">❄️ Temp Locked at -4°C</div>`;
+  } else {
+    imgEl.innerHTML = `<span class="emoji-lg">${catEmoji(item.cat)}</span>
+      <div class="pd-temp">❄️ Temp Locked at -4°C</div>`;
+  }
+
+  // Weight chips
+  const weights = item.cat === 'mutton' ? ['500g','1 kg','2 kg'] :
+                  item.cat === 'chicken' ? ['500g','1 kg','1.5 kg','2 kg'] :
+                  item.cat === 'fish' ? ['500g','1 kg'] : ['1 unit','2 units','3 units'];
+  const wc = document.getElementById('weightChips');
+  wc.innerHTML = weights.map((w,i) =>
+    `<div class="wchip${i===0?' active':''}" onclick="selectWeight(this,'${w}')">${w}</div>`
+  ).join('');
+
+  // Reset addons
+  document.getElementById('addon1').className = 'addon-check checked';
+  document.getElementById('addon1').textContent = '✓';
+  document.getElementById('addon2').className = 'addon-check';
+  document.getElementById('addon2').textContent = '';
+
+  updatePdBtn();
+  showScreen('screen-product');
+}
+
+function selectWeight(el, w) {
+  document.querySelectorAll('.wchip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function toggleAddon(num) {
+  ADDONS[num] = !ADDONS[num];
+  const el = document.getElementById('addon' + num);
+  if (ADDONS[num]) {
+    el.className = 'addon-check checked';
+    el.textContent = '✓';
+  } else {
+    el.className = 'addon-check';
+    el.textContent = '';
+  }
+}
+
+function updatePdBtn() {
+  const item = CURRENT_PRODUCT;
+  if (!item) return;
+  const qty = CART[item.code] || 0;
+  const btn = document.getElementById('pdAddBtn');
+  if (!item.inStock) {
+    btn.textContent = 'Out of Stock';
+    btn.disabled = true;
+    return;
+  }
+  btn.disabled = false;
+  btn.textContent = qty > 0 ? `Update Basket (${qty} in cart) →` : 'Add to Basket →';
+}
+
+function addFromDetail() {
+  if (!CURRENT_PRODUCT) return;
+  addToCart(CURRENT_PRODUCT.code);
+  updatePdBtn();
+}
+
+// ═══════════════════════════════════════════
+//  Basket Screen
+// ═══════════════════════════════════════════
+function renderBasket() {
+  const count = cartCount();
+  const sub = cartSubtotal();
+  const empty = document.getElementById('basketEmpty');
+  const content = document.getElementById('basketContent');
+
+  if (count === 0) {
+    empty.style.display = 'flex';
+    content.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  content.style.display = 'block';
+
+  // Delivery bar
+  const freeLeft = Math.max(0, FREE_ABOVE - sub);
+  const pct = Math.min(100, Math.round((sub / FREE_ABOVE) * 100));
+  const delMsg = document.getElementById('delBarMsg');
+  const delFill = document.getElementById('delFill');
+  if (freeLeft === 0) {
+    delMsg.innerHTML = '<span style="color:var(--success)">🎉 You have FREE delivery!</span>';
+  } else {
+    delMsg.textContent = `Add ₹${freeLeft} more for FREE delivery`;
+  }
+  document.getElementById('delBarAmt').textContent = `₹${sub} / ₹${FREE_ABOVE}`;
+  delFill.style.width = pct + '%';
+
+  // Items list
+  const list = document.getElementById('basketList');
+  const cartItems = Object.entries(CART).map(([code,qty]) => {
+    const item = MENU.find(i => i.code === code);
+    return item ? {...item, qty} : null;
+  }).filter(Boolean);
+
+  list.innerHTML = cartItems.map(item => {
+    const img = (item.images && item.images[0])
+      ? `<img src="${item.images[0]}" alt="${item.name}" loading="lazy" onerror="this.style.display='none'"/>`
+      : catEmoji(item.cat);
+    return `<div class="basket-item">
+      <div class="basket-img">${img}</div>
+      <div class="basket-info">
+        <div class="basket-name">${item.name}</div>
+        <div class="basket-price">₹${item.price} × ${item.qty} = ₹${item.price * item.qty}</div>
+      </div>
+      <div class="stepper">
+        <button class="step-btn" onclick="changeCart('${item.code}',-1);renderBasket()">−</button>
+        <span class="step-qty">${item.qty}</span>
+        <button class="step-btn" onclick="changeCart('${item.code}',1);renderBasket()">+</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Wallet section
+  const walletSec = document.getElementById('walletSection');
+  if (USER && USER.wallet > 0) {
+    walletSec.style.display = 'block';
+    document.getElementById('walletBal').textContent = USER.wallet;
+  } else {
+    walletSec.style.display = 'none';
+    WALLET_APPLIED = false;
+  }
+
+  renderPrices(sub);
+}
+
+function renderPrices(sub) {
+  if (sub === undefined) sub = cartSubtotal();
+  const couponDisc = COUPON ? COUPON.discount : 0;
+  const walletAmt = (WALLET_APPLIED && USER) ? Math.min(USER.wallet, sub - couponDisc) : 0;
+  const fee = deliveryFee(sub);
+  const total = Math.max(0, sub - couponDisc - walletAmt + fee);
+
+  document.getElementById('priceSubtotal').textContent = '₹' + sub;
+  document.getElementById('priceDelivery').textContent = fee === 0 ? 'FREE' : '₹' + fee;
+
+  const discRow = document.getElementById('priceDiscountRow');
+  if (couponDisc > 0) {
+    discRow.style.display = 'flex';
+    document.getElementById('priceDiscount').textContent = '-₹' + couponDisc;
+  } else {
+    discRow.style.display = 'none';
+  }
+
+  const walletRow = document.getElementById('priceWalletRow');
+  if (walletAmt > 0) {
+    walletRow.style.display = 'flex';
+    document.getElementById('priceWallet').textContent = '-₹' + walletAmt;
+  } else {
+    walletRow.style.display = 'none';
+  }
+
+  document.getElementById('priceTotal').textContent = '₹' + total;
+}
+
+function selectPayment(method) {
+  PAYMENT = method;
+  ['cod','pay_online','upi'].forEach(m => {
+    const el = document.getElementById('pay-' + m);
+    if (el) el.className = 'pay-radio' + (m === method ? ' checked' : '');
+  });
+}
+
+function toggleWallet() {
+  WALLET_APPLIED = !WALLET_APPLIED;
+  const tog = document.getElementById('walletToggle');
+  tog.className = 'wallet-toggle' + (WALLET_APPLIED ? ' on' : '');
+  renderPrices();
+}
+
+// Coupon
+async function applyCoupon() {
+  const code = document.getElementById('couponIn').value.trim().toUpperCase();
+  const msgEl = document.getElementById('couponMsg');
+  if (!code) { msgEl.innerHTML = '<span class="coupon-err">Enter a coupon code</span>'; return; }
+  const sub = cartSubtotal();
+  try {
+    const res = await fetch('/api/coupon/validate', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ code, subtotal: sub })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      COUPON = { code: data.coupon.code, discount: data.discount };
+      msgEl.innerHTML = `<span class="coupon-ok">✅ "${COUPON.code}" applied! You save ₹${COUPON.discount}</span>`;
+      renderPrices(sub);
+    } else {
+      COUPON = null;
+      msgEl.innerHTML = `<span class="coupon-err">❌ ${data.error || 'Invalid coupon'}</span>`;
+      renderPrices(sub);
+    }
+  } catch(e) {
+    msgEl.innerHTML = '<span class="coupon-err">Unable to validate coupon</span>';
+  }
+}
+
+// ═══════════════════════════════════════════
+//  Checkout / Order
+// ═══════════════════════════════════════════
+function showCheckoutModal() {
+  const modal = document.getElementById('checkoutModal');
+  modal.classList.add('show');
+
+  // Pre-fill if user is logged in
+  if (USER) {
+    if (USER.name) document.getElementById('oName').value = USER.name;
+    if (USER.phone) document.getElementById('oPhone').value = USER.phone;
+  }
+
+  // Show summary
+  const sub = cartSubtotal();
+  const couponDisc = COUPON ? COUPON.discount : 0;
+  const walletAmt = (WALLET_APPLIED && USER) ? Math.min(USER.wallet, sub - couponDisc) : 0;
+  const fee = deliveryFee(sub);
+  const total = Math.max(0, sub - couponDisc - walletAmt + fee);
+  const payLabel = PAYMENT === 'cod' ? '💵 Cash on Delivery' : PAYMENT === 'upi' ? '🏦 UPI Direct' : '📱 Pay Online';
+
+  const items = Object.entries(CART).map(([code,qty]) => {
+    const item = MENU.find(i => i.code === code);
+    return item ? `${item.name} × ${qty}` : '';
+  }).filter(Boolean).join(', ');
+
+  document.getElementById('modalSummary').innerHTML =
+    `<div style="margin-bottom:6px;font-weight:600">Order Summary</div>
+     <div style="color:var(--muted);font-size:12px;margin-bottom:8px">${items}</div>
+     <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Subtotal</span><span>₹${sub}</span></div>
+     ${couponDisc>0?`<div style="display:flex;justify-content:space-between;color:var(--success);margin-bottom:4px"><span>Coupon (${COUPON.code})</span><span>-₹${couponDisc}</span></div>`:''}
+     ${walletAmt>0?`<div style="display:flex;justify-content:space-between;color:var(--success);margin-bottom:4px"><span>Wallet</span><span>-₹${walletAmt}</span></div>`:''}
+     <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Delivery</span><span>${fee===0?'FREE':'₹'+fee}</span></div>
+     <div style="display:flex;justify-content:space-between;font-size:16px;font-weight:800;border-top:1px solid var(--border);padding-top:8px"><span>Total</span><span>₹${total}</span></div>
+     <div style="margin-top:6px;font-size:12px;color:var(--muted)">${payLabel}</div>`;
+}
+
+function closeCheckoutModal() {
+  document.getElementById('checkoutModal').classList.remove('show');
+}
+
+async function submitOrder(e) {
+  e.preventDefault();
+  const name = document.getElementById('oName').value.trim();
+  const phone = document.getElementById('oPhone').value.replace(/\D/g,'');
+  const address = document.getElementById('oAddress').value.trim();
+  const notes = document.getElementById('oNotes').value.trim();
+
+  if (!name) { showToast('Please enter your name','error'); return; }
+  if (phone.length !== 10) { showToast('Please enter a valid 10-digit phone','error'); return; }
+  if (!address) { showToast('Please enter your delivery address','error'); return; }
+
+  const btn = document.getElementById('submitOrderBtn');
+  btn.disabled = true; btn.textContent = '⏳ Placing order...';
+
+  const items = Object.entries(CART).map(([code,qty]) => ({ code, qty }));
+  const sub = cartSubtotal();
+  const couponDisc = COUPON ? COUPON.discount : 0;
+  const walletAmt = (WALLET_APPLIED && USER) ? Math.min(USER.wallet, sub - couponDisc) : 0;
+
+  try {
+    const res = await fetch('/api/order', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        name, phone, address, payment: PAYMENT, notes,
+        items, couponCode: COUPON ? COUPON.code : null
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      // Update user name if we have it
+      if (USER) { USER.name = name; saveUser(); }
+
+      // Deduct wallet if applied
+      if (walletAmt > 0 && USER && USER.phone) {
+        try {
+          await fetch('/api/wallet/use', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ phone: USER.phone, amount: walletAmt })
+          });
+          USER.wallet = Math.max(0, (USER.wallet||0) - walletAmt);
+          saveUser();
+        } catch(e2) {}
+      }
+
+      CART = {};
+      COUPON = null;
+      WALLET_APPLIED = false;
+      saveCart();
+      updateCartBar();
+      closeCheckoutModal();
+
+      const fee = deliveryFee(sub);
+      const total = Math.max(0, sub - couponDisc - walletAmt + fee);
+      showOrderSuccess(data.orderId, total, name);
+    } else {
+      showToast(data.error || 'Order failed. Please try again.','error');
+      btn.disabled = false; btn.textContent = '🛵 Confirm Order';
+    }
+  } catch(e) {
+    showToast('Network error. Please check connection.','error');
+    btn.disabled = false; btn.textContent = '🛵 Confirm Order';
+  }
+}
+
+function showOrderSuccess(orderId, total, name) {
+  // Show a nice success overlay
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center`;
+  overlay.innerHTML = `
+    <div style="font-size:72px;margin-bottom:16px">🎉</div>
+    <div style="font-size:24px;font-weight:800;margin-bottom:8px">Order Placed!</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:4px">Order #${orderId}</div>
+    <div style="font-size:20px;font-weight:700;color:var(--accent);margin-bottom:16px">₹${total}</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:24px">
+      Hey ${name}! Your fresh meat is being prepared.<br/>Estimated delivery: <strong>~30 minutes</strong> 🛵
+    </div>
+    <button style="background:var(--accent);color:#fff;padding:14px 32px;border-radius:12px;font-size:15px;font-weight:700;margin-bottom:10px"
+      onclick="document.body.removeChild(this.closest('[style*=fixed]'));showScreen('screen-orders')">
+      Track Order →
+    </button>
+    <button style="background:none;color:var(--muted);padding:10px;font-size:13px"
+      onclick="document.body.removeChild(this.closest('[style*=fixed]'));showScreen('screen-home')">
+      Continue Shopping
+    </button>
+  `;
+  document.body.appendChild(overlay);
+}
+
+// ═══════════════════════════════════════════
+//  Orders Screen
+// ═══════════════════════════════════════════
+async function loadOrders() {
+  const content = document.getElementById('ordersContent');
+  const title = document.getElementById('ordersTitle');
+
+  if (!USER || !USER.phone) {
+    content.innerHTML = `<div class="empty"><div class="empty-icon">🔐</div><h3>Not logged in</h3>
+      <p>Log in to see your order history</p>
+      <button class="btn-accent" style="margin-top:12px;max-width:200px" onclick="showScreen('screen-login')">Log In</button></div>`;
+    return;
+  }
+
+  content.innerHTML = `<div class="empty"><div class="empty-icon" style="animation:spin 1s linear infinite">⏳</div></div>`;
+
+  try {
+    const res = await fetch('/api/orders/' + USER.phone);
+    const data = await res.json();
+    if (!data.ok || !data.orders.length) {
+      content.innerHTML = `<div class="empty"><div class="empty-icon">📦</div>
+        <h3>No orders yet</h3><p>Your past orders will appear here</p></div>`;
+      return;
+    }
+    title.textContent = `My Orders (${data.orders.length})`;
+    content.innerHTML = data.orders.map(order => {
+      const statusClass = 'status-' + (order.status || 'placed');
+      const statusLabel = {
+        placed:'Order Placed',preparing:'Preparing',out_for_delivery:'Out for Delivery',
+        delivered:'Delivered',cancelled:'Cancelled'
+      }[order.status] || order.status;
+      const itemNames = (order.items||[]).map(i=>i.name).join(', ') || '—';
+      const d = new Date(order.created_at);
+      const dateStr = d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+      return `<div class="order-card" onclick="showOrderDetail(${order.id})">
+        <div class="order-card-top">
+          <div class="order-id">Order #${order.id}</div>
+          <div class="order-status ${statusClass}">${statusLabel}</div>
+        </div>
+        <div class="order-items">${itemNames}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="order-date">${dateStr}</div>
+          <div class="order-total">₹${order.total}</div>
+        </div>
+      </div>`;
+    }).join('');
+    // Store for detail view
+    window._ORDERS = data.orders;
+  } catch(e) {
+    content.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
+      <h3>Couldn't load orders</h3><p>Please check your connection</p></div>`;
+  }
+}
+
+function showOrderDetail(id) {
+  const orders = window._ORDERS || [];
+  const order = orders.find(o => o.id === id);
+  if (!order) return;
+
+  const STEPS = [
+    { key:'placed', label:'Order Placed', sub:'We received your order' },
+    { key:'preparing', label:'Accepted', sub:'Order confirmed by store' },
+    { key:'preparing', label:'Preparing', sub:'Your meat is being cleaned & cut' },
+    { key:'preparing', label:'Packed', sub:'Order packed and ready' },
+    { key:'out_for_delivery', label:'Out for Delivery', sub:'Rider is on the way' },
+    { key:'delivered', label:'Delivered', sub:'Enjoy your fresh meat! 🥩' },
+  ];
+  const statusLevel = {placed:1,preparing:4,out_for_delivery:5,delivered:6,cancelled:0}[order.status]||0;
+
+  const content = document.getElementById('ordersContent');
+  const title = document.getElementById('ordersTitle');
+  title.innerHTML = `<button onclick="loadOrders();document.getElementById('ordersTitle').textContent='My Orders'" style="background:none;color:var(--accent);font-size:13px;font-weight:600">← Back</button> Order #${id}`;
+
+  const itemsHtml = (order.items||[]).map(i=>
+    `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid var(--border)">
+      <span>${i.name} × ${i.qty}</span><span>₹${i.price * i.qty}</span>
+    </div>`).join('');
+
+  const stepsHtml = STEPS.map((step, idx) => {
+    const stepNum = idx + 1;
+    const isDone = stepNum < statusLevel;
+    const isCurrent = stepNum === statusLevel;
+    const dotClass = isDone ? 'done' : isCurrent ? 'current' : '';
+    const icon = isDone ? '✓' : isCurrent ? '→' : '';
+    return `<div class="track-step">
+      <div class="track-dot ${dotClass}">${icon}</div>
+      <div class="track-line"></div>
+      <div class="track-txt">
+        <div class="track-label" style="color:${isDone||isCurrent?'var(--text)':'var(--muted)'}">${step.label}</div>
+        ${isDone||isCurrent?`<div class="track-sub">${step.sub}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  content.innerHTML = `<div class="tracking-wrap">
+    <div style="margin-bottom:16px;padding:14px;background:var(--card);border-radius:14px;border:1px solid var(--border)">
+      ${itemsHtml}
+      <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;padding-top:10px;margin-top:4px">
+        <span>Total</span><span>₹${order.total}</span>
+      </div>
+    </div>
+    <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Order Tracking</div>
+    <div class="track-steps">${stepsHtml}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  Profile Screen
+// ═══════════════════════════════════════════
+async function loadProfile() {
+  if (!USER) return;
+  const avatarEl = document.getElementById('profileAvatar');
+  const nameEl = document.getElementById('profileName');
+  const phoneEl = document.getElementById('profilePhone');
+  const walletEl = document.getElementById('profileWallet');
+
+  const displayName = USER.name || 'Guest';
+  avatarEl.textContent = displayName.charAt(0).toUpperCase() || '?';
+  nameEl.textContent = displayName;
+  phoneEl.textContent = USER.phone ? '+91 ' + USER.phone : 'No phone on file';
+  walletEl.textContent = USER.wallet || 0;
+
+  if (USER.phone) {
+    try {
+      const res = await fetch('/api/customer/' + USER.phone);
+      const data = await res.json();
+      if (data.ok && data.customer) {
+        const c = data.customer;
+        USER.wallet = c.wallet || 0;
+        USER.name = c.name || USER.name;
+        saveUser();
+        avatarEl.textContent = (USER.name || 'G').charAt(0).toUpperCase();
+        nameEl.textContent = USER.name || 'Guest';
+        walletEl.textContent = USER.wallet;
+        if (c.orders !== undefined) {
+          phoneEl.textContent = `+91 ${USER.phone}  •  ${c.orders} orders`;
+        }
+      }
+    } catch(e) {}
+  }
+
+  document.getElementById('logoutBtn').style.display = USER.phone ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════════
+//  Coupons Modal
+// ═══════════════════════════════════════════
+async function showCouponsModal() {
+  const modal = document.getElementById('couponsModal');
+  modal.classList.add('show');
+  const list = document.getElementById('couponsModalList');
+  list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">Loading...</div>';
+  try {
+    const res = await fetch('/api/coupons');
+    const data = await res.json();
+    if (!data.length) {
+      list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">No active coupons right now</div>';
+      return;
+    }
+    list.innerHTML = data.map(c => `
+      <div style="border:1.5px dashed var(--accent);border-radius:12px;padding:14px;margin-bottom:10px;background:rgba(255,77,0,.05)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:15px;font-weight:800;color:var(--accent);letter-spacing:1px">${c.code}</span>
+          <button onclick="copyAndApplyCoupon('${c.code}')" style="background:var(--accent);color:#fff;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700">Apply</button>
+        </div>
+        <div style="font-size:12px;color:var(--text)">${c.description || (c.type==='percent'?`${c.value}% off`:`Flat ₹${c.value} off`)}</div>
+        ${c.minOrder?`<div style="font-size:11px;color:var(--muted);margin-top:2px">Min order: ₹${c.minOrder}</div>`:''}
+      </div>`).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">Unable to load coupons</div>';
+  }
+}
+
+function closeCouponsModal() {
+  document.getElementById('couponsModal').classList.remove('show');
+}
+
+function copyAndApplyCoupon(code) {
+  closeCouponsModal();
+  showScreen('screen-basket');
+  setTimeout(() => {
+    const inp = document.getElementById('couponIn');
+    if (inp) { inp.value = code; applyCoupon(); }
+  }, 400);
+}
+
+// ═══════════════════════════════════════════
+//  Modal close on overlay click
+// ═══════════════════════════════════════════
+document.getElementById('checkoutModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCheckoutModal();
+});
+document.getElementById('couponsModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCouponsModal();
+});
+
+// ═══════════════════════════════════════════
+//  Keyboard: close modals on Escape
+// ═══════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeCheckoutModal();
+    closeCouponsModal();
+  }
+});
+
+// ═══════════════════════════════════════════
+//  Swipe-back gesture (basic)
+// ═══════════════════════════════════════════
+let touchStartX = 0;
+document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, {passive:true});
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (dx > 80 && SCREEN_HISTORY.length > 1) {
+    const cur = SCREEN_HISTORY[SCREEN_HISTORY.length - 1];
+    if (['screen-product','screen-basket','screen-orders','screen-profile'].includes(cur)) {
+      goBack();
+    }
+  }
+}, {passive:true});
+
+</script>
 </body>
 </html>

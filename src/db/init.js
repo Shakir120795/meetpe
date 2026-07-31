@@ -17,6 +17,7 @@ db.exec(`
     name         TEXT,
     address      TEXT,
     reward_cash  INTEGER DEFAULT 0,
+    wallet_balance INTEGER DEFAULT 0,
     is_plus      INTEGER DEFAULT 0,
     plus_until   TEXT,
     created_at   TEXT DEFAULT CURRENT_TIMESTAMP

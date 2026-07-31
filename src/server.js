@@ -454,6 +454,52 @@ app.post('/admin/orders/:id/status', (req, res) => {
   }
 });
 
+// ===== Customer auth (bypass OTP — just phone) =====
+app.post('/api/auth/login', (req, res) => {
+  const { phone, name } = req.body || {};
+  const cleanPhone = String(phone || '').replace(/\D/g, '');
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+  const waPhone = `web:+91${cleanPhone}`;
+  db.prepare(`INSERT INTO customers (phone, name) VALUES (?, ?) ON CONFLICT(phone) DO UPDATE SET name = COALESCE(excluded.name, name)`).run(waPhone, name || null);
+  const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
+  res.json({ ok: true, customer: { phone: cleanPhone, name: customer.name || '', wallet: customer.wallet_balance || 0 } });
+});
+
+// ===== Get customer profile =====
+app.get('/api/customer/:phone', (req, res) => {
+  const cleanPhone = String(req.params.phone).replace(/\D/g, '');
+  const waPhone = `web:+91${cleanPhone}`;
+  const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
+  if (!customer) return res.json({ ok: true, customer: { phone: cleanPhone, name: '', wallet: 0, orders: 0 } });
+  const rewards = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rewards WHERE phone = ? AND used = 0 AND expires_at > datetime('now')`).get(waPhone);
+  const orderCount = db.prepare('SELECT COUNT(*) as cnt FROM orders WHERE phone = ?').get(waPhone);
+  res.json({ ok: true, customer: { phone: cleanPhone, name: customer.name || '', wallet: customer.wallet_balance || 0, rewards: rewards.total, orders: orderCount.cnt } });
+});
+
+// ===== Get customer orders (last 20) =====
+app.get('/api/orders/:phone', (req, res) => {
+  const cleanPhone = String(req.params.phone).replace(/\D/g, '');
+  const waPhone = `web:+91${cleanPhone}`;
+  const orders = db.prepare(`SELECT * FROM orders WHERE phone = ? ORDER BY id DESC LIMIT 20`).all(waPhone);
+  res.json({ ok: true, orders: orders.map(o => ({ ...o, items: JSON.parse(o.items_json || '[]') })) });
+});
+
+// ===== Use wallet balance =====
+app.post('/api/wallet/use', (req, res) => {
+  const { phone, amount } = req.body || {};
+  const cleanPhone = String(phone || '').replace(/\D/g, '');
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+  const deduct = parseInt(amount, 10) || 0;
+  if (deduct <= 0) return res.status(400).json({ ok: false, error: 'invalid amount' });
+  const waPhone = `web:+91${cleanPhone}`;
+  const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
+  if (!customer) return res.status(404).json({ ok: false, error: 'customer not found' });
+  if ((customer.wallet_balance || 0) < deduct) return res.status(400).json({ ok: false, error: 'insufficient wallet balance' });
+  db.prepare('UPDATE customers SET wallet_balance = wallet_balance - ? WHERE phone = ?').run(deduct, waPhone);
+  const updated = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(waPhone);
+  res.json({ ok: true, deducted: deduct, remaining: updated.wallet_balance });
+});
+
 // ===== Health (still works at /health) =====
 app.get('/health', (req, res) => {
   res.send('🥩 MeatPe bot is running.');
