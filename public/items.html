@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MeatPe Admin — Items</title>
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #d62828;
+      --green: #16a34a;
+      --orange: #f77f00;
+      --blue: #2563eb;
+      --gray: #6b7280;
+      --light: #f3f4f6;
+      --border: #e5e7eb;
+      --dark: #1a1a1a;
+    }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--light); color: var(--dark);
+      padding: 20px;
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; }
+    h1 {
+      font-size: 24px; margin-bottom: 6px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    h1 img { height: 36px; }
+    .sub { color: var(--gray); margin-bottom: 18px; }
+
+    .nav-links { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .nav-links a {
+      padding: 8px 14px; background: white; border-radius: 8px;
+      color: var(--gray); text-decoration: none; font-size: 13px; font-weight: 600;
+      border: 1px solid var(--border);
+    }
+    .nav-links a:hover { color: var(--primary); border-color: var(--primary); }
+    .nav-links a.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .key-bar {
+      background: white; padding: 14px 16px; border-radius: 12px; margin-bottom: 18px;
+      display: flex; gap: 10px; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.04);
+      flex-wrap: wrap;
+    }
+    .key-bar label { font-weight: 600; font-size: 14px; }
+    .key-bar input {
+      flex: 1; min-width: 200px; padding: 9px 12px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; font-family: monospace;
+    }
+    .key-bar button {
+      padding: 9px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;
+      border: none;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-add     { background: var(--green); color: white; }
+    .btn-edit    { background: var(--blue); color: white; }
+    .btn-delete  { background: #ef4444; color: white; }
+    .btn-ghost   { background: transparent; color: var(--gray); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--dark); border-color: var(--dark); }
+
+    .toolbar {
+      display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;
+      align-items: center;
+    }
+    .search {
+      flex: 1; min-width: 220px; padding: 10px 14px;
+      border: 1px solid var(--border); border-radius: 8px;
+      font-size: 14px; background: white;
+    }
+    .filter-bar {
+      display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .chip {
+      padding: 7px 14px; background: white; border: 1px solid var(--border);
+      border-radius: 999px; font-size: 13px; font-weight: 500; cursor: pointer;
+      color: var(--gray); transition: all .15s;
+    }
+    .chip:hover { color: var(--primary); border-color: var(--primary); }
+    .chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+    .cat-block {
+      background: white; border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+      margin-bottom: 16px; overflow: hidden;
+    }
+    .cat-head {
+      padding: 14px 18px; font-weight: 700; font-size: 15px;
+      border-bottom: 1px solid var(--border); display: flex;
+      justify-content: space-between; align-items: center;
+    }
+    .cat-head .meta { font-size: 13px; color: var(--gray); font-weight: 500; }
+
+    .item-row {
+      display: grid; grid-template-columns: 60px 1fr 100px 90px 110px auto;
+      gap: 12px; padding: 12px 18px; align-items: center;
+      border-bottom: 1px solid var(--light);
+    }
+    .item-row:last-child { border-bottom: none; }
+    .item-row .code {
+      font-family: monospace; background: var(--light);
+      padding: 4px 10px; border-radius: 5px; font-size: 12px;
+      text-align: center; font-weight: 600;
+    }
+    .item-row .name { font-size: 14px; font-weight: 500; line-height: 1.4; }
+    .item-row .unit { font-size: 13px; color: var(--gray); }
+    .item-row .price {
+      color: var(--primary); font-weight: 700; font-size: 15px;
+    }
+    .item-row .stock {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 12px; font-weight: 600;
+      padding: 4px 10px; border-radius: 999px;
+    }
+    .item-row .stock.in { background: #dcfce7; color: #14532d; }
+    .item-row .stock.out { background: #fee2e2; color: #991b1b; }
+    .item-row .actions { display: flex; gap: 6px; }
+    .item-row .actions button {
+      padding: 6px 12px; border-radius: 6px; border: none;
+      cursor: pointer; font-size: 12px; font-weight: 600;
+    }
+    .item-row.oos .name { color: var(--gray); }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.6);
+      z-index: 100; display: none; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: white; border-radius: 12px; padding: 26px;
+      max-width: 460px; width: 100%;
+      max-height: 90vh; overflow-y: auto; position: relative;
+    }
+    .modal h3 { font-size: 22px; margin-bottom: 4px; }
+    .modal .modal-sub { color: var(--gray); font-size: 13px; margin-bottom: 18px; }
+    .modal-close {
+      position: absolute; top: 14px; right: 14px;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--light); border: none; font-size: 18px; cursor: pointer;
+    }
+    .modal label {
+      display: block; font-size: 13px; font-weight: 600;
+      margin: 12px 0 5px; color: var(--dark);
+    }
+    .modal input, .modal select {
+      width: 100%; padding: 10px 12px; font-size: 14px;
+      border: 1px solid var(--border); border-radius: 8px;
+      font-family: inherit;
+    }
+    .modal input:focus, .modal select:focus { outline: none; border-color: var(--primary); }
+    .modal input[readonly] { background: var(--light); cursor: not-allowed; }
+    .modal-actions {
+      display: flex; gap: 10px; margin-top: 22px;
+    }
+    .modal-actions button {
+      flex: 1; padding: 11px 16px; border-radius: 8px;
+      border: none; font-weight: 600; cursor: pointer; font-size: 14px;
+    }
+    .images-container {
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .img-row {
+      display: flex; gap: 6px; align-items: center;
+    }
+    .img-row input {
+      flex: 1; padding: 8px 10px; font-size: 13px;
+      border: 1px solid var(--border); border-radius: 6px;
+    }
+    .img-row .remove-img {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #fee2e2; color: #dc2626; border: none;
+      cursor: pointer; font-size: 14px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .img-row .remove-img:hover { background: #fecaca; }
+    .img-row .preview {
+      width: 36px; height: 36px; border-radius: 6px;
+      object-fit: cover; background: var(--light);
+      border: 1px solid var(--border);
+    }
+    .img-actions {
+      display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .upload-label {
+      background: var(--green); color: white; border: none;
+    }
+    .upload-label:hover { opacity: .9; }
+    .uploading-msg {
+      font-size: 12px; color: var(--orange); font-weight: 600;
+      margin-top: 6px;
+    }
+    textarea { font-family: inherit; resize: vertical; }
+    }
+    .err { background: #fee; color: #b91c1c; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 13px; }
+    .toast {
+      position: fixed; bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--dark); color: white;
+      padding: 12px 20px; border-radius: 10px;
+      font-size: 14px; font-weight: 500; z-index: 200;
+      opacity: 0; pointer-events: none; transition: all .25s;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { background: #16a34a; }
+    .toast.error { background: #dc2626; }
+
+    @media (max-width: 700px) {
+      .item-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      .item-row .code { grid-column: 1; }
+      .item-row .stock { grid-column: 2; justify-self: end; }
+      .item-row .name { grid-column: 1 / -1; }
+      .item-row .unit { grid-column: 1; }
+      .item-row .price { grid-column: 2; justify-self: end; }
+      .item-row .actions { grid-column: 1 / -1; justify-self: stretch; }
+      .item-row .actions button { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1><img src="/logo.png" alt="MeatPe" />Items / Catalog</h1>
+  <p class="sub">Add new items, edit price, name, or remove. Changes are live instantly.</p>
+
+  <div class="nav-links">
+    <a href="/admin.html">📦 Stock</a>
+    <a href="/orders.html">📋 Orders</a>
+    <a href="/items.html" class="active">🍗 Items</a>
+    <a href="/coupons.html">🏷️ Coupons</a>
+    <a href="/settings.html">⚙️ Settings</a>
+    <a href="/" target="_blank">🌐 View Site</a>
+  </div>
+
+  <div class="key-bar">
+    <label>Admin key:</label>
+    <input id="key" type="password" placeholder="Enter ADMIN_KEY" autocomplete="off" />
+    <button id="loadBtn" class="btn-primary">Load items</button>
+    <button id="addBtn" class="btn-add" style="display:none">+ Add new item</button>
+  </div>
+
+  <div id="msg"></div>
+
+  <div class="toolbar" id="toolbar" style="display:none">
+    <input type="text" class="search" id="search" placeholder="🔎 Search by name or code..." />
+  </div>
+
+  <div class="filter-bar" id="filters" style="display:none"></div>
+
+  <div id="content"></div>
+</div>
+
+<!-- Modal: Add / Edit item -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">×</button>
+    <h3 id="modalTitle">Add new item</h3>
+    <p class="modal-sub" id="modalSub">Fill the details below.</p>
+    <div id="formErr"></div>
+    <form id="itemForm">
+      <label>Category *</label>
+      <select name="cat" id="catSelect" required>
+        <option value="chicken">🐔 Fresh Chicken</option>
+        <option value="mutton">🐐 Fresh Mutton</option>
+        <option value="fish">🐟 Fresh Fish</option>
+        <option value="ready_to_cook">🔥 Ready to Cook</option>
+        <option value="family_pack">👨‍👩‍👧 Family / Combo Packs</option>
+      </select>
+
+      <label>Code *</label>
+      <input name="code" id="codeInput" placeholder="e.g. C9" required />
+
+      <label>Name *</label>
+      <input name="name" id="nameInput" placeholder="e.g. Chicken Tangri (500g)" required />
+
+      <label>Unit *</label>
+      <input name="unit" id="unitInput" placeholder="e.g. 500g, 1kg, 2pc" required />
+
+      <label>Price (₹) *</label>
+      <input name="price" id="priceInput" type="number" min="1" placeholder="e.g. 240" required />
+
+      <label>Description <small style="color:var(--gray);font-weight:400">(optional, max 500 chars)</small></label>
+      <textarea name="description" id="descInput" rows="3" placeholder="e.g. Fresh, hygienically cleaned, curry-cut pieces. Perfect for home cooking." maxlength="500" style="resize:vertical"></textarea>
+
+      <label>Images <small style="color:var(--gray);font-weight:400">(up to 10 photos — slideshow on website)</small></label>
+      <div id="imagesContainer" class="images-container"></div>
+      <div class="img-actions">
+        <button type="button" id="addImageBtn" class="btn-ghost" style="font-size:12px">+ Add image URL</button>
+        <label class="btn-green upload-label" style="font-size:12px;padding:6px 12px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px">
+          📷 Upload from device
+          <input type="file" id="fileUploadInput" accept="image/*" multiple style="display:none" />
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn-primary" id="submitBtn">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const keyInput = $('key');
+const content  = $('content');
+const msg      = $('msg');
+const filtersEl= $('filters');
+const search   = $('search');
+
+const CAT_LABELS = {
+  chicken: '🐔 Fresh Chicken',
+  mutton: '🐐 Fresh Mutton',
+  fish: '🐟 Fresh Fish',
+  ready_to_cook: '🔥 Ready to Cook',
+  family_pack: '👨‍👩‍👧 Family / Combo Packs',
+};
+
+let ITEMS = [];
+let CURRENT_CAT = '';
+let SEARCH = '';
+let EDITING = null; // null = adding; otherwise the item being edited
+
+const saved = localStorage.getItem('meatpe_admin_key');
+if (saved) keyInput.value = saved;
+
+$('loadBtn').addEventListener('click', () => loadItems(true));
+keyInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadItems(true); });
+$('addBtn').addEventListener('click', () => openModal(null));
+$('modalClose').addEventListener('click', closeModal);
+$('cancelBtn').addEventListener('click', closeModal);
+$('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+$('catSelect').addEventListener('change', async () => {
+  if (EDITING) return;
+  // Suggest a code based on category
+  const cat = $('catSelect').value;
+  try {
+    const res = await fetch(`/admin/items/next-code?cat=${cat}&key=${encodeURIComponent(keyInput.value.trim())}`);
+    const data = await res.json();
+    if (data.ok && data.code) $('codeInput').value = data.code;
+  } catch {}
+});
+$('itemForm').addEventListener('submit', e => { e.preventDefault(); submitItem(); });
+search.addEventListener('input', () => { SEARCH = search.value.toLowerCase().trim(); render(); });
+
+if (saved) loadItems(true);
+
+async function loadItems(showLoad) {
+  msg.innerHTML = '';
+  const key = keyInput.value.trim();
+  if (!key) { msg.innerHTML = '<div class="err">Enter admin key first.</div>'; return; }
+  localStorage.setItem('meatpe_admin_key', key);
+  try {
+    const res = await fetch(`/admin/items?key=${encodeURIComponent(key)}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'load failed');
+    ITEMS = data.items;
+    $('addBtn').style.display = 'inline-block';
+    $('toolbar').style.display = 'flex';
+    renderFilters();
+    render();
+  } catch (e) {
+    msg.innerHTML = `<div class="err">${escapeHtml(e.message)} — check admin key.</div>`;
+  }
+}
+
+function renderFilters() {
+  const counts = ITEMS.reduce((acc, i) => { acc[i.cat] = (acc[i.cat] || 0) + 1; return acc; }, {});
+  filtersEl.style.display = 'flex';
+  let html = `<button class="chip ${CURRENT_CAT === '' ? 'active' : ''}" data-cat="">All (${ITEMS.length})</button>`;
+  for (const cat of Object.keys(CAT_LABELS)) {
+    html += `<button class="chip ${CURRENT_CAT === cat ? 'active' : ''}" data-cat="${cat}">${CAT_LABELS[cat]} (${counts[cat] || 0})</button>`;
+  }
+  filtersEl.innerHTML = html;
+  filtersEl.querySelectorAll('.chip').forEach(c => {
+    c.addEventListener('click', () => { CURRENT_CAT = c.dataset.cat; render(); });
+  });
+}
+
+function render() {
+  let items = ITEMS;
+  if (CURRENT_CAT) items = items.filter(i => i.cat === CURRENT_CAT);
+  if (SEARCH) items = items.filter(i =>
+    i.name.toLowerCase().includes(SEARCH) || i.code.toLowerCase().includes(SEARCH)
+  );
+
+  if (!items.length) {
+    content.innerHTML = `<div style="background:white;padding:50px;text-align:center;border-radius:12px;color:#888"><p>No items found.</p></div>`;
+    return;
+  }
+
+  // Group by category
+  const groups = {};
+  for (const it of items) (groups[it.cat] = groups[it.cat] || []).push(it);
+
+  let html = '';
+  for (const cat of Object.keys(CAT_LABELS)) {
+    const list = groups[cat];
+    if (!list || !list.length) continue;
+    html += `<div class="cat-block">
+      <div class="cat-head">
+        <span>${CAT_LABELS[cat]}</span>
+        <span class="meta">${list.length} item${list.length > 1 ? 's' : ''}</span>
+      </div>`;
+    for (const i of list) {
+      html += `<div class="item-row ${i.inStock === false ? 'oos' : ''}">
+        <span class="code">${escapeHtml(i.code)}</span>
+        <span class="name">${escapeHtml(i.name)}</span>
+        <span class="unit">${escapeHtml(i.unit)}</span>
+        <span class="price">₹${i.price}</span>
+        <span class="stock ${i.inStock === false ? 'out' : 'in'}">
+          ${i.inStock === false ? '⛔ Out' : '✅ In Stock'}
+        </span>
+        <span class="actions">
+          <button class="btn-edit" data-act="edit" data-code="${i.code}">✏️ Edit</button>
+          <button class="btn-delete" data-act="del" data-code="${i.code}">🗑️</button>
+        </span>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+  content.innerHTML = html;
+  content.querySelectorAll('[data-act="edit"]').forEach(b =>
+    b.addEventListener('click', () => openModal(ITEMS.find(x => x.code === b.dataset.code))));
+  content.querySelectorAll('[data-act="del"]').forEach(b =>
+    b.addEventListener('click', () => deleteItem(b.dataset.code)));
+}
+
+async function openModal(item) {
+  $('formErr').innerHTML = '';
+  EDITING = item || null;
+  const imgContainer = $('imagesContainer');
+  if (item) {
+    $('modalTitle').textContent = `Edit: ${item.name}`;
+    $('modalSub').textContent = `Code ${item.code} cannot be changed.`;
+    $('catSelect').value = item.cat;
+    $('codeInput').value = item.code;
+    $('codeInput').readOnly = true;
+    $('nameInput').value = item.name;
+    $('unitInput').value = item.unit;
+    $('priceInput').value = item.price;
+    $('descInput').value = item.description || '';
+    const imgs = Array.isArray(item.images) && item.images.length ? item.images : (item.img ? [item.img] : []);
+    imgContainer.innerHTML = '';
+    if (imgs.length) imgs.forEach(url => addImageRow(url));
+    else addImageRow('');
+  } else {
+    $('modalTitle').textContent = 'Add new item';
+    $('modalSub').textContent = 'Pick a category — code is auto-suggested.';
+    $('catSelect').value = CURRENT_CAT || 'chicken';
+    $('codeInput').readOnly = false;
+    try {
+      const res = await fetch(`/admin/items/next-code?cat=${$('catSelect').value}&key=${encodeURIComponent(keyInput.value.trim())}`);
+      const data = await res.json();
+      $('codeInput').value = (data.ok && data.code) ? data.code : '';
+    } catch { $('codeInput').value = ''; }
+    $('nameInput').value = '';
+    $('unitInput').value = '';
+    $('priceInput').value = '';
+    $('descInput').value = '';
+    imgContainer.innerHTML = '';
+    addImageRow('');
+  }
+  $('modal').classList.add('open');
+  setTimeout(() => $('nameInput').focus(), 100);
+}
+
+function addImageRow(url) {
+  const container = $('imagesContainer');
+  if (container.querySelectorAll('.img-row').length >= 10) return;
+  const row = document.createElement('div');
+  row.className = 'img-row';
+  row.innerHTML = `<input type="url" placeholder="/photos/c1.jpg or https://..." value="${escapeHtml(url || '')}" class="img-url-input" /><img class="preview" src="${url || ''}" onerror="this.style.display='none'" onload="this.style.display='block'" style="${url ? '' : 'display:none'}" /><button type="button" class="remove-img" title="Remove">×</button>`;
+  row.querySelector('.remove-img').addEventListener('click', () => { row.remove(); if (container.querySelectorAll('.img-row').length === 0) addImageRow(''); });
+  row.querySelector('.img-url-input').addEventListener('input', (e) => { row.querySelector('.preview').src = e.target.value; });
+  container.appendChild(row);
+}
+
+$('addImageBtn').addEventListener('click', () => addImageRow(''));
+
+// File upload handler
+$('fileUploadInput').addEventListener('change', async (e) => {
+  const files = e.target.files;
+  if (!files || !files.length) return;
+  const key = keyInput.value.trim();
+  const formData = new FormData();
+  for (let i = 0; i < Math.min(files.length, 10); i++) {
+    formData.append('images', files[i]);
+  }
+  // Show uploading state
+  const container = $('imagesContainer');
+  const uploadMsg = document.createElement('div');
+  uploadMsg.className = 'uploading-msg';
+  uploadMsg.textContent = '⏳ Uploading...';
+  container.parentElement.appendChild(uploadMsg);
+
+  try {
+    const res = await fetch(`/api/upload?key=${encodeURIComponent(key)}`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Upload failed');
+    // Add uploaded URLs as image rows
+    for (const url of data.urls) {
+      addImageRow(url);
+    }
+    markDirty();
+    toast(`✓ ${data.urls.length} image(s) uploaded`, 'success');
+  } catch (err) {
+    toast('❌ Upload failed: ' + err.message, 'error');
+  } finally {
+    uploadMsg.remove();
+    e.target.value = ''; // reset file input
+  }
+});
+
+function closeModal() { $('modal').classList.remove('open'); EDITING = null; }
+
+async function submitItem() {
+  $('formErr').innerHTML = '';
+  const key = keyInput.value.trim();
+  // Collect images from all rows
+  const imageInputs = $('imagesContainer').querySelectorAll('.img-url-input');
+  const images = Array.from(imageInputs).map(inp => inp.value.trim()).filter(u => u.length > 0);
+
+  const payload = {
+    cat: $('catSelect').value,
+    code: $('codeInput').value.trim().toUpperCase(),
+    name: $('nameInput').value.trim(),
+    unit: $('unitInput').value.trim(),
+    price: parseInt($('priceInput').value, 10),
+    description: $('descInput').value.trim(),
+    images: images,
+  };
+  $('submitBtn').disabled = true;
+  try {
+    const url = EDITING
+      ? `/admin/items/${EDITING.code}?key=${encodeURIComponent(key)}`
+      : `/admin/items?key=${encodeURIComponent(key)}`;
+    const res = await fetch(url, {
+      method: EDITING ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      $('formErr').innerHTML = `<div class="err">${escapeHtml(data.error || 'failed')}</div>`;
+      return;
+    }
+    closeModal();
+    toast(EDITING ? `✓ Updated: ${data.item.name}` : `✓ Added: ${data.item.name}`, 'success');
+    await loadItems();
+  } catch (e) {
+    $('formErr').innerHTML = `<div class="err">${escapeHtml(e.message)}</div>`;
+  } finally {
+    $('submitBtn').disabled = false;
+  }
+}
+
+async function deleteItem(code) {
+  const item = ITEMS.find(x => x.code === code);
+  if (!item) return;
+  if (!confirm(`Delete "${item.name}" (${item.code}) permanently?\n\nThis cannot be undone.`)) return;
+  const key = keyInput.value.trim();
+  try {
+    const res = await fetch(`/admin/items/${code}?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'delete failed');
+    toast(`Deleted: ${item.name}`, 'success');
+    await loadItems();
+  } catch (e) {
+    toast(e.message || 'Delete failed', 'error');
+  }
+}
+
+let toastTimer;
+function toast(text, type='') {
+  const el = $('toast');
+  el.textContent = text;
+  el.className = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>

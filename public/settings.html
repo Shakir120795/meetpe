@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MeatPe Admin — Site Settings</title>
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #d62828; --green: #16a34a; --orange: #f77f00;
+      --blue: #2563eb; --gray: #6b7280; --light: #f3f4f6;
+      --border: #e5e7eb; --dark: #1a1a1a;
+    }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--light); color: var(--dark); padding: 20px; }
+    .wrap { max-width: 1000px; margin: 0 auto; }
+    h1 { font-size: 24px; margin-bottom: 6px; display: flex; align-items: center; gap: 12px; }
+    h1 img { height: 36px; }
+    .sub { color: var(--gray); margin-bottom: 18px; }
+    .nav-links { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .nav-links a {
+      padding: 8px 14px; background: white; border-radius: 8px; color: var(--gray);
+      text-decoration: none; font-size: 13px; font-weight: 600; border: 1px solid var(--border);
+    }
+    .nav-links a:hover { color: var(--primary); border-color: var(--primary); }
+    .nav-links a.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .key-bar {
+      background: white; padding: 14px 16px; border-radius: 12px; margin-bottom: 18px;
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    .key-bar label { font-weight: 600; font-size: 14px; }
+    .key-bar input {
+      flex: 1; min-width: 200px; padding: 9px 12px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; font-family: monospace;
+    }
+    .key-bar button { padding: 9px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; border: none; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-green { background: var(--green); color: white; }
+    .btn-ghost { background: transparent; color: var(--gray); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--dark); border-color: var(--dark); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-danger { background: #ef4444; color: white; }
+
+    .section {
+      background: white; border-radius: 12px; padding: 22px 24px;
+      margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    .section h2 {
+      font-size: 18px; margin-bottom: 4px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section .desc { font-size: 13px; color: var(--gray); margin-bottom: 16px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--dark); }
+    .field input, .field textarea, .field select {
+      width: 100%; padding: 10px 12px; font-size: 14px;
+      border: 1px solid var(--border); border-radius: 8px; font-family: inherit;
+    }
+    .field textarea { resize: vertical; min-height: 80px; }
+    .field input:focus, .field textarea:focus { outline: none; border-color: var(--primary); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .field-row { grid-template-columns: 1fr; } }
+
+    .cat-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .cat-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; background: var(--light); border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .cat-item .icon-input { width: 50px; text-align: center; font-size: 18px; }
+    .cat-item .key-display { font-family: monospace; font-size: 12px; color: var(--gray); min-width: 100px; }
+    .cat-item .label-input { flex: 1; }
+    .cat-item .remove-cat { width: 28px; height: 28px; border-radius: 50%; background: #fee2e2; color: #dc2626; border: none; cursor: pointer; font-size: 14px; }
+    .cat-item .remove-cat:hover { background: #fecaca; }
+
+    .social-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .social-item {
+      display: grid; grid-template-columns: 50px 120px 1fr 1fr 32px; gap: 8px;
+      align-items: center; padding: 8px 12px; background: var(--light);
+      border-radius: 8px; border: 1px solid var(--border);
+    }
+    .social-item input { padding: 8px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: 6px; }
+    .social-item .remove-social { width: 28px; height: 28px; border-radius: 50%; background: #fee2e2; color: #dc2626; border: none; cursor: pointer; font-size: 14px; }
+    @media (max-width: 700px) {
+      .social-item { grid-template-columns: 1fr 1fr; }
+      .social-item .remove-social { grid-column: 2; justify-self: end; }
+    }
+
+    .save-bar {
+      position: sticky; bottom: 16px; z-index: 10;
+      background: white; padding: 14px 20px; border-radius: 12px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,.1);
+      display: none; align-items: center; justify-content: space-between;
+    }
+    .save-bar.show { display: flex; }
+    .save-bar .msg { font-size: 14px; color: var(--gray); }
+    .save-bar button { padding: 10px 24px; }
+
+    .toast {
+      position: fixed; bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--dark); color: white; padding: 12px 20px; border-radius: 10px;
+      font-size: 14px; font-weight: 500; z-index: 200;
+      opacity: 0; pointer-events: none; transition: all .25s;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { background: #16a34a; }
+    .toast.error { background: #dc2626; }
+    .err { background: #fee; color: #b91c1c; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 13px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1><img src="/logo.png" alt="MeatPe" />Site Settings</h1>
+  <p class="sub">Edit website content, categories, footer, social handles — all from here.</p>
+
+  <div class="nav-links">
+    <a href="/admin.html">📦 Stock</a>
+    <a href="/orders.html">📋 Orders</a>
+    <a href="/items.html">🍗 Items</a>
+    <a href="/coupons.html">🏷️ Coupons</a>
+    <a href="/settings.html" class="active">⚙️ Settings</a>
+    <a href="/" target="_blank">🌐 View Site</a>
+  </div>
+
+  <div class="key-bar">
+    <label>Admin key:</label>
+    <input id="key" type="password" placeholder="Enter ADMIN_KEY" autocomplete="off" />
+    <button id="loadBtn" class="btn-primary">Load settings</button>
+  </div>
+
+  <div id="msg"></div>
+  <div id="content" style="display:none">
+
+    <!-- BRANDING -->
+    <div class="section">
+      <h2>🎨 Branding</h2>
+      <p class="desc">Shop name, tagline, logo, and top announcement bar.</p>
+      <div class="field-row">
+        <div class="field"><label>Shop Name</label><input id="brandName" /></div>
+        <div class="field"><label>Logo URL</label><input id="brandLogo" placeholder="/logo.png" /></div>
+      </div>
+      <div class="field"><label>Tagline</label><input id="brandTagline" /></div>
+      <div class="field"><label>Top Bar Text</label><input id="brandTopbar" placeholder="Announcement text shown at top of website" /></div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div class="section">
+      <h2>📂 Categories</h2>
+      <p class="desc">Add, remove, or rename menu categories. Key is used internally (no spaces, lowercase).</p>
+      <div id="catList" class="cat-list"></div>
+      <button id="addCatBtn" class="btn-ghost btn-sm">+ Add category</button>
+    </div>
+
+    <!-- CONTACT -->
+    <div class="section">
+      <h2>📞 Contact & Reach Us</h2>
+      <p class="desc">Phone, email, timing, service location shown in footer.</p>
+      <div class="field-row">
+        <div class="field"><label>Phone (with country code)</label><input id="contactPhone" placeholder="+917617555488" /></div>
+        <div class="field"><label>Display Phone</label><input id="contactPhoneDisplay" placeholder="+91 76175 55488" /></div>
+      </div>
+      <div class="field"><label>Email (optional)</label><input id="contactEmail" placeholder="hello@meatpe.in" /></div>
+      <div class="field"><label>Timing / Hours</label><input id="contactTiming" placeholder="8:00 AM – 9:30 PM, all days" /></div>
+      <div class="field"><label>Service Location</label><input id="contactLocation" placeholder="Live now, expanding to all major cities 🚀" /></div>
+    </div>
+
+    <!-- SOCIALS -->
+    <div class="section">
+      <h2>🌐 Social Handles</h2>
+      <p class="desc">Add your social media links. Leave empty to hide from website.</p>
+      <div id="socialList" class="social-list"></div>
+      <button id="addSocialBtn" class="btn-ghost btn-sm">+ Add social link</button>
+    </div>
+
+    <!-- PAGES -->
+    <div class="section">
+      <h2>📝 Page Content</h2>
+      <p class="desc">Edit About Us, Safety, Privacy, Terms text. Shown on /about.html page.</p>
+      <div class="field"><label>About Us</label><textarea id="pageAbout" rows="5"></textarea></div>
+      <div class="field"><label>Safety & Quality</label><textarea id="pageSafety" rows="5"></textarea></div>
+      <div class="field"><label>Privacy Policy</label><textarea id="pagePrivacy" rows="5"></textarea></div>
+      <div class="field"><label>Terms of Service</label><textarea id="pageTerms" rows="5"></textarea></div>
+    </div>
+
+  </div>
+
+  <!-- Sticky save bar -->
+  <div class="save-bar" id="saveBar">
+    <span class="msg">⚠️ You have unsaved changes</span>
+    <button class="btn-green" id="saveBtn">💾 Save all settings</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const keyInput = $('key');
+const content = $('content');
+const msg = $('msg');
+const saveBar = $('saveBar');
+
+let SETTINGS = null;
+let DIRTY = false;
+
+const saved = localStorage.getItem('meatpe_admin_key');
+if (saved) keyInput.value = saved;
+
+$('loadBtn').addEventListener('click', loadSettings);
+keyInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadSettings(); });
+$('saveBtn').addEventListener('click', saveSettings);
+$('addCatBtn').addEventListener('click', () => { addCatRow({ key: '', label: '', icon: '🍽️' }); markDirty(); });
+$('addSocialBtn').addEventListener('click', () => { addSocialRow({ platform: '', handle: '', url: '', icon: '🔗' }); markDirty(); });
+
+if (saved) loadSettings();
+
+function markDirty() { DIRTY = true; saveBar.classList.add('show'); }
+
+async function loadSettings() {
+  msg.innerHTML = '';
+  const key = keyInput.value.trim();
+  if (!key) { msg.innerHTML = '<div class="err">Enter admin key.</div>'; return; }
+  localStorage.setItem('meatpe_admin_key', key);
+  try {
+    const res = await fetch(`/admin/settings?key=${encodeURIComponent(key)}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'failed');
+    SETTINGS = data.settings;
+    render();
+    content.style.display = 'block';
+    DIRTY = false;
+    saveBar.classList.remove('show');
+  } catch (e) {
+    msg.innerHTML = `<div class="err">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function render() {
+  // Branding
+  $('brandName').value = SETTINGS.branding.name || '';
+  $('brandLogo').value = SETTINGS.branding.logo || '';
+  $('brandTagline').value = SETTINGS.branding.tagline || '';
+  $('brandTopbar').value = SETTINGS.branding.topbar || '';
+
+  // Contact
+  $('contactPhone').value = SETTINGS.contact.phone || '';
+  $('contactPhoneDisplay').value = SETTINGS.contact.phoneDisplay || '';
+  $('contactEmail').value = SETTINGS.contact.email || '';
+  $('contactTiming').value = SETTINGS.contact.timing || '';
+  $('contactLocation').value = SETTINGS.contact.location || '';
+
+  // Categories
+  const catList = $('catList');
+  catList.innerHTML = '';
+  (SETTINGS.categories || []).forEach(c => addCatRow(c));
+
+  // Socials
+  const socialList = $('socialList');
+  socialList.innerHTML = '';
+  (SETTINGS.socials || []).forEach(s => addSocialRow(s));
+
+  // Pages
+  $('pageAbout').value = SETTINGS.pages.about || '';
+  $('pageSafety').value = SETTINGS.pages.safety || '';
+  $('pagePrivacy').value = SETTINGS.pages.privacy || '';
+  $('pageTerms').value = SETTINGS.pages.terms || '';
+
+  // Mark dirty on any input change
+  content.querySelectorAll('input, textarea, select').forEach(el => {
+    el.addEventListener('input', markDirty);
+  });
+}
+
+function addCatRow(cat) {
+  const list = $('catList');
+  const row = document.createElement('div');
+  row.className = 'cat-item';
+  row.innerHTML = `
+    <input class="icon-input" value="${escapeHtml(cat.icon || '🍽️')}" maxlength="4" title="Emoji icon" />
+    <input class="key-display" value="${escapeHtml(cat.key || '')}" placeholder="key (e.g. eggs)" title="Internal key (lowercase, no spaces)" />
+    <input class="label-input" value="${escapeHtml(cat.label || '')}" placeholder="Display name" />
+    <button class="remove-cat" title="Remove">×</button>
+  `;
+  row.querySelector('.remove-cat').addEventListener('click', () => { row.remove(); markDirty(); });
+  row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+  list.appendChild(row);
+}
+
+function addSocialRow(s) {
+  const list = $('socialList');
+  const row = document.createElement('div');
+  row.className = 'social-item';
+  row.innerHTML = `
+    <input value="${escapeHtml(s.icon || '🔗')}" maxlength="4" title="Icon emoji" style="text-align:center;font-size:18px" />
+    <input value="${escapeHtml(s.platform || '')}" placeholder="Platform (e.g. instagram)" />
+    <input value="${escapeHtml(s.handle || '')}" placeholder="Handle (e.g. @meatpe)" />
+    <input value="${escapeHtml(s.url || '')}" placeholder="Full URL" />
+    <button class="remove-social" title="Remove">×</button>
+  `;
+  row.querySelector('.remove-social').addEventListener('click', () => { row.remove(); markDirty(); });
+  row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+  list.appendChild(row);
+}
+
+function collectData() {
+  // Branding
+  const branding = {
+    name: $('brandName').value.trim(),
+    logo: $('brandLogo').value.trim(),
+    tagline: $('brandTagline').value.trim(),
+    topbar: $('brandTopbar').value.trim(),
+  };
+
+  // Contact
+  const contact = {
+    phone: $('contactPhone').value.trim(),
+    phoneDisplay: $('contactPhoneDisplay').value.trim(),
+    email: $('contactEmail').value.trim(),
+    timing: $('contactTiming').value.trim(),
+    location: $('contactLocation').value.trim(),
+  };
+
+  // Categories
+  const categories = [];
+  $('catList').querySelectorAll('.cat-item').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const icon = inputs[0].value.trim();
+    const key = inputs[1].value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    const label = inputs[2].value.trim();
+    if (key && label) categories.push({ key, label, icon });
+  });
+
+  // Socials
+  const socials = [];
+  $('socialList').querySelectorAll('.social-item').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const icon = inputs[0].value.trim();
+    const platform = inputs[1].value.trim().toLowerCase();
+    const handle = inputs[2].value.trim();
+    const url = inputs[3].value.trim();
+    if (platform && url) socials.push({ icon, platform, handle, url });
+  });
+
+  // Pages
+  const pages = {
+    about: $('pageAbout').value.trim(),
+    safety: $('pageSafety').value.trim(),
+    privacy: $('pagePrivacy').value.trim(),
+    terms: $('pageTerms').value.trim(),
+  };
+
+  return { branding, contact, categories, socials, pages };
+}
+
+async function saveSettings() {
+  const key = keyInput.value.trim();
+  const payload = collectData();
+  $('saveBtn').disabled = true;
+  $('saveBtn').textContent = 'Saving...';
+  try {
+    const res = await fetch(`/admin/settings?key=${encodeURIComponent(key)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'save failed');
+    SETTINGS = data.settings;
+    DIRTY = false;
+    saveBar.classList.remove('show');
+    toast('✅ Settings saved! Refresh website to see changes.', 'success');
+  } catch (e) {
+    toast('❌ ' + (e.message || 'Save failed'), 'error');
+  } finally {
+    $('saveBtn').disabled = false;
+    $('saveBtn').textContent = '💾 Save all settings';
+  }
+}
+
+// Warn before leaving with unsaved changes
+window.addEventListener('beforeunload', (e) => {
+  if (DIRTY) { e.preventDefault(); e.returnValue = ''; }
+});
+
+let toastTimer;
+function toast(text, type = '') {
+  const el = $('toast');
+  el.textContent = text;
+  el.className = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>

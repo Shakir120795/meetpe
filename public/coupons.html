@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MeatPe Admin — Coupons</title>
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #d62828; --green: #16a34a; --orange: #f77f00;
+      --blue: #2563eb; --gray: #6b7280; --light: #f3f4f6;
+      --border: #e5e7eb; --dark: #1a1a1a;
+    }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--light); color: var(--dark); padding: 20px; }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    h1 { font-size: 24px; margin-bottom: 6px; display: flex; align-items: center; gap: 12px; }
+    h1 img { height: 36px; }
+    .sub { color: var(--gray); margin-bottom: 18px; }
+    .nav-links { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .nav-links a {
+      padding: 8px 14px; background: white; border-radius: 8px; color: var(--gray);
+      text-decoration: none; font-size: 13px; font-weight: 600; border: 1px solid var(--border);
+    }
+    .nav-links a:hover { color: var(--primary); border-color: var(--primary); }
+    .nav-links a.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .key-bar {
+      background: white; padding: 14px 16px; border-radius: 12px; margin-bottom: 18px;
+      display: flex; gap: 10px; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.04); flex-wrap: wrap;
+    }
+    .key-bar label { font-weight: 600; font-size: 14px; }
+    .key-bar input {
+      flex: 1; min-width: 200px; padding: 9px 12px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; font-family: monospace;
+    }
+    .key-bar button { padding: 9px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; border: none; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-add { background: var(--green); color: white; }
+    .btn-edit { background: var(--blue); color: white; }
+    .btn-delete { background: #ef4444; color: white; }
+    .btn-ghost { background: transparent; color: var(--gray); border: 1px solid var(--border); }
+
+    .grid {
+      display: grid; gap: 14px;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    }
+    .card {
+      background: white; padding: 18px; border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+      border-left: 4px solid var(--gray);
+    }
+    .card.active { border-left-color: var(--green); }
+    .card.inactive { opacity: .6; border-left-color: var(--gray); }
+    .card.expired { opacity: .55; border-left-color: #ef4444; }
+    .card .head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .card .code-tag {
+      font-family: monospace; font-weight: 800; font-size: 16px;
+      background: var(--primary); color: white;
+      padding: 6px 12px; border-radius: 6px;
+      letter-spacing: .5px;
+    }
+    .card .badge {
+      font-size: 11px; font-weight: 700; padding: 4px 9px;
+      border-radius: 999px; text-transform: uppercase; letter-spacing: .5px;
+    }
+    .card .badge.active   { background: #dcfce7; color: #14532d; }
+    .card .badge.inactive { background: #f3f4f6; color: #6b7280; }
+    .card .badge.expired  { background: #fee2e2; color: #991b1b; }
+    .card .value {
+      font-size: 28px; font-weight: 800; color: var(--primary); margin: 6px 0;
+    }
+    .card .desc { font-size: 13px; color: var(--gray); margin-bottom: 8px; }
+    .card .meta { font-size: 12px; color: var(--gray); margin-bottom: 14px; }
+    .card .meta div { padding: 2px 0; }
+    .card .actions { display: flex; gap: 6px; }
+    .card .actions button {
+      flex: 1; padding: 7px 12px; border-radius: 6px; border: none;
+      cursor: pointer; font-size: 12px; font-weight: 600;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.6);
+      z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: white; border-radius: 12px; padding: 26px;
+      max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative;
+    }
+    .modal h3 { font-size: 22px; margin-bottom: 4px; }
+    .modal-sub { color: var(--gray); font-size: 13px; margin-bottom: 18px; }
+    .modal-close {
+      position: absolute; top: 14px; right: 14px;
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--light); border: none; font-size: 18px; cursor: pointer;
+    }
+    .modal label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 5px; }
+    .modal input, .modal select, .modal textarea {
+      width: 100%; padding: 10px 12px; font-size: 14px;
+      border: 1px solid var(--border); border-radius: 8px; font-family: inherit;
+    }
+    .modal input[readonly] { background: var(--light); }
+    .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+    .modal-actions button { flex: 1; padding: 11px 16px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; font-size: 14px; }
+    .err { background: #fee; color: #b91c1c; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 13px; }
+    .toast {
+      position: fixed; bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--dark); color: white; padding: 12px 20px; border-radius: 10px;
+      font-size: 14px; font-weight: 500; z-index: 200;
+      opacity: 0; pointer-events: none; transition: all .25s;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { background: #16a34a; }
+    .toast.error { background: #dc2626; }
+    .switch {
+      display: inline-flex; align-items: center; gap: 8px;
+      cursor: pointer;
+    }
+    .switch input { display: none; }
+    .switch .track {
+      width: 42px; height: 24px; border-radius: 999px;
+      background: #d1d5db; position: relative; transition: background .2s;
+    }
+    .switch .track::after {
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 18px; height: 18px; background: white; border-radius: 50%;
+      transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+    .switch input:checked + .track { background: var(--green); }
+    .switch input:checked + .track::after { left: 21px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1><img src="/logo.png" alt="MeatPe" />Coupons</h1>
+  <p class="sub">Create discount codes (₹ flat or % off). Customers apply at checkout.</p>
+
+  <div class="nav-links">
+    <a href="/admin.html">📦 Stock</a>
+    <a href="/orders.html">📋 Orders</a>
+    <a href="/items.html">🍗 Items</a>
+    <a href="/coupons.html" class="active">🏷️ Coupons</a>
+    <a href="/settings.html">⚙️ Settings</a>
+    <a href="/" target="_blank">🌐 View Site</a>
+  </div>
+
+  <div class="key-bar">
+    <label>Admin key:</label>
+    <input id="key" type="password" placeholder="Enter ADMIN_KEY" autocomplete="off" />
+    <button id="loadBtn" class="btn-primary">Load coupons</button>
+    <button id="addBtn" class="btn-add" style="display:none">+ Add new coupon</button>
+  </div>
+
+  <div id="msg"></div>
+  <div id="content"></div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">×</button>
+    <h3 id="modalTitle">Add coupon</h3>
+    <p class="modal-sub">Customers will use this code at website checkout.</p>
+    <div id="formErr"></div>
+    <form id="couponForm">
+      <label>Code *</label>
+      <input name="code" id="codeInput" placeholder="e.g. WELCOME50" maxlength="20" required style="text-transform:uppercase;letter-spacing:1px;font-weight:600" />
+
+      <div class="modal-row">
+        <div>
+          <label>Discount Type *</label>
+          <select name="type" id="typeInput" required>
+            <option value="flat">₹ Flat off</option>
+            <option value="percent">% Percent off</option>
+          </select>
+        </div>
+        <div>
+          <label>Value *</label>
+          <input name="value" id="valueInput" type="number" min="1" required />
+        </div>
+      </div>
+
+      <div class="modal-row">
+        <div>
+          <label>Min order (₹)</label>
+          <input name="minOrder" id="minOrderInput" type="number" min="0" placeholder="0" />
+        </div>
+        <div>
+          <label>Max discount (₹) <small style="color:var(--gray);font-weight:400">(percent only)</small></label>
+          <input name="maxDiscount" id="maxDiscountInput" type="number" min="0" placeholder="optional" />
+        </div>
+      </div>
+
+      <label>Description</label>
+      <input name="description" id="descInput" placeholder="Visible to customers" maxlength="200" />
+
+      <label>Expires on (optional)</label>
+      <input name="expiresAt" id="expiresInput" type="date" />
+
+      <label class="switch" style="margin-top:14px">
+        <input type="checkbox" id="activeInput" checked />
+        <span class="track"></span>
+        <span style="font-size:14px;font-weight:600">Active</span>
+      </label>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn-primary" id="submitBtn">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const keyInput = $('key');
+const content = $('content');
+const msg = $('msg');
+
+let COUPONS = [];
+let EDITING = null;
+
+const saved = localStorage.getItem('meatpe_admin_key');
+if (saved) keyInput.value = saved;
+
+$('loadBtn').addEventListener('click', () => loadCoupons());
+keyInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadCoupons(); });
+$('addBtn').addEventListener('click', () => openModal(null));
+$('modalClose').addEventListener('click', closeModal);
+$('cancelBtn').addEventListener('click', closeModal);
+$('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+$('couponForm').addEventListener('submit', e => { e.preventDefault(); submitCoupon(); });
+
+if (saved) loadCoupons();
+
+async function loadCoupons() {
+  msg.innerHTML = '';
+  const key = keyInput.value.trim();
+  if (!key) { msg.innerHTML = '<div class="err">Enter admin key.</div>'; return; }
+  localStorage.setItem('meatpe_admin_key', key);
+  try {
+    const res = await fetch(`/admin/coupons?key=${encodeURIComponent(key)}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'failed');
+    COUPONS = data.coupons || [];
+    $('addBtn').style.display = 'inline-block';
+    render();
+  } catch (e) { msg.innerHTML = `<div class="err">${escapeHtml(e.message)}</div>`; }
+}
+
+function statusOf(c) {
+  if (!c.active) return 'inactive';
+  if (c.expiresAt && new Date(c.expiresAt) < new Date()) return 'expired';
+  return 'active';
+}
+
+function render() {
+  if (!COUPONS.length) {
+    content.innerHTML = `<div style="background:white;padding:60px;text-align:center;border-radius:12px;color:#888">
+      <div style="font-size:48px;margin-bottom:8px">🏷️</div>
+      <p>No coupons yet. Click <strong>+ Add new coupon</strong> to create your first.</p>
+    </div>`;
+    return;
+  }
+  let html = '<div class="grid">';
+  for (const c of COUPONS) {
+    const st = statusOf(c);
+    const valLabel = c.type === 'percent' ? `${c.value}%` : `₹${c.value}`;
+    html += `
+      <div class="card ${st}">
+        <div class="head">
+          <span class="code-tag">${escapeHtml(c.code)}</span>
+          <span class="badge ${st}">${st}</span>
+        </div>
+        <div class="value">${valLabel} off</div>
+        <div class="desc">${escapeHtml(c.description || (c.type === 'percent' ? `${c.value}% off` : `₹${c.value} flat off`))}</div>
+        <div class="meta">
+          ${c.minOrder ? `<div>📦 Min order: ₹${c.minOrder}</div>` : ''}
+          ${c.maxDiscount ? `<div>🔒 Max discount: ₹${c.maxDiscount}</div>` : ''}
+          ${c.expiresAt ? `<div>⏳ Expires: ${c.expiresAt.split('T')[0]}</div>` : '<div>♾️ No expiry</div>'}
+        </div>
+        <div class="actions">
+          <button class="btn-edit" data-act="edit" data-code="${escapeHtml(c.code)}">✏️ Edit</button>
+          <button class="btn-delete" data-act="del" data-code="${escapeHtml(c.code)}">🗑️</button>
+        </div>
+      </div>`;
+  }
+  html += '</div>';
+  content.innerHTML = html;
+  content.querySelectorAll('[data-act="edit"]').forEach(b =>
+    b.addEventListener('click', () => openModal(COUPONS.find(c => c.code === b.dataset.code))));
+  content.querySelectorAll('[data-act="del"]').forEach(b =>
+    b.addEventListener('click', () => deleteCoupon(b.dataset.code)));
+}
+
+function openModal(coupon) {
+  $('formErr').innerHTML = '';
+  EDITING = coupon || null;
+  if (coupon) {
+    $('modalTitle').textContent = `Edit: ${coupon.code}`;
+    $('codeInput').value = coupon.code;
+    $('codeInput').readOnly = true;
+    $('typeInput').value = coupon.type;
+    $('valueInput').value = coupon.value;
+    $('minOrderInput').value = coupon.minOrder || 0;
+    $('maxDiscountInput').value = coupon.maxDiscount || '';
+    $('descInput').value = coupon.description || '';
+    $('expiresInput').value = coupon.expiresAt ? coupon.expiresAt.split('T')[0] : '';
+    $('activeInput').checked = !!coupon.active;
+  } else {
+    $('modalTitle').textContent = 'Add coupon';
+    $('codeInput').readOnly = false;
+    $('couponForm').reset();
+    $('activeInput').checked = true;
+    $('typeInput').value = 'flat';
+  }
+  $('modal').classList.add('open');
+  setTimeout(() => $('codeInput').focus(), 100);
+}
+
+function closeModal() { $('modal').classList.remove('open'); EDITING = null; }
+
+async function submitCoupon() {
+  $('formErr').innerHTML = '';
+  const key = keyInput.value.trim();
+  const payload = {
+    code: $('codeInput').value.trim().toUpperCase(),
+    type: $('typeInput').value,
+    value: parseInt($('valueInput').value, 10),
+    minOrder: $('minOrderInput').value ? parseInt($('minOrderInput').value, 10) : 0,
+    maxDiscount: $('maxDiscountInput').value ? parseInt($('maxDiscountInput').value, 10) : null,
+    description: $('descInput').value.trim(),
+    expiresAt: $('expiresInput').value || null,
+    active: $('activeInput').checked,
+  };
+  $('submitBtn').disabled = true;
+  try {
+    const url = EDITING
+      ? `/admin/coupons/${EDITING.code}?key=${encodeURIComponent(key)}`
+      : `/admin/coupons?key=${encodeURIComponent(key)}`;
+    const res = await fetch(url, {
+      method: EDITING ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      $('formErr').innerHTML = `<div class="err">${escapeHtml(data.error || 'failed')}</div>`;
+      return;
+    }
+    closeModal();
+    toast(EDITING ? `Updated: ${data.item.code}` : `Added: ${data.item.code}`, 'success');
+    await loadCoupons();
+  } catch (e) {
+    $('formErr').innerHTML = `<div class="err">${escapeHtml(e.message)}</div>`;
+  } finally {
+    $('submitBtn').disabled = false;
+  }
+}
+
+async function deleteCoupon(code) {
+  if (!confirm(`Delete coupon "${code}" permanently?`)) return;
+  const key = keyInput.value.trim();
+  try {
+    const res = await fetch(`/admin/coupons/${code}?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'failed');
+    toast(`Deleted: ${code}`, 'success');
+    await loadCoupons();
+  } catch (e) { toast(e.message || 'Delete failed', 'error'); }
+}
+
+let toastTimer;
+function toast(text, type='') {
+  const el = $('toast');
+  el.textContent = text;
+  el.className = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>

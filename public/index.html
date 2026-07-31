@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MeatPe — Fresh Meat in 30 Minutes | Agra</title>
+  <meta name="description" content="Premium fresh chicken, mutton & fish delivered in 30 minutes across Agra. Cleaned, cut, and ready. Order on WhatsApp." />
+  <meta property="og:title" content="MeatPe — Fresh Meat in 30 Minutes" />
+  <meta property="og:description" content="Taaza, Tezz, Trusted. Chicken, mutton & fish home delivery in Agra." />
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <link rel="apple-touch-icon" href="/logo.png" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<!-- ===== Top bar ===== -->
+<div class="topbar">
+  <span>🚚 Free delivery on orders ₹699+ • 30-min delivery in Agra</span>
+</div>
+
+<!-- ===== Header ===== -->
+<header class="header">
+  <div class="container header-inner">
+    <a href="/" class="logo">
+      <img src="/logo.png" alt="MeatPe" class="logo-img" />
+    </a>
+    <nav class="nav">
+      <a href="#menu">Menu</a>
+      <a href="#packs">Combos</a>
+      <a href="#plus">Plus</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <div class="header-actions">
+      <a href="tel:+917617555488" class="header-icon" aria-label="Call us" title="Call now">📞</a>
+      <button class="header-icon header-cart" id="headerCart" aria-label="Open cart" title="Cart">
+        🛒<span class="header-cart-badge" id="headerCartBadge" style="display:none">0</span>
+      </button>
+      <a href="#" class="btn btn-primary btn-sm wa-btn" data-msg="hi">
+        <span>💬</span> WhatsApp
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- ===== Hero ===== -->
+<section class="hero">
+  <div class="container hero-inner">
+    <div class="hero-text">
+      <span class="badge">⚡ Fresh • Fast • Trusted</span>
+      <h1>Fresh Meat in <span class="hl">30 Minutes</span></h1>
+      <p class="tagline">Taaza, Tezz, Trusted — direct from our kitchen to your kitchen.</p>
+      <p class="lead">Premium chicken, mutton & fish. Hygienically cleaned, expertly cut, delivered hot-fresh across Agra.</p>
+      <div class="hero-ctas">
+        <a href="#menu" class="btn btn-primary btn-lg">
+          <span>🛒</span> Browse Menu
+        </a>
+        <a href="#" class="btn btn-ghost btn-lg wa-btn" data-msg="hi">
+          <span>💬</span> WhatsApp
+        </a>
+        <a href="tel:+917617555488" class="btn btn-ghost btn-lg">
+          <span>📞</span> Call Now
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div><strong>30 min</strong><span>Delivery</span></div>
+        <div><strong>100%</strong><span>Fresh Daily</span></div>
+        <div><strong>Free</strong><span>Cleaning + Cutting</span></div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-card">
+        <div class="hero-card-visual cat-chicken"><span class="hero-emoji">🐔</span></div>
+        <div class="hero-card-info">
+          <div class="hero-price">₹260<small>/kg</small></div>
+          <div class="hero-label">Premium Chicken</div>
+        </div>
+      </div>
+      <div class="hero-card hero-card-2">
+        <div class="hero-card-visual cat-mutton"><span class="hero-emoji">🐐</span></div>
+        <div class="hero-card-info">
+          <div class="hero-price">₹800<small>/kg</small></div>
+          <div class="hero-label">Premium Mutton</div>
+        </div>
+      </div>
+      <div class="hero-card hero-card-3">
+        <div class="hero-card-visual cat-fish"><span class="hero-emoji">🐟</span></div>
+        <div class="hero-card-info">
+          <div class="hero-price">₹280<small>/kg</small></div>
+          <div class="hero-label">Fresh Rohu</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Why MeatPe ===== -->
+<section class="why">
+  <div class="container">
+    <div class="why-grid">
+      <div class="why-item"><div class="why-icon">⚡</div><h3>30-Min Delivery</h3><p>Order placed, meat at your door in 30 minutes flat.</p></div>
+      <div class="why-item"><div class="why-icon">✂️</div><h3>Cleaned + Cut Free</h3><p>Tell us how you want it. Curry cut, boneless, keema — sab free.</p></div>
+      <div class="why-item"><div class="why-icon">❄️</div><h3>Daily Fresh</h3><p>Sourced same day. No frozen, no stale, no compromise.</p></div>
+      <div class="why-item"><div class="why-icon">💰</div><h3>MeatPe Cash</h3><p>Order ₹500+ and earn ₹30 cashback on next order.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Menu ===== -->
+<section id="menu" class="section menu-section">
+  <div class="container">
+    <div class="section-head">
+      <h2>Our Menu</h2>
+      <p>Premium quality. Honest prices. Cleaned + cut included.</p>
+    </div>
+
+    <div class="cat-tabs" id="catTabs">
+      <button class="cat-tab active" data-cat="chicken">🐔 Chicken</button>
+      <button class="cat-tab" data-cat="mutton">🐐 Mutton</button>
+      <button class="cat-tab" data-cat="fish">🐟 Fish</button>
+      <button class="cat-tab" data-cat="ready_to_cook">🔥 Ready to Cook</button>
+      <button class="cat-tab" data-cat="family_pack">👨‍👩‍👧 Combos</button>
+    </div>
+
+    <div id="menuGrid" class="menu-grid"><!-- items injected by JS --></div>
+  </div>
+</section>
+
+<!-- ===== Combos / Packs banner ===== -->
+<section id="packs" class="combo-banner">
+  <div class="container combo-inner">
+    <div>
+      <span class="badge badge-light">🎉 Weekend Special</span>
+      <h2>Party Pack — 3kg Mixed Combo</h2>
+      <p>Chicken + Mutton, cleaned + cut, family-size. Perfect for weekend cooking.</p>
+      <div class="combo-price"><span class="strike">₹2499</span> ₹2199</div>
+      <a href="#" class="btn btn-white btn-lg wa-btn" data-msg="add P3 1">
+        Order Party Pack 💬
+      </a>
+    </div>
+    <div class="combo-emoji">🍗🥩🍖</div>
+  </div>
+</section>
+
+<!-- ===== Delivery + Rewards ===== -->
+<section class="section">
+  <div class="container info-grid">
+    <div class="info-card">
+      <h3>🚚 Delivery Charges</h3>
+      <ul class="clean-list">
+        <li>Orders below ₹399 — <strong>₹29</strong></li>
+        <li>Orders ₹399 to ₹699 — <strong>₹19</strong></li>
+        <li>Orders above ₹699 — <strong>FREE</strong></li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>🎁 MeatPe Cash Rewards</h3>
+      <ul class="clean-list">
+        <li>Order ₹500+ → Get <strong>₹30 cashback</strong></li>
+        <li>Valid for 15 days</li>
+        <li>Auto-applies on next order</li>
+        <li>One reward per order</li>
+      </ul>
+    </div>
+    <div id="plus" class="info-card info-card-plus">
+      <h3>💎 MeatPe Plus — ₹99/month</h3>
+      <ul class="clean-list">
+        <li>✅ Unlimited <strong>FREE</strong> delivery</li>
+        <li>✅ Priority order slots</li>
+        <li>✅ Member-only offers</li>
+        <li>✅ Special weekend deals</li>
+      </ul>
+      <a href="#" class="btn btn-primary wa-btn" data-msg="plus join">Join Plus 💎</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== How to order ===== -->
+<section class="section how">
+  <div class="container">
+    <div class="section-head"><h2>How to Order</h2><p>3 steps. 30 minutes. Done.</p></div>
+    <div class="how-grid">
+      <div class="how-step"><div class="how-num">1</div><h3>WhatsApp Us</h3><p>Send "hi" on WhatsApp. Browse the live menu.</p></div>
+      <div class="how-step"><div class="how-num">2</div><h3>Add to Cart</h3><p>Pick items, share your address, confirm order.</p></div>
+      <div class="how-step"><div class="how-num">3</div><h3>Receive Fresh</h3><p>Cleaned, cut, delivered in 30 minutes.</p></div>
+    </div>
+    <div class="center">
+      <a href="#" class="btn btn-primary btn-lg wa-btn" data-msg="hi">Start Order on WhatsApp 💬</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Footer ===== -->
+<footer id="contact" class="footer">
+  <div class="container footer-inner">
+    <div>
+      <div class="logo logo-light">
+        <img src="/logo.png" alt="MeatPe" class="logo-img logo-img-footer" />
+      </div>
+      <p class="muted">Fresh meat in 30 minutes. Premium quality, doorstep delivery.</p>
+      <!-- Social handles will be added once accounts are live
+      <div class="socials">
+        <a href="https://instagram.com/meatpe" target="_blank" rel="noopener" class="social"><span>📷</span> Instagram</a>
+        <a href="https://facebook.com/meatpe" target="_blank" rel="noopener" class="social"><span>👍</span> Facebook</a>
+        <a href="https://linkedin.com/company/meatpe" target="_blank" rel="noopener" class="social"><span>💼</span> LinkedIn</a>
+        <a href="https://youtube.com/@meatpe" target="_blank" rel="noopener" class="social"><span>▶️</span> YouTube</a>
+      </div>
+      -->
+    </div>
+    <div>
+      <h4>Quick Links</h4>
+      <p><a href="/" class="muted-link">Home</a></p>
+      <p><a href="/#menu" class="muted-link">Menu</a></p>
+      <p><a href="/#packs" class="muted-link">Combo Packs</a></p>
+      <p><a href="/#plus" class="muted-link">MeatPe Plus</a></p>
+    </div>
+    <div>
+      <h4>Company</h4>
+      <p><a href="/about.html" class="muted-link">About Us</a></p>
+      <p><a href="/about.html#safety" class="muted-link">Safety & Quality</a></p>
+      <p><a href="/about.html#privacy" class="muted-link">Privacy Policy</a></p>
+      <p><a href="/about.html#terms" class="muted-link">Terms of Use</a></p>
+    </div>
+    <div>
+      <h4>Reach Us</h4>
+      <p>📞 <a href="tel:+917617555488" class="muted-link">+91 76175 55488</a></p>
+      <p>💬 <a href="#" class="muted-link wa-btn" data-msg="hi">WhatsApp Order</a></p>
+      <p class="muted" style="margin-top:10px"><strong>Hours:</strong> 8:00 AM – 9:30 PM, all days</p>
+      <p class="muted"><strong>Service:</strong> Live now, expanding to all major cities 🚀</p>
+    </div>
+  </div>
+  <div class="copyright">
+    © <span id="yr"></span> MeatPe. All rights reserved. •
+    <a href="/about.html#privacy" class="muted-link">Privacy</a> •
+    <a href="/about.html#terms" class="muted-link">Terms</a>
+  </div>
+</footer>
+
+<!-- ===== Floating WA button ===== -->
+<a href="#" class="fab fab-wa wa-btn" data-msg="hi" aria-label="Order on WhatsApp">
+  <span class="fab-icon">💬</span>
+  <span class="fab-text">WhatsApp</span>
+</a>
+
+<!-- ===== Floating Cart button ===== -->
+<button class="fab fab-cart" id="cartBtn" aria-label="Open cart">
+  <span class="fab-icon">🛒</span>
+  <span class="fab-text">Cart</span>
+  <span class="cart-badge" id="cartBadge" style="display:none">0</span>
+</button>
+
+<!-- ===== Cart Drawer ===== -->
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<aside class="drawer" id="cartDrawer" aria-hidden="true">
+  <div class="drawer-head">
+    <h3>🛒 Your Cart</h3>
+    <button class="drawer-close" id="drawerClose" aria-label="Close">×</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"><!-- cart items --></div>
+  <div class="drawer-foot" id="drawerFoot"><!-- totals + checkout --></div>
+</aside>
+
+<!-- ===== Checkout Modal ===== -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <button class="modal-close" id="modalClose" aria-label="Close">×</button>
+    <h3>Place Your Order</h3>
+    <p class="modal-sub">Fill below and we'll deliver in 30 minutes 🚚</p>
+    <form id="checkoutForm" novalidate>
+      <label>Name *</label>
+      <input name="name" required placeholder="Your name" />
+      <label>Phone *</label>
+      <input name="phone" required pattern="[0-9]{10}" placeholder="10-digit mobile number" />
+      <label>Delivery Address *</label>
+      <textarea name="address" required rows="3" placeholder="House no, street, area, landmark, pincode"></textarea>
+
+      <label>Coupon Code <span style="color:var(--gray);font-weight:400">(optional)</span></label>
+      <div class="coupon-row">
+        <input name="coupon" id="couponInput" placeholder="e.g. WELCOME50" autocomplete="off" />
+        <button type="button" id="applyCouponBtn" class="btn btn-ghost">Apply</button>
+      </div>
+      <div id="couponMsg" class="coupon-msg"></div>
+      <details class="coupon-hint">
+        <summary>🏷️ View available offers</summary>
+        <div id="couponList" class="coupon-list">Loading...</div>
+      </details>
+
+      <label>Payment</label>
+      <div class="radio-group">
+        <label class="radio">
+          <input type="radio" name="payment" value="cod" checked />
+          <span>💵 Pay on Delivery <small>(Cash / UPI)</small></span>
+        </label>
+        <label class="radio">
+          <input type="radio" name="payment" value="pay_online" />
+          <span>📱 Pay Online via UPI <small>(after order)</small></span>
+        </label>
+      </div>
+      <label>Notes (optional)</label>
+      <input name="notes" placeholder="Cleaning, cutting preference, etc." />
+      <div class="modal-summary" id="modalSummary"></div>
+      <button type="submit" class="btn btn-primary btn-lg modal-submit" id="submitBtn">
+        <span>Place Order</span>
+      </button>
+      <p class="modal-or">Or send us this order on WhatsApp:</p>
+      <button type="button" class="btn btn-ghost modal-wa" id="modalWa">💬 Send via WhatsApp</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== Order Success Toast ===== -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== Support Chat Widget ===== -->
+<div class="support-widget" id="supportWidget">
+  <button class="support-fab" id="supportFab" aria-label="Need help? Chat with us">
+    <span class="support-icon">💬</span>
+    <span class="support-text">Need Help?</span>
+    <span class="support-dot"></span>
+  </button>
+
+  <div class="support-panel" id="supportPanel" aria-hidden="true">
+    <div class="support-head">
+      <div class="support-avatar">🥩</div>
+      <div>
+        <div class="support-title">MeatPe Support</div>
+        <div class="support-status"><span class="dot-online"></span> Usually replies in a few minutes</div>
+      </div>
+      <button class="support-close" id="supportClose" aria-label="Close">×</button>
+    </div>
+
+    <div class="support-body">
+      <p class="support-intro">Hi! 👋 How can we help you today?</p>
+
+      <div class="support-quick">
+        <button class="quick-btn wa-help" data-msg="Hi MeatPe! 📹 I'd like a video call to see the meat / shop before ordering. Are you available now?">
+          📹 <span><strong>Video Call Request</strong><small>See meat / shop live</small></span>
+        </button>
+        <button class="quick-btn wa-help" data-msg="Hi! I want to check the status of my order. Order #">
+          📦 <span><strong>Order Status</strong><small>Where is my order?</small></span>
+        </button>
+        <button class="quick-btn wa-help" data-msg="Hi! I have a delivery issue with my order. Order #">
+          🛵 <span><strong>Delivery Issue</strong><small>Late, missing, wrong address</small></span>
+        </button>
+        <button class="quick-btn wa-help" data-msg="Hi! I have a complaint about quality / freshness of my order. Order #">
+          ⚠️ <span><strong>Quality Complaint</strong><small>Item not fresh / damaged</small></span>
+        </button>
+        <button class="quick-btn wa-help" data-msg="Hi! I want to cancel my order. Order #">
+          ❌ <span><strong>Cancel Order</strong><small>Cancel a placed order</small></span>
+        </button>
+        <button class="quick-btn wa-help" data-msg="Hi! I have a question about a product / coupon / membership.">
+          ❓ <span><strong>General Question</strong><small>Pricing, coupon, Plus etc.</small></span>
+        </button>
+        <button class="quick-btn wa-help" data-msg="Hi! I want to give feedback / suggestion about MeatPe.">
+          💡 <span><strong>Feedback / Suggestion</strong><small>Share what you think</small></span>
+        </button>
+      </div>
+
+      <div class="support-divider"><span>or contact directly</span></div>
+
+      <div class="support-actions">
+        <a href="tel:+917617555488" class="support-action call">
+          <span class="ic">📞</span>
+          <span>
+            <strong>Call us</strong>
+            <small>+91 76175 55488</small>
+          </span>
+        </a>
+        <a href="https://wa.me/917617555488?text=Hi%20MeatPe%2C%20I%20need%20help" target="_blank" class="support-action wa">
+          <span class="ic">💬</span>
+          <span>
+            <strong>WhatsApp Chat</strong>
+            <small>Live support 8AM–9:30PM</small>
+          </span>
+        </a>
+        <a href="https://wa.me/917617555488?text=Hi%20MeatPe%21%20%F0%9F%93%B9%20Please%20start%20a%20video%20call%20with%20me%20when%20available." target="_blank" class="support-action video">
+          <span class="ic">📹</span>
+          <span>
+            <strong>Video Call (via WhatsApp)</strong>
+            <small>See the meat live before order</small>
+          </span>
+        </a>
+      </div>
+    </div>
+
+    <div class="support-foot">
+      Powered by <strong>MeatPe</strong> Support 🥩
+    </div>
+  </div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: meatpe-bot
+    env: node
+    plan: free
+    region: singapore
+    buildCommand: npm install
+    startCommand: node src/server.js
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: PORT
+        value: 10000
+      - key: SHOP_NAME
+        value: MeatPe
+      - key: TAGLINE
+        value: Fresh Meat in 30 Minutes — Taaza, Tezz, Trusted
+      - key: DB_PATH
+        value: /tmp/meatpe.db
+      # Set the rest in Render dashboard (Twilio + Instagram secrets):
+      # TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM
+      # IG_USER_ID, IG_ACCESS_TOKEN, IG_VERIFY_TOKEN, ADMIN_KEY
+      # ADMIN_WHATSAPP

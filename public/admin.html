@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MeatPe Admin — Stock Manager</title>
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f3f4f6; color: #1a1a1a; padding: 24px;
+    }
+    .wrap { max-width: 900px; margin: 0 auto; }
+    h1 { font-size: 26px; margin-bottom: 6px; }
+    h1 span { color: #d62828; }
+    .sub { color: #6b7280; margin-bottom: 24px; }
+    .key-bar {
+      background: white; padding: 16px; border-radius: 12px; margin-bottom: 20px;
+      display: flex; gap: 10px; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+    .key-bar label { font-weight: 600; }
+    .key-bar input {
+      flex: 1; padding: 10px 14px; border: 1px solid #e5e7eb;
+      border-radius: 8px; font-size: 14px; font-family: monospace;
+    }
+    .key-bar button {
+      background: #d62828; color: white; border: none; padding: 10px 18px;
+      border-radius: 8px; font-weight: 600; cursor: pointer;
+    }
+    .stat {
+      background: white; padding: 14px 18px; border-radius: 10px;
+      margin-bottom: 16px; display: flex; gap: 24px;
+    }
+    .stat strong { color: #d62828; font-size: 18px; }
+    .cat-section {
+      background: white; padding: 18px 20px; border-radius: 12px;
+      margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    .cat-title {
+      font-size: 16px; font-weight: 700; margin-bottom: 10px; padding-bottom: 8px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .row {
+      display: flex; align-items: center; padding: 10px 0; gap: 12px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .row:last-child { border: none; }
+    .row .code {
+      font-family: monospace; background: #f3f4f6;
+      padding: 3px 8px; border-radius: 4px; font-size: 12px;
+      min-width: 38px; text-align: center;
+    }
+    .row .name { flex: 1; font-size: 14px; }
+    .row .price { color: #d62828; font-weight: 700; min-width: 70px; text-align: right; }
+    .toggle {
+      position: relative; width: 50px; height: 28px;
+      background: #25d366; border-radius: 999px; cursor: pointer;
+      transition: background .2s; flex-shrink: 0;
+    }
+    .toggle::after {
+      content: ''; position: absolute; top: 3px; left: 25px;
+      width: 22px; height: 22px; background: white;
+      border-radius: 50%; transition: left .2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,.2);
+    }
+    .toggle.off { background: #d1d5db; }
+    .toggle.off::after { left: 3px; }
+    .row.oos { opacity: .55; }
+    .row.oos .name { text-decoration: line-through; }
+    .saving { color: #f77f00; font-size: 12px; margin-left: 6px; }
+    .err { background: #fee; color: #b91c1c; padding: 12px; border-radius: 8px; margin-bottom: 14px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1><img src="/logo.png" alt="MeatPe" style="height:42px;vertical-align:middle;margin-right:8px"/>Admin Panel</h1>
+  <p class="sub">Toggle items in/out of stock. Changes apply instantly to website + WhatsApp bot.</p>
+
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <a href="/admin.html" style="padding:8px 14px;background:#d62828;color:white;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600">📦 Stock</a>
+    <a href="/orders.html" style="padding:8px 14px;background:white;color:#6b7280;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📋 Orders</a>
+    <a href="/items.html" style="padding:8px 14px;background:white;color:#6b7280;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🍗 Items</a>
+    <a href="/coupons.html" style="padding:8px 14px;background:white;color:#6b7280;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🏷️ Coupons</a>
+    <a href="/settings.html" style="padding:8px 14px;background:white;color:#6b7280;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">⚙️ Settings</a>
+    <a href="/" target="_blank" style="padding:8px 14px;background:white;color:#6b7280;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🌐 View Site</a>
+  </div>
+
+  <div class="key-bar">
+    <label>Admin key:</label>
+    <input id="key" type="password" placeholder="Enter ADMIN_KEY from .env" autocomplete="off" />
+    <button id="loadBtn">Load items</button>
+  </div>
+
+  <div id="msg"></div>
+  <div id="content"></div>
+</div>
+
+<script>
+const CATEGORIES = {
+  chicken: '🐔 Fresh Chicken',
+  mutton: '🐐 Fresh Mutton',
+  fish: '🐟 Fresh Fish',
+  ready_to_cook: '🔥 Ready to Cook',
+  family_pack: '👨‍👩‍👧 Family / Combo Packs',
+};
+
+const $ = (id) => document.getElementById(id);
+const keyInput = $('key');
+const content = $('content');
+const msg = $('msg');
+
+// Restore key from localStorage
+const saved = localStorage.getItem('meatpe_admin_key');
+if (saved) keyInput.value = saved;
+
+$('loadBtn').addEventListener('click', loadMenu);
+keyInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadMenu(); });
+if (saved) loadMenu();
+
+async function loadMenu() {
+  msg.innerHTML = '';
+  const key = keyInput.value.trim();
+  if (!key) { msg.innerHTML = '<div class="err">Enter your admin key first.</div>'; return; }
+  localStorage.setItem('meatpe_admin_key', key);
+
+  try {
+    const res = await fetch('/api/menu');
+    if (!res.ok) throw new Error('menu fetch failed');
+    const items = await res.json();
+    render(items);
+  } catch (e) {
+    msg.innerHTML = '<div class="err">Failed to load menu. Is the server running?</div>';
+  }
+}
+
+function render(items) {
+  const inStock = items.filter(i => i.inStock !== false).length;
+  const oos = items.length - inStock;
+  let html = `<div class="stat"><div>Total: <strong>${items.length}</strong></div>
+    <div>In stock: <strong>${inStock}</strong></div>
+    <div>Out of stock: <strong>${oos}</strong></div></div>`;
+
+  for (const [catKey, catLabel] of Object.entries(CATEGORIES)) {
+    const catItems = items.filter(i => i.cat === catKey);
+    if (!catItems.length) continue;
+    html += `<div class="cat-section"><div class="cat-title">${catLabel}</div>`;
+    for (const i of catItems) {
+      const stock = i.inStock !== false;
+      html += `
+        <div class="row ${stock ? '' : 'oos'}" data-code="${i.code}">
+          <span class="code">${i.code}</span>
+          <span class="name">${escapeHtml(i.name)}</span>
+          <span class="price">₹${i.price}</span>
+          <div class="toggle ${stock ? '' : 'off'}" data-code="${i.code}" data-stock="${stock}"></div>
+        </div>`;
+    }
+    html += `</div>`;
+  }
+  content.innerHTML = html;
+
+  document.querySelectorAll('.toggle').forEach(t => {
+    t.addEventListener('click', () => toggleItem(t));
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function toggleItem(el) {
+  const code = el.dataset.code;
+  const currentlyInStock = el.dataset.stock === 'true';
+  const newStock = !currentlyInStock;
+  const key = keyInput.value.trim();
+
+  // Optimistic UI
+  el.classList.toggle('off', !newStock);
+  el.dataset.stock = String(newStock);
+  el.closest('.row').classList.toggle('oos', !newStock);
+
+  try {
+    const res = await fetch(`/admin/stock/${code}?key=${encodeURIComponent(key)}&inStock=${newStock}`, { method: 'POST' });
+    const data = await res.json();
+    if (!data.ok) {
+      // Revert
+      el.classList.toggle('off', !currentlyInStock);
+      el.dataset.stock = String(currentlyInStock);
+      el.closest('.row').classList.toggle('oos', !currentlyInStock);
+      msg.innerHTML = `<div class="err">${escapeHtml(data.error || 'Update failed — check admin key')}</div>`;
+      setTimeout(() => msg.innerHTML = '', 3000);
+    }
+  } catch (e) {
+    msg.innerHTML = '<div class="err">Network error.</div>';
+    setTimeout(() => msg.innerHTML = '', 3000);
+  }
+}
+</script>
+</body>
+</html>
