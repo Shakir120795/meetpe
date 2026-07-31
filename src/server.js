@@ -560,34 +560,27 @@ if (process.env.IG_ACCESS_TOKEN && process.env.IG_USER_ID) {
   console.log('📅 IG auto-post scheduled (11:00 AM IST daily)');
 }
 
-// ===== Location proxy — bypasses CORS/WebView restrictions =====
-// GET /api/location/search?q=kamla+nagar+agra
+// ===== Location proxy — Google Maps Geocoding =====
 app.get('/api/location/search', async (req, res) => {
   const q = String(req.query.q || '').trim();
   if (!q) return res.json([]);
+  const key = process.env.GOOGLE_MAPS_KEY;
+  if (!key) return res.json([]);
   try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=6&countrycodes=in`;
-    const r = await axios.get(url, {
-      headers: {
-        'User-Agent': 'NowDeliveryApp/1.0 (contact@nowapp.in)',
-        'Accept-Language': 'en'
-      },
-      timeout: 8000
-    });
-    const results = (r.data || []).map(d => {
-      const addr = d.address || {};
-      const name = addr.road || addr.suburb || addr.neighbourhood ||
-                   addr.village || addr.town || addr.city ||
-                   (d.display_name || '').split(',')[0];
-      const city = addr.city || addr.town || addr.county || '';
-      const state = addr.state || '';
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&region=in&language=en&key=${key}`;
+    const r = await axios.get(url, { timeout: 8000 });
+    const results = (r.data.results || []).slice(0, 6).map(d => {
+      const comps = d.address_components || [];
+      const get = (type) => (comps.find(c => c.types.includes(type)) || {}).long_name || '';
+      const name = get('sublocality_level_1') || get('sublocality') || get('neighborhood') || get('route') || get('locality') || d.formatted_address.split(',')[0];
+      const city = get('locality') || get('administrative_area_level_2') || '';
+      const state = get('administrative_area_level_1') || '';
       return {
-        lat: parseFloat(d.lat),
-        lon: parseFloat(d.lon),
+        lat: d.geometry.location.lat,
+        lon: d.geometry.location.lng,
         name: name || 'Location',
-        city,
-        state,
-        display: d.display_name || ''
+        city, state,
+        display: d.formatted_address || ''
       };
     });
     res.json(results);
@@ -597,28 +590,26 @@ app.get('/api/location/search', async (req, res) => {
   }
 });
 
-// GET /api/location/reverse?lat=27.17&lon=78.00
 app.get('/api/location/reverse', async (req, res) => {
   const lat = parseFloat(req.query.lat);
   const lon = parseFloat(req.query.lon);
   if (isNaN(lat) || isNaN(lon)) return res.json({ ok: false });
+  const key = process.env.GOOGLE_MAPS_KEY;
+  if (!key) return res.json({ ok: false, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, full: '' });
   try {
-    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`;
-    const r = await axios.get(url, {
-      headers: {
-        'User-Agent': 'NowDeliveryApp/1.0 (contact@nowapp.in)',
-        'Accept-Language': 'en'
-      },
-      timeout: 8000
-    });
-    const addr = r.data.address || {};
-    const area = addr.suburb || addr.neighbourhood || addr.quarter || addr.village || addr.road || '';
-    const city = addr.city || addr.town || addr.county || addr.state_district || '';
-    const state = addr.state || '';
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&language=en&key=${key}`;
+    const r = await axios.get(url, { timeout: 8000 });
+    const result = (r.data.results || [])[0];
+    if (!result) return res.json({ ok: false, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, full: '' });
+    const comps = result.address_components || [];
+    const get = (type) => (comps.find(c => c.types.includes(type)) || {}).long_name || '';
+    const area = get('sublocality_level_1') || get('sublocality') || get('neighborhood') || get('route') || '';
+    const city = get('locality') || get('administrative_area_level_2') || '';
+    const state = get('administrative_area_level_1') || '';
     const stateAbbr = state.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 3);
     const shortLabel = area && city && area !== city ? `${area}, ${city}` : (city || 'My Location');
     const label = stateAbbr ? `${shortLabel}, ${stateAbbr}` : shortLabel;
-    res.json({ ok: true, label, full: r.data.display_name || '', area, city, state });
+    res.json({ ok: true, label, full: result.formatted_address || '', area, city, state });
   } catch (e) {
     console.warn('reverse geocode error:', e.message);
     res.json({ ok: false, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, full: '' });
