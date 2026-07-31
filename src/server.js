@@ -563,40 +563,52 @@ if (process.env.IG_ACCESS_TOKEN && process.env.IG_USER_ID) {
 
 // ===== Location debug (temp) =====
 app.get('/api/location/debug', async (req, res) => {
-  const key = process.env.GOOGLE_MAPS_KEY;
-  if (!key) return res.json({ error: 'GOOGLE_MAPS_KEY not set' });
+  const gKey = process.env.GOOGLE_MAPS_KEY;
+  const lKey = process.env.LOCATIONIQ_KEY;
+  if (!gKey && !lKey) return res.json({ error: 'No API key set' });
   try {
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=agra&region=in&key=${key}`;
-    const r = await axios.get(url, { timeout: 8000 });
-    res.json({ status: r.data.status, count: (r.data.results||[]).length, error_message: r.data.error_message || null });
+    let url, r;
+    if (lKey) {
+      url = `https://us1.locationiq.com/v1/search?key=${lKey}&q=agra&format=json&limit=1`;
+      r = await axios.get(url, { timeout: 8000 });
+      return res.json({ provider: 'locationiq', count: (r.data||[]).length, sample: (r.data||[])[0] });
+    } else {
+      url = `https://maps.googleapis.com/maps/api/geocode/json?address=agra&region=in&key=${gKey}`;
+      r = await axios.get(url, { timeout: 8000 });
+      return res.json({ provider: 'google', status: r.data.status, count: (r.data.results||[]).length, error_message: r.data.error_message || null });
+    }
   } catch(e) {
     res.json({ error: e.message });
   }
 });
 
-// ===== Location proxy — Google Maps Geocoding =====
+// ===== Location proxy =====
 app.get('/api/location/search', async (req, res) => {
   const q = String(req.query.q || '').trim();
   if (!q) return res.json([]);
-  const key = process.env.GOOGLE_MAPS_KEY;
-  if (!key) return res.json([]);
+  const gKey = process.env.GOOGLE_MAPS_KEY;
+  const lKey = process.env.LOCATIONIQ_KEY;
+  if (!gKey && !lKey) return res.json([]);
   try {
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&region=in&language=en&key=${key}`;
-    const r = await axios.get(url, { timeout: 8000 });
-    const results = (r.data.results || []).slice(0, 6).map(d => {
-      const comps = d.address_components || [];
-      const get = (type) => (comps.find(c => c.types.includes(type)) || {}).long_name || '';
-      const name = get('sublocality_level_1') || get('sublocality') || get('neighborhood') || get('route') || get('locality') || d.formatted_address.split(',')[0];
-      const city = get('locality') || get('administrative_area_level_2') || '';
-      const state = get('administrative_area_level_1') || '';
-      return {
-        lat: d.geometry.location.lat,
-        lon: d.geometry.location.lng,
-        name: name || 'Location',
-        city, state,
-        display: d.formatted_address || ''
-      };
-    });
+    let results = [];
+    if (lKey) {
+      const url = `https://us1.locationiq.com/v1/search?key=${lKey}&q=${encodeURIComponent(q)}&format=json&addressdetails=1&limit=6&countrycodes=in&normalizecity=1`;
+      const r = await axios.get(url, { timeout: 8000 });
+      results = (r.data || []).map(d => {
+        const addr = d.address || {};
+        const name = addr.road || addr.suburb || addr.neighbourhood || addr.village || addr.town || addr.city || (d.display_name||'').split(',')[0];
+        return { lat: parseFloat(d.lat), lon: parseFloat(d.lon), name: name||'Location', city: addr.city||addr.town||'', state: addr.state||'', display: d.display_name||'' };
+      });
+    } else {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&region=in&language=en&key=${gKey}`;
+      const r = await axios.get(url, { timeout: 8000 });
+      results = (r.data.results || []).slice(0,6).map(d => {
+        const comps = d.address_components || [];
+        const get = (type) => (comps.find(c => c.types.includes(type)) || {}).long_name || '';
+        const name = get('sublocality_level_1') || get('sublocality') || get('neighborhood') || get('route') || get('locality') || d.formatted_address.split(',')[0];
+        return { lat: d.geometry.location.lat, lon: d.geometry.location.lng, name: name||'Location', city: get('locality')||'', state: get('administrative_area_level_1')||'', display: d.formatted_address||'' };
+      });
+    }
     res.json(results);
   } catch (e) {
     console.warn('location search error:', e.message);
@@ -608,22 +620,36 @@ app.get('/api/location/reverse', async (req, res) => {
   const lat = parseFloat(req.query.lat);
   const lon = parseFloat(req.query.lon);
   if (isNaN(lat) || isNaN(lon)) return res.json({ ok: false });
-  const key = process.env.GOOGLE_MAPS_KEY;
-  if (!key) return res.json({ ok: false, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, full: '' });
+  const gKey = process.env.GOOGLE_MAPS_KEY;
+  const lKey = process.env.LOCATIONIQ_KEY;
+  if (!gKey && !lKey) return res.json({ ok: false, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, full: '' });
   try {
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&language=en&key=${key}`;
-    const r = await axios.get(url, { timeout: 8000 });
-    const result = (r.data.results || [])[0];
-    if (!result) return res.json({ ok: false, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, full: '' });
-    const comps = result.address_components || [];
-    const get = (type) => (comps.find(c => c.types.includes(type)) || {}).long_name || '';
-    const area = get('sublocality_level_1') || get('sublocality') || get('neighborhood') || get('route') || '';
-    const city = get('locality') || get('administrative_area_level_2') || '';
-    const state = get('administrative_area_level_1') || '';
-    const stateAbbr = state.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 3);
+    let area = '', city = '', state = '', displayName = '';
+    if (lKey) {
+      const url = `https://us1.locationiq.com/v1/reverse?key=${lKey}&lat=${lat}&lon=${lon}&format=json&normalizecity=1`;
+      const r = await axios.get(url, { timeout: 8000 });
+      const addr = r.data.address || {};
+      area = addr.suburb || addr.neighbourhood || addr.quarter || addr.village || addr.road || '';
+      city = addr.city || addr.town || addr.county || '';
+      state = addr.state || '';
+      displayName = r.data.display_name || '';
+    } else {
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&language=en&key=${gKey}`;
+      const r = await axios.get(url, { timeout: 8000 });
+      const result = (r.data.results||[])[0];
+      if (result) {
+        const comps = result.address_components || [];
+        const get = (type) => (comps.find(c => c.types.includes(type)) || {}).long_name || '';
+        area = get('sublocality_level_1') || get('sublocality') || get('neighborhood') || get('route') || '';
+        city = get('locality') || get('administrative_area_level_2') || '';
+        state = get('administrative_area_level_1') || '';
+        displayName = result.formatted_address || '';
+      }
+    }
+    const stateAbbr = state.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,3);
     const shortLabel = area && city && area !== city ? `${area}, ${city}` : (city || 'My Location');
     const label = stateAbbr ? `${shortLabel}, ${stateAbbr}` : shortLabel;
-    res.json({ ok: true, label, full: result.formatted_address || '', area, city, state });
+    res.json({ ok: true, label, full: displayName, area, city, state });
   } catch (e) {
     console.warn('reverse geocode error:', e.message);
     res.json({ ok: false, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, full: '' });
