@@ -1056,6 +1056,298 @@ try {
   )`);
 } catch(e) { console.warn('subscriptions table:', e.message); }
 
+// ===== NOTIFICATIONS SYSTEM =====
+
+// Create notifications table if not exists
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS notifications (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone        TEXT NOT NULL,
+    type         TEXT NOT NULL,
+    channel      TEXT DEFAULT 'whatsapp',
+    subject      TEXT,
+    message      TEXT NOT NULL,
+    status       TEXT DEFAULT 'pending',
+    sent_at      TEXT,
+    error        TEXT,
+    created_at   TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  db.exec(`CREATE TABLE IF NOT EXISTS notification_templates (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    name     TEXT UNIQUE NOT NULL,
+    subject  TEXT,
+    body     TEXT NOT NULL,
+    channels TEXT,
+    active   BOOLEAN DEFAULT 1,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+} catch(e) { console.warn('notifications table:', e.message); }
+
+// Initialize default notification templates
+function initNotificationTemplates() {
+  const templates = [
+    {
+      name: 'order_placed',
+      subject: 'Order Confirmed',
+      body: '✅ *Order Confirmed!* — {SHOP_NAME}\n\nOrder #{ORDER_ID}\nTotal: ₹{TOTAL}\nETA: ~30 minutes 🛵\n\n📍 Delivery to:\n{ADDRESS}\n\nThank you for ordering!',
+      channels: 'whatsapp,email'
+    },
+    {
+      name: 'order_preparing',
+      subject: 'Order Preparing',
+      body: '👨‍🍳 *Your order is being prepared* — {SHOP_NAME}\n\nOrder #{ORDER_ID}\nWe\'re cleaning + cutting your meat fresh right now.',
+      channels: 'whatsapp,sms'
+    },
+    {
+      name: 'order_out_for_delivery',
+      subject: 'Out for Delivery',
+      body: '🛵 *Out for delivery!* — {SHOP_NAME}\n\nOrder #{ORDER_ID}\nYour fresh meat is on the way. ETA: {ETA} minutes.\n\nTotal: ₹{TOTAL}',
+      channels: 'whatsapp,sms'
+    },
+    {
+      name: 'order_delivered',
+      subject: 'Order Delivered',
+      body: '✅ *Order Delivered* — {SHOP_NAME}\n\nOrder #{ORDER_ID}\nThank you for ordering! Enjoy your fresh meat 🥩\n\nIf any issue, reply within 2 hours with a photo.',
+      channels: 'whatsapp,email,sms'
+    },
+    {
+      name: 'order_cancelled',
+      subject: 'Order Cancelled',
+      body: '❌ *Order Cancelled* — {SHOP_NAME}\n\nOrder #{ORDER_ID}\nYour order has been cancelled. Refund will be processed shortly.',
+      channels: 'whatsapp,email'
+    }
+  ];
+  
+  for (const tpl of templates) {
+    try {
+      db.prepare(`INSERT OR IGNORE INTO notification_templates (name, subject, body, channels, active) VALUES (?, ?, ?, ?, 1)`)
+        .run(tpl.name, tpl.subject, tpl.body, tpl.channels);
+    } catch (e) {
+      // Template already exists
+    }
+  }
+}
+
+initNotificationTemplates();
+
+// Helper: Send notification through multiple channels
+async function sendNotificationViaChannels(phone, template, variables = {}, channels = ['whatsapp']) {
+  const results = [];
+  
+  for (const channel of channels) {
+    try {
+      let sent = false;
+      let message = template.body;
+      
+      // Replace variables
+      for (const [key, val] of Object.entries(variables)) {
+        message = message.replace(new RegExp(`{${key}}`, 'g'), val);
+      }
+      
+      if (channel === 'whatsapp' && process.env.TWILIO_ACCOUNT_SID) {
+        try {
+          await sendMessage(`whatsapp:+91${phone.replace(/\D/g, '')}`, message);
+          sent = true;
+        } catch (e) {
+          console.warn(`WhatsApp send failed: ${e.message}`);
+        }
+      }
+      
+      if (channel === 'sms' && process.env.TWILIO_ACCOUNT_SID) {
+        try {
+          // SMS via Twilio (optional — requires SMS credits)
+          // await twilio.messages.create({ from: process.env.TWILIO_PHONE, to: `+91${phone}`, body: message });
+          sent = false; // Disabled by default to save costs
+        } catch (e) {
+          console.warn(`SMS send failed: ${e.message}`);
+        }
+      }
+      
+      if (channel === 'email') {
+        // Email notification (requires email service like SendGrid, Nodemailer)
+        // For now, just log it
+        console.log(`📧 Email to ${phone}: ${template.subject}`);
+        sent = false;
+      }
+      
+      results.push({ channel, sent });
+    } catch (e) {
+      console.warn(`Notification error on channel ${channel}:`, e.message);
+      results.push({ channel, sent: false, error: e.message });
+    }
+  }
+  
+  return results;
+}
+
+// POST /api/notifications/subscribe — subscribe for notifications
+app.post('/api/notifications/subscribe', (req, res) => {
+  try {
+    const { phone, email, channels } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+    
+    const waPhone = `web:+91${cleanPhone}`;
+    const validChannels = channels || ['whatsapp'];
+    
+    db.prepare(`
+      INSERT INTO customers (phone, email) VALUES (?, ?)
+      ON CONFLICT(phone) DO UPDATE SET email = COALESCE(excluded.email, email)
+    `).run(waPhone, email || null);
+    
+    res.json({ ok: true, message: 'Subscribed to notifications', channels: validChannels });
+  } catch (e) {
+    console.error('notification subscribe error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// POST /api/notifications/test — test notification (with admin key)
+app.post('/api/notifications/test', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try {
+    const { phone, message, channel = 'whatsapp' } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+    
+    // Send test message
+    if (channel === 'whatsapp' && process.env.TWILIO_ACCOUNT_SID) {
+      sendMessage(`whatsapp:+91${cleanPhone}`, message || '🧪 Test notification from MeatPe').catch(e => {
+        console.warn('Test message failed:', e.message);
+      });
+    }
+    
+    res.json({ ok: true, message: 'Test notification sent', channel });
+  } catch (e) {
+    console.error('notification test error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// GET /api/notifications/:phone — get notification history
+app.get('/api/notifications/:phone', (req, res) => {
+  try {
+    const cleanPhone = String(req.params.phone).replace(/\D/g, '');
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
+    const waPhone = `web:+91${cleanPhone}`;
+    
+    const notifications = db.prepare(`
+      SELECT * FROM notifications WHERE phone = ?
+      ORDER BY created_at DESC LIMIT ?
+    `).all(waPhone, limit);
+    
+    res.json({ ok: true, notifications });
+  } catch (e) {
+    console.error('get notifications error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// GET /admin/notifications?key=X — list all notifications (admin)
+app.get('/admin/notifications', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try {
+    const status = req.query.status || '';
+    const type = req.query.type || '';
+    const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
+    
+    let where = [];
+    let params = [];
+    if (status) { where.push('status = ?'); params.push(status); }
+    if (type) { where.push('type = ?'); params.push(type); }
+    
+    const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
+    const notifications = db.prepare(`
+      SELECT * FROM notifications ${whereSql}
+      ORDER BY created_at DESC LIMIT ?
+    `).all(...params, limit);
+    
+    const stats = db.prepare(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN status='sent' THEN 1 ELSE 0 END) as sent,
+        SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END) as failed
+      FROM notifications
+    `).get();
+    
+    res.json({ ok: true, notifications, stats });
+  } catch (e) {
+    console.error('admin notifications error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// GET /admin/notification-templates?key=X — list templates
+app.get('/admin/notification-templates', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try {
+    const templates = db.prepare('SELECT * FROM notification_templates ORDER BY name').all();
+    res.json({ ok: true, templates });
+  } catch (e) {
+    console.error('get templates error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// PUT /admin/notification-templates/:id?key=X — update template
+app.put('/admin/notification-templates/:id', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try {
+    const { subject, body, channels, active } = req.body || {};
+    const id = parseInt(req.params.id, 10);
+    
+    const updates = [];
+    const values = [];
+    if (subject !== undefined) { updates.push('subject = ?'); values.push(subject); }
+    if (body !== undefined) { updates.push('body = ?'); values.push(body); }
+    if (channels !== undefined) { updates.push('channels = ?'); values.push(channels); }
+    if (active !== undefined) { updates.push('active = ?'); values.push(active ? 1 : 0); }
+    
+    if (updates.length === 0) return res.status(400).json({ ok: false, error: 'no updates provided' });
+    
+    values.push(id);
+    db.prepare(`UPDATE notification_templates SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('update template error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// Webhook support: POST /api/webhooks/notify — custom webhook notifications
+app.post('/api/webhooks/notify', (req, res) => {
+  try {
+    const { phone, event, data, signature } = req.body || {};
+    
+    // Verify webhook signature (optional security)
+    if (process.env.WEBHOOK_SECRET && signature) {
+      const crypto = require('crypto');
+      const hash = crypto.createHmac('sha256', process.env.WEBHOOK_SECRET)
+        .update(JSON.stringify({ phone, event, data }))
+        .digest('hex');
+      if (hash !== signature) return res.status(403).json({ ok: false, error: 'invalid signature' });
+    }
+    
+    // Log webhook notification
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+    
+    const waPhone = `web:+91${cleanPhone}`;
+    const message = data?.message || `Event: ${event}`;
+    
+    db.prepare(`
+      INSERT INTO notifications (phone, type, channel, message, status)
+      VALUES (?, ?, 'webhook', ?, 'sent')
+    `).run(waPhone, event || 'webhook', message);
+    
+    res.json({ ok: true, message: 'Webhook notification logged' });
+  } catch (e) {
+    console.error('webhook error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
 // POST /api/subscriptions — create subscription
 app.post('/api/subscriptions', (req, res) => {
   try {
