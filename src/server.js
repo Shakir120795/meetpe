@@ -1348,6 +1348,321 @@ app.post('/api/webhooks/notify', (req, res) => {
   }
 });
 
+// ===== VENDOR/SELLER MANAGEMENT =====
+
+// Create vendors table
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS vendors (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone            TEXT UNIQUE NOT NULL,
+    name             TEXT NOT NULL,
+    business_name    TEXT NOT NULL,
+    email            TEXT,
+    address          TEXT,
+    city             TEXT,
+    state            TEXT,
+    gst_number       TEXT,
+    bank_account     TEXT,
+    bank_ifsc        TEXT,
+    commission_rate  REAL DEFAULT 0.15,
+    status           TEXT DEFAULT 'pending',
+    document_urls    TEXT,
+    verified_at      TEXT,
+    created_at       TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  db.exec(`CREATE TABLE IF NOT EXISTS vendor_products (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    vendor_id      INTEGER NOT NULL,
+    code           TEXT NOT NULL,
+    name           TEXT NOT NULL,
+    description    TEXT,
+    price          INTEGER NOT NULL,
+    unit           TEXT DEFAULT 'kg',
+    category       TEXT,
+    image_urls     TEXT,
+    status         TEXT DEFAULT 'active',
+    created_at     TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(vendor_id) REFERENCES vendors(id)
+  )`);
+  db.exec(`CREATE TABLE IF NOT EXISTS vendor_payouts (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    vendor_id        INTEGER NOT NULL,
+    period_start     TEXT NOT NULL,
+    period_end       TEXT NOT NULL,
+    orders_count     INTEGER DEFAULT 0,
+    gross_amount     INTEGER DEFAULT 0,
+    commission_amount INTEGER DEFAULT 0,
+    net_amount       INTEGER DEFAULT 0,
+    status           TEXT DEFAULT 'pending',
+    payout_date      TEXT,
+    notes            TEXT,
+    created_at       TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(vendor_id) REFERENCES vendors(id)
+  )`);
+} catch(e) { console.warn('vendors table:', e.message); }
+
+// POST /api/vendors/register — register new vendor
+app.post('/api/vendors/register', (req, res) => {
+  try {
+    const { phone, name, businessName, email, gst } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+    if (!name || !businessName) return res.status(400).json({ ok: false, error: 'name and businessName required' });
+    
+    const waPhone = `vendor:+91${cleanPhone}`;
+    const info = db.prepare(`
+      INSERT INTO vendors (phone, name, business_name, email, gst_number, status)
+      VALUES (?, ?, ?, ?, ?, 'pending')
+    `).run(waPhone, name.trim(), businessName.trim(), email || null, gst || null);
+    
+    res.json({ ok: true, vendor_id: info.lastInsertRowid, status: 'pending', message: 'Registration submitted. Admin review required.' });
+  } catch (e) {
+    if (e.message.includes('UNIQUE')) {
+      return res.status(400).json({ ok: false, error: 'Phone already registered' });
+    }
+    console.error('vendor register error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// GET /api/vendors/:id — get vendor details
+app.get('/api/vendors/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const vendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(id);
+    if (!vendor) return res.status(404).json({ ok: false, error: 'vendor not found' });
+    
+    // Don't expose sensitive data publicly
+    const safe = {
+      id: vendor.id,
+      name: vendor.name,
+      business_name: vendor.business_name,
+      city: vendor.city,
+      status: vendor.status,
+      created_at: vendor.created_at
+    };
+    res.json({ ok: true, vendor: safe });
+  } catch (e) {
+    console.error('get vendor error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// PUT /api/vendors/:id — vendor updates own profile
+app.put('/api/vendors/:id', (req, res) => {
+  try {
+    const { phone, address, city, state, bankAccount, bankIfsc } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    const id = parseInt(req.params.id, 10);
+    
+    const vendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(id);
+    if (!vendor) return res.status(404).json({ ok: false, error: 'vendor not found' });
+    
+    // Verify ownership by phone
+    if (vendor.phone !== `vendor:+91${cleanPhone}`) {
+      return res.status(403).json({ ok: false, error: 'forbidden' });
+    }
+    
+    const updates = [];
+    const values = [];
+    if (address) { updates.push('address = ?'); values.push(address); }
+    if (city) { updates.push('city = ?'); values.push(city); }
+    if (state) { updates.push('state = ?'); values.push(state); }
+    if (bankAccount) { updates.push('bank_account = ?'); values.push(bankAccount); }
+    if (bankIfsc) { updates.push('bank_ifsc = ?'); values.push(bankIfsc); }
+    
+    if (updates.length > 0) {
+      updates.push('updated_at = CURRENT_TIMESTAMP');
+      values.push(id);
+      db.prepare(`UPDATE vendors SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+    }
+    
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('update vendor error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// GET /admin/vendors?key=X — list all vendors (admin)
+app.get('/admin/vendors', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try {
+    const status = req.query.status || '';
+    const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
+    
+    let sql = 'SELECT v.*, COUNT(DISTINCT o.id) as order_count FROM vendors v LEFT JOIN vendor_products vp ON vp.vendor_id = v.id LEFT JOIN orders o ON o.id IN (SELECT id FROM orders WHERE items_json LIKE ?) GROUP BY v.id';
+    let params = ['%' + v.id + '%'];
+    
+    if (status) {
+      sql = 'SELECT v.* FROM vendors v WHERE v.status = ? ORDER BY v.created_at DESC LIMIT ?';
+      params = [status, limit];
+    } else {
+      sql = 'SELECT v.* FROM vendors v ORDER BY v.created_at DESC LIMIT ?';
+      params = [limit];
+    }
+    
+    const vendors = db.prepare(sql).all(...params);
+    
+    const stats = db.prepare(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN status='approved' THEN 1 ELSE 0 END) as approved,
+        SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN status='rejected' THEN 1 ELSE 0 END) as rejected
+      FROM vendors
+    `).get();
+    
+    res.json({ ok: true, vendors, stats });
+  } catch (e) {
+    console.error('list vendors error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// POST /admin/vendors/:id/approve?key=X — approve vendor
+app.post('/admin/vendors/:id/approve', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try {
+    const id = parseInt(req.params.id, 10);
+    db.prepare('UPDATE vendors SET status = ?, verified_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .run('approved', id);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('approve vendor error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// POST /admin/vendors/:id/reject?key=X — reject vendor
+app.post('/admin/vendors/:id/reject', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try {
+    const { reason } = req.body || {};
+    const id = parseInt(req.params.id, 10);
+    db.prepare('UPDATE vendors SET status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+      .run('rejected', reason || null, id);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('reject vendor error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// GET /api/vendors/:id/orders — get vendor's orders
+app.get('/api/vendors/:id/orders', (req, res) => {
+  try {
+    const vendorId = parseInt(req.params.id, 10);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
+    
+    // Get vendor's products
+    const products = db.prepare('SELECT code FROM vendor_products WHERE vendor_id = ?').all(vendorId);
+    const productCodes = products.map(p => p.code);
+    
+    if (!productCodes.length) {
+      return res.json({ ok: true, orders: [], total: 0 });
+    }
+    
+    // Find orders containing vendor's products
+    const allOrders = db.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT ?').all(limit);
+    const vendorOrders = allOrders.filter(o => {
+      const items = JSON.parse(o.items_json || '[]');
+      return items.some(i => productCodes.includes(i.code));
+    });
+    
+    res.json({ ok: true, orders: vendorOrders.map(o => ({ ...o, items: JSON.parse(o.items_json) })), total: vendorOrders.length });
+  } catch (e) {
+    console.error('vendor orders error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// GET /api/vendors/:id/analytics — vendor analytics
+app.get('/api/vendors/:id/analytics', (req, res) => {
+  try {
+    const vendorId = parseInt(req.params.id, 10);
+    
+    // Get vendor's products
+    const products = db.prepare('SELECT * FROM vendor_products WHERE vendor_id = ?').all(vendorId);
+    const productCodes = products.map(p => p.code);
+    
+    // Calculate revenue from vendor products
+    let totalRevenue = 0;
+    let totalOrders = 0;
+    const allOrders = db.prepare('SELECT * FROM orders WHERE status = ?').all('delivered');
+    
+    for (const order of allOrders) {
+      const items = JSON.parse(order.items_json || '[]');
+      for (const item of items) {
+        if (productCodes.includes(item.code)) {
+          totalRevenue += item.price * item.qty;
+          totalOrders++;
+        }
+      }
+    }
+    
+    const commission = totalRevenue * 0.15; // 15% commission
+    
+    res.json({ ok: true, analytics: {
+      products: products.length,
+      total_orders: totalOrders,
+      total_revenue: totalRevenue,
+      commission: Math.round(commission),
+      net_revenue: Math.round(totalRevenue - commission)
+    }});
+  } catch (e) {
+    console.error('vendor analytics error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// GET /admin/vendor-payouts?key=X — list all vendor payouts
+app.get('/admin/vendor-payouts', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try {
+    const status = req.query.status || '';
+    let sql = 'SELECT vp.*, v.name as vendor_name FROM vendor_payouts vp LEFT JOIN vendors v ON v.id = vp.vendor_id';
+    let params = [];
+    
+    if (status) {
+      sql += ' WHERE vp.status = ?';
+      params.push(status);
+    }
+    sql += ' ORDER BY vp.created_at DESC LIMIT 100';
+    
+    const payouts = db.prepare(sql).all(...params);
+    
+    const stats = db.prepare(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN status='processed' THEN 1 ELSE 0 END) as processed,
+        COALESCE(SUM(CASE WHEN status='pending' THEN net_amount ELSE 0 END),0) as pending_amount
+      FROM vendor_payouts
+    `).get();
+    
+    res.json({ ok: true, payouts, stats });
+  } catch (e) {
+    console.error('vendor payouts error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// POST /admin/vendor-payouts/:id/process?key=X — mark payout as processed
+app.post('/admin/vendor-payouts/:id/process', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try {
+    const id = parseInt(req.params.id, 10);
+    db.prepare('UPDATE vendor_payouts SET status = ?, payout_date = CURRENT_TIMESTAMP WHERE id = ?')
+      .run('processed', id);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('process payout error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
 // POST /api/subscriptions — create subscription
 app.post('/api/subscriptions', (req, res) => {
   try {
