@@ -833,25 +833,79 @@ input,textarea{font:inherit;color:inherit}
             <div class="pm-label">Order History</div>
             <div class="pm-arrow">›</div>
           </div>
-          <div class="pm-item" onclick="showToast('Saved addresses coming soon!')">
-            <div class="pm-icon">📍</div>
-            <div class="pm-label">Saved Addresses</div>
+          <div class="pm-item" onclick="showScreen('screen-subscriptions')">
+            <div class="pm-icon">🔁</div>
+            <div class="pm-label">My Subscriptions</div>
+            <div class="pm-arrow">›</div>
+          </div>
+          <div class="pm-item" onclick="showScreen('screen-returns')">
+            <div class="pm-icon">🔄</div>
+            <div class="pm-label">Returns &amp; Refunds</div>
+            <div class="pm-arrow">›</div>
+          </div>
+          <div class="pm-item" onclick="showScreen('screen-wallet')">
+            <div class="pm-icon">💳</div>
+            <div class="pm-label">Wallet &amp; Rewards</div>
             <div class="pm-arrow">›</div>
           </div>
           <div class="pm-item" onclick="showCouponsModal()">
             <div class="pm-icon">🎫</div>
-            <div class="pm-label">Coupons &amp; Rewards</div>
+            <div class="pm-label">Coupons &amp; Offers</div>
             <div class="pm-arrow">›</div>
           </div>
-          <div class="pm-item" onclick="showToast('📹 Video inspect available on WhatsApp!')">
-            <div class="pm-icon">📹</div>
-            <div class="pm-label">Video Inspection Request</div>
+          <div class="pm-item" onclick="showScreen('screen-reviews')">
+            <div class="pm-icon">⭐</div>
+            <div class="pm-label">My Reviews</div>
             <div class="pm-arrow">›</div>
           </div>
         </div>
 
         <button class="logout-btn" id="logoutBtn" onclick="logout()">Log Out</button>
         <div style="height:12px"></div>
+      </div>
+    </div>
+
+    <!-- ═══ SUBSCRIPTIONS SCREEN ═══ -->
+    <div class="screen" id="screen-subscriptions">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">🔁 My Subscriptions</div>
+      </div>
+      <div id="subsContent" style="padding:14px">
+        <div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div>
+      </div>
+    </div>
+
+    <!-- ═══ RETURNS SCREEN ═══ -->
+    <div class="screen" id="screen-returns">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">🔄 Returns &amp; Refunds</div>
+      </div>
+      <div id="returnsContent" style="padding:14px">
+        <div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div>
+      </div>
+    </div>
+
+    <!-- ═══ WALLET SCREEN ═══ -->
+    <div class="screen" id="screen-wallet">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">💳 Wallet &amp; Rewards</div>
+      </div>
+      <div id="walletContent" style="padding:14px">
+        <div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div>
+      </div>
+    </div>
+
+    <!-- ═══ REVIEWS SCREEN ═══ -->
+    <div class="screen" id="screen-reviews">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">⭐ My Reviews</div>
+      </div>
+      <div id="reviewsContent" style="padding:14px">
+        <div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div>
       </div>
     </div>
 
@@ -1049,11 +1103,17 @@ function showScreen(id) {
   if (id === 'screen-basket') renderBasket();
   if (id === 'screen-orders') loadOrders();
   if (id === 'screen-profile') loadProfile();
+  if (id === 'screen-subscriptions') loadSubscriptions();
+  if (id === 'screen-returns') loadReturns();
+  if (id === 'screen-wallet') loadWallet();
+  if (id === 'screen-reviews') loadMyReviews();
 
   // Update nav highlight
   const navMap = {
     'screen-home':'nav-home','screen-basket':'nav-home',
-    'screen-product':'nav-home','screen-orders':'nav-orders','screen-profile':'nav-profile'
+    'screen-product':'nav-home','screen-orders':'nav-orders','screen-profile':'nav-profile',
+    'screen-subscriptions':'nav-profile','screen-returns':'nav-profile',
+    'screen-wallet':'nav-profile','screen-reviews':'nav-profile'
   };
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   const nb = document.getElementById(navMap[id]);
@@ -1981,6 +2041,265 @@ async function loadProfile() {
   }
 
   document.getElementById('logoutBtn').style.display = USER.phone ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════════
+//  Subscriptions Screen
+// ═══════════════════════════════════════════
+async function loadSubscriptions() {
+  const el = document.getElementById('subsContent');
+  if (!USER || !USER.phone) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🔒</div><h3>Login Required</h3><p>Please login to view subscriptions</p></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div>`;
+  try {
+    const res = await fetch('/api/subscriptions/' + USER.phone);
+    const data = await res.json();
+    const subs = data.subscriptions || [];
+    if (!subs.length) {
+      el.innerHTML = `
+        <div class="empty"><div class="empty-icon">🔁</div><h3>No Subscriptions</h3><p>Set up recurring orders for your favourite items</p></div>
+        <button onclick="showScreen('screen-home')" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:16px">Browse Menu</button>`;
+      return;
+    }
+    el.innerHTML = subs.map(s => `
+      <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:14px;font-weight:700">${s.frequency.charAt(0).toUpperCase()+s.frequency.slice(1)} Order</div>
+          <span style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${s.status==='active'?'rgba(34,197,94,.15)':s.status==='paused'?'rgba(251,191,36,.15)':'rgba(239,68,68,.15)'};color:${s.status==='active'?'#22c55e':s.status==='paused'?'#fbbf24':'#ef4444'}">${s.status.toUpperCase()}</span>
+        </div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:6px">
+          ${(s.items||[]).map(i=>`${i.name} × ${i.qty}`).join(', ')}
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:12px">
+          <span>Next delivery: <strong>${s.next_delivery||'--'}</strong></span>
+          <span style="color:var(--accent);font-weight:700">₹${s.total_price}</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          ${s.status==='active'
+            ? `<button onclick="pauseSubscription(${s.id})" style="flex:1;padding:10px;background:rgba(251,191,36,.15);color:#fbbf24;border:1px solid rgba(251,191,36,.3);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">⏸ Pause</button>`
+            : s.status==='paused'
+            ? `<button onclick="resumeSubscription(${s.id})" style="flex:1;padding:10px;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">▶ Resume</button>`
+            : ''}
+          <button onclick="cancelSubscription(${s.id})" style="flex:1;padding:10px;background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">✕ Cancel</button>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">❌</div><p>Failed to load</p></div>`;
+  }
+}
+
+async function pauseSubscription(id) {
+  if (!USER) return;
+  await fetch(`/api/subscriptions/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ phone: USER.phone, status:'paused' }) });
+  showToast('Subscription paused ⏸', 'success');
+  loadSubscriptions();
+}
+async function resumeSubscription(id) {
+  if (!USER) return;
+  await fetch(`/api/subscriptions/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ phone: USER.phone, status:'active' }) });
+  showToast('Subscription resumed ▶', 'success');
+  loadSubscriptions();
+}
+async function cancelSubscription(id) {
+  if (!USER || !confirm('Cancel this subscription?')) return;
+  await fetch(`/api/subscriptions/${id}/cancel`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ phone: USER.phone }) });
+  showToast('Subscription cancelled', 'success');
+  loadSubscriptions();
+}
+
+// ═══════════════════════════════════════════
+//  Returns Screen
+// ═══════════════════════════════════════════
+async function loadReturns() {
+  const el = document.getElementById('returnsContent');
+  if (!USER || !USER.phone) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🔒</div><h3>Login Required</h3></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div>`;
+  try {
+    const res = await fetch('/api/returns/' + USER.phone);
+    const data = await res.json();
+    const returns = data.returns || [];
+
+    const statusColor = { requested:'#fbbf24', approved:'#22c55e', rejected:'#ef4444', refunded:'#a78bfa', processing:'#60a5fa' };
+
+    const html = `
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Have an issue with a delivered order? Submit a return request.</div>
+        <button onclick="showNewReturnForm()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer">+ New Return Request</button>
+      </div>
+      <div id="newReturnForm" style="display:none;background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px">New Return Request</div>
+        <input id="retOrderId" type="number" placeholder="Order ID *" style="width:100%;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:10px"/>
+        <select id="retReason" style="width:100%;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:10px">
+          <option value="">Select Reason *</option>
+          <option value="quality_issue">Quality Issue</option>
+          <option value="wrong_item">Wrong Item Delivered</option>
+          <option value="short_weight">Short Weight</option>
+          <option value="not_fresh">Not Fresh</option>
+          <option value="other">Other</option>
+        </select>
+        <textarea id="retDesc" placeholder="Describe the issue..." style="width:100%;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;resize:none;height:80px;margin-bottom:10px"></textarea>
+        <div style="display:flex;gap:8px">
+          <button onclick="submitReturnRequest()" style="flex:1;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Submit</button>
+          <button onclick="document.getElementById('newReturnForm').style.display='none'" style="flex:1;padding:12px;background:var(--border);color:var(--text);border:none;border-radius:10px;font-size:14px;cursor:pointer">Cancel</button>
+        </div>
+      </div>
+      ${!returns.length ? `<div class="empty"><div class="empty-icon">✅</div><h3>No Returns</h3><p>All your orders are good!</p></div>` :
+        returns.map(r => `
+          <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+              <div style="font-size:14px;font-weight:700">Order #${r.order_id}</div>
+              <span style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.05);color:${statusColor[r.status]||'#fff'}">${r.status.toUpperCase()}</span>
+            </div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:4px">Reason: ${r.reason.replace(/_/g,' ')}</div>
+            ${r.description ? `<div style="font-size:12px;color:var(--muted)">${r.description}</div>` : ''}
+            ${r.refund_amount > 0 ? `<div style="font-size:13px;color:#22c55e;margin-top:8px;font-weight:700">✅ Refund: ₹${r.refund_amount} added to wallet</div>` : ''}
+            <div style="font-size:11px;color:var(--muted);margin-top:8px">${new Date(r.created_at).toLocaleDateString('en-IN')}</div>
+          </div>`).join('')}`;
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">❌</div><p>Failed to load</p></div>`;
+  }
+}
+
+function showNewReturnForm() {
+  document.getElementById('newReturnForm').style.display = 'block';
+}
+
+async function submitReturnRequest() {
+  const orderId = document.getElementById('retOrderId').value;
+  const reason = document.getElementById('retReason').value;
+  const desc = document.getElementById('retDesc').value;
+  if (!orderId || !reason) { showToast('Please fill Order ID and Reason', 'error'); return; }
+  try {
+    const res = await fetch('/api/returns', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ phone: USER.phone, order_id: parseInt(orderId), reason, description: desc })
+    });
+    const data = await res.json();
+    if (data.ok) { showToast('Return request submitted! ✅', 'success'); loadReturns(); }
+    else showToast(data.error || 'Failed', 'error');
+  } catch(e) { showToast('Failed to submit', 'error'); }
+}
+
+// ═══════════════════════════════════════════
+//  Wallet Screen
+// ═══════════════════════════════════════════
+async function loadWallet() {
+  const el = document.getElementById('walletContent');
+  if (!USER || !USER.phone) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🔒</div><h3>Login Required</h3></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div>`;
+  try {
+    const res = await fetch('/api/customer/' + USER.phone);
+    const data = await res.json();
+    const c = data.customer || {};
+    el.innerHTML = `
+      <div style="background:linear-gradient(135deg,#1a0800,#3d1a00);border-radius:20px;padding:24px;margin-bottom:16px;border:1px solid #5a2d00">
+        <div style="font-size:13px;color:#f97316;font-weight:600;margin-bottom:4px">NOW Wallet Balance</div>
+        <div style="font-size:42px;font-weight:900;color:#fff">₹${c.wallet||0}</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:4px">Use at checkout for instant discount</div>
+      </div>
+      <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">🎁 Reward Points</div>
+        <div style="font-size:28px;font-weight:800;color:var(--accent)">₹${c.rewards||0}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Earn ₹30 on every order above ₹500</div>
+      </div>
+      <div style="background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px">📊 Your Stats</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="text-align:center;padding:12px;background:var(--bg);border-radius:10px">
+            <div style="font-size:22px;font-weight:800;color:var(--accent)">${c.orders||0}</div>
+            <div style="font-size:11px;color:var(--muted)">Total Orders</div>
+          </div>
+          <div style="text-align:center;padding:12px;background:var(--bg);border-radius:10px">
+            <div style="font-size:22px;font-weight:800;color:#22c55e">₹${c.wallet||0}</div>
+            <div style="font-size:11px;color:var(--muted)">Wallet</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:14px;background:rgba(255,77,0,.08);border-radius:12px;border:1px solid rgba(255,77,0,.2)">
+        <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px">💡 How to earn?</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">
+          • Order above ₹500 → earn ₹30 reward<br/>
+          • Wallet balance auto-applied at checkout<br/>
+          • Rewards valid for 15 days
+        </div>
+      </div>`;
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">❌</div><p>Failed to load</p></div>`;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  My Reviews Screen
+// ═══════════════════════════════════════════
+async function loadMyReviews() {
+  const el = document.getElementById('reviewsContent');
+  if (!USER || !USER.phone) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🔒</div><h3>Login Required</h3></div>`;
+    return;
+  }
+  el.innerHTML = `<div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div>`;
+  try {
+    // Get delivered orders to review
+    const res = await fetch('/api/orders/' + USER.phone);
+    const data = await res.json();
+    const delivered = (data.orders||[]).filter(o => o.status === 'delivered').slice(0,10);
+    if (!delivered.length) {
+      el.innerHTML = `<div class="empty"><div class="empty-icon">📦</div><h3>No Delivered Orders</h3><p>Reviews available after delivery</p></div>`;
+      return;
+    }
+    el.innerHTML = `
+      <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Rate your delivered orders to help others</div>
+      ${delivered.map(o => `
+        <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid var(--border)">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">Order #${o.id} — ${new Date(o.created_at).toLocaleDateString('en-IN')}</div>
+          ${(o.items||[]).map(item => `
+            <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+              <div style="font-size:13px;font-weight:600;margin-bottom:6px">${item.name}</div>
+              <div style="display:flex;gap:4px;margin-bottom:6px" id="stars-${o.id}-${item.code}">
+                ${[1,2,3,4,5].map(s=>`<span onclick="setReviewRating('${o.id}','${item.code}',${s})" style="font-size:24px;cursor:pointer;color:#333" data-val="${s}">★</span>`).join('')}
+              </div>
+              <textarea id="rev-${o.id}-${item.code}" placeholder="Your feedback (optional)..." style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;resize:none;height:50px"></textarea>
+              <button onclick="submitQuickReview(${o.id},'${item.code}')" style="margin-top:6px;width:100%;padding:9px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Submit Review</button>
+            </div>`).join('')}
+        </div>`).join('')}`;
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">❌</div><p>Failed to load</p></div>`;
+  }
+}
+
+function setReviewRating(orderId, code, val) {
+  const container = document.getElementById(`stars-${orderId}-${code}`);
+  if (!container) return;
+  container.querySelectorAll('span').forEach(s => {
+    s.style.color = parseInt(s.dataset.val) <= val ? '#f59e0b' : '#333';
+  });
+  container.dataset.rating = val;
+}
+
+async function submitQuickReview(orderId, code) {
+  if (!USER) return;
+  const container = document.getElementById(`stars-${orderId}-${code}`);
+  const rating = parseInt(container?.dataset.rating || 0);
+  const comment = document.getElementById(`rev-${orderId}-${code}`)?.value || '';
+  if (!rating) { showToast('Please select a rating ⭐', 'error'); return; }
+  try {
+    const res = await fetch('/api/reviews', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ phone: USER.phone, order_id: orderId, item_code: code, rating, comment })
+    });
+    const data = await res.json();
+    if (data.ok) { showToast('Review submitted! ⭐ Thank you', 'success'); }
+    else showToast(data.error || 'Already reviewed', 'error');
+  } catch(e) { showToast('Failed to submit', 'error'); }
 }
 
 // ═══════════════════════════════════════════
