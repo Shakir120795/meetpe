@@ -1663,6 +1663,256 @@ app.post('/admin/vendor-payouts/:id/process', (req, res) => {
   }
 });
 
+// ===== MOBILE APP APIs =====
+
+// POST /api/mobile/login — quick mobile login
+app.post('/api/mobile/login', (req, res) => {
+  try {
+    const { phone, name, deviceId } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+    
+    const waPhone = `app:+91${cleanPhone}`;
+    db.prepare(`INSERT INTO customers (phone, name) VALUES (?, ?) ON CONFLICT(phone) DO UPDATE SET name = COALESCE(excluded.name, name)`)
+      .run(waPhone, name || null);
+    
+    const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
+    const rewards = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rewards WHERE phone = ? AND used = 0 AND expires_at > datetime('now')`).get(waPhone);
+    
+    res.json({ ok: true, customer: { phone: cleanPhone, name: customer.name || '', wallet: customer.wallet_balance || 0, rewards: rewards.total || 0 }, deviceId });
+  } catch (e) {
+    console.error('mobile login error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// GET /api/mobile/home — home feed for mobile app
+app.get('/api/mobile/home', (req, res) => {
+  try {
+    const lat = parseFloat(req.query.lat);
+    const lon = parseFloat(req.query.lon);
+    
+    const catalog = catalogWithStock();
+    
+    // Categorize items
+    const byCategory = {};
+    for (const item of catalog) {
+      if (!byCategory[item.cat]) byCategory[item.cat] = [];
+      byCategory[item.cat].push(item);
+    }
+    
+    // Get trending (most ordered in last 7 days)
+    const allOrders = db.prepare(`
+      SELECT items_json FROM orders 
+      WHERE status = 'delivered' 
+      AND created_at >= datetime('now', '-7 days')
+    `).all();
+    
+    const itemFreq = {};
+    for (const o of allOrders) {
+      try {
+        for (const i of JSON.parse(o.items_json || '[]')) {
+          itemFreq[i.code] = (itemFreq[i.code] || 0) + 1;
+        }
+      } catch {}
+    }
+    
+    const trending = catalog
+      .filter(c => itemFreq[c.code])
+      .sort((a, b) => (itemFreq[b.code] || 0) - (itemFreq[a.code] || 0))
+      .slice(0, 8);
+    
+    // Active coupons
+    const activeCoupons = coupons.listActive().map(c => ({
+      code: c.code,
+      value: c.value,
+      type: c.type,
+      minOrder: c.minOrder,
+      description: c.description
+    }));
+    
+    res.json({
+      ok: true,
+      home: {
+        trending,
+        categories: Object.keys(byCategory).slice(0, 6),
+        categoryItems: Object.fromEntries(
+          Object.entries(byCategory).map(([cat, items]) => [cat, items.slice(0, 5)])
+        ),
+        coupons: activeCoupons.slice(0, 3)
+      }
+    });
+  } catch (e) {
+    console.error('mobile home error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// GET /api/mobile/search — mobile search with filters
+app.get('/api/mobile/search', (req, res) => {
+  try {
+    const q = (req.query.q || '').toLowerCase();
+    const cat = (req.query.cat || '').toLowerCase();
+    const maxPrice = parseInt(req.query.maxPrice, 10) || 10000;
+    
+    let catalog = catalogWithStock();
+    
+    // Filter by search
+    if (q) {
+      catalog = catalog.filter(i =>
+        i.name.toLowerCase().includes(q) ||
+        i.code.toLowerCase().includes(q)
+      );
+    }
+    
+    // Filter by category
+    if (cat) {
+      catalog = catalog.filter(i => i.cat.toLowerCase().includes(cat));
+    }
+    
+    // Filter by price
+    catalog = catalog.filter(i => i.price <= maxPrice);
+    
+    // Sort by relevance/price
+    catalog.sort((a, b) => a.price - b.price);
+    
+    res.json({ ok: true, results: catalog.slice(0, 50) });
+  } catch (e) {
+    console.error('mobile search error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// POST /api/mobile/cart/validate — validate cart before checkout
+app.post('/api/mobile/cart/validate', (req, res) => {
+  try {
+    const { items, couponCode } = req.body || {};
+    if (!Array.isArray(items) || !items.length) {
+      return res.status(400).json({ ok: false, error: 'items required' });
+    }
+    
+    // Validate items
+    const cleanItems = [];
+    let subtotal = 0;
+    
+    for (const it of items) {
+      const found = findByCode(it.code);
+      if (!found) continue;
+      const { outOfStock } = loadStock();
+      if (outOfStock.map(c => c.toUpperCase()).includes(found.code.toUpperCase())) continue;
+      
+      const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+      cleanItems.push({ code: found.code, name: found.name, price: found.price, qty });
+      subtotal += found.price * qty;
+    }
+    
+    if (!cleanItems.length) return res.status(400).json({ ok: false, error: 'no valid items' });
+    
+    // Apply coupon
+    let discount = 0;
+    if (couponCode) {
+      const result = coupons.applyCoupon(couponCode, subtotal);
+      if (result.ok) discount = result.discount;
+    }
+    
+    // Calculate delivery
+    const free = Number(process.env.DELIVERY_FREE_ABOVE || 699);
+    const lowBelow = Number(process.env.DELIVERY_LOW_BELOW || 399);
+    const feeLow = Number(process.env.DELIVERY_FEE_LOW || 29);
+    const feeMid = Number(process.env.DELIVERY_FEE_MID || 19);
+    const delivery = subtotal >= free ? 0 : (subtotal < lowBelow ? feeLow : feeMid);
+    const total = Math.max(0, subtotal - discount + delivery);
+    
+    res.json({
+      ok: true,
+      cart: {
+        items: cleanItems,
+        subtotal,
+        couponDiscount: discount,
+        delivery,
+        total,
+        saveable: discount + (free - subtotal > 0 ? free - subtotal : 0)
+      }
+    });
+  } catch (e) {
+    console.error('cart validate error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// POST /api/mobile/checkout — quick checkout for mobile
+app.post('/api/mobile/checkout', (req, res) => {
+  try {
+    const { phone, name, address, items, couponCode, paymentMethod, lat, lon } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+    if (!address) return res.status(400).json({ ok: false, error: 'address required' });
+    if (!Array.isArray(items) || !items.length) return res.status(400).json({ ok: false, error: 'items required' });
+    
+    // Validate items server-side
+    const cleanItems = [];
+    for (const it of items) {
+      const found = findByCode(it.code);
+      if (!found) continue;
+      const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+      cleanItems.push({ code: found.code, name: found.name, price: found.price, qty });
+    }
+    if (!cleanItems.length) return res.status(400).json({ ok: false, error: 'no valid items' });
+    
+    const subtotal = cleanItems.reduce((s, i) => s + i.price * i.qty, 0);
+    
+    // Apply coupon
+    let couponDiscount = 0;
+    let appliedCoupon = null;
+    if (couponCode) {
+      const result = coupons.applyCoupon(couponCode, subtotal);
+      if (result.ok) {
+        couponDiscount = result.discount;
+        appliedCoupon = result.coupon.code;
+      }
+    }
+    
+    const free = Number(process.env.DELIVERY_FREE_ABOVE || 699);
+    const lowBelow = Number(process.env.DELIVERY_LOW_BELOW || 399);
+    const feeLow = Number(process.env.DELIVERY_FEE_LOW || 29);
+    const feeMid = Number(process.env.DELIVERY_FEE_MID || 19);
+    const delivery = subtotal >= free ? 0 : (subtotal < lowBelow ? feeLow : feeMid);
+    const total = Math.max(0, subtotal - couponDiscount + delivery);
+    
+    const waPhone = `app:+91${cleanPhone}`;
+    db.prepare(`INSERT INTO customers (phone, name, address) VALUES (?, ?, ?) ON CONFLICT(phone) DO UPDATE SET name = excluded.name, address = excluded.address`)
+      .run(waPhone, name || 'Mobile User', address);
+    
+    const orderInfo = db.prepare(`
+      INSERT INTO orders (phone, items_json, subtotal, delivery_fee, total, address, source)
+      VALUES (?, ?, ?, ?, ?, ?, 'mobile_app')
+    `).run(waPhone, JSON.stringify(cleanItems), subtotal, delivery, total, address);
+    
+    const orderId = orderInfo.lastInsertRowid;
+    
+    res.json({
+      ok: true,
+      order: {
+        id: orderId,
+        subtotal,
+        couponDiscount,
+        delivery,
+        total,
+        paymentMethod,
+        location: lat && lon ? { lat, lon } : null
+      }
+    });
+    
+    // Async notification
+    setImmediate(() => {
+      notifyCustomer({ id: orderId, phone: waPhone, address, total }, 'placed');
+    });
+  } catch (e) {
+    console.error('mobile checkout error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
 // POST /api/subscriptions — create subscription
 app.post('/api/subscriptions', (req, res) => {
   try {
