@@ -1024,6 +1024,299 @@ app.get('/admin/analytics', (req, res) => {
   res.json({ ok: true, daily, topItems, byHour, summary, thisWeek, lastWeek });
 });
 
+// ===== SUBSCRIPTIONS (Recurring Orders) =====
+
+// Create subscriptions table if not exists
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS subscriptions (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone            TEXT NOT NULL,
+    name             TEXT,
+    address          TEXT,
+    items_json       TEXT NOT NULL,
+    frequency        TEXT NOT NULL,
+    next_delivery    TEXT,
+    status           TEXT DEFAULT 'active',
+    total_price      INTEGER NOT NULL,
+    cycles_remaining INTEGER,
+    notes            TEXT,
+    created_at       TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at       TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(phone, id)
+  )`);
+  db.exec(`CREATE TABLE IF NOT EXISTS subscription_orders (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    subscription_id  INTEGER NOT NULL,
+    order_id         INTEGER,
+    scheduled_date   TEXT,
+    status           TEXT DEFAULT 'scheduled',
+    created_at       TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(subscription_id) REFERENCES subscriptions(id),
+    FOREIGN KEY(order_id) REFERENCES orders(id)
+  )`);
+} catch(e) { console.warn('subscriptions table:', e.message); }
+
+// POST /api/subscriptions — create subscription
+app.post('/api/subscriptions', (req, res) => {
+  try {
+    const { phone, name, address, items, frequency, cyclesRemaining, notes } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+    if (!Array.isArray(items) || !items.length) return res.status(400).json({ ok: false, error: 'items required' });
+    if (!['daily', 'weekly', 'biweekly', 'monthly'].includes(frequency)) {
+      return res.status(400).json({ ok: false, error: 'frequency must be daily, weekly, biweekly, or monthly' });
+    }
+    
+    // Validate items and calculate total
+    const cleanItems = [];
+    let total = 0;
+    for (const it of items) {
+      const found = findByCode(it.code);
+      if (!found) continue;
+      const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+      cleanItems.push({ code: found.code, name: found.name, price: found.price, qty });
+      total += found.price * qty;
+    }
+    if (!cleanItems.length) return res.status(400).json({ ok: false, error: 'no valid items' });
+    
+    const waPhone = `web:+91${cleanPhone}`;
+    
+    // Calculate next delivery date based on frequency
+    const nextDate = new Date();
+    switch(frequency) {
+      case 'daily': nextDate.setDate(nextDate.getDate() + 1); break;
+      case 'weekly': nextDate.setDate(nextDate.getDate() + 7); break;
+      case 'biweekly': nextDate.setDate(nextDate.getDate() + 14); break;
+      case 'monthly': nextDate.setMonth(nextDate.getMonth() + 1); break;
+    }
+    
+    const info = db.prepare(`
+      INSERT INTO subscriptions (phone, name, address, items_json, frequency, next_delivery, total_price, cycles_remaining, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      waPhone,
+      name || 'Regular Customer',
+      address || '',
+      JSON.stringify(cleanItems),
+      frequency,
+      nextDate.toISOString().split('T')[0],
+      total,
+      cyclesRemaining || null,
+      (notes || '').trim()
+    );
+    
+    res.json({ ok: true, id: info.lastInsertRowid, nextDelivery: nextDate.toISOString().split('T')[0], total });
+  } catch (e) {
+    console.error('subscription create error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// GET /api/subscriptions/:phone — list customer's subscriptions
+app.get('/api/subscriptions/:phone', (req, res) => {
+  try {
+    const cleanPhone = String(req.params.phone).replace(/\D/g, '');
+    const waPhone = `web:+91${cleanPhone}`;
+    const subs = db.prepare(`
+      SELECT * FROM subscriptions WHERE phone = ? ORDER BY id DESC
+    `).all(waPhone);
+    res.json({ 
+      ok: true, 
+      subscriptions: subs.map(s => ({
+        ...s, 
+        items: JSON.parse(s.items_json || '[]')
+      }))
+    });
+  } catch (e) {
+    console.error('subscription list error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// PUT /api/subscriptions/:id — update subscription (pause, resume, modify items)
+app.put('/api/subscriptions/:id', (req, res) => {
+  try {
+    const { phone, status, items, notes, frequency, cyclesRemaining } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    const waPhone = `web:+91${cleanPhone}`;
+    const id = parseInt(req.params.id, 10);
+    
+    // Verify ownership
+    const sub = db.prepare('SELECT * FROM subscriptions WHERE id = ? AND phone = ?').get(id, waPhone);
+    if (!sub) return res.status(404).json({ ok: false, error: 'subscription not found' });
+    
+    const updates = [];
+    const values = [];
+    
+    if (status && ['active', 'paused', 'cancelled'].includes(status)) {
+      updates.push('status = ?');
+      values.push(status);
+    }
+    if (items && Array.isArray(items) && items.length) {
+      const cleanItems = [];
+      let total = 0;
+      for (const it of items) {
+        const found = findByCode(it.code);
+        if (!found) continue;
+        const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+        cleanItems.push({ code: found.code, name: found.name, price: found.price, qty });
+        total += found.price * qty;
+      }
+      if (cleanItems.length) {
+        updates.push('items_json = ?, total_price = ?');
+        values.push(JSON.stringify(cleanItems), total);
+      }
+    }
+    if (notes !== undefined) {
+      updates.push('notes = ?');
+      values.push((notes || '').trim());
+    }
+    if (frequency && ['daily', 'weekly', 'biweekly', 'monthly'].includes(frequency)) {
+      updates.push('frequency = ?');
+      values.push(frequency);
+    }
+    if (cyclesRemaining !== undefined) {
+      updates.push('cycles_remaining = ?');
+      values.push(cyclesRemaining || null);
+    }
+    
+    if (updates.length === 0) return res.status(400).json({ ok: false, error: 'no updates provided' });
+    
+    updates.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+    
+    db.prepare(`UPDATE subscriptions SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('subscription update error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// POST /api/subscriptions/:id/cancel — cancel subscription
+app.post('/api/subscriptions/:id/cancel', (req, res) => {
+  try {
+    const { phone } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    const waPhone = `web:+91${cleanPhone}`;
+    const id = parseInt(req.params.id, 10);
+    
+    const sub = db.prepare('SELECT * FROM subscriptions WHERE id = ? AND phone = ?').get(id, waPhone);
+    if (!sub) return res.status(404).json({ ok: false, error: 'subscription not found' });
+    
+    db.prepare('UPDATE subscriptions SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run('cancelled', id);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('subscription cancel error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// GET /admin/subscriptions?key=X — list all subscriptions (admin)
+app.get('/admin/subscriptions', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try {
+    const status = req.query.status || '';
+    let sql = `SELECT s.*, c.name as customer_name FROM subscriptions s
+      LEFT JOIN customers c ON c.phone = s.phone`;
+    if (status) {
+      sql += ` WHERE s.status = ?`;
+    }
+    sql += ` ORDER BY s.id DESC LIMIT 100`;
+    const subs = db.prepare(sql).all(...(status ? [status] : []));
+    
+    const stats = db.prepare(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN status='active' THEN 1 ELSE 0 END) as active,
+        SUM(CASE WHEN status='paused' THEN 1 ELSE 0 END) as paused,
+        SUM(CASE WHEN status='cancelled' THEN 1 ELSE 0 END) as cancelled,
+        COALESCE(SUM(total_price),0) as total_mrr
+      FROM subscriptions WHERE status = 'active'
+    `).get();
+    
+    res.json({ 
+      ok: true, 
+      subscriptions: subs.map(s => ({ ...s, items: JSON.parse(s.items_json || '[]') })),
+      stats 
+    });
+  } catch (e) {
+    console.error('admin subscriptions error:', e);
+    res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// Cron job: Auto-generate orders from active subscriptions
+cron.schedule('0 6 * * *', async () => {
+  console.log('🔄 [SUBSCRIPTION CRON] Processing recurring orders...');
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const dueSubscriptions = db.prepare(`
+      SELECT * FROM subscriptions 
+      WHERE status = 'active' 
+      AND next_delivery <= ?
+      AND (cycles_remaining IS NULL OR cycles_remaining > 0)
+    `).all(today);
+    
+    for (const sub of dueSubscriptions) {
+      // Create order from subscription
+      const items = JSON.parse(sub.items_json || '[]');
+      const waPhone = sub.phone;
+      const free = Number(process.env.DELIVERY_FREE_ABOVE || 699);
+      const lowBelow = Number(process.env.DELIVERY_LOW_BELOW || 399);
+      const feeLow = Number(process.env.DELIVERY_FEE_LOW || 29);
+      const feeMid = Number(process.env.DELIVERY_FEE_MID || 19);
+      const delivery = sub.total_price >= free ? 0 : (sub.total_price < lowBelow ? feeLow : feeMid);
+      const total = Math.max(0, sub.total_price + delivery);
+      
+      const orderInfo = db.prepare(`
+        INSERT INTO orders (phone, items_json, subtotal, delivery_fee, total, address, source)
+        VALUES (?, ?, ?, ?, ?, ?, 'subscription')
+      `).run(waPhone, sub.items_json, sub.total_price, delivery, total, sub.address);
+      
+      const orderId = orderInfo.lastInsertRowid;
+      
+      // Link to subscription
+      db.prepare(`
+        INSERT INTO subscription_orders (subscription_id, order_id, scheduled_date, status)
+        VALUES (?, ?, ?, 'created')
+      `).run(sub.id, orderId, today);
+      
+      // Update next delivery date
+      const nextDate = new Date();
+      switch(sub.frequency) {
+        case 'daily': nextDate.setDate(nextDate.getDate() + 1); break;
+        case 'weekly': nextDate.setDate(nextDate.getDate() + 7); break;
+        case 'biweekly': nextDate.setDate(nextDate.getDate() + 14); break;
+        case 'monthly': nextDate.setMonth(nextDate.getMonth() + 1); break;
+      }
+      
+      let cyclesLeft = sub.cycles_remaining;
+      if (cyclesLeft !== null) cyclesLeft--;
+      
+      const updateStatus = cyclesLeft === 0 ? 'completed' : 'active';
+      db.prepare(`
+        UPDATE subscriptions 
+        SET next_delivery = ?, cycles_remaining = ?, status = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(nextDate.toISOString().split('T')[0], cyclesLeft, updateStatus, sub.id);
+      
+      console.log(`  ✅ Order #${orderId} created from subscription #${sub.id} for ${waPhone}`);
+      
+      // Notify customer
+      setImmediate(() => {
+        const customer = db.prepare('SELECT name FROM customers WHERE phone = ?').get(waPhone);
+        notifyCustomer(
+          { id: orderId, phone: waPhone, address: sub.address, total },
+          'placed'
+        );
+      });
+    }
+  } catch (e) {
+    console.error('subscription cron error:', e);
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🥩 MeatPe server listening on :${PORT}`);
 });
