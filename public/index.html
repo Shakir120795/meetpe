@@ -1021,18 +1021,36 @@ input,textarea{font:inherit;color:inherit}
         <!-- FAQ -->
         <div style="background:var(--card);border-radius:16px;padding:20px;margin-bottom:14px;border:1px solid var(--border)">
           <div style="font-size:16px;font-weight:800;margin-bottom:14px">❓ FAQ</div>
-          ${[
-            ['How do I place an order?','Login, select products, choose delivery address, complete payment or choose Cash on Delivery.'],
-            ['Which products are available?','Fresh Chicken and Fresh Mutton.'],
-            ['Can I cancel my order?','Only before preparation begins. Once preparation starts, cancellation may not be possible.'],
-            ['How do I track my order?','Track live from the Order Tracking section in the app.'],
-            ['Which payment methods are supported?','Cash on Delivery, UPI, Debit/Credit Cards, Wallet.'],
-            ['How to contact support?','Through the Support section inside the app.']
-          ].map(([q,a]) => `
-            <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
-              <div style="font-size:13px;font-weight:700;margin-bottom:4px">${q}</div>
-              <div style="font-size:13px;color:var(--muted);line-height:1.6">${a}</div>
-            </div>`).join('')}
+
+          <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px">How do I place an order?</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.6">Login, select products, choose your delivery address, complete payment or choose Cash on Delivery, and place your order.</div>
+          </div>
+
+          <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px">Which products are available?</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.6">Fresh Chicken and Fresh Mutton.</div>
+          </div>
+
+          <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px">Can I cancel my order?</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.6">Orders may be cancelled only before preparation begins. Once preparation has started, cancellation may not be possible because products are prepared fresh.</div>
+          </div>
+
+          <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px">How do I track my order?</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.6">Track your order live from the Order Tracking section in the app.</div>
+          </div>
+
+          <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px">Which payment methods are supported?</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.6">Cash on Delivery, UPI, Debit/Credit Cards, Wallet and other supported payment methods.</div>
+          </div>
+
+          <div>
+            <div style="font-size:13px;font-weight:700;margin-bottom:4px">How can I contact customer support?</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.6">Through the Support section available inside the app.</div>
+          </div>
         </div>
 
         <!-- Terms -->
