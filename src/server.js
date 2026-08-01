@@ -2176,4 +2176,15 @@ cron.schedule('0 6 * * *', async () => {
 
 app.listen(PORT, () => {
   console.log(`🥩 MeatPe server listening on :${PORT}`);
+
+  // Self-ping every 14 minutes to prevent Render free tier sleep
+  const SELF_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+  setInterval(async () => {
+    try {
+      await axios.get(`${SELF_URL}/health`, { timeout: 5000 });
+      console.log('🏓 Self-ping OK — server awake');
+    } catch (e) {
+      // Silent fail — server is running anyway
+    }
+  }, 14 * 60 * 1000); // every 14 minutes
 });
