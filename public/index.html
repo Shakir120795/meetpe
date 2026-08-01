@@ -523,6 +523,12 @@ input,textarea{font:inherit;color:inherit}
         </div>
         <button class="drawer-close-btn" onclick="closeDrawer()">✕</button>
       </div>
+      <!-- Login button — only shown for guests -->
+      <div id="drawerLoginBtn" style="padding:12px 16px;border-bottom:1px solid var(--border);display:none">
+        <button onclick="closeDrawer();logout();" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer">
+          🔑 Login / Switch Account
+        </button>
+      </div>
       <div class="drawer-body-scroll">
         <!-- Wallet Card -->
         <div class="drawer-wallet-card" onclick="showScreen('screen-profile');closeDrawer()">
@@ -2415,21 +2421,26 @@ function openDrawer() {
   const phone = document.getElementById('drawerPhone');
   const logoutBtn = document.getElementById('drawerLogoutBtn');
   const walletBal = document.getElementById('drawerWalletBal');
+  const loginBtn = document.getElementById('drawerLoginBtn');
+
   if (USER && USER.phone) {
     avatar.textContent = (USER.name || USER.phone)[0].toUpperCase();
     username.textContent = USER.name || 'User';
     phone.textContent = '+91 ' + USER.phone;
     logoutBtn.style.display = 'flex';
+    if (loginBtn) loginBtn.style.display = 'none';
     // Load wallet balance
     fetch('/api/customer/' + USER.phone)
       .then(r => r.json())
       .then(d => { if (d.ok) walletBal.textContent = '₹' + (d.customer.wallet || 0); })
       .catch(() => {});
   } else {
+    // Guest user
     avatar.textContent = '👤';
-    username.textContent = 'Guest';
-    phone.textContent = 'Login to access all features';
+    username.textContent = USER?.isGuest ? 'Guest' : 'Not logged in';
+    phone.textContent = 'Tap to login with your number';
     logoutBtn.style.display = 'none';
+    if (loginBtn) loginBtn.style.display = 'block';
     walletBal.textContent = '₹0';
   }
 }
