@@ -119,6 +119,7 @@ tr:hover td{background:#fafafa}
     <div class="nav-item" data-sec="settings"><span class="icon">⚙️</span> Settings</div>
     <div class="nav-item" data-sec="reviews"><span class="icon">⭐</span> Reviews</div>
     <div class="nav-item" data-sec="inventory"><span class="icon">📦</span> Inventory</div>
+    <div class="nav-item" data-sec="returns"><span class="icon">🔄</span> Returns</div>
     <div class="nav-item" data-sec="links"><span class="icon">🔗</span> Quick Links</div>
   </nav>
   <div class="sidebar-footer">NOW Delivery Admin v2.0</div>
@@ -179,6 +180,19 @@ tr:hover td{background:#fafafa}
         <div class="card-head"><h3>🏆 Top Selling Items</h3></div>
         <div style="overflow-x:auto"><table id="topItemsTable"></table></div>
       </div>
+    </div>
+    <!-- RETURNS -->
+    <div class="section" id="sec-returns">
+      <div class="stats-grid" id="returnsStats"></div>
+      <div class="chips">
+        <button class="chip active" onclick="loadReturns('requested')">🆕 Requested</button>
+        <button class="chip" onclick="loadReturns('approved')">✅ Approved</button>
+        <button class="chip" onclick="loadReturns('processing')">⚙️ Processing</button>
+        <button class="chip" onclick="loadReturns('refunded')">💰 Refunded</button>
+        <button class="chip" onclick="loadReturns('rejected')">❌ Rejected</button>
+        <button class="chip" onclick="loadReturns('')">📋 All</button>
+      </div>
+      <div id="returnsContent"></div>
     </div>
     <!-- INVENTORY -->
     <div class="section" id="sec-inventory">
@@ -331,6 +345,7 @@ function switchSection(sec){
   if(sec==='settings') loadSettings();
   if(sec==='reviews') loadReviews('pending');
   if(sec==='inventory') loadInventory();
+  if(sec==='returns') loadReturns('requested');
 }
 
 async function loadAll(){
@@ -739,6 +754,74 @@ async function saveSettings(){
     const r=await fetch(`/admin/settings?key=${encodeURIComponent(key)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const d=await r.json(); if(!d.ok) throw new Error(d.error);
     toast('Settings saved','success');
+  }catch(e){toast(e.message,'error');}
+}
+// ── RETURNS ──
+const RETURN_REASONS={'wrong_item':'Wrong item','quality_issue':'Quality issue','missing_item':'Missing item','damaged':'Damaged','other':'Other'};
+async function loadReturns(status='requested'){
+  const key=KEY(); if(!key) return;
+  try{
+    const r=await fetch(`/admin/returns?key=${encodeURIComponent(key)}${status?'&status='+status:''}`);
+    const d=await r.json(); if(!d.ok) throw new Error(d.error);
+    const s=d.stats||{};
+    $('returnsStats').innerHTML=`
+      <div class="stat-card blue"><div class="label">Total Returns</div><div class="val">${s.total||0}</div></div>
+      <div class="stat-card orange"><div class="label">Pending</div><div class="val">${s.requested||0}</div></div>
+      <div class="stat-card green"><div class="label">Approved</div><div class="val">${s.approved||0}</div></div>
+      <div class="stat-card red"><div class="label">Total Refunded</div><div class="val">₹${s.total_refunded||0}</div></div>
+    `;
+    const returns=d.returns||[];
+    if(!returns.length){$('returnsContent').innerHTML='<div class="empty"><div class="big">🔄</div><p>No returns found</p></div>';return;}
+    $('returnsContent').innerHTML='<div style="display:grid;gap:12px">'+returns.map(ret=>`
+      <div class="card" style="padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div><strong>Return #${ret.id}</strong> — Order #${ret.order_id}<br/>
+            <span style="font-size:12px;color:var(--gray)">${esc(ret.customer_name||ret.phone)}</span>
+          </div>
+          <span class="badge ${ret.status==='refunded'?'delivered':ret.status==='rejected'?'cancelled':ret.status==='approved'?'placed':'preparing'}">${ret.status}</span>
+        </div>
+        <div style="font-size:13px;margin-bottom:8px">
+          <strong>Reason:</strong> ${RETURN_REASONS[ret.reason]||ret.reason}
+          ${ret.description?`<br/><span style="color:var(--muted)">"${esc(ret.description)}"</span>`:''}
+        </div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:12px">
+          Order Total: ₹${ret.order_total||0} • ${fmtTime(ret.created_at)}
+          ${ret.refund_amount?`<br/>Refund: ₹${ret.refund_amount} via ${ret.refund_method||'wallet'}`:''}
+          ${ret.admin_note?`<br/>Note: ${esc(ret.admin_note)}`:''}
+        </div>
+        ${ret.status==='requested'||ret.status==='approved'?`
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <input id="ra_${ret.id}" type="number" placeholder="Refund ₹" min="0" value="${ret.order_total||0}"
+            style="padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--white)"/>
+          <select id="rm_${ret.id}" style="padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--white)">
+            <option value="wallet">Wallet Credit</option>
+            <option value="upi">UPI Transfer</option>
+            <option value="cash">Cash</option>
+          </select>
+          <input id="rn_${ret.id}" placeholder="Admin note" value="${esc(ret.admin_note||'')}"
+            style="padding:8px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--white)"/>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn sm green" onclick="processReturn(${ret.id},'refunded')">💰 Approve & Refund</button>
+          <button class="btn sm blue" onclick="processReturn(${ret.id},'approved')">✅ Approve</button>
+          <button class="btn sm danger" onclick="processReturn(${ret.id},'rejected')">❌ Reject</button>
+        </div>`:
+        ret.status==='processing'?`<button class="btn sm green" onclick="processReturn(${ret.id},'refunded')">💰 Mark Refunded</button>`:''}
+      </div>`).join('')+'</div>';
+  }catch(e){toast(e.message,'error');}
+}
+async function processReturn(id,status){
+  const key=KEY();
+  const ra=document.getElementById(`ra_${id}`);
+  const rm=document.getElementById(`rm_${id}`);
+  const rn=document.getElementById(`rn_${id}`);
+  const payload={status,refund_amount:ra?parseInt(ra.value)||0:0,refund_method:rm?rm.value:'wallet',admin_note:rn?rn.value:''};
+  try{
+    const r=await fetch(`/admin/returns/${id}?key=${encodeURIComponent(key)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json(); if(!d.ok) throw new Error(d.error);
+    toast(`Return #${id} → ${status}`,'success');
+    if(status==='refunded'&&payload.refund_amount>0) toast(`₹${payload.refund_amount} added to customer wallet`,'success');
+    loadReturns();
   }catch(e){toast(e.message,'error');}
 }
 // ── INVENTORY ──

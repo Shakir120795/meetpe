@@ -743,6 +743,92 @@ app.get('/admin/analytics', (req, res) => {
   res.json({ ok: true, daily, topItems, byHour, summary, thisWeek, lastWeek });
 });
 
+// ===== Returns & Refunds =====
+
+// DB table created in init.js — adding via ALTER if not exists
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS returns (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id     INTEGER NOT NULL,
+    phone        TEXT NOT NULL,
+    reason       TEXT NOT NULL,
+    description  TEXT,
+    items_json   TEXT,
+    status       TEXT DEFAULT 'requested',
+    refund_amount INTEGER DEFAULT 0,
+    refund_method TEXT,
+    admin_note   TEXT,
+    created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+} catch(e) { console.warn('returns table:', e.message); }
+
+// POST /api/returns — customer submits return request
+app.post('/api/returns', (req, res) => {
+  const { phone, order_id, reason, description, items } = req.body || {};
+  const cleanPhone = String(phone || '').replace(/\D/g, '');
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+  if (!order_id || !reason) return res.status(400).json({ ok: false, error: 'order_id and reason required' });
+  const waPhone = `web:+91${cleanPhone}`;
+  // Verify order belongs to customer and is delivered
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND phone = ?').get(order_id, waPhone);
+  if (!order) return res.status(404).json({ ok: false, error: 'Order not found' });
+  if (!['delivered'].includes(order.status)) return res.status(400).json({ ok: false, error: 'Only delivered orders can be returned' });
+  // Check if return already exists
+  const existing = db.prepare('SELECT id FROM returns WHERE order_id = ? AND phone = ?').get(order_id, waPhone);
+  if (existing) return res.status(400).json({ ok: false, error: 'Return request already submitted' });
+  const info = db.prepare(`INSERT INTO returns (order_id, phone, reason, description, items_json) VALUES (?, ?, ?, ?, ?)`)
+    .run(order_id, waPhone, reason.trim(), (description || '').trim(), JSON.stringify(items || []));
+  res.json({ ok: true, id: info.lastInsertRowid });
+});
+
+// GET /api/returns/:phone — customer's return requests
+app.get('/api/returns/:phone', (req, res) => {
+  const cleanPhone = String(req.params.phone).replace(/\D/g, '');
+  const waPhone = `web:+91${cleanPhone}`;
+  const returns = db.prepare('SELECT * FROM returns WHERE phone = ? ORDER BY id DESC').all(waPhone);
+  res.json({ ok: true, returns });
+});
+
+// GET /admin/returns?key=X — list all returns
+app.get('/admin/returns', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const status = req.query.status || '';
+  const rows = db.prepare(`
+    SELECT r.*, c.name as customer_name, o.total as order_total
+    FROM returns r
+    LEFT JOIN customers c ON c.phone = r.phone
+    LEFT JOIN orders o ON o.id = r.order_id
+    ${status ? 'WHERE r.status = ?' : ''}
+    ORDER BY r.id DESC LIMIT 100
+  `).all(...(status ? [status] : []));
+  const stats = db.prepare(`SELECT
+    COUNT(*) as total,
+    SUM(CASE WHEN status='requested' THEN 1 ELSE 0 END) as requested,
+    SUM(CASE WHEN status='approved' THEN 1 ELSE 0 END) as approved,
+    SUM(CASE WHEN status='refunded' THEN 1 ELSE 0 END) as refunded,
+    SUM(CASE WHEN status='rejected' THEN 1 ELSE 0 END) as rejected,
+    COALESCE(SUM(CASE WHEN status='refunded' THEN refund_amount ELSE 0 END),0) as total_refunded
+  FROM returns`).get();
+  res.json({ ok: true, returns: rows, stats });
+});
+
+// PUT /admin/returns/:id?key=X — update return status
+app.put('/admin/returns/:id', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const { status, refund_amount, refund_method, admin_note } = req.body || {};
+  const allowed = ['requested', 'approved', 'rejected', 'refunded', 'processing'];
+  if (!allowed.includes(status)) return res.status(400).json({ ok: false, error: 'invalid status' });
+  db.prepare(`UPDATE returns SET status=?, refund_amount=?, refund_method=?, admin_note=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`)
+    .run(status, refund_amount || 0, refund_method || '', admin_note || '', req.params.id);
+  // If refunded — add to customer wallet
+  if (status === 'refunded' && refund_amount > 0) {
+    const ret = db.prepare('SELECT phone FROM returns WHERE id=?').get(req.params.id);
+    if (ret) db.prepare('UPDATE customers SET wallet_balance = wallet_balance + ? WHERE phone = ?').run(refund_amount, ret.phone);
+  }
+  res.json({ ok: true });
+});
+
 // ===== Inventory Management =====
 
 // GET /admin/inventory?key=X — full inventory with stock levels
