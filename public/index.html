@@ -41,11 +41,10 @@ input,textarea{font:inherit;color:inherit}
 #app{position:fixed;inset:0;overflow:hidden;display:flex;flex-direction:column}
 .screens{flex:1;overflow:hidden;position:relative}
 .screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;background:var(--bg);
-  transform:translateX(100%);transition:transform .32s cubic-bezier(.4,0,.2,1);will-change:transform;
+  display:none;
   padding-bottom:calc(var(--nav-h) + 8px)}
-.screen.active{transform:translateX(0)}
-.screen.slide-left{transform:translateX(-30%)}
-#screen-login{transform:translateX(0);padding-bottom:0}
+.screen.active{display:block}
+#screen-login{padding-bottom:0}
 
 /* ── Bottom nav ── */
 .bottom-nav{height:var(--nav-h);background:var(--card);border-top:1px solid var(--border);
@@ -1006,7 +1005,14 @@ const CAT_EMOJI = {
     showScreen('screen-home');
     loadMenu();
   } else {
-    // Already on login screen
+    // Show only login screen
+    document.querySelectorAll('.screen').forEach(s => {
+      s.classList.remove('active');
+      s.style.display = 'none';
+    });
+    const loginScreen = document.getElementById('screen-login');
+    loginScreen.style.display = '';
+    loginScreen.classList.add('active');
     document.getElementById('bottomNav').style.display = 'none';
     document.getElementById('cartBar').style.display = 'none';
   }
@@ -1020,17 +1026,13 @@ function showScreen(id) {
   const target = document.getElementById(id);
   if (!target) return;
 
-  // Slide-left animation on current active
+  // Hide ALL screens first, then show only target
   screens.forEach(s => {
-    if (s.classList.contains('active')) {
-      s.classList.add('slide-left');
-      s.classList.remove('active');
-    } else {
-      s.classList.remove('slide-left');
-    }
+    s.classList.remove('active', 'slide-left');
+    s.style.display = 'none';
   });
 
-  target.classList.remove('slide-left');
+  target.style.display = '';
   target.classList.add('active');
   target.scrollTop = 0;
 
@@ -1064,13 +1066,13 @@ function goBack() {
   const prev = SCREEN_HISTORY[SCREEN_HISTORY.length - 1] || 'screen-home';
   const screens = document.querySelectorAll('.screen');
   const target = document.getElementById(prev);
+  // Hide all screens first
   screens.forEach(s => {
-    s.classList.remove('active','slide-left');
+    s.classList.remove('active', 'slide-left');
+    s.style.display = 'none';
     s.style.transform = '';
   });
-  // Come back from right to left
-  const current = document.querySelector('.screen.active');
-  if (current) current.classList.remove('active');
+  target.style.display = '';
   target.classList.add('active');
   target.scrollTop = 0;
 
@@ -1175,9 +1177,14 @@ function logout() {
   localStorage.removeItem('now_cart');
   document.getElementById('bottomNav').style.display = 'none';
   document.getElementById('cartBar').style.display = 'none';
-  // Reset screens
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active','slide-left'));
-  document.getElementById('screen-login').classList.add('active');
+  // Hide all screens, show only login
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active','slide-left');
+    s.style.display = 'none';
+  });
+  const loginScreen = document.getElementById('screen-login');
+  loginScreen.style.display = '';
+  loginScreen.classList.add('active');
   SCREEN_HISTORY = ['screen-login'];
   updateCartBar();
 }
