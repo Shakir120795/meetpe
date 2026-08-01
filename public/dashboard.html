@@ -118,6 +118,7 @@ tr:hover td{background:#fafafa}
     <div class="nav-item" data-sec="analytics"><span class="icon">📈</span> Analytics</div>
     <div class="nav-item" data-sec="settings"><span class="icon">⚙️</span> Settings</div>
     <div class="nav-item" data-sec="reviews"><span class="icon">⭐</span> Reviews</div>
+    <div class="nav-item" data-sec="inventory"><span class="icon">📦</span> Inventory</div>
     <div class="nav-item" data-sec="links"><span class="icon">🔗</span> Quick Links</div>
   </nav>
   <div class="sidebar-footer">NOW Delivery Admin v2.0</div>
@@ -177,6 +178,18 @@ tr:hover td{background:#fafafa}
       <div class="card">
         <div class="card-head"><h3>🏆 Top Selling Items</h3></div>
         <div style="overflow-x:auto"><table id="topItemsTable"></table></div>
+      </div>
+    </div>
+    <!-- INVENTORY -->
+    <div class="section" id="sec-inventory">
+      <div class="stats-grid" id="inventoryStats"></div>
+      <div id="inventoryAlerts" style="margin-bottom:16px"></div>
+      <div class="card">
+        <div class="card-head">
+          <h3>📦 Stock Management</h3>
+          <button class="btn sm" onclick="loadInventory()">↻ Refresh</button>
+        </div>
+        <div style="overflow-x:auto"><table id="inventoryTable"></table></div>
       </div>
     </div>
     <!-- REVIEWS -->
@@ -317,6 +330,7 @@ function switchSection(sec){
   if(sec==='analytics') loadAnalytics();
   if(sec==='settings') loadSettings();
   if(sec==='reviews') loadReviews('pending');
+  if(sec==='inventory') loadInventory();
 }
 
 async function loadAll(){
@@ -725,6 +739,71 @@ async function saveSettings(){
     const r=await fetch(`/admin/settings?key=${encodeURIComponent(key)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const d=await r.json(); if(!d.ok) throw new Error(d.error);
     toast('Settings saved','success');
+  }catch(e){toast(e.message,'error');}
+}
+// ── INVENTORY ──
+async function loadInventory(){
+  const key=KEY(); if(!key) return;
+  try{
+    const [invR, alertR] = await Promise.all([
+      fetch(`/admin/inventory?key=${encodeURIComponent(key)}`),
+      fetch(`/admin/inventory/alerts?key=${encodeURIComponent(key)}`)
+    ]);
+    const inv=await invR.json(); const alerts=await alertR.json();
+    if(!inv.ok) throw new Error(inv.error);
+    // Stats
+    $('inventoryStats').innerHTML=`
+      <div class="stat-card blue"><div class="label">Total Items</div><div class="val">${inv.stats.totalItems}</div></div>
+      <div class="stat-card green"><div class="label">In Stock</div><div class="val">${inv.stats.inStockCount}</div></div>
+      <div class="stat-card red"><div class="label">Out of Stock</div><div class="val">${inv.stats.outOfStockCount}</div></div>
+      <div class="stat-card orange"><div class="label">Low Stock Alerts</div><div class="val">${alerts.lowStockCount||0}</div></div>
+    `;
+    // Alerts banner
+    const alertsList = alerts.alerts||[];
+    $('inventoryAlerts').innerHTML = alertsList.length ? `
+      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:14px 16px">
+        <div style="font-weight:700;margin-bottom:8px;color:#c2410c">⚠️ ${alertsList.length} Stock Alert${alertsList.length>1?'s':''}</div>
+        ${alertsList.slice(0,5).map(a=>`
+          <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0">
+            <span><strong>${esc(a.code)}</strong> — ${esc(a.name)}</span>
+            <span class="badge ${a.type==='out_of_stock'?'cancelled':'preparing'}">${a.type==='out_of_stock'?'Out of Stock':'Low Stock'}</span>
+          </div>`).join('')}
+        ${alertsList.length>5?`<div style="font-size:12px;color:#c2410c;margin-top:6px">+${alertsList.length-5} more alerts</div>`:''}
+      </div>` : '';
+    // Table
+    $('inventoryTable').innerHTML=`<thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Price</th><th>SKU</th><th>Stock</th><th>Low Stock</th><th>Actions</th></tr></thead><tbody>`+
+      inv.inventory.map(i=>`<tr>
+        <td><code style="background:var(--light);padding:2px 8px;border-radius:4px;font-size:12px">${esc(i.code)}</code></td>
+        <td style="font-size:13px;font-weight:500">${esc(i.name)}</td>
+        <td style="font-size:12px;color:var(--gray)">${esc(CAT_LABELS[i.cat]||i.cat)}</td>
+        <td><strong style="color:var(--primary)">₹${i.price}</strong></td>
+        <td style="font-size:12px;font-family:monospace">${esc(i.sku||i.code)}</td>
+        <td><span class="badge ${i.inStock?'delivered':'cancelled'}">${i.inStock?'In Stock':'Out'}</span></td>
+        <td><span class="badge ${i.lowStock?'preparing':'inactive'}">${i.lowStock?'⚠️ Low':'-'}</span></td>
+        <td style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="btn sm ${i.inStock?'danger':'green'}" onclick="quickToggleStock('${i.code}',${!i.inStock})">${i.inStock?'⛔ OOS':'✅ In'}</button>
+          <button class="btn sm ${i.lowStock?'':'orange'}" onclick="toggleLowStock('${i.code}',${!i.lowStock})" style="${i.lowStock?'border-color:#f59e0b;color:#f59e0b':''}">⚠️</button>
+        </td>
+      </tr>`).join('')+'</tbody>';
+  }catch(e){toast(e.message,'error');}
+}
+async function quickToggleStock(code, inStock){
+  const key=KEY();
+  try{
+    await fetch(`/admin/stock/${code}?key=${encodeURIComponent(key)}&inStock=${inStock}`,{method:'POST'});
+    toast(`${code} → ${inStock?'In Stock':'Out of Stock'}`,'success');
+    loadInventory();
+  }catch(e){toast(e.message,'error');}
+}
+async function toggleLowStock(code, lowStock){
+  const key=KEY();
+  try{
+    await fetch(`/admin/inventory/${code}?key=${encodeURIComponent(key)}`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({lowStock})
+    });
+    toast(`${code} low stock ${lowStock?'flagged':'cleared'}`,'success');
+    loadInventory();
   }catch(e){toast(e.message,'error');}
 }
 // ── REVIEWS ──

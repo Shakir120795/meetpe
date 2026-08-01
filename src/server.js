@@ -743,6 +743,70 @@ app.get('/admin/analytics', (req, res) => {
   res.json({ ok: true, daily, topItems, byHour, summary, thisWeek, lastWeek });
 });
 
+// ===== Inventory Management =====
+
+// GET /admin/inventory?key=X — full inventory with stock levels
+app.get('/admin/inventory', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const { outOfStock } = loadStock();
+  const catalog = getCatalog();
+  const oosUpper = outOfStock.map(c => c.toUpperCase());
+  const inventory = catalog.map(item => ({
+    code: item.code,
+    name: item.name,
+    cat: item.cat,
+    price: item.price,
+    unit: item.unit,
+    sku: item.sku || item.code,
+    inStock: !oosUpper.includes(item.code.toUpperCase()),
+    lowStock: item.lowStock || false,
+    stockQty: item.stockQty || null,
+  }));
+  const totalItems = inventory.length;
+  const inStockCount = inventory.filter(i => i.inStock).length;
+  const outOfStockCount = inventory.filter(i => !i.inStock).length;
+  res.json({ ok: true, inventory, stats: { totalItems, inStockCount, outOfStockCount } });
+});
+
+// POST /admin/inventory/:code?key=X — update stock qty + low stock flag
+app.post('/admin/inventory/:code', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const { inStock, lowStock, stockQty, sku } = req.body || {};
+  const code = req.params.code;
+  // Update stock state
+  if (typeof inStock === 'boolean') setStock(code, inStock);
+  // Update catalog item with extra inventory fields
+  const catalog = getCatalog();
+  const idx = catalog.findIndex(i => i.code.toUpperCase() === code.toUpperCase());
+  if (idx === -1) return res.status(404).json({ ok: false, error: 'item not found' });
+  if (typeof lowStock === 'boolean') catalog[idx].lowStock = lowStock;
+  if (stockQty !== undefined) catalog[idx].stockQty = parseInt(stockQty) || null;
+  if (sku) catalog[idx].sku = sku.trim();
+  // Write back
+  const fs = require('fs');
+  const path = require('path');
+  const catalogFile = path.join(__dirname, '..', 'data', 'catalog.json');
+  fs.writeFileSync(catalogFile, JSON.stringify(catalog, null, 2));
+  res.json({ ok: true, code });
+});
+
+// GET /admin/inventory/alerts?key=X — low stock + out of stock alerts
+app.get('/admin/inventory/alerts', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const { outOfStock } = loadStock();
+  const catalog = getCatalog();
+  const oosUpper = outOfStock.map(c => c.toUpperCase());
+  const alerts = [];
+  for (const item of catalog) {
+    if (oosUpper.includes(item.code.toUpperCase())) {
+      alerts.push({ type: 'out_of_stock', code: item.code, name: item.name, cat: item.cat });
+    } else if (item.lowStock) {
+      alerts.push({ type: 'low_stock', code: item.code, name: item.name, cat: item.cat, qty: item.stockQty });
+    }
+  }
+  res.json({ ok: true, alerts, outOfStockCount: oosUpper.length, lowStockCount: alerts.filter(a => a.type === 'low_stock').length });
+});
+
 // ===== Reviews & Ratings =====
 
 // POST /api/reviews — submit review (customer)
