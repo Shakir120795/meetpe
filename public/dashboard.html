@@ -117,6 +117,7 @@ tr:hover td{background:#fafafa}
     <div class="nav-item" data-sec="coupons"><span class="icon">🏷️</span> Coupons</div>
     <div class="nav-item" data-sec="analytics"><span class="icon">📈</span> Analytics</div>
     <div class="nav-item" data-sec="settings"><span class="icon">⚙️</span> Settings</div>
+    <div class="nav-item" data-sec="reviews"><span class="icon">⭐</span> Reviews</div>
     <div class="nav-item" data-sec="links"><span class="icon">🔗</span> Quick Links</div>
   </nav>
   <div class="sidebar-footer">NOW Delivery Admin v2.0</div>
@@ -177,6 +178,16 @@ tr:hover td{background:#fafafa}
         <div class="card-head"><h3>🏆 Top Selling Items</h3></div>
         <div style="overflow-x:auto"><table id="topItemsTable"></table></div>
       </div>
+    </div>
+    <!-- REVIEWS -->
+    <div class="section" id="sec-reviews">
+      <div class="chips" id="reviewFilterChips">
+        <button class="chip active" onclick="loadReviews('pending')">⏳ Pending</button>
+        <button class="chip" onclick="loadReviews('approved')">✅ Approved</button>
+        <button class="chip" onclick="loadReviews('rejected')">❌ Rejected</button>
+        <button class="chip" onclick="loadReviews('')">📋 All</button>
+      </div>
+      <div id="reviewsContent"><div class="empty"><div class="big">⭐</div><p>Load reviews</p></div></div>
     </div>
     <!-- SETTINGS -->
     <div class="section" id="sec-settings">
@@ -305,6 +316,7 @@ function switchSection(sec){
   if(sec==='coupons') loadCoupons();
   if(sec==='analytics') loadAnalytics();
   if(sec==='settings') loadSettings();
+  if(sec==='reviews') loadReviews('pending');
 }
 
 async function loadAll(){
@@ -713,6 +725,56 @@ async function saveSettings(){
     const r=await fetch(`/admin/settings?key=${encodeURIComponent(key)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const d=await r.json(); if(!d.ok) throw new Error(d.error);
     toast('Settings saved','success');
+  }catch(e){toast(e.message,'error');}
+}
+// ── REVIEWS ──
+async function loadReviews(status='pending'){
+  const key=KEY(); if(!key) return;
+  // Update active chip
+  document.querySelectorAll('#reviewFilterChips .chip').forEach(c=>c.classList.remove('active'));
+  const labels={'pending':'⏳ Pending','approved':'✅ Approved','rejected':'❌ Rejected','':'📋 All'};
+  document.querySelectorAll('#reviewFilterChips .chip').forEach(c=>{
+    if(c.textContent.trim()===labels[status]) c.classList.add('active');
+  });
+  try{
+    const r=await fetch(`/admin/reviews?key=${encodeURIComponent(key)}${status?'&status='+status:''}`);
+    const d=await r.json(); if(!d.ok) throw new Error(d.error);
+    const reviews=d.reviews||[];
+    if(!reviews.length){$('reviewsContent').innerHTML='<div class="empty"><div class="big">⭐</div><p>No reviews found</p></div>';return;}
+    $('reviewsContent').innerHTML=`<div style="display:grid;gap:12px">`+reviews.map(rv=>`
+      <div class="card" style="padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+          <div>
+            <span style="font-size:18px">${'★'.repeat(rv.rating)}${'☆'.repeat(5-rv.rating)}</span>
+            <span style="margin-left:8px;font-size:13px;font-weight:600">${esc(rv.customer_name||rv.phone||'Customer')}</span>
+          </div>
+          <span class="badge ${rv.status}">${rv.status}</span>
+        </div>
+        <div style="font-size:12px;color:var(--gray);margin-bottom:6px">Item: <strong>${esc(rv.item_code)}</strong> • Order #${rv.order_id||'-'} • ${fmtTime(rv.created_at)}</div>
+        ${rv.comment?`<div style="font-size:13px;background:var(--light);padding:10px;border-radius:8px;margin-bottom:10px">"${esc(rv.comment)}"</div>`:''}
+        <div style="display:flex;gap:6px">
+          ${rv.status!=='approved'?`<button class="btn sm green" onclick="updateReview(${rv.id},'approved')">✅ Approve</button>`:''}
+          ${rv.status!=='rejected'?`<button class="btn sm" onclick="updateReview(${rv.id},'rejected')" style="border-color:#ef4444;color:#ef4444">❌ Reject</button>`:''}
+          <button class="btn sm danger" onclick="deleteReview(${rv.id})">🗑️ Delete</button>
+        </div>
+      </div>`).join('')+'</div>';
+  }catch(e){toast(e.message,'error');}
+}
+async function updateReview(id,status){
+  const key=KEY();
+  try{
+    const r=await fetch(`/admin/reviews/${id}?key=${encodeURIComponent(key)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+    const d=await r.json(); if(!d.ok) throw new Error(d.error);
+    toast(`Review ${status}`,'success'); loadReviews();
+  }catch(e){toast(e.message,'error');}
+}
+async function deleteReview(id){
+  if(!confirm('Delete this review?')) return;
+  const key=KEY();
+  try{
+    const r=await fetch(`/admin/reviews/${id}?key=${encodeURIComponent(key)}`,{method:'DELETE'});
+    const d=await r.json(); if(!d.ok) throw new Error(d.error);
+    toast('Review deleted','success'); loadReviews();
   }catch(e){toast(e.message,'error');}
 }
 // ── UTILS ──

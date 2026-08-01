@@ -743,6 +743,72 @@ app.get('/admin/analytics', (req, res) => {
   res.json({ ok: true, daily, topItems, byHour, summary, thisWeek, lastWeek });
 });
 
+// ===== Reviews & Ratings =====
+
+// POST /api/reviews — submit review (customer)
+app.post('/api/reviews', (req, res) => {
+  const { phone, order_id, item_code, rating, comment } = req.body || {};
+  const cleanPhone = String(phone || '').replace(/\D/g, '');
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+  const r = parseInt(rating, 10);
+  if (!r || r < 1 || r > 5) return res.status(400).json({ ok: false, error: 'rating must be 1-5' });
+  if (!item_code) return res.status(400).json({ ok: false, error: 'item_code required' });
+  const waPhone = `web:+91${cleanPhone}`;
+  // Check if order exists and is delivered
+  const order = order_id ? db.prepare('SELECT * FROM orders WHERE id = ? AND phone = ?').get(order_id, waPhone) : null;
+  if (order_id && (!order || order.status !== 'delivered')) {
+    return res.status(400).json({ ok: false, error: 'Order not found or not delivered' });
+  }
+  // Prevent duplicate review per order+item
+  if (order_id) {
+    const exists = db.prepare('SELECT id FROM reviews WHERE order_id = ? AND item_code = ? AND phone = ?').get(order_id, item_code, waPhone);
+    if (exists) return res.status(400).json({ ok: false, error: 'Already reviewed' });
+  }
+  const info = db.prepare(`INSERT INTO reviews (order_id, phone, item_code, rating, comment) VALUES (?, ?, ?, ?, ?)`).run(order_id || null, waPhone, item_code, r, (comment || '').trim().slice(0, 500));
+  res.json({ ok: true, id: info.lastInsertRowid });
+});
+
+// GET /api/reviews/:item_code — public reviews for a product
+app.get('/api/reviews/:item_code', (req, res) => {
+  const rows = db.prepare(`
+    SELECT r.id, r.rating, r.comment, r.created_at, c.name as customer_name
+    FROM reviews r LEFT JOIN customers c ON c.phone = r.phone
+    WHERE r.item_code = ? AND r.status = 'approved'
+    ORDER BY r.created_at DESC LIMIT 20
+  `).all(req.params.item_code);
+  const stats = db.prepare(`SELECT COUNT(*) as count, ROUND(AVG(rating),1) as avg FROM reviews WHERE item_code = ? AND status = 'approved'`).get(req.params.item_code);
+  res.json({ ok: true, reviews: rows, stats });
+});
+
+// GET /admin/reviews?key=X — list all reviews (admin)
+app.get('/admin/reviews', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const status = req.query.status || '';
+  const rows = db.prepare(`
+    SELECT r.*, c.name as customer_name
+    FROM reviews r LEFT JOIN customers c ON c.phone = r.phone
+    ${status ? 'WHERE r.status = ?' : ''}
+    ORDER BY r.created_at DESC LIMIT 200
+  `).all(...(status ? [status] : []));
+  res.json({ ok: true, reviews: rows });
+});
+
+// PUT /admin/reviews/:id?key=X — approve/reject/delete
+app.put('/admin/reviews/:id', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const { status } = req.body || {};
+  const allowed = ['approved', 'rejected', 'pending'];
+  if (!allowed.includes(status)) return res.status(400).json({ ok: false, error: 'invalid status' });
+  db.prepare('UPDATE reviews SET status = ? WHERE id = ?').run(status, req.params.id);
+  res.json({ ok: true });
+});
+
+app.delete('/admin/reviews/:id', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  db.prepare('DELETE FROM reviews WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
 // ===== Admin: customers list =====
 app.get('/admin/customers', (req, res) => {
   if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });

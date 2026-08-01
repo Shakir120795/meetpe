@@ -51,6 +51,17 @@ db.exec(`
     used         INTEGER DEFAULT 0,
     created_at   TEXT DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS reviews (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id     INTEGER,
+    phone        TEXT,
+    item_code    TEXT,
+    rating       INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
+    comment      TEXT,
+    status       TEXT DEFAULT 'pending',
+    created_at   TEXT DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 console.log(`✅ DB ready at ${dbPath}`);

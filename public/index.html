@@ -401,6 +401,10 @@ input,textarea{font:inherit;color:inherit}
 .drawer-trigger{background:transparent !important}
 .hamburger{font-size:22px;color:var(--text);line-height:1}
 
+/* ═══ REVIEWS ═══ */
+.star-row{display:flex;gap:4px;margin-bottom:4px}
+.star{font-size:28px;cursor:pointer;color:var(--border);transition:color .15s;-webkit-tap-highlight-color:transparent}
+.star.active,.star:hover{color:#f59e0b}
 /* ═══ LOCATION MAP SCREEN ═══ */
 .loc-screen{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;flex-direction:column;overscroll-behavior:none;touch-action:pan-x pan-y;}
 .loc-topbar{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border)}
@@ -1885,6 +1889,24 @@ function showOrderDetail(id) {
     </div>
     <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Order Tracking</div>
     <div class="track-steps">${stepsHtml}</div>
+    ${order.status === 'delivered' ? `
+    <div style="margin-top:20px;background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border)">
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px">⭐ Rate Your Order</div>
+      ${(order.items||[]).map(item => `
+        <div class="review-item" id="review-${order.id}-${item.code}">
+          <div style="font-size:13px;font-weight:600;margin-bottom:8px">${item.name}</div>
+          <div class="star-row" data-order="${order.id}" data-code="${item.code}">
+            ${[1,2,3,4,5].map(s=>`<span class="star" data-val="${s}" onclick="setRating(this,${s})">★</span>`).join('')}
+          </div>
+          <textarea id="comment-${order.id}-${item.code}" placeholder="Your feedback (optional)..." 
+            style="width:100%;margin-top:8px;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;resize:none;height:60px"></textarea>
+          <button onclick="submitReview(${order.id},'${item.code}')" 
+            style="margin-top:8px;width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">
+            Submit Review
+          </button>
+        </div>
+      `).join('<hr style="border:none;border-top:1px solid var(--border);margin:12px 0"/>')}
+    </div>` : ''}
   </div>`;
 }
 
@@ -2065,6 +2087,42 @@ function closeDrawer() {
 
 function showSavedAddresses() {
   showToast('Saved addresses coming soon!', '', 2000);
+}
+
+// ═══════════════════════════════════════════
+//  Reviews & Ratings
+// ═══════════════════════════════════════════
+const _ratings = {}; // { 'orderId-code': rating }
+
+function setRating(el, val) {
+  const row = el.closest('.star-row');
+  const key = row.dataset.order + '-' + row.dataset.code;
+  _ratings[key] = val;
+  row.querySelectorAll('.star').forEach((s, i) => {
+    s.classList.toggle('active', i < val);
+  });
+}
+
+async function submitReview(orderId, itemCode) {
+  const key = orderId + '-' + itemCode;
+  const rating = _ratings[key];
+  if (!rating) { showToast('Please select a rating', 'error', 2000); return; }
+  const comment = document.getElementById(`comment-${orderId}-${itemCode}`)?.value || '';
+  if (!USER || !USER.phone) { showToast('Login required', 'error'); return; }
+  try {
+    const r = await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: USER.phone, order_id: orderId, item_code: itemCode, rating, comment })
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error);
+    const wrap = document.getElementById(`review-${orderId}-${itemCode}`);
+    if (wrap) wrap.innerHTML = `<div style="text-align:center;padding:12px;color:var(--success)">✅ Thanks for your review!</div>`;
+    showToast('Review submitted!', 'success', 2000);
+  } catch(e) {
+    showToast(e.message || 'Failed', 'error', 2500);
+  }
 }
 
 // ═══════════════════════════════════════════
