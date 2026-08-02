@@ -10,59 +10,86 @@
   <link rel="stylesheet" href="/style.css" />
   <style>
     .info-page { padding: 50px 0 80px; }
-    .info-tabs {
-      display: flex; flex-wrap: wrap; gap: 8px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 36px; padding-bottom: 0;
-      position: sticky; top: 70px; background: white; z-index: 5;
-      padding-top: 8px;
+
+    /* Accordion */
+    .accordion { max-width: 800px; display: flex; flex-direction: column; gap: 12px; }
+
+    .acc-item {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #fff;
     }
-    .info-tab {
-      padding: 12px 20px; font-size: 15px; font-weight: 600;
-      color: var(--gray); cursor: pointer; border: none;
-      background: transparent; border-bottom: 3px solid transparent;
-      transition: all .15s;
+
+    .acc-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 22px;
+      cursor: pointer;
+      user-select: none;
+      background: #fff;
+      transition: background .15s;
     }
-    .info-tab:hover { color: var(--primary); }
-    .info-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
-    .info-section { display: none; max-width: 800px; }
-    .info-section.active { display: block; }
-    .info-section h2 {
-      font-size: 32px; margin-bottom: 8px;
+    .acc-header:hover { background: var(--light); }
+    .acc-header.open { background: var(--light); }
+
+    .acc-title {
+      font-size: 17px; font-weight: 700; color: var(--dark);
+      display: flex; align-items: center; gap: 10px;
     }
-    .info-section .updated {
-      color: var(--gray); font-size: 13px; margin-bottom: 28px;
-      padding-bottom: 16px; border-bottom: 1px solid var(--border);
+
+    .acc-arrow {
+      font-size: 13px; color: var(--gray);
+      transition: transform .25s;
+      flex-shrink: 0;
     }
-    .info-section h3 {
-      font-size: 20px; margin: 32px 0 12px; color: var(--dark);
+    .acc-header.open .acc-arrow { transform: rotate(180deg); }
+
+    .acc-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .35s ease, padding .25s ease;
+      padding: 0 22px;
     }
-    .info-section h4 { font-size: 16px; margin: 18px 0 8px; }
-    .info-section p { color: #374151; margin-bottom: 14px; line-height: 1.7; }
-    .info-section ul { margin: 6px 0 16px; padding-left: 22px; }
-    .info-section li { color: #374151; margin-bottom: 8px; line-height: 1.7; }
-    .info-section strong { color: var(--dark); }
+    .acc-body.open {
+      max-height: 9999px;
+      padding: 4px 22px 24px;
+    }
+
+    /* Content styles */
+    .acc-body .updated {
+      color: var(--gray); font-size: 13px; margin-bottom: 20px;
+      padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+    .acc-body h3 { font-size: 18px; margin: 24px 0 10px; color: var(--dark); }
+    .acc-body h4 { font-size: 15px; margin: 16px 0 6px; }
+    .acc-body p { color: #374151; margin-bottom: 12px; line-height: 1.7; }
+    .acc-body ul { margin: 6px 0 14px; padding-left: 22px; }
+    .acc-body li { color: #374151; margin-bottom: 8px; line-height: 1.7; }
+    .acc-body strong { color: var(--dark); }
+
     .pillars {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
-      margin: 24px 0;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+      margin: 20px 0;
     }
     .pillar {
-      background: var(--light); padding: 22px; border-radius: var(--radius);
+      background: var(--light); padding: 18px; border-radius: var(--radius);
       border: 1px solid var(--border);
     }
-    .pillar .icon { font-size: 32px; margin-bottom: 10px; }
-    .pillar h4 { margin: 0 0 6px; font-size: 16px; }
-    .pillar p { font-size: 14px; color: var(--gray); margin: 0; }
+    .pillar .icon { font-size: 28px; margin-bottom: 8px; }
+    .pillar h4 { margin: 0 0 4px; font-size: 15px; }
+    .pillar p { font-size: 13px; color: var(--gray); margin: 0; }
+
     .callout {
       background: var(--primary-light); border-left: 4px solid var(--primary);
-      padding: 16px 20px; border-radius: 8px; margin: 18px 0;
+      padding: 14px 18px; border-radius: 8px; margin: 16px 0;
     }
     .callout p { margin: 0; color: var(--dark); }
+
     @media (max-width: 700px) {
       .pillars { grid-template-columns: 1fr; }
-      .info-tabs { top: 64px; }
-      .info-tab { padding: 10px 14px; font-size: 14px; }
-      .info-section h2 { font-size: 26px; }
+      .acc-title { font-size: 15px; }
+      .acc-header { padding: 16px 16px; }
+      .acc-body.open { padding: 4px 16px 20px; }
     }
   </style>
 </head>
@@ -92,215 +119,243 @@
 
 <section class="info-page">
   <div class="container">
+    <div class="accordion">
 
-    <!-- Tabs -->
-    <div class="info-tabs">
-      <button class="info-tab active" data-tab="about">About Us</button>
-      <button class="info-tab" data-tab="safety">Safety & Quality</button>
-      <button class="info-tab" data-tab="privacy">Privacy Policy</button>
-      <button class="info-tab" data-tab="terms">Terms of Use</button>
-    </div>
+      <!-- ABOUT US -->
+      <div class="acc-item" id="about">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <span class="acc-title">🏢 About Us</span>
+          <span class="acc-arrow">▼</span>
+        </div>
+        <div class="acc-body">
+          <p>MeatPe is a fresh meat delivery service built for households who care about <strong>quality, hygiene, and convenience</strong>. We deliver freshly cut chicken, mutton, fish, and ready-to-cook items to your doorstep in <strong>30 minutes</strong> — cleaned, cut, and packed exactly the way you want.</p>
 
-    <!-- ABOUT US -->
-    <div id="about" class="info-section active">
-      <h2>About MeatPe</h2>
-      <p class="updated">Fresh. Fast. Trusted.</p>
+          <h3>Why we started</h3>
+          <p>Buying meat in India is often a compromise: long queues at the local shop, unreliable hygiene, no fixed prices, and no way to know how fresh the meat really is. MeatPe was started to fix this — fixed daily-fresh inventory, transparent pricing, hygienic processing, and fast home delivery.</p>
 
-      <p>MeatPe is a fresh meat delivery service built for households who care about <strong>quality, hygiene, and convenience</strong>. We deliver freshly cut chicken, mutton, fish, and ready-to-cook items to your doorstep in <strong>30 minutes</strong> — cleaned, cut, and packed exactly the way you want.</p>
+          <h3>What we promise</h3>
+          <div class="pillars">
+            <div class="pillar"><div class="icon">🌿</div><h4>Daily Fresh</h4><p>Sourced same-day from trusted suppliers. No frozen meat sold as fresh.</p></div>
+            <div class="pillar"><div class="icon">⚡</div><h4>30-Min Delivery</h4><p>From our processing unit to your kitchen, in 30 minutes flat.</p></div>
+            <div class="pillar"><div class="icon">💯</div><h4>Honest Pricing</h4><p>One price for everyone. No haggling. Free cleaning + cutting.</p></div>
+          </div>
 
-      <h3>Why we started</h3>
-      <p>Buying meat in India is often a compromise: long queues at the local shop, unreliable hygiene, no fixed prices, and no way to know how fresh the meat really is. MeatPe was started to fix this — fixed daily-fresh inventory, transparent pricing, hygienic processing, and fast home delivery.</p>
+          <h3>Our journey</h3>
+          <p>We are starting small and scaling thoughtfully. After perfecting the experience in our pilot location, we plan to expand to <strong>all major Indian cities</strong>. Every city we launch in will have its own daily-fresh sourcing, trained processing team, and 30-minute delivery promise.</p>
 
-      <h3>What we promise</h3>
-      <div class="pillars">
-        <div class="pillar"><div class="icon">🌿</div><h4>Daily Fresh</h4><p>Sourced same-day from trusted suppliers. No frozen meat sold as fresh.</p></div>
-        <div class="pillar"><div class="icon">⚡</div><h4>30-Min Delivery</h4><p>From our processing unit to your kitchen, in 30 minutes flat.</p></div>
-        <div class="pillar"><div class="icon">💯</div><h4>Honest Pricing</h4><p>One price for everyone. No haggling. Free cleaning + cutting.</p></div>
+          <h3>Get in touch</h3>
+          <p>For orders, suggestions, partnerships, or feedback:</p>
+          <ul>
+            <li>📞 Call: <a href="tel:+917617555488">+91 76175 55488</a></li>
+            <li>💬 WhatsApp: <a href="https://wa.me/917617555488">Send a message</a></li>
+          </ul>
+        </div>
       </div>
 
-      <h3>Our journey</h3>
-      <p>We are starting small and scaling thoughtfully. After perfecting the experience in our pilot location, we plan to expand to <strong>all major Indian cities</strong>. Every city we launch in will have its own daily-fresh sourcing, trained processing team, and 30-minute delivery promise.</p>
+      <!-- SAFETY & QUALITY -->
+      <div class="acc-item" id="safety">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <span class="acc-title">🛡️ Safety & Quality</span>
+          <span class="acc-arrow">▼</span>
+        </div>
+        <div class="acc-body">
+          <p class="updated">Last updated: 22 May 2026</p>
+          <p>Food safety is non-negotiable at MeatPe. Every item that reaches your home goes through a strict quality and hygiene process designed for raw meat handling.</p>
 
-      <h3>Get in touch</h3>
-      <p>For orders, suggestions, partnerships, or feedback:</p>
-      <ul>
-        <li>📞 Call: <a href="tel:+917617555488">+91 76175 55488</a></li>
-        <li>💬 WhatsApp: <a href="https://wa.me/917617555488">Send a message</a></li>
-      </ul>
-    </div>
+          <h3>1. Sourcing</h3>
+          <ul>
+            <li>We work with <strong>licensed suppliers and abattoirs</strong> who meet local health authority standards.</li>
+            <li>Chicken and mutton are sourced fresh on the day of delivery — not stored from previous days.</li>
+            <li>Fish is sourced from regulated suppliers and inspected for freshness on arrival.</li>
+          </ul>
 
-    <!-- SAFETY & QUALITY -->
-    <div id="safety" class="info-section">
-      <h2>Safety & Quality Standards</h2>
-      <p class="updated">Last updated: 22 May 2026</p>
+          <h3>2. Processing & Hygiene</h3>
+          <ul>
+            <li>All cleaning, cutting, and packing happens in a <strong>dedicated, sanitised processing area</strong>.</li>
+            <li>Staff handling meat use <strong>gloves, aprons, headgear, and masks</strong> at all times.</li>
+            <li>Knives, boards, and surfaces are sanitised between batches.</li>
+            <li>Chicken, mutton, fish, and ready-to-cook items are processed in <strong>separate zones</strong> to prevent cross-contamination.</li>
+          </ul>
 
-      <p>Food safety is non-negotiable at MeatPe. Every item that reaches your home goes through a strict quality and hygiene process designed for raw meat handling.</p>
+          <h3>3. Cold Chain</h3>
+          <ul>
+            <li>From processing to your door, products stay in temperature-controlled storage and insulated delivery bags.</li>
+            <li>We do <strong>not</strong> use stale or repackaged inventory.</li>
+          </ul>
 
-      <h3>1. Sourcing</h3>
-      <ul>
-        <li>We work with <strong>licensed suppliers and abattoirs</strong> who meet local health authority standards.</li>
-        <li>Chicken and mutton are sourced fresh on the day of delivery — not stored from previous days.</li>
-        <li>Fish is sourced from regulated suppliers and inspected for freshness on arrival.</li>
-      </ul>
+          <h3>4. Packaging</h3>
+          <ul>
+            <li>Items are packed in <strong>food-grade, leak-proof</strong> containers.</li>
+            <li>Each pack is sealed and labelled with item name and weight.</li>
+          </ul>
 
-      <h3>2. Processing & Hygiene</h3>
-      <ul>
-        <li>All cleaning, cutting, and packing happens in a <strong>dedicated, sanitised processing area</strong>.</li>
-        <li>Staff handling meat use <strong>gloves, aprons, headgear, and masks</strong> at all times.</li>
-        <li>Knives, boards, and surfaces are sanitised between batches.</li>
-        <li>Chicken, mutton, fish, and ready-to-cook items are processed in <strong>separate zones</strong> to prevent cross-contamination.</li>
-      </ul>
+          <h3>5. If something is wrong</h3>
+          <div class="callout">
+            <p><strong>If you receive any item that is not fresh, mis-weighed, or damaged</strong>, message us on WhatsApp within <strong>2 hours of delivery</strong> with a photo. We will replace it or refund the item — no questions asked.</p>
+          </div>
 
-      <h3>3. Cold Chain</h3>
-      <ul>
-        <li>From processing to your door, products stay in temperature-controlled storage and insulated delivery bags.</li>
-        <li>We do <strong>not</strong> use stale or repackaged inventory.</li>
-      </ul>
+          <h3>6. Halal / Jhatka preference</h3>
+          <p>Customers may specify <strong>Halal</strong> or <strong>Jhatka</strong> preference at the time of ordering. We honour the preference based on the supplier source for that day. If a specific preparation is unavailable on a given day, we will inform you before processing the order.</p>
 
-      <h3>4. Packaging</h3>
-      <ul>
-        <li>Items are packed in <strong>food-grade, leak-proof</strong> containers.</li>
-        <li>Each pack is sealed and labelled with item name and weight.</li>
-      </ul>
-
-      <h3>5. If something is wrong</h3>
-      <div class="callout">
-        <p><strong>If you receive any item that is not fresh, mis-weighed, or damaged</strong>, message us on WhatsApp within <strong>2 hours of delivery</strong> with a photo. We will replace it or refund the item — no questions asked.</p>
+          <h3>7. Customer responsibility</h3>
+          <p>Once delivered, please <strong>refrigerate or cook immediately</strong>. Raw meat should not be left at room temperature for more than 2 hours. Wash hands, knives, and surfaces after handling.</p>
+        </div>
       </div>
 
-      <h3>6. Halal / Jhatka preference</h3>
-      <p>Customers may specify <strong>Halal</strong> or <strong>Jhatka</strong> preference at the time of ordering. We honour the preference based on the supplier source for that day. If a specific preparation is unavailable on a given day, we will inform you before processing the order.</p>
+      <!-- REFUND POLICY -->
+      <div class="acc-item" id="refund">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <span class="acc-title">💰 Refund Policy</span>
+          <span class="acc-arrow">▼</span>
+        </div>
+        <div class="acc-body">
+          <p class="updated">Last updated: 22 May 2026</p>
+          <p>At MeatPe, every order is freshly prepared after confirmation. We take quality seriously and want you to be completely satisfied.</p>
 
-      <h3>7. Customer responsibility</h3>
-      <p>Once delivered, please <strong>refrigerate or cook immediately</strong>. Raw meat should not be left at room temperature for more than 2 hours. Wash hands, knives, and surfaces after handling.</p>
+          <h3>When refunds apply</h3>
+          <ul>
+            <li>Item received is <strong>not fresh</strong> or of poor quality.</li>
+            <li><strong>Wrong item</strong> delivered.</li>
+            <li>Item is <strong>damaged</strong> or packaging is broken.</li>
+            <li>Significant <strong>weight discrepancy</strong> from what was ordered.</li>
+          </ul>
+
+          <h3>How to raise a refund</h3>
+          <p>Message us on <a href="https://wa.me/917617555488">WhatsApp</a> within <strong>2 hours of delivery</strong> with a photo of the issue. We will respond promptly.</p>
+
+          <h3>Refund options</h3>
+          <ul>
+            <li><strong>Replacement</strong> — we resend the correct/fresh item (subject to stock availability).</li>
+            <li><strong>MeatPe Cash credit</strong> — added to your account for next order.</li>
+            <li><strong>Full refund</strong> — for prepaid orders, processed within 5–7 working days.</li>
+          </ul>
+
+          <h3>When refunds do not apply</h3>
+          <ul>
+            <li>Order cancelled after meat has been cleaned/cut.</li>
+            <li>Change of mind after delivery.</li>
+            <li>Issue reported after 2 hours of delivery without valid reason.</li>
+          </ul>
+
+          <div class="callout">
+            <p>For any refund queries, call <a href="tel:+917617555488">+91 76175 55488</a> or WhatsApp us — we're here to help.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRIVACY POLICY -->
+      <div class="acc-item" id="privacy">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <span class="acc-title">🔒 Privacy Policy</span>
+          <span class="acc-arrow">▼</span>
+        </div>
+        <div class="acc-body">
+          <p class="updated">Last updated: 22 May 2026</p>
+          <p>This Privacy Policy explains what information MeatPe collects, why we collect it, and how we handle it. If anything is unclear, message us on <a href="https://wa.me/917617555488">WhatsApp</a> or call <a href="tel:+917617555488">+91 76175 55488</a>.</p>
+
+          <h3>1. What we collect</h3>
+          <ul>
+            <li><strong>Name</strong> — to address you and label your order.</li>
+            <li><strong>Phone number</strong> — to confirm orders, send delivery updates, and resolve issues.</li>
+            <li><strong>Delivery address</strong> — to deliver to the correct location.</li>
+            <li><strong>Order history</strong> — items you have purchased, dates, totals.</li>
+            <li><strong>Optional notes</strong> — cleaning/cutting preferences, delivery instructions.</li>
+            <li><strong>Basic device info</strong> — browser type, IP address, log data — used only for security and to fix bugs.</li>
+          </ul>
+          <p>We do <strong>not</strong> collect aadhaar, PAN, bank account details, or full payment card numbers.</p>
+
+          <h3>2. How we use your information</h3>
+          <ul>
+            <li>To process and deliver your orders.</li>
+            <li>To send order-related WhatsApp / SMS / phone updates.</li>
+            <li>To honour reward credits (MeatPe Cash) and Plus membership benefits.</li>
+            <li>To improve our service.</li>
+            <li>To send <strong>occasional offers and updates</strong>. You may opt out anytime by replying STOP.</li>
+          </ul>
+
+          <h3>3. Who we share with</h3>
+          <ul>
+            <li><strong>Delivery partner</strong> — name, phone, and address (only the rider on your order).</li>
+            <li><strong>Messaging providers</strong> — phone number needed to deliver messages.</li>
+            <li><strong>Hosting providers</strong> — order data stored on cloud servers.</li>
+          </ul>
+          <p>We do <strong>not</strong> sell or rent your personal information to third parties.</p>
+
+          <h3>4. How long we keep your information</h3>
+          <ul>
+            <li>Order records: up to <strong>3 years</strong> (for tax and accounting).</li>
+            <li>Account details: kept while active; deleted on request.</li>
+          </ul>
+
+          <h3>5. Your rights</h3>
+          <p>You can ask us to show, correct, or delete your data. Message us on <a href="https://wa.me/917617555488">WhatsApp</a> or call <a href="tel:+917617555488">+91 76175 55488</a>. We respond within <strong>15 working days</strong>.</p>
+
+          <h3>6. Security</h3>
+          <p>We use secure servers and encrypted connections (HTTPS). We follow industry standard practices to keep your information safe.</p>
+
+          <h3>7. Children</h3>
+          <p>MeatPe is intended for adults (18+). Minors should use the service under a parent or guardian's account.</p>
+        </div>
+      </div>
+
+      <!-- TERMS OF USE -->
+      <div class="acc-item" id="terms">
+        <div class="acc-header" onclick="toggleAcc(this)">
+          <span class="acc-title">📋 Terms of Use</span>
+          <span class="acc-arrow">▼</span>
+        </div>
+        <div class="acc-body">
+          <p class="updated">Last updated: 22 May 2026</p>
+          <p>By using the MeatPe website, app, or WhatsApp ordering service, you agree to these terms.</p>
+
+          <h3>1. Ordering</h3>
+          <ul>
+            <li>Orders can be placed via the website, WhatsApp, or by calling our number.</li>
+            <li>An order is confirmed only after we send you an order confirmation.</li>
+            <li>Prices and item availability are subject to daily stock and may change without notice.</li>
+          </ul>
+
+          <h3>2. Payment</h3>
+          <ul>
+            <li>We accept <strong>Cash on Delivery</strong> and <strong>UPI on Delivery</strong>.</li>
+            <li>Online prepaid payments may be added in the future.</li>
+          </ul>
+
+          <h3>3. Delivery</h3>
+          <ul>
+            <li>30-minute delivery is a target — actual time may vary based on location, traffic, and weather.</li>
+            <li>Delivery charges are calculated based on order value.</li>
+            <li>If you are not reachable at delivery time, the order may be cancelled.</li>
+          </ul>
+
+          <h3>4. Cancellations & refunds</h3>
+          <ul>
+            <li>Orders can be cancelled <strong>before processing begins</strong> (typically within 5 minutes of placing).</li>
+            <li>Once meat has been cleaned/cut, cancellation is not possible.</li>
+            <li>Quality issues must be reported within <strong>2 hours of delivery</strong> with a photo.</li>
+          </ul>
+
+          <h3>5. MeatPe Cash & Plus</h3>
+          <ul>
+            <li><strong>MeatPe Cash</strong> expires after 15 days, is non-transferable, and cannot be withdrawn as cash.</li>
+            <li><strong>MeatPe Plus</strong> benefits are subject to the published plan terms.</li>
+          </ul>
+
+          <h3>6. Acceptable use</h3>
+          <ul>
+            <li>Do not use abusive language with our team or delivery partners.</li>
+            <li>Do not attempt to misuse the website (scraping, automated abuse, fake orders).</li>
+          </ul>
+
+          <h3>7. Governing law</h3>
+          <p>These terms are governed by the laws of India. Disputes are subject to the jurisdiction of courts in our registered location.</p>
+
+          <h3>8. Contact</h3>
+          <p>Questions? Message us on <a href="https://wa.me/917617555488">WhatsApp</a> or call <a href="tel:+917617555488">+91 76175 55488</a>.</p>
+        </div>
+      </div>
+
     </div>
-
-    <!-- PRIVACY -->
-    <div id="privacy" class="info-section">
-      <h2>Privacy Policy</h2>
-      <p class="updated">Last updated: 22 May 2026</p>
-
-      <p>This Privacy Policy explains what information MeatPe collects, why we collect it, and how we handle it. We have written it in plain language. If anything is unclear, message us on <a href="https://wa.me/917617555488">WhatsApp</a> or call <a href="tel:+917617555488">+91 76175 55488</a>.</p>
-
-      <h3>1. What we collect</h3>
-      <p>We collect only what is needed to deliver your order:</p>
-      <ul>
-        <li><strong>Name</strong> — to address you and label your order.</li>
-        <li><strong>Phone number</strong> — to confirm orders, send delivery updates, and resolve issues.</li>
-        <li><strong>Delivery address</strong> — to deliver to the correct location.</li>
-        <li><strong>Order history</strong> — items you have purchased, dates, totals.</li>
-        <li><strong>Optional notes</strong> — cleaning/cutting preferences, delivery instructions.</li>
-        <li><strong>Basic device info</strong> — browser type, IP address, log data — used only for security and to fix bugs.</li>
-      </ul>
-      <p>We do <strong>not</strong> collect aadhaar, PAN, bank account details, or full payment card numbers. Cash on delivery and UPI on delivery are the default payment methods at this stage.</p>
-
-      <h3>2. How we use your information</h3>
-      <ul>
-        <li>To process and deliver your orders.</li>
-        <li>To send order-related WhatsApp / SMS / phone updates.</li>
-        <li>To honour reward credits (MeatPe Cash) and Plus membership benefits.</li>
-        <li>To improve our service — for example, identifying which items go out of stock fastest.</li>
-        <li>To send <strong>occasional offers and updates</strong>. You may opt out anytime by replying STOP.</li>
-      </ul>
-
-      <h3>3. Who we share with</h3>
-      <p>We share your information only with the people who help us complete your order:</p>
-      <ul>
-        <li><strong>Delivery partner</strong> — name, phone, and address (only the rider on your order).</li>
-        <li><strong>Messaging providers</strong> (e.g. WhatsApp / SMS gateway) — phone number and message content needed to deliver the message.</li>
-        <li><strong>Hosting providers</strong> — order data is stored on cloud servers we use to run MeatPe.</li>
-      </ul>
-      <p>We do <strong>not</strong> sell or rent your personal information to third parties for marketing.</p>
-
-      <h3>4. How long we keep your information</h3>
-      <ul>
-        <li>Order records: kept for up to <strong>3 years</strong> (for tax, accounting, and dispute purposes).</li>
-        <li>Account details: kept while your account is active; deleted on request.</li>
-      </ul>
-
-      <h3>5. Your rights</h3>
-      <p>You can ask us to:</p>
-      <ul>
-        <li>Show you what information we have about you.</li>
-        <li>Correct any wrong information.</li>
-        <li>Delete your account and personal data (we will keep order records as required by law).</li>
-        <li>Stop sending you promotional messages.</li>
-      </ul>
-      <p>To make any of these requests, message us on <a href="https://wa.me/917617555488">WhatsApp</a> from your registered phone number, or call <a href="tel:+917617555488">+91 76175 55488</a>. We will respond within <strong>15 working days</strong>.</p>
-
-      <h3>6. Security</h3>
-      <p>We use secure servers and encrypted connections (HTTPS) to protect your data. While no system is 100% secure, we follow industry standard practices to keep your information safe.</p>
-
-      <h3>7. Children</h3>
-      <p>MeatPe is intended for adults (18+). If you are a minor, please use the service under a parent or guardian's account.</p>
-
-      <h3>8. Changes to this policy</h3>
-      <p>If we update this policy, we will revise the "Last updated" date at the top. Significant changes will be communicated through the website or WhatsApp.</p>
-    </div>
-
-    <!-- TERMS -->
-    <div id="terms" class="info-section">
-      <h2>Terms of Use</h2>
-      <p class="updated">Last updated: 22 May 2026</p>
-
-      <p>By using the MeatPe website, app, or WhatsApp ordering service, you agree to these terms. Please read them.</p>
-
-      <h3>1. Ordering</h3>
-      <ul>
-        <li>Orders can be placed via the website, WhatsApp, or by calling our number.</li>
-        <li>An order is confirmed only after we send you an order confirmation.</li>
-        <li>Prices and item availability shown are subject to daily stock and may change without notice.</li>
-      </ul>
-
-      <h3>2. Payment</h3>
-      <ul>
-        <li>We accept <strong>Cash on Delivery</strong> and <strong>UPI on Delivery</strong>.</li>
-        <li>Online prepaid payments may be added in the future.</li>
-      </ul>
-
-      <h3>3. Delivery</h3>
-      <ul>
-        <li>30-minute delivery is a target — actual time may vary based on location, traffic, and weather.</li>
-        <li>Delivery charges are calculated based on order value (see homepage for current rates).</li>
-        <li>If you are not reachable at the time of delivery, the order may be cancelled.</li>
-      </ul>
-
-      <h3>4. Cancellations & refunds</h3>
-      <ul>
-        <li>Orders can be cancelled <strong>before processing begins</strong> (typically within 5 minutes of placing).</li>
-        <li>Once meat has been cleaned/cut for your order, cancellation is not possible.</li>
-        <li>If an item is not as expected (quality issue, wrong item, damage), report on WhatsApp within <strong>2 hours of delivery</strong> with a photo. We will refund or replace.</li>
-        <li>Refunds for prepaid orders (when applicable) are processed within 5–7 working days.</li>
-      </ul>
-
-      <h3>5. MeatPe Cash & Plus</h3>
-      <ul>
-        <li><strong>MeatPe Cash</strong> rewards expire after 15 days, are non-transferable, and cannot be withdrawn as cash.</li>
-        <li><strong>MeatPe Plus</strong> membership benefits are subject to the published plan terms; we may revise benefits with prior notice.</li>
-      </ul>
-
-      <h3>6. Acceptable use</h3>
-      <ul>
-        <li>Do not use abusive language with our team or delivery partners.</li>
-        <li>Do not attempt to misuse the website (scraping, automated abuse, fake orders).</li>
-        <li>We may refuse service or cancel accounts that violate these terms.</li>
-      </ul>
-
-      <h3>7. Liability</h3>
-      <p>We do our best to deliver high-quality, safe meat. However, we are not responsible for:</p>
-      <ul>
-        <li>Allergic reactions or dietary issues — please check ingredient information before consuming.</li>
-        <li>Improper storage by the customer after delivery.</li>
-        <li>Delays caused by reasons beyond our control (weather, traffic, public events, etc.).</li>
-      </ul>
-
-      <h3>8. Governing law</h3>
-      <p>These terms are governed by the laws of India. Any disputes will be subject to the jurisdiction of the courts in our registered location.</p>
-
-      <h3>9. Contact</h3>
-      <p>Questions? Message us on <a href="https://wa.me/917617555488">WhatsApp</a> or call <a href="tel:+917617555488">+91 76175 55488</a>.</p>
-    </div>
-
   </div>
 </section>
 
@@ -346,18 +401,32 @@
 </footer>
 
 <script>
-// Tabs + deep-link via hash
-const tabs = document.querySelectorAll('.info-tab');
-const sections = document.querySelectorAll('.info-section');
-function activate(name) {
-  tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
-  sections.forEach(s => s.classList.toggle('active', s.id === name));
-  if (history.replaceState) history.replaceState(null, '', '#' + name);
+function toggleAcc(header) {
+  const body = header.nextElementSibling;
+  const isOpen = header.classList.contains('open');
+
+  // Close all
+  document.querySelectorAll('.acc-header').forEach(h => h.classList.remove('open'));
+  document.querySelectorAll('.acc-body').forEach(b => b.classList.remove('open'));
+
+  // Open clicked one (if it was closed)
+  if (!isOpen) {
+    header.classList.add('open');
+    body.classList.add('open');
+    if (history.replaceState) history.replaceState(null, '', '#' + header.closest('.acc-item').id);
+  }
 }
-tabs.forEach(t => t.addEventListener('click', () => activate(t.dataset.tab)));
-// Open the right tab on hash load
+
+// Deep-link via hash
 const hash = (location.hash || '').replace('#', '');
-if (['about','safety','privacy','terms'].includes(hash)) activate(hash);
+if (hash) {
+  const item = document.getElementById(hash);
+  if (item) {
+    const h = item.querySelector('.acc-header');
+    if (h) toggleAcc(h);
+    setTimeout(() => item.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }
+}
 
 document.getElementById('yr').textContent = new Date().getFullYear();
 </script>
