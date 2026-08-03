@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>NOW — Fresh Meat Delivered Fast</title>
+<title data-brand-name>MeatPe</title>
 <meta name="description" content="Fresh chicken & mutton delivered in 30 min across Agra"/>
 <link rel="manifest" href="/manifest.json"/>
 <meta name="theme-color" content="#E8450A"/>
@@ -491,7 +491,7 @@ input,textarea{font:inherit;color:inherit}
         <img src="/logo.png" alt="NOW" class="login-logo" onerror="this.style.display='none'"/>
         <div class="login-tagline">Fresh. Fast. Trusted.</div>
         <div class="login-card">
-          <h2>Welcome to NOW 👋</h2>
+          <h2>Welcome to <span data-brand-name>NOW</span> 👋</h2>
           <p>Enter your phone number to continue</p>
           <div class="phone-row">
             <span class="phone-prefix">🇮🇳 +91</span>
@@ -665,7 +665,7 @@ input,textarea{font:inherit;color:inherit}
           <span class="di-icon">❓</span><span class="di-label">Help &amp; Support</span><span class="di-arrow">›</span>
         </button>
         <button class="drawer-item" onclick="showScreen('screen-about');closeDrawer()">
-          <span class="di-icon">ℹ️</span><span class="di-label">About NOW</span><span class="di-arrow">›</span>
+          <span class="di-icon">ℹ️</span><span class="di-label">About <span data-brand-name>NOW</span></span><span class="di-arrow">›</span>
         </button>
         <div class="drawer-divider"></div>
         <button class="drawer-item drawer-logout" id="drawerLogoutBtn" onclick="logout();closeDrawer()" style="display:none">
@@ -1076,7 +1076,7 @@ input,textarea{font:inherit;color:inherit}
     <div class="screen" id="screen-about">
       <div class="screen-header">
         <button class="back-btn" onclick="goBack()">←</button>
-        <div class="screen-title">ℹ️ About NOW</div>
+        <div class="screen-title">ℹ️ About <span data-brand-name>NOW</span></div>
       </div>
       <div style="padding:16px;padding-bottom:80px">
 
@@ -1087,11 +1087,11 @@ input,textarea{font:inherit;color:inherit}
           </div>
           <div style="max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 20px">
             <div style="padding-bottom:20px">
-              <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px">Welcome to NOW (Nonveg On Wheel)</div>
+              <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px">Welcome to <span data-brand-name>NOW</span></div>
               <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px"><em>Freshness is not just a promise—it's our commitment.</em></div>
-              <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">NOW (Nonveg On Wheel) is dedicated to delivering fresh, hygienically prepared chicken and mutton directly to your doorstep. Every order is carefully handled, quality checked, and packed to maintain freshness and taste.</div>
+              <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px"><span data-brand-name>NOW</span> is dedicated to delivering fresh, hygienically prepared chicken and mutton directly to your doorstep. Every order is carefully handled, quality checked, and packed to maintain freshness and taste.</div>
               <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">We believe customers deserve premium quality, transparent pricing, and reliable delivery every time they order.</div>
-              <div style="font-size:13px;font-weight:700;margin-bottom:8px">Why Choose NOW?</div>
+              <div style="font-size:13px;font-weight:700;margin-bottom:8px">Why Choose <span data-brand-name>NOW</span>?</div>
               <div style="font-size:13px;color:var(--muted);line-height:2">
                 ✅ Freshly Prepared Products<br/>
                 ✅ Hygienic Processing &amp; Packaging<br/>
@@ -1100,7 +1100,7 @@ input,textarea{font:inherit;color:inherit}
                 ✅ Secure Payments<br/>
                 ✅ Dedicated Customer Support
               </div>
-              <div style="margin-top:12px;font-size:13px;font-weight:700;color:var(--accent)">NOW – Fresh • Fast • Trusted</div>
+              <div style="margin-top:12px;font-size:13px;font-weight:700;color:var(--accent)"><span data-brand-name>NOW</span> – <span data-brand-tagline>Fresh • Fast • Trusted</span></div>
             </div>
           </div>
         </div>
@@ -1112,7 +1112,7 @@ input,textarea{font:inherit;color:inherit}
           </div>
           <div style="max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 20px">
             <div style="padding-bottom:20px">
-              <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">At NOW, every order is freshly prepared after confirmation. Therefore, refunds are available only in genuine cases.</div>
+              <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">At <span data-brand-name>NOW</span>, every order is freshly prepared after confirmation. Therefore, refunds are available only in genuine cases.</div>
               <div style="font-size:13px;font-weight:700;color:#22c55e;margin-bottom:6px">✅ Eligible for Refund or Replacement</div>
               <div style="font-size:13px;color:var(--muted);line-height:2;margin-bottom:12px">
                 • Wrong product is delivered<br/>
@@ -1408,6 +1408,7 @@ let PAYMENT = 'cod';
 let COUPON = null;       // { code, discount }
 let WALLET_APPLIED = false;
 let ADDONS = { 1: true, 2: false }; // addon states on product screen
+let APP_SETTINGS = null; // Store branding/settings from backend
 
 const FREE_ABOVE = 699;
 const FEE_LOW_BELOW = 399;
@@ -1419,10 +1420,47 @@ const CAT_EMOJI = {
   ready_to_cook:'🔥', family_pack:'👨‍👩‍👧', all:'🍖'
 };
 
+// Load settings from backend
+async function loadAppSettings() {
+  try {
+    const res = await fetch('/api/settings');
+    const data = await res.json();
+    if (data) {
+      APP_SETTINGS = data;
+      // Update branding dynamically
+      applyBranding();
+    }
+  } catch(e) {
+    console.warn('Could not load app settings:', e);
+  }
+}
+
+function applyBranding() {
+  if (!APP_SETTINGS || !APP_SETTINGS.branding) return;
+  const { name, tagline } = APP_SETTINGS.branding;
+  
+  // Update all instances of app name
+  document.querySelectorAll('[data-brand-name]').forEach(el => {
+    el.textContent = name || 'NOW';
+  });
+  
+  // Update tagline
+  document.querySelectorAll('[data-brand-tagline]').forEach(el => {
+    el.textContent = tagline || 'Fresh. Fast. Trusted.';
+  });
+  
+  // Update footer
+  const footer = document.querySelector('.drawer-footer');
+  if (footer) footer.textContent = `${name || 'NOW'} — ${tagline || 'Fresh Meat Delivered Fast'} 🥩`;
+}
+
 // ── Init ──
 (function init() {
   THEME = localStorage.getItem('now_theme') || 'dark';
   applyTheme();
+  
+  // Load settings first
+  loadAppSettings();
 
   const saved = localStorage.getItem('now_user');
   if (saved) {
@@ -1686,7 +1724,7 @@ function loginSuccess() {
   showScreen('screen-home');
   initLocation();
   updateTopbarUser();
-  showToast('Welcome to NOW! 🥩','success');
+  showToast('Welcome! 🥩','success');
 }
 
 function logout() {
