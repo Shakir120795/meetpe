@@ -782,10 +782,29 @@ input,textarea{font:inherit;color:inherit}
         <button class="back-btn" onclick="goBack()">←</button>
         <div class="screen-title" id="pdTitle">Product</div>
       </div>
+      
+      <!-- Product Image -->
       <div class="pd-img" id="pdImg">
         <span class="emoji-lg" id="pdEmoji">🥩</span>
         <div class="pd-temp">❄️ Temp Locked at -4°C</div>
       </div>
+      
+      <!-- Info Badges -->
+      <div style="display:flex;gap:8px;padding:12px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <div style="background:rgba(22,163,74,.12);color:#16a34a;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;display:flex;align-items:center;gap:4px">
+          ⏱️ 30 mins
+        </div>
+        <div style="background:rgba(59,130,246,.12);color:#3b82f6;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap">
+          🦴 Boneless
+        </div>
+        <div style="background:rgba(234,179,8,.12);color:#eab308;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap">
+          🔪 Curry Cut
+        </div>
+        <div style="background:rgba(168,85,247,.12);color:#a855f7;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap">
+          💪 High Protein
+        </div>
+      </div>
+      
       <div class="pd-body">
         <div class="chip-badge" id="pdCatBadge">🐔 Chicken</div>
         <div class="pd-name" id="pdName">Whole Chicken</div>
@@ -795,6 +814,29 @@ input,textarea{font:inherit;color:inherit}
           <div class="pd-mrp" id="pdMrp">₹286</div>
           <div class="pd-save-tag" id="pdSaveTag">Save 9%</div>
         </div>
+        
+        <!-- Product Highlights -->
+        <div style="background:rgba(22,163,74,.08);border:1px solid rgba(22,163,74,.2);border-radius:12px;padding:12px 14px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <span style="font-size:16px">✅</span>
+            <span style="font-size:13px;font-weight:700;color:#16a34a">Fresh & Hygienic</span>
+          </div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6">
+            Farm-fresh meat, cleaned hygienically. Delivered in 30 minutes with temperature control.
+          </div>
+        </div>
+        
+        <!-- Nutritional Info -->
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">📊 Nutritional Info (per 100g)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px">
+            <div><span style="color:var(--muted)">Protein:</span> <strong>21g</strong></div>
+            <div><span style="color:var(--muted)">Fat:</span> <strong>4g</strong></div>
+            <div><span style="color:var(--muted)">Calories:</span> <strong>165 kcal</strong></div>
+            <div><span style="color:var(--muted)">Carbs:</span> <strong>0g</strong></div>
+          </div>
+        </div>
+        
         <div class="pd-section">
           <div class="pd-section-title">Select Weight</div>
           <div class="weight-chips" id="weightChips"></div>
@@ -803,7 +845,7 @@ input,textarea{font:inherit;color:inherit}
           <div class="pd-section-title">Add-ons</div>
           <div id="addonsList">
             <div class="addon-row">
-              <div class="addon-check" id="addon1" onclick="toggleAddon(1)">✓</div>
+              <div class="addon-check checked" id="addon1" onclick="toggleAddon(1)">✓</div>
               <div class="addon-label">🌶️ Masala marinade (tandoor style)</div>
               <div class="addon-price">+₹30</div>
             </div>
@@ -819,6 +861,12 @@ input,textarea{font:inherit;color:inherit}
           <div id="pdDesc" style="font-size:13px;color:var(--muted);line-height:1.6">
             Premium quality, farm-fresh meat. Hygienically cleaned and cut as per your preference. Delivered within 30 minutes.
           </div>
+        </div>
+        
+        <!-- Similar Products -->
+        <div class="pd-section">
+          <div style="font-size:16px;font-weight:800;margin-bottom:12px">You may also like</div>
+          <div id="similarProducts" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px"></div>
         </div>
       </div>
       <div class="pd-add-btn">
@@ -1998,6 +2046,40 @@ function openProduct(code) {
 
   updatePdBtn();
   showScreen('screen-product');
+  
+  // Load similar products from same category
+  loadSimilarProducts(item.cat, item.code);
+}
+
+function loadSimilarProducts(category, currentCode) {
+  const similar = MENU.filter(i => i.cat === category && i.code !== currentCode && i.inStock !== false).slice(0, 4);
+  const container = document.getElementById('similarProducts');
+  if (!similar.length) {
+    container.closest('.pd-section').style.display = 'none';
+    return;
+  }
+  container.closest('.pd-section').style.display = 'block';
+  
+  container.innerHTML = similar.map(item => {
+    const img = item.images && item.images[0] 
+      ? `<img src="${item.images[0]}" style="width:100%;height:100%;object-fit:cover" />`
+      : `<div style="font-size:48px">${catEmoji(item.cat)}</div>`;
+    return `
+      <div onclick="openProduct('${item.code}')" style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer">
+        <div style="aspect-ratio:1;background:linear-gradient(135deg,#1a1a1a,#252525);display:flex;align-items:center;justify-content:center">
+          ${img}
+        </div>
+        <div style="padding:10px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${item.unit}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:16px;font-weight:800;color:var(--accent)">₹${item.price}</div>
+            <button onclick="event.stopPropagation();addToCart('${item.code}')" style="background:var(--accent);color:#fff;border:none;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700">Add</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 // Parse grams from unit string like "500g", "1kg", "1.5 kg", "2 kg", "250g"
