@@ -695,7 +695,6 @@ input,textarea{font:inherit;color:inherit}
           <button class="icon-btn" onclick="showScreen('screen-basket')" title="Cart" style="position:relative">
             🛒<span class="cart-dot" id="cartDot" style="display:none">0</span>
           </button>
-          <button class="theme-toggle-btn" onclick="toggleTheme()" id="themeBtn" title="Toggle theme">🌙</button>
         </div>
       </div>
 
@@ -982,6 +981,35 @@ input,textarea{font:inherit;color:inherit}
             <div class="pm-icon">⭐</div>
             <div class="pm-label">My Reviews</div>
             <div class="pm-arrow">›</div>
+          </div>
+        </div>
+
+        <!-- Appearance Section -->
+        <div style="margin:16px 14px 0">
+          <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px">Appearance</div>
+          <div style="background:var(--card);border-radius:14px;border:1px solid var(--border);overflow:hidden">
+
+            <!-- Light Theme -->
+            <div onclick="setTheme('light')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
+              <div style="width:36px;height:36px;background:rgba(255,255,255,.08);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">☀️</div>
+              <div style="flex:1;font-size:14px;font-weight:500">Light Theme</div>
+              <div id="themeRadioLight" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
+            </div>
+
+            <!-- Dark Theme -->
+            <div onclick="setTheme('dark')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
+              <div style="width:36px;height:36px;background:rgba(255,255,255,.08);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">🌙</div>
+              <div style="flex:1;font-size:14px;font-weight:500">Dark Theme</div>
+              <div id="themeRadioDark" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
+            </div>
+
+            <!-- System Theme -->
+            <div onclick="setTheme('system')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer">
+              <div style="width:36px;height:36px;background:rgba(255,255,255,.08);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">⚙️</div>
+              <div style="flex:1;font-size:14px;font-weight:500">System Default</div>
+              <div id="themeRadioSystem" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
+            </div>
+
           </div>
         </div>
 
@@ -1522,10 +1550,33 @@ function focusSearch() {
 //  Theme
 // ═══════════════════════════════════════════
 function applyTheme() {
-  document.documentElement.className = THEME === 'light' ? 'light' : '';
-  const btn = document.getElementById('themeBtn');
-  if (btn) btn.textContent = THEME === 'light' ? '☀️' : '🌙';
+  if (THEME === 'system') {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.className = prefersDark ? '' : 'light';
+  } else {
+    document.documentElement.className = THEME === 'light' ? 'light' : '';
+  }
+  // Update radio buttons
+  const radios = { light: 'themeRadioLight', dark: 'themeRadioDark', system: 'themeRadioSystem' };
+  Object.entries(radios).forEach(([t, id]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (t === THEME) {
+      el.style.borderColor = 'var(--accent)';
+      el.innerHTML = '<div style="width:10px;height:10px;background:var(--accent);border-radius:50%"></div>';
+    } else {
+      el.style.borderColor = 'var(--border)';
+      el.innerHTML = '';
+    }
+  });
 }
+
+function setTheme(t) {
+  THEME = t;
+  localStorage.setItem('now_theme', THEME);
+  applyTheme();
+}
+
 function toggleTheme() {
   THEME = THEME === 'dark' ? 'light' : 'dark';
   localStorage.setItem('now_theme', THEME);
