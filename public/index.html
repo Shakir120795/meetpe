@@ -1391,11 +1391,51 @@ function updatePageContent() {
   const pages = APP_SETTINGS.pages;
   if (!pages) return;
   
-  // Helper to format text with line breaks
+  // Helper to format text with proper styling
   const formatContent = (text) => {
     if (!text) return '<div style="font-size:13px;color:var(--muted)">No content available.</div>';
-    // Convert \n to <br/> and style the text
-    return `<div style="font-size:13px;color:var(--muted);line-height:1.7;white-space:pre-wrap">${escapeHtml(text)}</div>`;
+    
+    // Split by lines and format each
+    const lines = text.split('\n');
+    let html = '';
+    
+    lines.forEach(line => {
+      line = line.trim();
+      if (!line) {
+        html += '<div style="height:8px"></div>'; // Empty line spacing
+        return;
+      }
+      
+      // Section headings (✅, ❌, ⚠️, etc.)
+      if (line.startsWith('✅') || line.startsWith('❌') || line.startsWith('⚠️')) {
+        const color = line.startsWith('✅') ? '#22c55e' : line.startsWith('❌') ? '#ef4444' : 'var(--accent)';
+        html += `<div style="font-size:13px;font-weight:700;color:${color};margin:12px 0 6px">${line}</div>`;
+        return;
+      }
+      
+      // Bullet points
+      if (line.startsWith('•')) {
+        html += `<div style="font-size:13px;color:var(--muted);line-height:1.8;margin-left:8px">${line}</div>`;
+        return;
+      }
+      
+      // Bold standalone lines (e.g., "Please Note", "Important")
+      if (line.length < 50 && !line.includes('.') && !line.includes('?')) {
+        html += `<div style="font-size:13px;font-weight:700;margin:12px 0 6px">${line}</div>`;
+        return;
+      }
+      
+      // FAQ Q&A format
+      if (line.endsWith('?')) {
+        html += `<div style="font-size:13px;font-weight:700;margin:12px 0 4px">${line}</div>`;
+        return;
+      }
+      
+      // Regular text
+      html += `<div style="font-size:13px;color:var(--muted);line-height:1.7;margin:4px 0">${line}</div>`;
+    });
+    
+    return html;
   };
   
   // Update each page content
