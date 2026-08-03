@@ -1375,7 +1375,7 @@ input,textarea{font:inherit;color:inherit}
       <textarea id="returnDesc" placeholder="Describe the issue..." style="width:100%;padding:11px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;resize:none;height:80px"></textarea>
     </div>
     <button onclick="submitReturn()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">Submit Return Request</button>
-    <button onclick="document.getElementById('returnModal').classList.remove('open')" style="width:100%;padding:12px;background:transparent;border:none;color:var(--muted);font-size:14px;cursor:pointer;margin-top:8px">Cancel</button>
+    <button onclick="document.getElementById('returnModal').classList.remove('show')" style="width:100%;padding:12px;background:transparent;border:none;color:var(--muted);font-size:14px;cursor:pointer;margin-top:8px">Cancel</button>
   </div>
 </div>
 
@@ -2488,11 +2488,13 @@ function showOrderDetail(id) {
     </div>` : '';
 
   // Review section — show for delivered orders
+  // IMPORTANT: Check for already reviewed items when page loads
   const reviewSection = isDelivered ? `
     <div style="margin-top:12px;background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border)">
       <div style="font-size:15px;font-weight:800;margin-bottom:14px">⭐ Rate Your Order</div>
-      ${(order.items||[]).map(item => `
-        <div id="review-${order.id}-${item.code}" style="padding:10px 0;border-bottom:1px solid var(--border)">
+      ${(order.items||[]).map(item => {
+        // Mark review section with unique ID so we can check review status after render
+        return `<div id="review-${order.id}-${item.code}" style="padding:10px 0;border-bottom:1px solid var(--border)" data-order="${order.id}" data-item="${item.code}">
           <div style="font-size:13px;font-weight:600;margin-bottom:8px">${item.name}</div>
           <div style="display:flex;gap:6px;margin-bottom:8px" id="stars-${order.id}-${item.code}">
             ${[1,2,3,4,5].map(s=>`<span onclick="setReviewRating('${order.id}','${item.code}',${s})"
@@ -2504,11 +2506,15 @@ function showOrderDetail(id) {
             style="margin-top:8px;width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
             Submit Review
           </button>
-        </div>`).join('')}
+        </div>`;
+      }).join('')}
     </div>` : `
     <div style="margin-top:12px;background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--border);text-align:center">
       <div style="font-size:13px;color:var(--muted)">⭐ You can rate this order after delivery</div>
     </div>`;
+  
+  // After rendering, check review status for each item
+  setTimeout(() => checkAlreadyReviewedItems(order.id, order.items || []), 100);
 
   content.innerHTML = `<div class="tracking-wrap">
     <!-- Order summary -->
@@ -3107,7 +3113,8 @@ function openReturnModal(orderId) {
   if (reasonEl) reasonEl.value = 'quality_issue';
   const descEl = document.getElementById('returnDesc');
   if (descEl) descEl.value = '';
-  document.getElementById('returnModal').classList.add('open');
+  // FIXED: Use .show class instead of .open to match CSS
+  document.getElementById('returnModal').classList.add('show');
 }
 
 async function submitReturn() {
@@ -3131,8 +3138,8 @@ async function submitReturn() {
     });
     const d = await r.json();
     if (d.ok) {
-      // FIXED: Close modal properly and reload orders to show updated status
-      document.getElementById('returnModal').classList.remove('open');
+      // FIXED: Use .show class and reload orders
+      document.getElementById('returnModal').classList.remove('show');
       showToast('✅ Return request submitted! We\'ll contact you within 24 hrs.', 'success', 3500);
       // Reload orders to reflect the return request
       setTimeout(() => loadMyOrders(), 1000);
@@ -3151,6 +3158,33 @@ async function submitReturn() {
 //  Reviews & Ratings
 // ═══════════════════════════════════════════
 const _ratings = {};
+
+// Check if items are already reviewed when page loads
+async function checkAlreadyReviewedItems(orderId, items) {
+  if (!USER || !USER.phone) return;
+  
+  try {
+    const cleanPhone = USER.phone.replace(/\D/g, '');
+    const res = await fetch(`/api/reviews/check/${cleanPhone}/${orderId}`);
+    const data = await res.json();
+    
+    if (data.ok && Array.isArray(data.reviewed)) {
+      // Lock already reviewed items
+      data.reviewed.forEach(itemCode => {
+        const wrap = document.getElementById(`review-${orderId}-${itemCode}`);
+        if (wrap) {
+          wrap.innerHTML = `
+            <div style="text-align:center;padding:12px;color:var(--muted);background:rgba(156,163,175,.08);border-radius:10px">
+              Already reviewed ✓
+            </div>`;
+        }
+      });
+    }
+  } catch(e) {
+    // Silently fail - user can still try to submit
+    console.warn('Could not check review status:', e);
+  }
+}
 
 function setRating(el, val) {
   const row = el.closest('.star-row');

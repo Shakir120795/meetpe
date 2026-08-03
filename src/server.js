@@ -965,6 +965,22 @@ app.get('/api/reviews/:item_code', (req, res) => {
   res.json({ ok: true, reviews: rows, stats });
 });
 
+// GET /api/reviews/check/:phone/:order_id — check which items user already reviewed
+app.get('/api/reviews/check/:phone/:order_id', (req, res) => {
+  const cleanPhone = String(req.params.phone || '').replace(/\D/g, '');
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+  const webPhone = `web:+91${cleanPhone}`;
+  const waPhone = `whatsapp:+91${cleanPhone}`;
+  const orderId = parseInt(req.params.order_id, 10);
+  
+  const reviewedItems = db.prepare(`
+    SELECT DISTINCT item_code FROM reviews 
+    WHERE order_id = ? AND (phone = ? OR phone = ?)
+  `).all(orderId, webPhone, waPhone).map(r => r.item_code);
+  
+  res.json({ ok: true, reviewed: reviewedItems });
+});
+
 // GET /admin/reviews?key=X — list all reviews (admin)
 app.get('/admin/reviews', (req, res) => {
   if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
