@@ -1,7 +1,7 @@
 {
   "branding": {
-    "name": "MeatPe",
-    "tagline": "Fresh Meat in 30 Minutes — Taaza, Tezz, Trusted",
+    "name": "NOW",
+    "tagline": "Nonveg-On-Wheel",
     "logo": "/logo.png",
     "topbar": "🚚 Free delivery on orders ₹699+ • 30-min delivery"
   },
@@ -35,14 +35,14 @@
   "contact": {
     "phone": "+917617555488",
     "phoneDisplay": "+91 76175 55488",
-    "email": "",
+    "email": "shakir@gmail.com",
     "timing": "8:00 AM – 9:30 PM, all days",
     "location": "Live now, expanding to all major cities 🚀"
   },
   "socials": [],
   "pages": {
-    "about": "MeatPe delivers premium fresh meat in 30 minutes. We are expanding to all major cities in India.",
-    "safety": "Food safety is non-negotiable at MeatPe. Every item that reaches your home goes through a strict quality and hygiene process. We work with licensed suppliers, maintain cold chain, use food-grade packaging, and offer a 2-hour replacement guarantee if anything is wrong.",
+    "about": "NOW delivers premium fresh meat in 30 minutes. We are expanding to all major cities in India.",
+    "safety": "Food safety is non-negotiable at NOW. Every item that reaches your home goes through a strict quality and hygiene process. We work with licensed suppliers, maintain cold chain, use food-grade packaging, and offer a 2-hour replacement guarantee if anything is wrong.",
     "privacy": "We collect only what is needed to deliver your order: name, phone, address, and order history. We do not sell your data. You can request deletion anytime by messaging us on WhatsApp.",
     "terms": "Orders can be cancelled before processing begins (within 5 minutes). Once meat is cleaned/cut, cancellation is not possible. Quality issues reported within 2 hours with a photo will be replaced or refunded."
   }
