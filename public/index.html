@@ -55,15 +55,15 @@ input,textarea{font:inherit;color:inherit}
 
 /* ── Bottom nav ── */
 .bottom-nav{height:var(--nav-h);background:var(--card);border-top:1px solid var(--border);
-  display:flex;align-items:stretch;flex-shrink:0;z-index:100}
+  display:flex;align-items:stretch;flex-shrink:0;z-index:150;position:relative}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   font-size:11px;color:var(--muted);transition:color .2s;padding:4px 0;position:relative}
 .nav-btn.active{color:var(--accent)}
 .nav-btn .nav-icon{font-size:22px;line-height:1}
-.nav-badge{position:absolute;top:2px;right:calc(50% - 18px);background:var(--accent);color:#fff;
-  font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;
-  display:flex;align-items:center;justify-content:center;padding:0 4px;
-  box-shadow:0 2px 6px rgba(214,40,40,.4);border:2px solid var(--bg)}
+.nav-badge{position:absolute;top:6px;right:calc(50% - 20px);background:#ef4444;color:#fff;
+  font-size:11px;font-weight:800;min-width:20px;height:20px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;padding:0 5px;
+  box-shadow:0 2px 8px rgba(239,68,68,.5);border:2px solid var(--card);z-index:200}
 
 /* ── Login screen ── */
 #screen-login{background:linear-gradient(160deg,#1a0500 0%,#0D0D0D 60%,#000 100%)}
