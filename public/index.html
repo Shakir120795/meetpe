@@ -2899,25 +2899,31 @@ function openMapPicker() {
   if (!_map) {
     setTimeout(() => {
       _map = L.map('mapPickerEl', { zoomControl: true, attributionControl: false })
-        .setView([lat, lon], 16);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19, subdomains: 'abcd'
+        .setView([lat, lon], 17);
+
+      // High-detail OSM tiles — closest to Google Maps look, free, no API key
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        subdomains: ['a','b','c']
       }).addTo(_map);
+
       _map.on('moveend', onMapMove);
-      onMapMove(); // initial geocode
-    }, 100);
+      onMapMove();
+    }, 150);
   } else {
-    setTimeout(() => { _map.invalidateSize(); _map.setView([lat, lon], 16); }, 100);
+    setTimeout(() => {
+      _map.invalidateSize();
+      _map.setView([lat, lon], 17);
+    }, 150);
   }
 
-  // Try GPS immediately (silent — no permission prompt yet on most browsers)
+  // Silent GPS — just centers map, no error shown at all
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       pos => {
-        const { latitude, longitude } = pos.coords;
-        _map && _map.setView([latitude, longitude], 17, { animate: true });
+        if (_map) _map.setView([pos.coords.latitude, pos.coords.longitude], 17, { animate: true });
       },
-      () => {}, // silent fail
+      () => {}, // completely silent
       { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
     );
   }
@@ -2954,17 +2960,19 @@ function centerMapOnGPS() {
   if (fab) { fab.textContent = '⏳'; fab.disabled = true; }
   if (!navigator.geolocation) {
     if (fab) { fab.textContent = '🎯'; fab.disabled = false; }
-    showToast('GPS not available', 'error'); return;
+    showToast('GPS not supported. Drag map to set location.', '', 2500);
+    return;
   }
   navigator.geolocation.getCurrentPosition(
     pos => {
       if (fab) { fab.textContent = '🎯'; fab.disabled = false; }
-      _map && _map.setView([pos.coords.latitude, pos.coords.longitude], 17, { animate: true });
+      if (_map) _map.setView([pos.coords.latitude, pos.coords.longitude], 17, { animate: true });
+      showToast('📍 GPS found!', 'success', 1500);
     },
     err => {
       if (fab) { fab.textContent = '🎯'; fab.disabled = false; }
-      if (err.code === 1) showToast('Location permission denied. Drag map to set location.', 'error', 3000);
-      else showToast('Could not get GPS. Drag map manually.', '', 2500);
+      // Don't show scary error — just hint to drag
+      showToast('Drag the map to set your location 📍', '', 2500);
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
