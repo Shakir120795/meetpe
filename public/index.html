@@ -508,26 +508,59 @@ input,textarea{font:inherit;color:inherit}
     <div class="map-picker-screen" id="mapPickerScreen">
       <div class="map-picker-topbar">
         <button class="icon-btn" onclick="closeMapPicker()" style="background:var(--border);border-radius:10px">←</button>
-        <div style="font-size:15px;font-weight:800;flex:1;text-align:center;letter-spacing:.5px;text-transform:uppercase">Set Location on Map</div>
+        <div style="font-size:15px;font-weight:800;flex:1;text-align:center;letter-spacing:.5px;text-transform:uppercase" id="mapPickerTitle">Set Location on Map</div>
         <div style="width:36px"></div>
       </div>
+      <!-- Map area -->
       <div style="flex:1;position:relative;display:flex;flex-direction:column;min-height:0">
-        <div id="mapPickerEl" style="flex:1"></div>
-        <!-- Center pin -->
-        <div class="map-center-pin">📍</div>
+        <div id="mapPickerEl" style="flex:1;width:100%"></div>
+        <!-- Fixed center pin -->
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-100%);z-index:1000;pointer-events:none;font-size:40px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))">📍</div>
         <!-- GPS FAB -->
-        <button class="map-gps-fab" onclick="centerMapOnGPS()" title="My location">🎯</button>
-        <!-- Loading overlay -->
-        <div class="map-loading-overlay" id="mapLoadingOverlay">
-          <div class="map-spinner"></div>
+        <button onclick="centerMapOnGPS()" id="gpsFab"
+          style="position:absolute;bottom:16px;right:16px;width:46px;height:46px;background:var(--card);border:1px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;z-index:1001;box-shadow:0 4px 16px rgba(0,0,0,.4)">🎯</button>
+        <!-- Loading -->
+        <div id="mapLoadingOverlay" style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:999">
+          <div style="width:36px;height:36px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite"></div>
         </div>
       </div>
-      <div class="map-bottom-panel">
-        <div class="map-addr-box">
-          <div class="map-addr-area" id="mapAddrArea">Move map to set location</div>
-          <div class="map-addr-full" id="mapAddrFull">Drag the map to pin your address</div>
+      <!-- Bottom panel — Step 1: just confirm location -->
+      <div id="mapStep1" style="background:var(--card);border-top:1px solid var(--border);padding:14px 16px;flex-shrink:0">
+        <div style="background:var(--bg);border-radius:12px;padding:12px 14px;margin-bottom:12px;border:1px solid var(--border)">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px" id="mapAddrArea">Locating...</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.4" id="mapAddrFull">Move the map to set your location</div>
         </div>
-        <button class="map-confirm-btn" onclick="confirmMapLocation()">✓ Confirm this location</button>
+        <button onclick="mapConfirmStep1()" style="width:100%;padding:15px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">
+          Confirm Location →
+        </button>
+      </div>
+      <!-- Bottom panel — Step 2: fill address details -->
+      <div id="mapStep2" style="display:none;background:var(--card);border-top:1px solid var(--border);padding:14px 16px;flex-shrink:0;max-height:55vh;overflow-y:auto">
+        <div style="font-size:15px;font-weight:800;margin-bottom:4px">Add Address Details</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:14px" id="mapStep2Loc">📍 Loading...</div>
+
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase">Address Type</div>
+        <div style="display:flex;gap:8px;margin-bottom:14px" id="addrTypeRow">
+          <button class="addr-type-btn active" onclick="selectAddrType('Home',this)">🏠 Home</button>
+          <button class="addr-type-btn" onclick="selectAddrType('Work',this)">🏢 Work</button>
+          <button class="addr-type-btn" onclick="selectAddrType('Other',this)">📍 Other</button>
+        </div>
+
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase">House / Flat No. *</div>
+        <input id="newAddrFlat" class="add-addr-input" placeholder="e.g. 123, Block A"/>
+
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase">Street / Area</div>
+        <input id="newAddrStreet" class="add-addr-input" placeholder="e.g. MG Road, Civil Lines"/>
+
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase">Landmark</div>
+        <input id="newAddrLandmark" class="add-addr-input" placeholder="e.g. Near Agra College"/>
+
+        <button onclick="saveNewAddress()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px">
+          💾 Save Address
+        </button>
+        <button onclick="backToMapStep1()" style="width:100%;padding:12px;background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;margin-top:6px">
+          ← Change Location
+        </button>
       </div>
     </div>
 
@@ -552,10 +585,10 @@ input,textarea{font:inherit;color:inherit}
         <div id="locSearchResults" class="loc-search-results" style="display:none"></div>
 
         <!-- Use current location -->
-        <button class="loc-gps-btn" id="locGpsBtn" onclick="openMapPicker()">
+        <button class="loc-gps-btn" id="locGpsBtn" onclick="openMapForCurrentLoc()">
           <span style="font-size:22px">🎯</span>
           <div style="text-align:left">
-            <div style="font-size:14px;font-weight:700">Use current location</div>
+            <div style="font-size:14px;font-weight:700;color:var(--accent)">Use current location</div>
             <div style="font-size:11px;color:var(--muted);font-weight:400;margin-top:1px">Pick on map</div>
           </div>
         </button>
@@ -563,43 +596,14 @@ input,textarea{font:inherit;color:inherit}
         <!-- Saved Addresses -->
         <div class="loc-section-header">
           <div class="loc-section-title">Saved addresses</div>
-          <div class="loc-add-new" onclick="showAddAddressForm()">
-            <span>+</span> ADD NEW ADDRESS
+          <div class="loc-add-new" onclick="openMapForNewAddr()">
+            <span style="font-size:16px">+</span> ADD NEW ADDRESS
           </div>
         </div>
 
         <div id="savedAddrList">
-          <div class="loc-spinner-wrap"><div class="loc-spinner"></div></div>
-        </div>
-
-        <!-- Add Address Form (hidden by default) -->
-        <div id="addAddrForm" style="display:none">
-          <div class="add-addr-form">
-            <div style="font-size:15px;font-weight:700;margin-bottom:16px">Add New Address</div>
-
-            <label class="add-addr-label">Address type</label>
-            <div class="addr-type-row">
-              <button class="addr-type-btn active" id="typeHome" onclick="selectAddrType('Home',this)">🏠 Home</button>
-              <button class="addr-type-btn" id="typeWork" onclick="selectAddrType('Work',this)">🏢 Work</button>
-              <button class="addr-type-btn" id="typeOther" onclick="selectAddrType('Other',this)">📍 Other</button>
-            </div>
-
-            <label class="add-addr-label">House / Flat No. *</label>
-            <input id="newAddrFlat" class="add-addr-input" placeholder="e.g. 123, Block A"/>
-
-            <label class="add-addr-label">Street / Area *</label>
-            <input id="newAddrStreet" class="add-addr-input" placeholder="e.g. MG Road, Civil Lines"/>
-
-            <label class="add-addr-label">Landmark</label>
-            <input id="newAddrLandmark" class="add-addr-input" placeholder="e.g. Near Agra College"/>
-
-            <label class="add-addr-label">Pincode</label>
-            <input id="newAddrPin" class="add-addr-input" placeholder="282001" maxlength="6" inputmode="numeric"/>
-
-            <div style="display:flex;gap:8px;margin-top:4px">
-              <button onclick="saveNewAddress()" style="flex:1;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer">Save Address</button>
-              <button onclick="document.getElementById('addAddrForm').style.display='none'" style="flex:1;padding:14px;background:var(--border);color:var(--text);border:none;border-radius:12px;font-size:14px;cursor:pointer">Cancel</button>
-            </div>
+          <div style="display:flex;align-items:center;justify-content:center;padding:24px">
+            <div style="width:28px;height:28px;border:3px solid rgba(232,69,10,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite"></div>
           </div>
         </div>
 
@@ -2883,126 +2887,162 @@ async function submitReview(orderId, itemCode) {
 }
 
 // ═══════════════════════════════════════════
-//  Map Picker (Leaflet)
+//  Map Picker (Leaflet) — Zepto/Blinkit style
 // ═══════════════════════════════════════════
 let _map = null;
 let _geocodeTimer = null;
-let _mapLat = 27.1767, _mapLon = 78.0081; // Agra default
+let _mapLat = 27.1767, _mapLon = 78.0081;
 let _mapLabel = '', _mapFull = '';
+let _mapMode = 'select'; // 'select' | 'new_addr'
+let _newAddrType = 'Home';
 
-function openMapPicker() {
-  document.getElementById('mapPickerScreen').classList.add('open');
-  const saved = getSelectedAddr();
-  const lat = (saved && saved.lat) ? saved.lat : 27.1767;
-  const lon = (saved && saved.lon) ? saved.lon : 78.0081;
-
-  if (!_map) {
-    setTimeout(() => {
-      _map = L.map('mapPickerEl', { zoomControl: true, attributionControl: false })
-        .setView([lat, lon], 17);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        subdomains: ['a','b','c']
-      }).addTo(_map);
-
-      _map.on('moveend', onMapMove);
-      onMapMove();
-
-      // GPS after map is ready — move to real location
-      tryMoveToGPS();
-    }, 150);
-  } else {
-    setTimeout(() => {
-      _map.invalidateSize();
-      _map.setView([lat, lon], 17);
-      // Try GPS again on re-open
-      tryMoveToGPS();
-    }, 150);
+function _initMap(lat, lon) {
+  if (_map) {
+    setTimeout(() => { _map.invalidateSize(); _map.setView([lat, lon], 17); }, 100);
+    return;
   }
-}
+  _map = L.map('mapPickerEl', {
+    zoomControl: true,
+    attributionControl: false,
+    tap: true
+  }).setView([lat, lon], 17);
 
-function tryMoveToGPS() {
-  if (!navigator.geolocation) return;
-  const overlay = document.getElementById('mapLoadingOverlay');
-  if (overlay) overlay.style.display = 'flex';
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    subdomains: ['a', 'b', 'c']
+  }).addTo(_map);
 
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      if (overlay) overlay.style.display = 'none';
-      const { latitude, longitude } = pos.coords;
-      if (_map) {
-        _map.setView([latitude, longitude], 17, { animate: true });
-      }
-    },
-    () => {
-      // Silent — user can drag manually
-      if (overlay) overlay.style.display = 'none';
-    },
-    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-  );
-}
-
-function closeMapPicker() {
-  document.getElementById('mapPickerScreen').classList.remove('open');
+  _map.on('moveend', onMapMove);
+  onMapMove();
 }
 
 function onMapMove() {
   if (!_map) return;
   const c = _map.getCenter();
   _mapLat = c.lat; _mapLon = c.lng;
-  document.getElementById('mapAddrArea').textContent = 'Locating...';
-  document.getElementById('mapAddrFull').textContent = '';
+  const areaEl = document.getElementById('mapAddrArea');
+  const fullEl = document.getElementById('mapAddrFull');
+  if (areaEl) areaEl.textContent = 'Locating...';
+  if (fullEl) fullEl.textContent = '';
   clearTimeout(_geocodeTimer);
   _geocodeTimer = setTimeout(async () => {
     try {
-      const r = await fetch(`/api/location/reverse?lat=${_mapLat}&lon=${_mapLon}`);
+      const r = await fetch('/api/location/reverse?lat=' + _mapLat + '&lon=' + _mapLon);
       const d = await r.json();
-      _mapLabel = d.label || `${_mapLat.toFixed(4)}, ${_mapLon.toFixed(4)}`;
+      _mapLabel = d.label || (_mapLat.toFixed(5) + ', ' + _mapLon.toFixed(5));
       _mapFull = d.full || '';
     } catch(e) {
-      _mapLabel = `${_mapLat.toFixed(4)}, ${_mapLon.toFixed(4)}`;
+      _mapLabel = _mapLat.toFixed(5) + ', ' + _mapLon.toFixed(5);
       _mapFull = '';
     }
-    document.getElementById('mapAddrArea').textContent = _mapLabel;
-    document.getElementById('mapAddrFull').textContent = _mapFull.length > 80 ? _mapFull.slice(0,78)+'…' : _mapFull;
-  }, 700);
+    if (areaEl) areaEl.textContent = _mapLabel;
+    if (fullEl) fullEl.textContent = _mapFull ? (_mapFull.length > 80 ? _mapFull.slice(0,78)+'…' : _mapFull) : 'Drag map to adjust pin';
+  }, 600);
+}
+
+function _tryGPS() {
+  if (!navigator.geolocation) return;
+  const overlay = document.getElementById('mapLoadingOverlay');
+  if (overlay) overlay.style.display = 'flex';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      if (overlay) overlay.style.display = 'none';
+      if (_map) _map.setView([pos.coords.latitude, pos.coords.longitude], 17, { animate: true });
+    },
+    () => { if (overlay) overlay.style.display = 'none'; },
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+  );
+}
+
+// "Use current location" button
+function openMapForCurrentLoc() {
+  _mapMode = 'select';
+  document.getElementById('mapPickerTitle').textContent = 'Set Location on Map';
+  document.getElementById('mapStep1').style.display = 'block';
+  document.getElementById('mapStep2').style.display = 'none';
+  document.getElementById('mapPickerScreen').classList.add('open');
+  const saved = getSelectedAddr();
+  const lat = (saved && saved.lat) ? saved.lat : 27.1767;
+  const lon = (saved && saved.lon) ? saved.lon : 78.0081;
+  setTimeout(() => { _initMap(lat, lon); _tryGPS(); }, 150);
+}
+
+// "+ ADD NEW ADDRESS" button
+function openMapForNewAddr() {
+  _mapMode = 'new_addr';
+  document.getElementById('mapPickerTitle').textContent = 'Set Location on Map';
+  document.getElementById('mapStep1').style.display = 'block';
+  document.getElementById('mapStep2').style.display = 'none';
+  document.getElementById('newAddrFlat').value = '';
+  document.getElementById('newAddrStreet').value = '';
+  document.getElementById('newAddrLandmark').value = '';
+  _newAddrType = 'Home';
+  document.querySelectorAll('#addrTypeRow .addr-type-btn').forEach(b => b.classList.remove('active'));
+  var firstBtn = document.querySelector('#addrTypeRow .addr-type-btn');
+  if (firstBtn) firstBtn.classList.add('active');
+  document.getElementById('mapPickerScreen').classList.add('open');
+  const saved = getSelectedAddr();
+  const lat = (saved && saved.lat) ? saved.lat : 27.1767;
+  const lon = (saved && saved.lon) ? saved.lon : 78.0081;
+  setTimeout(() => { _initMap(lat, lon); _tryGPS(); }, 150);
+}
+
+function closeMapPicker() {
+  document.getElementById('mapPickerScreen').classList.remove('open');
+}
+
+// "Confirm Location" button — Step 1
+function mapConfirmStep1() {
+  if (!_mapLabel) { showToast('Move map to set your location', '', 2000); return; }
+  if (_mapMode === 'select') {
+    setSelectedAddr({ label: _mapLabel, full: _mapFull, lat: _mapLat, lon: _mapLon });
+    updateLocTopbar(_mapLabel);
+    closeMapPicker();
+    closeLocMap();
+    showToast('📍 Location set!', 'success', 2000);
+  } else {
+    document.getElementById('mapStep1').style.display = 'none';
+    document.getElementById('mapStep2').style.display = 'block';
+    var locText = _mapLabel.length > 45 ? _mapLabel.slice(0,43)+'…' : _mapLabel;
+    document.getElementById('mapStep2Loc').textContent = '📍 ' + locText;
+    if (_mapFull && !document.getElementById('newAddrStreet').value) {
+      var parts = _mapFull.split(',');
+      if (parts.length >= 2) document.getElementById('newAddrStreet').value = parts.slice(0,2).join(',').trim();
+    }
+    setTimeout(() => document.getElementById('newAddrFlat').focus(), 200);
+  }
+}
+
+function backToMapStep1() {
+  document.getElementById('mapStep2').style.display = 'none';
+  document.getElementById('mapStep1').style.display = 'block';
+  setTimeout(() => { if (_map) _map.invalidateSize(); }, 100);
 }
 
 function centerMapOnGPS() {
-  const fab = document.getElementById('mapPickerScreen').querySelector('.map-gps-fab');
+  var fab = document.getElementById('gpsFab');
   if (fab) { fab.textContent = '⏳'; fab.disabled = true; }
-
   if (!navigator.geolocation) {
     if (fab) { fab.textContent = '🎯'; fab.disabled = false; }
-    showToast('GPS not supported. Drag map to set location.', '', 2500);
-    return;
+    showToast('Drag the map to set location', '', 2000); return;
   }
-
   navigator.geolocation.getCurrentPosition(
-    pos => {
+    function(pos) {
       if (fab) { fab.textContent = '🎯'; fab.disabled = false; }
       if (_map) _map.setView([pos.coords.latitude, pos.coords.longitude], 18, { animate: true });
-      showToast('📍 Moved to your location!', 'success', 1500);
+      showToast('📍 Moved to your location', 'success', 1500);
     },
-    err => {
+    function() {
       if (fab) { fab.textContent = '🎯'; fab.disabled = false; }
-      showToast('Drag the map to set your location 📍', '', 2000);
+      showToast('Drag the map to set location 📍', '', 2000);
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
 }
 
-function confirmMapLocation() {
-  if (!_mapLabel) { showToast('Move the map to set your location', '', 2000); return; }
-  setSelectedAddr({ label: _mapLabel, full: _mapFull, lat: _mapLat, lon: _mapLon });
-  updateLocTopbar(_mapLabel);
-
-  // Also save as address if user wants
-  closeMapPicker();
-  closeLocMap();
-  showToast('📍 Location set!', 'success', 2000);
-}
+// Legacy aliases
+function openMapPicker() { openMapForCurrentLoc(); }
+function confirmMapLocation() { mapConfirmStep1(); }
 
 // ═══════════════════════════════════════════
 //  Location & Saved Addresses
@@ -3022,28 +3062,14 @@ function setSelectedAddr(addr) {
   localStorage.setItem('now_location', JSON.stringify(addr));
 }
 
-let _newAddrType = 'Home';
-
 function selectAddrType(type, el) {
   _newAddrType = type;
-  document.querySelectorAll('.addr-type-btn').forEach(b => b.classList.remove('active'));
+  var row = el.closest('#addrTypeRow') || el.parentElement;
+  if (row) row.querySelectorAll('.addr-type-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
 }
 
-function showAddAddressForm() {
-  const form = document.getElementById('addAddrForm');
-  form.style.display = form.style.display === 'none' ? 'block' : 'none';
-  if (form.style.display === 'block') {
-    document.getElementById('newAddrFlat').value = '';
-    document.getElementById('newAddrStreet').value = '';
-    document.getElementById('newAddrLandmark').value = '';
-    document.getElementById('newAddrPin').value = '';
-    _newAddrType = 'Home';
-    document.querySelectorAll('.addr-type-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('typeHome').classList.add('active');
-    setTimeout(() => document.getElementById('newAddrFlat').focus(), 100);
-  }
-}
+function showAddAddressForm() { openMapForNewAddr(); }
 
 function saveNewAddress() {
   const flat = document.getElementById('newAddrFlat').value.trim();
