@@ -2666,17 +2666,43 @@ async function loadWallet() {
     const data = await res.json();
     const c = data.customer || {};
     el.innerHTML = `
+      <!-- Wallet Balance Card -->
       <div style="background:linear-gradient(135deg,#1a0800,#3d1a00);border-radius:20px;padding:24px;margin-bottom:16px;border:1px solid #5a2d00">
         <div style="font-size:13px;color:#f97316;font-weight:600;margin-bottom:4px">NOW Wallet Balance</div>
-        <div style="font-size:42px;font-weight:900;color:#fff">₹${c.wallet||0}</div>
+        <div style="font-size:42px;font-weight:900;color:#fff" id="walletBalDisplay">₹${c.wallet||0}</div>
         <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:4px">Use at checkout for instant discount</div>
       </div>
+
+      <!-- Add Money -->
+      <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid var(--border)">
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px">➕ Add Money to Wallet</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+          ${[100,200,500,1000].map(amt => `
+            <button onclick="selectWalletAmt(${amt},this)"
+              style="padding:10px 4px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s">
+              ₹${amt}
+            </button>`).join('')}
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input id="walletCustomAmt" type="number" placeholder="Enter amount (₹10–₹10000)"
+            oninput="document.querySelectorAll('.wallet-amt-btn').forEach(b=>b.classList.remove('selected-amt'));this.dataset.custom='1'"
+            style="flex:1;padding:11px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none"/>
+        </div>
+        <button onclick="startWalletTopup()"
+          style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">
+          💳 Add Money
+        </button>
+      </div>
+
+      <!-- Rewards -->
       <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid var(--border)">
         <div style="font-size:13px;font-weight:700;margin-bottom:8px">🎁 Reward Points</div>
         <div style="font-size:28px;font-weight:800;color:var(--accent)">₹${c.rewards||0}</div>
         <div style="font-size:12px;color:var(--muted);margin-top:4px">Earn ₹30 on every order above ₹500</div>
       </div>
-      <div style="background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border)">
+
+      <!-- Stats -->
+      <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid var(--border)">
         <div style="font-size:13px;font-weight:700;margin-bottom:12px">📊 Your Stats</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div style="text-align:center;padding:12px;background:var(--bg);border-radius:10px">
@@ -2689,7 +2715,9 @@ async function loadWallet() {
           </div>
         </div>
       </div>
-      <div style="margin-top:16px;padding:14px;background:rgba(232,69,10,.08);border-radius:12px;border:1px solid rgba(232,69,10,.2)">
+
+      <!-- How to earn -->
+      <div style="padding:14px;background:rgba(232,69,10,.08);border-radius:12px;border:1px solid rgba(232,69,10,.2)">
         <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px">💡 How to earn?</div>
         <div style="font-size:12px;color:var(--muted);line-height:1.6">
           • Order above ₹500 → earn ₹30 reward<br/>
@@ -2699,6 +2727,100 @@ async function loadWallet() {
       </div>`;
   } catch(e) {
     el.innerHTML = `<div class="empty"><div class="empty-icon">❌</div><p>Failed to load</p></div>`;
+  }
+}
+
+let _walletAddAmt = 0;
+
+function selectWalletAmt(amt, btn) {
+  _walletAddAmt = amt;
+  document.querySelectorAll('[onclick^="selectWalletAmt"]').forEach(b => {
+    b.style.borderColor = 'var(--border)';
+    b.style.background = 'var(--bg)';
+    b.style.color = 'var(--text)';
+  });
+  btn.style.borderColor = 'var(--accent)';
+  btn.style.background = 'rgba(232,69,10,.1)';
+  btn.style.color = 'var(--accent)';
+  const inp = document.getElementById('walletCustomAmt');
+  if (inp) { inp.value = amt; delete inp.dataset.custom; }
+}
+
+async function startWalletTopup() {
+  if (!USER || !USER.phone) { showToast('Please login first', 'error'); return; }
+  const inp = document.getElementById('walletCustomAmt');
+  const amt = parseInt(inp ? inp.value : _walletAddAmt, 10);
+  if (!amt || amt < 10 || amt > 10000) {
+    showToast('Enter amount between ₹10 and ₹10000', 'error'); return;
+  }
+
+  try {
+    showToast('Opening payment...', '', 1500);
+    const res = await fetch('/api/wallet/topup/order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: USER.phone, amount: amt })
+    });
+    const data = await res.json();
+    if (!data.ok) { showToast(data.error || 'Failed to create order', 'error'); return; }
+
+    // Load Razorpay script if not loaded
+    if (!window.Razorpay) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    const options = {
+      key: data.keyId,
+      amount: data.order.amount,
+      currency: 'INR',
+      name: 'NOW — Nonveg On Wheel',
+      description: 'Add to NOW Wallet',
+      order_id: data.order.id,
+      prefill: { contact: '+91' + USER.phone, name: USER.name || '' },
+      theme: { color: '#E8450A' },
+      modal: { backdropclose: false },
+      handler: async function(response) {
+        try {
+          const vRes = await fetch('/api/wallet/topup/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: USER.phone,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              amount: amt
+            })
+          });
+          const vData = await vRes.json();
+          if (vData.ok) {
+            USER.wallet = vData.wallet;
+            saveUser();
+            // Update topbar wallet display
+            const topWal = document.getElementById('topWalletBal');
+            if (topWal) topWal.textContent = '₹' + vData.wallet;
+            showToast('✅ ₹' + amt + ' added to wallet!', 'success', 3000);
+            loadWallet(); // refresh screen
+          } else {
+            showToast('Payment verified but credit failed. Contact support.', 'error', 4000);
+          }
+        } catch(e) {
+          showToast('Payment done but verification failed. Contact support.', 'error', 4000);
+        }
+      }
+    };
+    const rzp = new window.Razorpay(options);
+    rzp.on('payment.failed', function(r) {
+      showToast('Payment failed: ' + (r.error.description || 'Try again'), 'error', 3000);
+    });
+    rzp.open();
+  } catch(e) {
+    showToast('Could not open payment. Check connection.', 'error');
   }
 }
 

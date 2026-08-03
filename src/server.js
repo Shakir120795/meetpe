@@ -2174,6 +2174,68 @@ cron.schedule('0 6 * * *', async () => {
   }
 });
 
+// ===== RAZORPAY WALLET TOP-UP =====
+
+// POST /api/wallet/topup/order — create Razorpay order
+app.post('/api/wallet/topup/order', async (req, res) => {
+  try {
+    const { phone, amount } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+    const amt = parseInt(amount, 10);
+    if (!amt || amt < 10 || amt > 10000) return res.status(400).json({ ok: false, error: 'amount must be ₹10–₹10000' });
+
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) return res.status(500).json({ ok: false, error: 'Payment not configured' });
+
+    // Create order via Razorpay API
+    const orderRes = await axios.post(
+      'https://api.razorpay.com/v1/orders',
+      { amount: amt * 100, currency: 'INR', receipt: `wallet_${cleanPhone}_${Date.now()}` },
+      { auth: { username: keyId, password: keySecret }, timeout: 10000 }
+    );
+
+    res.json({ ok: true, order: orderRes.data, keyId });
+  } catch (e) {
+    console.error('Razorpay order error:', e.response?.data || e.message);
+    res.status(500).json({ ok: false, error: 'Could not create payment order' });
+  }
+});
+
+// POST /api/wallet/topup/verify — verify payment & credit wallet
+app.post('/api/wallet/topup/verify', (req, res) => {
+  try {
+    const { phone, razorpay_order_id, razorpay_payment_id, razorpay_signature, amount } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keySecret) return res.status(500).json({ ok: false, error: 'Payment not configured' });
+
+    // Verify signature
+    const crypto = require('crypto');
+    const body = razorpay_order_id + '|' + razorpay_payment_id;
+    const expectedSig = crypto.createHmac('sha256', keySecret).update(body).digest('hex');
+
+    if (expectedSig !== razorpay_signature) {
+      return res.status(400).json({ ok: false, error: 'Payment verification failed' });
+    }
+
+    // Credit wallet
+    const amt = parseInt(amount, 10);
+    const waPhone = `web:+91${cleanPhone}`;
+    db.prepare('UPDATE customers SET wallet_balance = wallet_balance + ? WHERE phone = ?').run(amt, waPhone);
+    const updated = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(waPhone);
+
+    console.log(`💳 Wallet topped up: +₹${amt} for ${cleanPhone} (${razorpay_payment_id})`);
+    res.json({ ok: true, wallet: updated ? updated.wallet_balance : amt });
+  } catch (e) {
+    console.error('Razorpay verify error:', e.message);
+    res.status(500).json({ ok: false, error: 'Verification failed' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🥩 MeatPe server listening on :${PORT}`);
 
