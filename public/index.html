@@ -359,6 +359,8 @@ input,textarea{font:inherit;color:inherit}
 
 /* ── Skeleton ── */
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .skel{background:linear-gradient(90deg,var(--border) 25%,var(--card) 50%,var(--border) 75%);
   background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
 
@@ -2270,31 +2272,28 @@ async function submitOrder(e) {
   const items = Object.entries(CART).map(([code,qty]) => ({ code, qty }));
   const sub = cartSubtotal();
   const couponDisc = COUPON ? COUPON.discount : 0;
-  const walletAmt = (WALLET_APPLIED && USER) ? Math.min(USER.wallet, sub - couponDisc) : 0;
+  const walletAmt = (WALLET_APPLIED && USER) ? Math.min(USER.wallet || 0, Math.max(0, sub - couponDisc)) : 0;
 
   try {
     const res = await fetch('/api/order', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         name, phone, address, payment: PAYMENT, notes,
-        items, couponCode: COUPON ? COUPON.code : null
+        items, couponCode: COUPON ? COUPON.code : null,
+        walletAmount: walletAmt  // server handles wallet deduction
       })
     });
     const data = await res.json();
     if (data.ok) {
-      // Update user name if we have it
-      if (USER) { USER.name = name; saveUser(); }
-
-      // Deduct wallet if applied
-      if (walletAmt > 0 && USER && USER.phone) {
-        try {
-          await fetch('/api/wallet/use', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ phone: USER.phone, amount: walletAmt })
-          });
-          USER.wallet = Math.max(0, (USER.wallet||0) - walletAmt);
-          saveUser();
-        } catch(e2) {}
+      if (USER) {
+        USER.name = name;
+        // Update local wallet balance from server response
+        if (data.walletDeducted > 0) {
+          USER.wallet = Math.max(0, (USER.wallet||0) - data.walletDeducted);
+          const topWal = document.getElementById('topWalletBal');
+          if (topWal) topWal.textContent = '₹' + USER.wallet;
+        }
+        saveUser();
       }
 
       CART = {};
@@ -2303,10 +2302,7 @@ async function submitOrder(e) {
       saveCart();
       updateCartBar();
       closeCheckoutModal();
-
-      const fee = deliveryFee(sub);
-      const total = Math.max(0, sub - couponDisc - walletAmt + fee);
-      showOrderSuccess(data.orderId, total, name);
+      showOrderSuccess(data.orderId, data.total, name);
     } else {
       showToast(data.error || 'Order failed. Please try again.','error');
       btn.disabled = false; btn.textContent = '🛵 Confirm Order';
@@ -2318,25 +2314,31 @@ async function submitOrder(e) {
 }
 
 function showOrderSuccess(orderId, total, name) {
-  // Show a nice success overlay
   const overlay = document.createElement('div');
+  overlay.id = 'orderSuccessOverlay';
   overlay.style.cssText = `position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center`;
   overlay.innerHTML = `
-    <div style="font-size:72px;margin-bottom:16px">🎉</div>
+    <div style="font-size:72px;margin-bottom:16px;animation:bounceIn .5s">🎉</div>
     <div style="font-size:24px;font-weight:800;margin-bottom:8px">Order Placed!</div>
     <div style="font-size:14px;color:var(--muted);margin-bottom:4px">Order #${orderId}</div>
-    <div style="font-size:20px;font-weight:700;color:var(--accent);margin-bottom:16px">₹${total}</div>
-    <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:24px">
-      Hey ${name}! Your fresh meat is being prepared.<br/>Estimated delivery: <strong>~30 minutes</strong> 🛵
+    <div style="font-size:22px;font-weight:800;color:var(--accent);margin-bottom:16px">₹${total}</div>
+    <div style="background:var(--card);border-radius:16px;padding:16px 20px;margin-bottom:24px;border:1px solid var(--border);max-width:320px;width:100%">
+      <div style="font-size:13px;color:var(--muted);line-height:1.8">
+        Hey <strong>${name}</strong>! 🥩<br/>
+        Your order is being processed.<br/>
+        <strong>ETA: ~30 minutes 🛵</strong>
+      </div>
     </div>
-    <button style="background:var(--accent);color:#fff;padding:14px 32px;border-radius:12px;font-size:15px;font-weight:700;margin-bottom:10px"
-      onclick="document.body.removeChild(this.closest('[style*=fixed]'));showScreen('screen-orders')">
-      Track Order →
-    </button>
-    <button style="background:none;color:var(--muted);padding:10px;font-size:13px"
-      onclick="document.body.removeChild(this.closest('[style*=fixed]'));showScreen('screen-home')">
-      Continue Shopping
-    </button>
+    <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px">
+      <button style="background:var(--accent);color:#fff;padding:14px 32px;border-radius:12px;font-size:15px;font-weight:700;border:none;cursor:pointer"
+        onclick="document.getElementById('orderSuccessOverlay').remove();showScreen('screen-orders')">
+        📦 Track My Order
+      </button>
+      <button style="background:var(--card);color:var(--text);padding:12px 32px;border-radius:12px;font-size:14px;font-weight:600;border:1px solid var(--border);cursor:pointer"
+        onclick="document.getElementById('orderSuccessOverlay').remove();showScreen('screen-home')">
+        Continue Shopping
+      </button>
+    </div>
   `;
   document.body.appendChild(overlay);
 }
@@ -2344,14 +2346,18 @@ function showOrderSuccess(orderId, total, name) {
 // ═══════════════════════════════════════════
 //  Orders Screen
 // ═══════════════════════════════════════════
+let _ordersRefreshTimer = null;
+
 async function loadOrders() {
   const content = document.getElementById('ordersContent');
   const title = document.getElementById('ordersTitle');
 
+  // Clear any existing auto-refresh
+  if (_ordersRefreshTimer) { clearInterval(_ordersRefreshTimer); _ordersRefreshTimer = null; }
+
   if (!USER || !USER.phone) {
     content.innerHTML = `<div class="empty"><div class="empty-icon">🔐</div><h3>Not logged in</h3>
-      <p>Log in to see your order history</p>
-      <button class="btn-accent" style="margin-top:12px;max-width:200px" onclick="showScreen('screen-login')">Log In</button></div>`;
+      <p>Log in to see your order history</p></div>`;
     return;
   }
 
@@ -2362,37 +2368,69 @@ async function loadOrders() {
     const data = await res.json();
     if (!data.ok || !data.orders.length) {
       content.innerHTML = `<div class="empty"><div class="empty-icon">📦</div>
-        <h3>No orders yet</h3><p>Your past orders will appear here</p></div>`;
+        <h3>No orders yet</h3><p>Your past orders will appear here</p>
+        <button style="margin-top:12px;padding:12px 24px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer" onclick="showScreen('screen-home')">Start Shopping</button>
+        </div>`;
       return;
     }
     title.textContent = `My Orders (${data.orders.length})`;
-    content.innerHTML = data.orders.map(order => {
-      const statusClass = 'status-' + (order.status || 'placed');
-      const statusLabel = {
-        placed:'Order Placed',preparing:'Preparing',out_for_delivery:'Out for Delivery',
-        delivered:'Delivered',cancelled:'Cancelled'
-      }[order.status] || order.status;
-      const itemNames = (order.items||[]).map(i=>i.name).join(', ') || '—';
-      const d = new Date(order.created_at);
-      const dateStr = d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
-      return `<div class="order-card" onclick="showOrderDetail(${order.id})">
-        <div class="order-card-top">
-          <div class="order-id">Order #${order.id}</div>
-          <div class="order-status ${statusClass}">${statusLabel}</div>
-        </div>
-        <div class="order-items">${itemNames}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div class="order-date">${dateStr}</div>
-          <div class="order-total">₹${order.total}</div>
-        </div>
-      </div>`;
-    }).join('');
-    // Store for detail view
     window._ORDERS = data.orders;
+
+    // Check if any active orders — if so, start auto-refresh
+    const hasActive = data.orders.some(o => ['placed','preparing','out_for_delivery'].includes(o.status));
+    if (hasActive) {
+      _ordersRefreshTimer = setInterval(async () => {
+        try {
+          const r2 = await fetch('/api/orders/' + USER.phone);
+          const d2 = await r2.json();
+          if (d2.ok) {
+            window._ORDERS = d2.orders;
+            renderOrdersList(d2.orders);
+          }
+        } catch(e) {}
+      }, 20000); // refresh every 20s
+    }
+
+    renderOrdersList(data.orders);
   } catch(e) {
     content.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>
       <h3>Couldn't load orders</h3><p>Please check your connection</p></div>`;
   }
+}
+
+function renderOrdersList(orders) {
+  const content = document.getElementById('ordersContent');
+  const title = document.getElementById('ordersTitle');
+  if (title && !title.innerHTML.includes('←')) {
+    title.textContent = `My Orders (${orders.length})`;
+  }
+
+  const statusLabel = { placed:'Order Placed', preparing:'Preparing 👨‍🍳', out_for_delivery:'Out for Delivery 🛵', delivered:'Delivered ✅', cancelled:'Cancelled ❌' };
+  const statusDot = { placed:'#f59e0b', preparing:'#818cf8', out_for_delivery:'#22c55e', delivered:'#22c55e', cancelled:'#ef4444' };
+
+  content.innerHTML = orders.map(order => {
+    const statusClass = 'status-' + (order.status || 'placed');
+    const label = statusLabel[order.status] || order.status;
+    const dot = statusDot[order.status] || '#888';
+    const itemNames = (order.items||[]).map(i=>i.name).join(', ') || '—';
+    const d = new Date(order.created_at);
+    const dateStr = d.toLocaleDateString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const isActive = ['placed','preparing','out_for_delivery'].includes(order.status);
+    return `<div class="order-card" onclick="showOrderDetail(${order.id})">
+      <div class="order-card-top">
+        <div class="order-id">Order #${order.id}</div>
+        <div class="order-status ${statusClass}" style="display:flex;align-items:center;gap:4px">
+          ${isActive ? `<span style="width:6px;height:6px;border-radius:50%;background:${dot};display:inline-block;animation:pulse 1.5s infinite"></span>` : ''}
+          ${label}
+        </div>
+      </div>
+      <div class="order-items">${itemNames}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="order-date">${dateStr}</div>
+        <div class="order-total">₹${order.total}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function showOrderDetail(id) {

@@ -161,7 +161,7 @@ async function notifyCustomer(order, status) {
 
 app.post('/api/order', (req, res) => {
   try {
-    const { name, phone, address, payment, notes, items, couponCode } = req.body || {};
+    const { name, phone, address, payment, notes, items, couponCode, walletAmount } = req.body || {};
     if (!name || !phone || !address || !Array.isArray(items) || !items.length) {
       return res.status(400).json({ ok: false, error: 'missing fields' });
     }
@@ -191,7 +191,6 @@ app.post('/api/order', (req, res) => {
         couponDiscount = result.discount;
         appliedCouponCode = result.coupon.code;
       }
-      // Silently ignore invalid coupons (UI validates first)
     }
 
     const free = Number(process.env.DELIVERY_FREE_ABOVE || 699);
@@ -199,42 +198,64 @@ app.post('/api/order', (req, res) => {
     const feeLow = Number(process.env.DELIVERY_FEE_LOW || 29);
     const feeMid = Number(process.env.DELIVERY_FEE_MID || 19);
     const delivery = subtotal >= free ? 0 : (subtotal < lowBelow ? feeLow : feeMid);
-    const total = Math.max(0, subtotal - couponDiscount + delivery);
 
-    const waPhone = `whatsapp:+91${cleanPhone}`;
+    // Server-side wallet deduction (validated)
+    const walletAmt = parseInt(walletAmount || 0, 10);
+    let actualWalletDeducted = 0;
+
+    // Use web: prefix — consistent with auth/login
+    const webPhone = `web:+91${cleanPhone}`;
+
+    if (walletAmt > 0) {
+      const customer = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(webPhone);
+      if (customer && customer.wallet_balance >= walletAmt) {
+        actualWalletDeducted = walletAmt;
+      }
+    }
+
+    const total = Math.max(0, subtotal - couponDiscount - actualWalletDeducted + delivery);
+
     const reward = Number(process.env.REWARD_THRESHOLD || 500);
     const rewardAmt = Number(process.env.REWARD_AMOUNT || 30);
 
-    const customerStmt = db.prepare(`
+    // Upsert customer
+    db.prepare(`
       INSERT INTO customers (phone, name, address) VALUES (?, ?, ?)
       ON CONFLICT(phone) DO UPDATE SET name = excluded.name, address = excluded.address
-    `);
-    customerStmt.run(waPhone, name, address);
+    `).run(webPhone, name, address);
 
-    const orderStmt = db.prepare(`
+    // Insert order
+    const info = db.prepare(`
       INSERT INTO orders (phone, items_json, subtotal, delivery_fee, total, address, source)
       VALUES (?, ?, ?, ?, ?, ?, 'web')
-    `);
-    const info = orderStmt.run(waPhone, JSON.stringify(cleanItems), subtotal, delivery, total, address);
+    `).run(webPhone, JSON.stringify(cleanItems), subtotal, delivery, total, address);
     const orderId = info.lastInsertRowid;
+
+    // Deduct wallet server-side
+    if (actualWalletDeducted > 0) {
+      db.prepare('UPDATE customers SET wallet_balance = wallet_balance - ? WHERE phone = ?')
+        .run(actualWalletDeducted, webPhone);
+    }
 
     let earnedReward = 0;
     if (subtotal >= reward) {
       db.prepare(`INSERT INTO rewards (phone, amount, expires_at) VALUES (?, ?, datetime('now', '+15 days'))`)
-        .run(waPhone, rewardAmt);
+        .run(webPhone, rewardAmt);
       earnedReward = rewardAmt;
     }
 
-    // Friendly payment label
     const paymentLabel = payment === 'pay_online'
       ? 'Pay Online (UPI link sent)'
+      : payment === 'upi'
+      ? 'UPI Direct'
       : 'Pay on Delivery (Cash / UPI)';
 
-    // Notify admin on WhatsApp
+    // Notify admin
     if (process.env.ADMIN_WHATSAPP) {
       const couponLine = appliedCouponCode ? `\n🏷️  Coupon: ${appliedCouponCode} (−₹${couponDiscount})` : '';
+      const walletLine = actualWalletDeducted > 0 ? `\n💳 Wallet: −₹${actualWalletDeducted}` : '';
       const adminMsg =
-`🆕 *New Web Order #${orderId}*
+`🆕 *New Order #${orderId}*
 
 👤 ${name}
 📞 +91${cleanPhone}
@@ -243,7 +264,7 @@ app.post('/api/order', (req, res) => {
 ${notes ? '📝 ' + notes + '\n' : ''}
 ${cleanItems.map(i => `• ${i.name} × ${i.qty} = ₹${i.price * i.qty}`).join('\n')}
 
-Subtotal: ₹${subtotal}${couponLine}
+Subtotal: ₹${subtotal}${couponLine}${walletLine}
 Delivery: ₹${delivery}
 *Total: ₹${total}*${earnedReward ? `\n🎁 +₹${earnedReward} reward issued` : ''}`;
       sendMessage(process.env.ADMIN_WHATSAPP, adminMsg).catch(err =>
@@ -253,15 +274,13 @@ Delivery: ₹${delivery}
     res.json({
       ok: true, orderId, subtotal,
       couponDiscount, couponCode: appliedCouponCode,
+      walletDeducted: actualWalletDeducted,
       delivery, total, reward: earnedReward,
     });
 
     // Notify customer
     setImmediate(() => {
-      notifyCustomer(
-        { id: orderId, phone: waPhone, address, total },
-        'placed'
-      );
+      notifyCustomer({ id: orderId, phone: webPhone, address, total }, 'placed');
     });
   } catch (e) {
     console.error('order err:', e);
@@ -480,8 +499,13 @@ app.get('/api/customer/:phone', (req, res) => {
 // ===== Get customer orders (last 20) =====
 app.get('/api/orders/:phone', (req, res) => {
   const cleanPhone = String(req.params.phone).replace(/\D/g, '');
-  const waPhone = `web:+91${cleanPhone}`;
-  const orders = db.prepare(`SELECT * FROM orders WHERE phone = ? ORDER BY id DESC LIMIT 20`).all(waPhone);
+  // Check both prefixes for backward compatibility
+  const webPhone = `web:+91${cleanPhone}`;
+  const waPhone = `whatsapp:+91${cleanPhone}`;
+  const orders = db.prepare(`
+    SELECT * FROM orders WHERE phone IN (?, ?)
+    ORDER BY id DESC LIMIT 20
+  `).all(webPhone, waPhone);
   res.json({ ok: true, orders: orders.map(o => ({ ...o, items: JSON.parse(o.items_json || '[]') })) });
 });
 
