@@ -1086,21 +1086,8 @@ input,textarea{font:inherit;color:inherit}
             <span>🏢 About Us</span><span style="font-size:12px;transition:transform .25s">▼</span>
           </div>
           <div style="max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 20px">
-            <div style="padding-bottom:20px">
-              <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px">Welcome to <span data-brand-name>NOW</span></div>
-              <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px"><em>Freshness is not just a promise—it's our commitment.</em></div>
-              <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px"><span data-brand-name>NOW</span> is dedicated to delivering fresh, hygienically prepared chicken and mutton directly to your doorstep. Every order is carefully handled, quality checked, and packed to maintain freshness and taste.</div>
-              <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">We believe customers deserve premium quality, transparent pricing, and reliable delivery every time they order.</div>
-              <div style="font-size:13px;font-weight:700;margin-bottom:8px">Why Choose <span data-brand-name>NOW</span>?</div>
-              <div style="font-size:13px;color:var(--muted);line-height:2">
-                ✅ Freshly Prepared Products<br/>
-                ✅ Hygienic Processing &amp; Packaging<br/>
-                ✅ Fast &amp; Reliable Delivery<br/>
-                ✅ Quality Checked Before Dispatch<br/>
-                ✅ Secure Payments<br/>
-                ✅ Dedicated Customer Support
-              </div>
-              <div style="margin-top:12px;font-size:13px;font-weight:700;color:var(--accent)"><span data-brand-name>NOW</span> – <span data-brand-tagline>Fresh • Fast • Trusted</span></div>
+            <div style="padding-bottom:20px" id="pageContent-about">
+              <div style="font-size:13px;color:var(--muted);line-height:1.7">Loading...</div>
             </div>
           </div>
         </div>
@@ -1111,29 +1098,8 @@ input,textarea{font:inherit;color:inherit}
             <span>💰 Refund Policy</span><span style="font-size:12px;transition:transform .25s">▼</span>
           </div>
           <div style="max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 20px">
-            <div style="padding-bottom:20px">
-              <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">At <span data-brand-name>NOW</span>, every order is freshly prepared after confirmation. Therefore, refunds are available only in genuine cases.</div>
-              <div style="font-size:13px;font-weight:700;color:#22c55e;margin-bottom:6px">✅ Eligible for Refund or Replacement</div>
-              <div style="font-size:13px;color:var(--muted);line-height:2;margin-bottom:12px">
-                • Wrong product is delivered<br/>
-                • Product is damaged or leaking during delivery<br/>
-                • Product quality issue is verified by NOW<br/>
-                • Order is cancelled by NOW before delivery<br/>
-                • Item is missing from the order
-              </div>
-              <div style="font-size:13px;font-weight:700;color:#ef4444;margin-bottom:6px">❌ Refund Will NOT Be Provided If</div>
-              <div style="font-size:13px;color:var(--muted);line-height:2;margin-bottom:12px">
-                • Customer changes mind after order confirmation<br/>
-                • Wrong delivery address or phone number provided<br/>
-                • Customer is unavailable during delivery<br/>
-                • Product already consumed or partially used<br/>
-                • Customer refuses delivery without valid reason<br/>
-                • Minor delays due to traffic, weather, festivals
-              </div>
-              <div style="background:rgba(232,69,10,.08);border-radius:10px;padding:12px;border:1px solid rgba(232,69,10,.2)">
-                <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:4px">⚠️ Important</div>
-                <div style="font-size:12px;color:var(--muted);line-height:1.7">Quality issues must be reported within <strong style="color:var(--text)">30 minutes</strong> of delivery with clear photos/videos. Approved refunds processed to original payment method or NOW Wallet.</div>
-              </div>
+            <div style="padding-bottom:20px" id="pageContent-refund">
+              <div style="font-size:13px;color:var(--muted);line-height:1.7">Loading...</div>
             </div>
           </div>
         </div>
@@ -1144,24 +1110,20 @@ input,textarea{font:inherit;color:inherit}
             <span>🔒 Privacy Policy</span><span style="font-size:12px;transition:transform .25s">▼</span>
           </div>
           <div style="max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 20px">
-            <div style="padding-bottom:20px">
-              <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">Your privacy matters to us. NOW collects only the information required to provide better service.</div>
-              <div style="font-size:13px;font-weight:700;margin-bottom:6px">Information collected may include:</div>
-              <div style="font-size:13px;color:var(--muted);line-height:2;margin-bottom:12px">
-                • Name &amp; Mobile Number<br/>
-                • Delivery Address<br/>
-                • Live Location (only during delivery)<br/>
-                • Order History<br/>
-                • Payment Details (processed securely)
-              </div>
-              <div style="font-size:13px;font-weight:700;margin-bottom:6px">Your data is used only for:</div>
-              <div style="font-size:13px;color:var(--muted);line-height:2">
-                • Order processing &amp; Delivery<br/>
-                • Customer support<br/>
-                • Service improvement<br/>
-                • Promotional offers (optional)
-              </div>
-              <div style="margin-top:10px;font-size:12px;color:var(--muted);font-style:italic">We never sell customer information to third parties.</div>
+            <div style="padding-bottom:20px" id="pageContent-privacy">
+              <div style="font-size:13px;color:var(--muted);line-height:1.7">Loading...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Safety & Quality -->
+        <div style="background:var(--card);border-radius:16px;margin-bottom:14px;border:1px solid var(--border);overflow:hidden">
+          <div onclick="toggleAboutAcc(this)" style="padding:18px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:16px;font-weight:800;">
+            <span>🛡️ Safety & Quality</span><span style="font-size:12px;transition:transform .25s">▼</span>
+          </div>
+          <div style="max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 20px">
+            <div style="padding-bottom:20px" id="pageContent-safety">
+              <div style="font-size:13px;color:var(--muted);line-height:1.7">Loading...</div>
             </div>
           </div>
         </div>
@@ -1172,15 +1134,8 @@ input,textarea{font:inherit;color:inherit}
             <span>🚚 Delivery Policy</span><span style="font-size:12px;transition:transform .25s">▼</span>
           </div>
           <div style="max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 20px">
-            <div style="padding-bottom:20px">
-              <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">NOW currently delivers only within serviceable areas. Delivery charges and ETA are calculated automatically based on your location.</div>
-              <div style="font-size:13px;font-weight:700;margin-bottom:6px">Delivery times may vary due to:</div>
-              <div style="font-size:13px;color:var(--muted);line-height:2">
-                • Traffic &amp; Weather conditions<br/>
-                • High order volume<br/>
-                • Festivals &amp; Operational conditions
-              </div>
-              <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.7">If customer is unavailable after reasonable attempts, order may be cancelled without refund for freshly prepared products.</div>
+            <div style="padding-bottom:20px" id="pageContent-delivery">
+              <div style="font-size:13px;color:var(--muted);line-height:1.7">Loading...</div>
             </div>
           </div>
         </div>
@@ -1191,16 +1146,8 @@ input,textarea{font:inherit;color:inherit}
             <span>👑 Membership Rules</span><span style="font-size:12px;transition:transform .25s">▼</span>
           </div>
           <div style="max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 20px">
-            <div style="padding-bottom:20px">
-              <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px">NOW Membership provides extra convenience and exclusive benefits.</div>
-              <div style="font-size:13px;font-weight:700;margin-bottom:6px">Membership may include:</div>
-              <div style="font-size:13px;color:var(--muted);line-height:2;margin-bottom:12px">
-                • Reduced delivery charges<br/>
-                • Priority order processing<br/>
-                • Exclusive member offers<br/>
-                • Special rewards
-              </div>
-              <div style="font-size:13px;color:var(--muted);line-height:1.7;font-size:12px">Benefits available only in eligible zones. Non-transferable. Fee non-refundable except where required by law. Unused benefits expire per plan terms.</div>
+            <div style="padding-bottom:20px" id="pageContent-membership">
+              <div style="font-size:13px;color:var(--muted);line-height:1.7">Loading...</div>
             </div>
           </div>
         </div>
@@ -1211,42 +1158,23 @@ input,textarea{font:inherit;color:inherit}
             <span>❓ FAQ</span><span style="font-size:12px;transition:transform .25s">▼</span>
           </div>
           <div style="max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 20px">
-            <div style="padding-bottom:20px">
-
-          <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
-            <div style="font-size:13px;font-weight:700;margin-bottom:4px">How do I place an order?</div>
-            <div style="font-size:13px;color:var(--muted);line-height:1.6">Login, select products, choose your delivery address, complete payment or choose Cash on Delivery, and place your order.</div>
-          </div>
-
-          <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
-            <div style="font-size:13px;font-weight:700;margin-bottom:4px">Which products are available?</div>
-            <div style="font-size:13px;color:var(--muted);line-height:1.6">Fresh Chicken and Fresh Mutton.</div>
-          </div>
-
-          <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
-            <div style="font-size:13px;font-weight:700;margin-bottom:4px">Can I cancel my order?</div>
-            <div style="font-size:13px;color:var(--muted);line-height:1.6">Orders may be cancelled only before preparation begins. Once preparation has started, cancellation may not be possible because products are prepared fresh.</div>
-          </div>
-
-          <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
-            <div style="font-size:13px;font-weight:700;margin-bottom:4px">How do I track my order?</div>
-            <div style="font-size:13px;color:var(--muted);line-height:1.6">Track your order live from the Order Tracking section in the app.</div>
-          </div>
-
-          <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--border)">
-            <div style="font-size:13px;font-weight:700;margin-bottom:4px">Which payment methods are supported?</div>
-            <div style="font-size:13px;color:var(--muted);line-height:1.6">Cash on Delivery, UPI, Debit/Credit Cards, Wallet and other supported payment methods.</div>
-          </div>
-
-          <div>
-            <div style="font-size:13px;font-weight:700;margin-bottom:4px">How can I contact customer support?</div>
-            <div style="font-size:13px;color:var(--muted);line-height:1.6">Through the Support section available inside the app.</div>
-          </div>
+            <div style="padding-bottom:20px" id="pageContent-faq">
+              <div style="font-size:13px;color:var(--muted);line-height:1.7">Loading...</div>
             </div>
           </div>
         </div>
 
         <!-- Terms -->
+        <div style="background:var(--card);border-radius:16px;margin-bottom:14px;border:1px solid var(--border);overflow:hidden">
+          <div onclick="toggleAboutAcc(this)" style="padding:18px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:16px;font-weight:800;">
+            <span>📜 Terms & Conditions</span><span style="font-size:12px;transition:transform .25s">▼</span>
+          </div>
+          <div style="max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 20px">
+            <div style="padding-bottom:20px" id="pageContent-terms">
+              <div style="font-size:13px;color:var(--muted);line-height:1.7">Loading...</div>
+            </div>
+          </div>
+        </div>
         <div style="background:var(--card);border-radius:16px;margin-bottom:14px;border:1px solid var(--border);overflow:hidden">
           <div onclick="toggleAboutAcc(this)" style="padding:18px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:16px;font-weight:800;">
             <span>📜 Terms &amp; Conditions</span><span style="font-size:12px;transition:transform .25s">▼</span>
@@ -1452,6 +1380,37 @@ function applyBranding() {
   // Update footer
   const footer = document.querySelector('.drawer-footer');
   if (footer) footer.textContent = `${name || 'NOW'} — ${tagline || 'Fresh Meat Delivered Fast'} 🥩`;
+  
+  // Update page content dynamically
+  if (APP_SETTINGS.pages) {
+    updatePageContent();
+  }
+}
+
+function updatePageContent() {
+  const pages = APP_SETTINGS.pages;
+  if (!pages) return;
+  
+  // Helper to format text with line breaks
+  const formatContent = (text) => {
+    if (!text) return '<div style="font-size:13px;color:var(--muted)">No content available.</div>';
+    // Convert \n to <br/> and style the text
+    return `<div style="font-size:13px;color:var(--muted);line-height:1.7;white-space:pre-wrap">${escapeHtml(text)}</div>`;
+  };
+  
+  // Update each page content
+  ['about', 'refund', 'privacy', 'safety', 'delivery', 'membership', 'faq', 'terms'].forEach(key => {
+    const el = document.getElementById(`pageContent-${key}`);
+    if (el && pages[key]) {
+      el.innerHTML = formatContent(pages[key]);
+    }
+  });
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
 
 // ── Init ──
