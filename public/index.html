@@ -54,8 +54,8 @@ input,textarea{font:inherit;color:inherit}
 #screen-login{padding-bottom:0}
 
 /* ── Bottom nav ── */
-.bottom-nav{height:var(--nav-h);background:var(--card);border-top:1px solid var(--border);
-  display:flex;align-items:stretch;flex-shrink:0;z-index:150;position:relative}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav-h);background:var(--card);
+  border-top:1px solid var(--border);display:flex;align-items:stretch;z-index:150}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   font-size:11px;color:var(--muted);transition:color .2s;padding:4px 0;position:relative}
 .nav-btn.active{color:var(--accent)}
