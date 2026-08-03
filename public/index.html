@@ -13,9 +13,8 @@
 <meta name="apple-mobile-web-app-title" content="NOW"/>
 <link rel="apple-touch-icon" href="/logo.png"/>
 <link rel="icon" type="image/png" href="/logo.png"/>
-<!-- Leaflet Map -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet Map removed - using address-based location -->
+
 <style>
 :root{
   --bg:#0D0D0D;--card:#1C1C1E;--accent:#E8450A;--accent2:#c73200;
@@ -421,38 +420,49 @@ input,textarea{font:inherit;color:inherit}
 .star-row{display:flex;gap:4px;margin-bottom:4px}
 .star{font-size:28px;cursor:pointer;color:var(--border);transition:color .15s;-webkit-tap-highlight-color:transparent}
 .star.active,.star:hover{color:#f59e0b}
-/* ═══ LOCATION MAP SCREEN ═══ */
-.loc-screen{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;flex-direction:column;overscroll-behavior:none;touch-action:pan-x pan-y;}
+/* ═══ LOCATION SCREEN (Blinkit style) ═══ */
+.loc-screen{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;flex-direction:column;overscroll-behavior:none;}
 .loc-topbar{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border)}
-.loc-topbar-title{font-size:16px;font-weight:700;flex:1}
-#locMap{flex:1;position:relative;z-index:1}
-.map-pin-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-100%);z-index:1000;pointer-events:none;font-size:40px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
-.map-pin-center::after{content:'';display:block;width:8px;height:8px;background:var(--accent);border-radius:50%;margin:0 auto;margin-top:-4px}
-.loc-bottom{background:var(--card);border-top:1px solid var(--border);padding:14px 16px;z-index:2}
-.loc-address-box{background:var(--bg);border-radius:12px;padding:12px 14px;margin-bottom:12px;min-height:48px}
-.loc-address-area{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
-.loc-address-full{font-size:11px;color:var(--muted);line-height:1.4}
-.loc-gps-btn{display:flex;align-items:center;gap:8px;background:var(--border);border:none;color:var(--text);
-  padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;width:100%}
-.loc-confirm-btn{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;
-  font-size:15px;font-weight:700;cursor:pointer}
-.loc-confirm-btn:active{opacity:.85}
-.loc-search-row{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:10px;padding:8px 12px;margin-bottom:8px;border:1px solid var(--border)}
-.loc-search-input{flex:1;background:none;border:none;color:var(--text);font-size:13px;outline:none}
+.loc-topbar-title{font-size:15px;font-weight:800;flex:1;text-align:center;letter-spacing:.5px;text-transform:uppercase}
+.loc-body{flex:1;overflow-y:auto;padding:16px}
+.loc-search-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px;transition:border-color .2s}
+.loc-search-row:focus-within{border-color:var(--accent)}
+.loc-search-input{flex:1;background:none;border:none;color:var(--text);font-size:14px;outline:none}
 .loc-search-input::placeholder{color:var(--muted)}
-.loc-search-results{background:var(--card);border-radius:10px;margin-bottom:8px;max-height:160px;overflow-y:auto;border:1px solid var(--border)}
-.loc-result-item{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;font-size:13px;color:var(--text)}
+.loc-gps-btn{display:flex;align-items:center;gap:12px;background:var(--card);border:1.5px solid var(--accent);color:var(--accent);
+  padding:14px 16px;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;width:100%;margin-bottom:20px;transition:all .2s}
+.loc-gps-btn:active{opacity:.8;transform:scale(.98)}
+.loc-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.loc-section-title{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase}
+.loc-add-new{font-size:13px;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:4px;cursor:pointer}
+.addr-card{display:flex;align-items:flex-start;gap:14px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all .2s;position:relative}
+.addr-card.selected{border-color:var(--accent);background:rgba(232,69,10,.06)}
+.addr-card:active{transform:scale(.98)}
+.addr-icon{width:42px;height:42px;border-radius:12px;background:rgba(232,69,10,.12);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.addr-card.selected .addr-icon{background:rgba(232,69,10,.2)}
+.addr-info{flex:1;min-width:0}
+.addr-tag-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.addr-tag{font-size:13px;font-weight:700;color:var(--text)}
+.addr-selected-badge{font-size:10px;font-weight:700;color:var(--accent);background:rgba(232,69,10,.15);padding:2px 8px;border-radius:6px;border:1px solid rgba(232,69,10,.3)}
+.addr-full{font-size:12px;color:var(--muted);line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.addr-menu-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;color:var(--muted);font-size:18px;flex-shrink:0}
+.addr-menu-btn:active{background:var(--border)}
+.loc-search-results{background:var(--card);border-radius:14px;margin-bottom:12px;overflow:hidden;border:1px solid var(--border)}
+.loc-result-item{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:flex-start;gap:10px}
 .loc-result-item:last-child{border-bottom:none}
 .loc-result-item:active{background:var(--border)}
-.loc-result-name{font-weight:600}
+.loc-result-name{font-size:13px;font-weight:600;color:var(--text)}
 .loc-result-sub{font-size:11px;color:var(--muted);margin-top:2px}
-.loc-manual-toggle{font-size:12px;color:var(--accent);padding:6px 0 8px;cursor:pointer;font-weight:600}
-.loc-manual-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:10px;
-  padding:10px 12px;color:var(--text);font-size:13px;outline:none;margin-bottom:8px;box-sizing:border-box}
-.loc-manual-save{width:100%;padding:10px;background:var(--border);color:var(--text);border:none;
-  border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px}
-.loc-loading{position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:500;border-radius:0}
-.loc-spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+/* Add address modal */
+.add-addr-form{background:var(--card);border-radius:16px;padding:16px;margin-top:12px;border:1px solid var(--border)}
+.add-addr-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;display:block}
+.add-addr-input{width:100%;padding:11px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;outline:none;margin-bottom:12px;transition:border-color .2s}
+.add-addr-input:focus{border-color:var(--accent)}
+.addr-type-row{display:flex;gap:8px;margin-bottom:12px}
+.addr-type-btn{flex:1;padding:9px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:5px}
+.addr-type-btn.active{border-color:var(--accent);background:rgba(232,69,10,.1);color:var(--accent)}
+.loc-spinner-wrap{display:flex;align-items:center;justify-content:center;padding:20px}
+.loc-spinner{width:32px;height:32px;border:3px solid rgba(232,69,10,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}</style>
 
 </head>
@@ -481,49 +491,78 @@ input,textarea{font:inherit;color:inherit}
       </div>
     </div>
 
-    <!-- ═══ LOCATION MAP SCREEN ═══ -->
+    <!-- ═══ LOCATION SCREEN (Blinkit style) ═══ -->
     <div class="loc-screen" id="locMapScreen" style="display:none">
       <div class="loc-topbar">
-        <button class="icon-btn" onclick="closeLocMap()" style="background:var(--border)">←</button>
-        <div class="loc-topbar-title">Set Delivery Location</div>
+        <button class="icon-btn" onclick="closeLocMap()" style="background:var(--border);border-radius:10px">←</button>
+        <div class="loc-topbar-title">Select Delivery Location</div>
+        <div style="width:36px"></div>
       </div>
-      <div style="position:relative;flex:1;display:flex;flex-direction:column">
-        <div id="locMap" style="flex:1"></div>
-        <!-- Fixed center pin -->
-        <div class="map-pin-center">📍</div>
-        <!-- Loading overlay -->
-        <div class="loc-loading" id="locLoading" style="display:none">
-          <div class="loc-spinner"></div>
-        </div>
-      </div>
-      <div class="loc-bottom">
-        <button class="loc-gps-btn" id="locGpsBtn" onclick="centerOnGPS()">
-          <span style="font-size:18px">🎯</span>
-          <span>Use my current location</span>
-        </button>
-        <!-- Manual address search -->
+
+      <div class="loc-body">
+        <!-- Search -->
         <div class="loc-search-row">
-          <span style="font-size:16px">🔍</span>
-          <input id="locSearchInput" class="loc-search-input" placeholder="Search area, street, colony..."
+          <span style="font-size:18px;color:var(--muted)">🔍</span>
+          <input id="locSearchInput" class="loc-search-input" placeholder="Search for location"
             oninput="locSearchDebounce(this.value)" autocomplete="off"/>
-          <button onclick="clearLocSearch()" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer">✕</button>
+          <button onclick="clearLocSearch()" style="color:var(--muted);font-size:16px;padding:4px">✕</button>
         </div>
+
+        <!-- Search results -->
         <div id="locSearchResults" class="loc-search-results" style="display:none"></div>
-        <!-- OR manual fill -->
-        <div class="loc-manual-toggle" onclick="toggleManualAddr()">
-          ✏️ Enter address manually <span id="manualToggleArrow">▼</span>
-        </div>
-        <div id="manualAddrBox" style="display:none">
-          <input id="manualAddrInput" class="loc-manual-input" placeholder="House no, street, area, city..." />
-          <button class="loc-manual-save" onclick="saveManualAddr()">Use this address</button>
-        </div>
-        <div class="loc-address-box">
-          <div class="loc-address-area" id="locAddrArea">Move map to set location</div>
-          <div class="loc-address-full" id="locAddrFull">Drag the map to adjust pin</div>
-        </div>
-        <button class="loc-confirm-btn" id="locConfirmBtn" onclick="confirmLocation()">
-          Confirm Location
+
+        <!-- Use current location -->
+        <button class="loc-gps-btn" id="locGpsBtn" onclick="detectGPS()">
+          <span style="font-size:22px">🎯</span>
+          <div style="text-align:left">
+            <div style="font-size:14px;font-weight:700">Use current location</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:400;margin-top:1px">Using GPS</div>
+          </div>
         </button>
+
+        <!-- Saved Addresses -->
+        <div class="loc-section-header">
+          <div class="loc-section-title">Saved addresses</div>
+          <div class="loc-add-new" onclick="showAddAddressForm()">
+            <span>+</span> ADD NEW ADDRESS
+          </div>
+        </div>
+
+        <div id="savedAddrList">
+          <div class="loc-spinner-wrap"><div class="loc-spinner"></div></div>
+        </div>
+
+        <!-- Add Address Form (hidden by default) -->
+        <div id="addAddrForm" style="display:none">
+          <div class="add-addr-form">
+            <div style="font-size:15px;font-weight:700;margin-bottom:16px">Add New Address</div>
+
+            <label class="add-addr-label">Address type</label>
+            <div class="addr-type-row">
+              <button class="addr-type-btn active" id="typeHome" onclick="selectAddrType('Home',this)">🏠 Home</button>
+              <button class="addr-type-btn" id="typeWork" onclick="selectAddrType('Work',this)">🏢 Work</button>
+              <button class="addr-type-btn" id="typeOther" onclick="selectAddrType('Other',this)">📍 Other</button>
+            </div>
+
+            <label class="add-addr-label">House / Flat No. *</label>
+            <input id="newAddrFlat" class="add-addr-input" placeholder="e.g. 123, Block A"/>
+
+            <label class="add-addr-label">Street / Area *</label>
+            <input id="newAddrStreet" class="add-addr-input" placeholder="e.g. MG Road, Civil Lines"/>
+
+            <label class="add-addr-label">Landmark</label>
+            <input id="newAddrLandmark" class="add-addr-input" placeholder="e.g. Near Agra College"/>
+
+            <label class="add-addr-label">Pincode</label>
+            <input id="newAddrPin" class="add-addr-input" placeholder="282001" maxlength="6" inputmode="numeric"/>
+
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <button onclick="saveNewAddress()" style="flex:1;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer">Save Address</button>
+              <button onclick="document.getElementById('addAddrForm').style.display='none'" style="flex:1;padding:14px;background:var(--border);color:var(--text);border:none;border-radius:12px;font-size:14px;cursor:pointer">Cancel</button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -1210,8 +1249,14 @@ input,textarea{font:inherit;color:inherit}
       </div>
       <div style="margin-bottom:16px">
         <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">Delivery Address *</label>
-        <textarea id="oAddress" required rows="3" placeholder="House no, street, area, landmark..."
-          style="width:100%;padding:12px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;outline:none;font-size:14px;resize:none"></textarea>
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          <textarea id="oAddress" required rows="3" placeholder="House no, street, area, landmark..."
+            style="flex:1;padding:12px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;outline:none;font-size:14px;resize:none"></textarea>
+          <button type="button" onclick="closeCheckoutModal();openLocMap()" 
+            style="padding:8px 10px;background:rgba(232,69,10,.1);color:var(--accent);border:1.5px solid rgba(232,69,10,.3);border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0">
+            📍 Change
+          </button>
+        </div>
       </div>
       <div style="margin-bottom:16px">
         <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">Notes (optional)</label>
@@ -2033,6 +2078,13 @@ function showCheckoutModal() {
     if (USER.phone) document.getElementById('oPhone').value = USER.phone;
   }
 
+  // Auto-fill selected delivery address
+  const saved = getSelectedAddr();
+  if (saved && saved.full) {
+    const addrField = document.getElementById('oAddress');
+    if (addrField && !addrField.value) addrField.value = saved.full;
+  }
+
   // Show summary
   const sub = cartSubtotal();
   const couponDisc = COUPON ? COUPON.discount : 0;
@@ -2791,223 +2843,283 @@ async function submitReview(orderId, itemCode) {
 }
 
 // ═══════════════════════════════════════════
-//  GPS Location Detection
+//  Location & Saved Addresses
 // ═══════════════════════════════════════════
-// ═══════════════════════════════════════════
-//  Location Map (Leaflet + OpenStreetMap)
-// ═══════════════════════════════════════════
-let _map = null;
-let _mapMarker = null;
-let _geocodeTimer = null;
-let _pendingLat = null, _pendingLon = null;
-let _pendingLabel = '', _pendingFull = '';
 
-function openLocMap() {
-  const screen = document.getElementById('locMapScreen');
-  screen.style.display = 'flex';
-  screen.style.flexDirection = 'column';
+// --- Saved Addresses (localStorage) ---
+function getSavedAddresses() {
+  try { return JSON.parse(localStorage.getItem('now_addresses') || '[]'); } catch { return []; }
+}
+function saveAddresses(arr) {
+  localStorage.setItem('now_addresses', JSON.stringify(arr));
+}
+function getSelectedAddr() {
+  try { return JSON.parse(localStorage.getItem('now_location')); } catch { return null; }
+}
+function setSelectedAddr(addr) {
+  localStorage.setItem('now_location', JSON.stringify(addr));
+}
 
-  // Init map once
-  if (!_map) {
-    setTimeout(() => {
-      const saved = getSavedLocation();
-      const lat = saved ? saved.lat : 27.1767;  // Agra default
-      const lon = saved ? saved.lon : 78.0081;
+let _newAddrType = 'Home';
 
-      _map = L.map('locMap', { zoomControl: true, attributionControl: false }).setView([lat, lon], 16);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        subdomains: 'abcd',
-      }).addTo(_map);
+function selectAddrType(type, el) {
+  _newAddrType = type;
+  document.querySelectorAll('.addr-type-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
 
-      // Reverse geocode on map move end
-      _map.on('moveend', () => {
-        const c = _map.getCenter();
-        reverseGeocode(c.lat, c.lng);
-      });
-
-      // Initial reverse geocode
-      reverseGeocode(lat, lon);
-    }, 100);
-  } else {
-    setTimeout(() => _map.invalidateSize(), 100);
+function showAddAddressForm() {
+  const form = document.getElementById('addAddrForm');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  if (form.style.display === 'block') {
+    document.getElementById('newAddrFlat').value = '';
+    document.getElementById('newAddrStreet').value = '';
+    document.getElementById('newAddrLandmark').value = '';
+    document.getElementById('newAddrPin').value = '';
+    _newAddrType = 'Home';
+    document.querySelectorAll('.addr-type-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('typeHome').classList.add('active');
+    setTimeout(() => document.getElementById('newAddrFlat').focus(), 100);
   }
+}
+
+function saveNewAddress() {
+  const flat = document.getElementById('newAddrFlat').value.trim();
+  const street = document.getElementById('newAddrStreet').value.trim();
+  const landmark = document.getElementById('newAddrLandmark').value.trim();
+  const pin = document.getElementById('newAddrPin').value.trim();
+
+  if (!flat || !street) { showToast('Please enter house no. and street', 'error'); return; }
+
+  const full = [flat, street, landmark, pin].filter(Boolean).join(', ');
+  const addr = {
+    id: Date.now(),
+    type: _newAddrType,
+    label: _newAddrType,
+    flat, street, landmark, pin,
+    full
+  };
+
+  const addresses = getSavedAddresses();
+  addresses.push(addr);
+  saveAddresses(addresses);
+
+  // Auto-select new address
+  setSelectedAddr({ label: _newAddrType, full, lat: null, lon: null });
+  updateLocTopbar(full);
+
+  document.getElementById('addAddrForm').style.display = 'none';
+  renderSavedAddresses();
+  showToast('✅ Address saved!', 'success');
+}
+
+function renderSavedAddresses() {
+  const list = document.getElementById('savedAddrList');
+  const addresses = getSavedAddresses();
+  const selected = getSelectedAddr();
+
+  if (!addresses.length) {
+    list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">
+      No saved addresses yet.<br/>Add your first address above ↑
+    </div>`;
+    return;
+  }
+
+  const typeIcon = { Home: '🏠', Work: '🏢', Other: '📍' };
+
+  list.innerHTML = addresses.map(addr => {
+    const isSelected = selected && selected.full === addr.full;
+    return `<div class="addr-card ${isSelected ? 'selected' : ''}" onclick="selectAddress('${addr.id}')">
+      <div class="addr-icon">${typeIcon[addr.type] || '📍'}</div>
+      <div class="addr-info">
+        <div class="addr-tag-row">
+          <span class="addr-tag">${addr.label}</span>
+          ${isSelected ? '<span class="addr-selected-badge">SELECTED</span>' : ''}
+        </div>
+        <div class="addr-full" title="${addr.full}">${addr.full}</div>
+      </div>
+      <button class="addr-menu-btn" onclick="event.stopPropagation();deleteAddress(${addr.id})">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
+function selectAddress(id) {
+  const addresses = getSavedAddresses();
+  const addr = addresses.find(a => a.id === id);
+  if (!addr) return;
+  setSelectedAddr({ label: addr.label, full: addr.full, lat: null, lon: null });
+  updateLocTopbar(addr.full);
+  renderSavedAddresses();
+  showToast('📍 ' + addr.label + ' selected', 'success', 1500);
+  setTimeout(() => closeLocMap(), 600);
+}
+
+function deleteAddress(id) {
+  const addresses = getSavedAddresses().filter(a => a.id !== id);
+  saveAddresses(addresses);
+  // If deleted was selected, clear
+  const selected = getSelectedAddr();
+  const deleted = getSavedAddresses().find ? null : null;
+  renderSavedAddresses();
+  showToast('Address removed', '', 1500);
+}
+
+function showSavedAddresses() {
+  openLocMap();
+}
+
+// --- GPS Detection ---
+function detectGPS() {
+  const btn = document.getElementById('locGpsBtn');
+  const origHTML = btn.innerHTML;
+  btn.innerHTML = `<span style="font-size:22px">⏳</span>
+    <div style="text-align:left">
+      <div style="font-size:14px;font-weight:700">Detecting location...</div>
+      <div style="font-size:11px;color:var(--muted);font-weight:400;margin-top:1px">Please wait</div>
+    </div>`;
+  btn.disabled = true;
+
+  if (!navigator.geolocation) {
+    btn.innerHTML = origHTML; btn.disabled = false;
+    showToast('GPS not available on this device', 'error');
+    return;
+  }
+
+  let done = false;
+  const timer = setTimeout(() => {
+    if (done) return; done = true;
+    btn.innerHTML = origHTML; btn.disabled = false;
+    showToast('GPS timed out — enter address manually', 'error', 3000);
+  }, 12000);
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      if (done) return; done = true;
+      clearTimeout(timer);
+      const { latitude: lat, longitude: lon } = pos.coords;
+      try {
+        const r = await fetch(`/api/location/reverse?lat=${lat}&lon=${lon}`);
+        const data = await r.json();
+        const label = data.label || 'Current Location';
+        const full = data.full || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+        setSelectedAddr({ label, full, lat, lon });
+        updateLocTopbar(label);
+        btn.innerHTML = origHTML; btn.disabled = false;
+        showToast('📍 Location detected!', 'success', 2000);
+        setTimeout(() => closeLocMap(), 600);
+      } catch(e) {
+        const label = 'Current Location';
+        const full = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+        setSelectedAddr({ label, full, lat, lon });
+        updateLocTopbar(label);
+        btn.innerHTML = origHTML; btn.disabled = false;
+        showToast('📍 Location set!', 'success', 2000);
+        setTimeout(() => closeLocMap(), 600);
+      }
+    },
+    (err) => {
+      if (done) return; done = true;
+      clearTimeout(timer);
+      btn.innerHTML = origHTML; btn.disabled = false;
+      if (err.code === 1) {
+        showToast('Location permission denied. Add address manually.', 'error', 3500);
+      } else {
+        showToast('Could not detect location. Add address manually.', 'error', 3000);
+      }
+    },
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 }
+  );
+}
+
+// --- Search ---
+let _searchTimer = null;
+function locSearchDebounce(val) {
+  clearTimeout(_searchTimer);
+  const res = document.getElementById('locSearchResults');
+  if (!val.trim()) { res.style.display = 'none'; return; }
+  _searchTimer = setTimeout(() => locSearch(val), 600);
+}
+
+async function locSearch(q) {
+  const res_el = document.getElementById('locSearchResults');
+  res_el.style.display = 'block';
+  res_el.innerHTML = `<div class="loc-result-item"><div class="loc-result-name" style="color:var(--muted)">Searching...</div></div>`;
+  try {
+    const r = await fetch(`/api/location/search?q=${encodeURIComponent(q)}`);
+    const data = await r.json();
+    if (!data.length) {
+      res_el.innerHTML = `<div class="loc-result-item"><div class="loc-result-name" style="color:var(--muted)">No results. Try different keyword.</div></div>`;
+      return;
+    }
+    res_el.innerHTML = data.map(d => {
+      const sub = [d.city, d.state].filter(Boolean).join(', ') || (d.display||'').slice(0,50);
+      const safeName = (d.name+'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+      const safeFull = (d.display+'').replace(/'/g,"\\'").replace(/"/g,'&quot;').slice(0,120);
+      return `<div class="loc-result-item" onclick="selectSearchResult(${d.lat},${d.lon},'${safeName}','${safeFull}')">
+        <span style="font-size:18px;flex-shrink:0">📍</span>
+        <div>
+          <div class="loc-result-name">${d.name}</div>
+          <div class="loc-result-sub">${sub}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    res_el.innerHTML = `<div class="loc-result-item"><div class="loc-result-name" style="color:var(--danger)">Search failed. Enter address manually.</div></div>`;
+  }
+}
+
+function selectSearchResult(lat, lon, name, full) {
+  document.getElementById('locSearchResults').style.display = 'none';
+  document.getElementById('locSearchInput').value = '';
+  setSelectedAddr({ label: name, full, lat: parseFloat(lat), lon: parseFloat(lon) });
+  updateLocTopbar(name);
+  showToast('📍 ' + name, 'success', 2000);
+  setTimeout(() => closeLocMap(), 500);
+}
+
+function clearLocSearch() {
+  document.getElementById('locSearchInput').value = '';
+  document.getElementById('locSearchResults').style.display = 'none';
+}
+
+// --- Open/Close ---
+function openLocMap() {
+  document.getElementById('locMapScreen').style.display = 'flex';
+  document.getElementById('locMapScreen').style.flexDirection = 'column';
+  document.getElementById('addAddrForm').style.display = 'none';
+  document.getElementById('locSearchInput').value = '';
+  document.getElementById('locSearchResults').style.display = 'none';
+  renderSavedAddresses();
 }
 
 function closeLocMap() {
   document.getElementById('locMapScreen').style.display = 'none';
 }
 
-function centerOnGPS() {
-  if (!navigator.geolocation) {
-    showToast('GPS not supported — search your area below', '', 3000);
-    document.getElementById('locSearchInput').focus();
-    return;
-  }
-  const btn = document.getElementById('locGpsBtn');
-  btn.innerHTML = '<span style="font-size:18px">⏳</span><span>Detecting GPS...</span>';
-  btn.disabled = true;
-
-  let watchId = null;
-  let done = false;
-
-  const finish = (lat, lon) => {
-    if (done) return;
-    done = true;
-    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-    _map.setView([lat, lon], 17, { animate: true });
-    btn.innerHTML = '<span style="font-size:18px">🎯</span><span>Use my current location</span>';
-    btn.disabled = false;
-    showToast('📍 Location found!', 'success', 2000);
-  };
-
-  const fail = () => {
-    if (done) return;
-    done = true;
-    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-    btn.innerHTML = '<span style="font-size:18px">🎯</span><span>Use my current location</span>';
-    btn.disabled = false;
-    showToast('GPS unavailable — search your area below 👇', '', 3000);
-    // Auto-focus search box
-    setTimeout(() => document.getElementById('locSearchInput').focus(), 300);
-  };
-
-  watchId = navigator.geolocation.watchPosition(
-    (pos) => finish(pos.coords.latitude, pos.coords.longitude),
-    (err) => {
-      if (err.code === 1) {
-        // Permission denied — show message
-        done = true;
-        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
-        btn.innerHTML = '<span style="font-size:18px">🎯</span><span>Use my current location</span>';
-        btn.disabled = false;
-        showToast('Location permission denied. Enable in phone Settings → Apps → Location', 'error', 4000);
-        setTimeout(() => document.getElementById('locSearchInput').focus(), 300);
-      }
-      // For timeout/unavailable, let the setTimeout handle it
-    },
-    { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
-  );
-
-  // Hard timeout fallback — 16 sec
-  setTimeout(() => fail(), 16000);
-}
-
-async function reverseGeocode(lat, lon) {
-  _pendingLat = lat;
-  _pendingLon = lon;
-  document.getElementById('locAddrArea').textContent = 'Fetching address...';
-  document.getElementById('locAddrFull').textContent = '';
-  clearTimeout(_geocodeTimer);
-  _geocodeTimer = setTimeout(async () => {
-    try {
-      const r = await fetch(`/api/location/reverse?lat=${lat}&lon=${lon}`);
-      const data = await r.json();
-      _pendingLabel = data.label || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-      _pendingFull = data.full || '';
-      document.getElementById('locAddrArea').textContent = _pendingLabel;
-      document.getElementById('locAddrFull').textContent = _pendingFull.length > 80 ? _pendingFull.slice(0,78)+'…' : _pendingFull;
-    } catch(e) {
-      _pendingLabel = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-      _pendingFull = '';
-      document.getElementById('locAddrArea').textContent = _pendingLabel;
-      document.getElementById('locAddrFull').textContent = 'Tap confirm to use this location';
-    }
-  }, 700);
-}
-
-function confirmLocation() {
-  if (!_pendingLat && !_pendingLabel) { showToast('Move map or enter address', '', 2000); return; }
-  localStorage.setItem('now_location', JSON.stringify({
-    label: _pendingLabel, full: _pendingFull, lat: _pendingLat, lon: _pendingLon
-  }));
+// --- Update topbar ---
+function updateLocTopbar(label) {
   const txt = document.getElementById('locText');
-  txt.textContent = _pendingLabel.length > 22 ? _pendingLabel.slice(0,20)+'…' : _pendingLabel;
-  showToast('📍 Location saved!', 'success', 2000);
-  closeLocMap();
+  if (txt) txt.textContent = label && label.length > 22 ? label.slice(0, 20) + '…' : (label || 'Set Location');
 }
 
 function getSavedLocation() {
-  try { return JSON.parse(localStorage.getItem('now_location')); } catch { return null; }
-}
-
-// ── Address Search (Nominatim) ──
-let _searchTimer = null;
-function locSearchDebounce(val) {
-  clearTimeout(_searchTimer);
-  if (!val.trim()) { document.getElementById('locSearchResults').style.display='none'; return; }
-  _searchTimer = setTimeout(() => locSearch(val), 600);
-}
-async function locSearch(q) {
-  const res_el = document.getElementById('locSearchResults');
-  res_el.style.display = 'block';
-  res_el.innerHTML = '<div class="loc-result-item" style="color:var(--muted)">Searching...</div>';
-  try {
-    const r = await fetch(`/api/location/search?q=${encodeURIComponent(q)}`);
-    const data = await r.json();
-    if (!data.length) {
-      res_el.innerHTML = '<div class="loc-result-item" style="color:var(--muted)">No results. Try different keyword.</div>';
-      return;
-    }
-    res_el.innerHTML = data.map(d => {
-      const sub = [d.city, d.state].filter(Boolean).join(', ') || d.display.slice(0,50);
-      const safeName = (d.name+'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-      const safeFull = (d.display+'').replace(/'/g,"\\'").replace(/"/g,'&quot;').slice(0,100);
-      return `<div class="loc-result-item" onclick="selectSearchResult(${d.lat},${d.lon},'${safeName}','${safeFull}')">
-        <div class="loc-result-name">${d.name}</div>
-        <div class="loc-result-sub">${sub}</div>
-      </div>`;
-    }).join('');
-  } catch(e) {
-    res_el.innerHTML = '<div class="loc-result-item" style="color:var(--danger)">Search failed. Use manual address below.</div>';
-  }
-}
-function selectSearchResult(lat, lon, name, full) {
-  document.getElementById('locSearchResults').style.display = 'none';
-  document.getElementById('locSearchInput').value = '';
-  _map.setView([lat, lon], 17, {animate:true});
-  _pendingLat = parseFloat(lat); _pendingLon = parseFloat(lon);
-  _pendingLabel = name; _pendingFull = full;
-  document.getElementById('locAddrArea').textContent = name;
-  document.getElementById('locAddrFull').textContent = full;
-}
-function clearLocSearch() {
-  document.getElementById('locSearchInput').value = '';
-  document.getElementById('locSearchResults').style.display = 'none';
-}
-
-// ── Manual Address ──
-function toggleManualAddr() {
-  const box = document.getElementById('manualAddrBox');
-  const arrow = document.getElementById('manualToggleArrow');
-  const open = box.style.display === 'none';
-  box.style.display = open ? 'block' : 'none';
-  arrow.textContent = open ? '▲' : '▼';
-  if (open) document.getElementById('manualAddrInput').focus();
-}
-function saveManualAddr() {
-  const val = document.getElementById('manualAddrInput').value.trim();
-  if (!val) { showToast('Please enter an address', 'error', 2000); return; }
-  _pendingLabel = val.length > 40 ? val.slice(0,38)+'…' : val;
-  _pendingFull = val;
-  document.getElementById('locAddrArea').textContent = _pendingLabel;
-  document.getElementById('locAddrFull').textContent = val;
-  showToast('Address set! Tap Confirm to save.', 'success', 2000);
-  document.getElementById('manualAddrBox').style.display = 'none';
-  document.getElementById('manualToggleArrow').textContent = '▼';
+  return getSelectedAddr();
 }
 
 function initLocation() {
-  const txt = document.getElementById('locText');
-  const saved = getSavedLocation();
-  if (saved && saved.label) {
-    txt.textContent = saved.label.length > 22 ? saved.label.slice(0,20)+'…' : saved.label;
-  } else {
-    txt.textContent = 'Set Location';
-    // Auto open map after short delay
-    setTimeout(() => openLocMap(), 800);
+  const saved = getSelectedAddr();
+  updateLocTopbar(saved ? saved.label : 'Set Location');
+  if (!saved) {
+    setTimeout(() => openLocMap(), 900);
   }
 }
+
+// Stubs for old functions that may be referenced
+function centerOnGPS() { detectGPS(); }
+function confirmLocation() { closeLocMap(); }
+function toggleManualAddr() {}
+function saveManualAddr() {}
+function locSearch_old() {}
 
 </script>
 
