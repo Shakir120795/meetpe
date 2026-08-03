@@ -2813,9 +2813,7 @@ function closeDrawer() {
   document.getElementById('drawerOverlay').classList.remove('open');
 }
 
-function showSavedAddresses() {
-  showToast('Saved addresses coming soon!', '', 2000);
-}
+// showSavedAddresses defined below with full implementation
 
 // ═══════════════════════════════════════════
 //  Returns & Refunds
@@ -2898,7 +2896,11 @@ let _newAddrType = 'Home';
 
 function _initMap(lat, lon) {
   if (_map) {
-    setTimeout(() => { _map.invalidateSize(); _map.setView([lat, lon], 17); }, 100);
+    setTimeout(() => {
+      _map.invalidateSize();
+      _map.setView([lat, lon], 17);
+      onMapMove();
+    }, 200);
     return;
   }
   _map = L.map('mapPickerEl', {
@@ -3274,7 +3276,6 @@ function clearLocSearch() {
 function openLocMap() {
   document.getElementById('locMapScreen').style.display = 'flex';
   document.getElementById('locMapScreen').style.flexDirection = 'column';
-  document.getElementById('addAddrForm').style.display = 'none';
   document.getElementById('locSearchInput').value = '';
   document.getElementById('locSearchResults').style.display = 'none';
   renderSavedAddresses();
