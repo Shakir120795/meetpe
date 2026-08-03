@@ -182,6 +182,10 @@
       <div class="field"><label>Safety & Quality</label><textarea id="pageSafety" rows="5"></textarea></div>
       <div class="field"><label>Privacy Policy</label><textarea id="pagePrivacy" rows="5"></textarea></div>
       <div class="field"><label>Terms of Service</label><textarea id="pageTerms" rows="5"></textarea></div>
+      <div class="field"><label>Refund Policy</label><textarea id="pageRefund" rows="5"></textarea></div>
+      <div class="field"><label>Delivery Policy</label><textarea id="pageDelivery" rows="5"></textarea></div>
+      <div class="field"><label>Membership Rules</label><textarea id="pageMembership" rows="5"></textarea></div>
+      <div class="field"><label>FAQ</label><textarea id="pageFaq" rows="5"></textarea></div>
     </div>
 
   </div>
@@ -266,6 +270,10 @@ function render() {
   $('pageSafety').value = SETTINGS.pages.safety || '';
   $('pagePrivacy').value = SETTINGS.pages.privacy || '';
   $('pageTerms').value = SETTINGS.pages.terms || '';
+  $('pageRefund').value = SETTINGS.pages.refund || '';
+  $('pageDelivery').value = SETTINGS.pages.delivery || '';
+  $('pageMembership').value = SETTINGS.pages.membership || '';
+  $('pageFaq').value = SETTINGS.pages.faq || '';
 
   // Mark dirty on any input change
   content.querySelectorAll('input, textarea, select').forEach(el => {
@@ -349,6 +357,10 @@ function collectData() {
     safety: $('pageSafety').value.trim(),
     privacy: $('pagePrivacy').value.trim(),
     terms: $('pageTerms').value.trim(),
+    refund: $('pageRefund').value.trim(),
+    delivery: $('pageDelivery').value.trim(),
+    membership: $('pageMembership').value.trim(),
+    faq: $('pageFaq').value.trim(),
   };
 
   return { branding, contact, categories, socials, pages };
