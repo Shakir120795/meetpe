@@ -793,16 +793,21 @@ app.post('/api/returns', (req, res) => {
   const cleanPhone = String(phone || '').replace(/\D/g, '');
   if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
   if (!order_id || !reason) return res.status(400).json({ ok: false, error: 'order_id and reason required' });
-  const waPhone = `web:+91${cleanPhone}`;
-  // Verify order belongs to customer and is delivered
-  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND phone = ?').get(order_id, waPhone);
+
+  const webPhone = `web:+91${cleanPhone}`;
+  const waPhone = `whatsapp:+91${cleanPhone}`;
+
+  // Verify order belongs to customer (both phone formats)
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND (phone = ? OR phone = ?)').get(order_id, webPhone, waPhone);
   if (!order) return res.status(404).json({ ok: false, error: 'Order not found' });
-  if (!['delivered'].includes(order.status)) return res.status(400).json({ ok: false, error: 'Only delivered orders can be returned' });
+  if (order.status === 'cancelled') return res.status(400).json({ ok: false, error: 'Cannot return a cancelled order' });
+
   // Check if return already exists
-  const existing = db.prepare('SELECT id FROM returns WHERE order_id = ? AND phone = ?').get(order_id, waPhone);
-  if (existing) return res.status(400).json({ ok: false, error: 'Return request already submitted' });
+  const existing = db.prepare('SELECT id FROM returns WHERE order_id = ? AND (phone = ? OR phone = ?)').get(order_id, webPhone, waPhone);
+  if (existing) return res.status(400).json({ ok: false, error: 'Return request already submitted for this order' });
+
   const info = db.prepare(`INSERT INTO returns (order_id, phone, reason, description, items_json) VALUES (?, ?, ?, ?, ?)`)
-    .run(order_id, waPhone, reason.trim(), (description || '').trim(), JSON.stringify(items || []));
+    .run(order_id, webPhone, reason.trim(), (description || '').trim(), JSON.stringify(items || []));
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 
@@ -927,18 +932,24 @@ app.post('/api/reviews', (req, res) => {
   const r = parseInt(rating, 10);
   if (!r || r < 1 || r > 5) return res.status(400).json({ ok: false, error: 'rating must be 1-5' });
   if (!item_code) return res.status(400).json({ ok: false, error: 'item_code required' });
-  const waPhone = `web:+91${cleanPhone}`;
-  // Check if order exists and is delivered
-  const order = order_id ? db.prepare('SELECT * FROM orders WHERE id = ? AND phone = ?').get(order_id, waPhone) : null;
-  if (order_id && (!order || order.status !== 'delivered')) {
-    return res.status(400).json({ ok: false, error: 'Order not found or not delivered' });
-  }
-  // Prevent duplicate review per order+item
+
+  // Support both phone prefixes
+  const webPhone = `web:+91${cleanPhone}`;
+  const waPhone = `whatsapp:+91${cleanPhone}`;
+
+  // Verify order belongs to customer (check both phone formats)
   if (order_id) {
-    const exists = db.prepare('SELECT id FROM reviews WHERE order_id = ? AND item_code = ? AND phone = ?').get(order_id, item_code, waPhone);
-    if (exists) return res.status(400).json({ ok: false, error: 'Already reviewed' });
+    const order = db.prepare('SELECT * FROM orders WHERE id = ? AND (phone = ? OR phone = ?)').get(order_id, webPhone, waPhone);
+    if (!order) return res.status(404).json({ ok: false, error: 'Order not found' });
+    // Allow review for any non-cancelled order (not just delivered)
+    if (order.status === 'cancelled') return res.status(400).json({ ok: false, error: 'Cannot review a cancelled order' });
+    // Check if already reviewed
+    const existing = db.prepare('SELECT id FROM reviews WHERE order_id = ? AND item_code = ? AND (phone = ? OR phone = ?)').get(order_id, item_code, webPhone, waPhone);
+    if (existing) return res.status(400).json({ ok: false, error: 'Already reviewed' });
   }
-  const info = db.prepare(`INSERT INTO reviews (order_id, phone, item_code, rating, comment) VALUES (?, ?, ?, ?, ?)`).run(order_id || null, waPhone, item_code, r, (comment || '').trim().slice(0, 500));
+
+  const info = db.prepare(`INSERT INTO reviews (order_id, phone, item_code, rating, comment, status) VALUES (?, ?, ?, ?, ?, 'approved')`)
+    .run(order_id || null, webPhone, item_code, r, (comment || '').trim().slice(0, 500));
   res.json({ ok: true, id: info.lastInsertRowid });
 });
 

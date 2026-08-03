@@ -2438,73 +2438,96 @@ function showOrderDetail(id) {
   const order = orders.find(o => o.id === id);
   if (!order) return;
 
+  // Stop auto-refresh when viewing detail
+  if (_ordersRefreshTimer) { clearInterval(_ordersRefreshTimer); _ordersRefreshTimer = null; }
+
   const STEPS = [
-    { key:'placed', label:'Order Placed', sub:'We received your order' },
-    { key:'preparing', label:'Accepted', sub:'Order confirmed by store' },
-    { key:'preparing', label:'Preparing', sub:'Your meat is being cleaned & cut' },
-    { key:'preparing', label:'Packed', sub:'Order packed and ready' },
-    { key:'out_for_delivery', label:'Out for Delivery', sub:'Rider is on the way' },
-    { key:'delivered', label:'Delivered', sub:'Enjoy your fresh meat! 🥩' },
+    { label:'Order Placed', sub:'We received your order' },
+    { label:'Accepted', sub:'Order confirmed by store' },
+    { label:'Preparing', sub:'Your meat is being cleaned & cut' },
+    { label:'Packed', sub:'Order packed and ready' },
+    { label:'Out for Delivery', sub:'Rider is on the way 🛵' },
+    { label:'Delivered', sub:'Enjoy your fresh meat! 🥩' },
   ];
-  const statusLevel = {placed:1,preparing:4,out_for_delivery:5,delivered:6,cancelled:0}[order.status]||0;
+  const statusLevel = {placed:1, preparing:4, out_for_delivery:5, delivered:6, cancelled:0}[order.status] || 0;
+  const isCancelled = order.status === 'cancelled';
+  const isDelivered = order.status === 'delivered';
 
   const content = document.getElementById('ordersContent');
   const title = document.getElementById('ordersTitle');
-  title.innerHTML = `<button onclick="loadOrders();document.getElementById('ordersTitle').textContent='My Orders'" style="background:none;color:var(--accent);font-size:13px;font-weight:600">← Back</button> Order #${id}`;
+  title.innerHTML = `<button onclick="loadOrders()" style="background:none;color:var(--accent);font-size:13px;font-weight:600">← Back</button> Order #${id}`;
 
   const itemsHtml = (order.items||[]).map(i=>
-    `<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid var(--border)">
-      <span>${i.name} × ${i.qty}</span><span>₹${i.price * i.qty}</span>
+    `<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid var(--border)">
+      <span>${i.name} × ${i.qty}</span><span style="font-weight:700">₹${i.price * i.qty}</span>
     </div>`).join('');
 
-  const stepsHtml = STEPS.map((step, idx) => {
-    const stepNum = idx + 1;
-    const isDone = stepNum < statusLevel;
-    const isCurrent = stepNum === statusLevel;
-    const dotClass = isDone ? 'done' : isCurrent ? 'current' : '';
-    const icon = isDone ? '✓' : isCurrent ? '→' : '';
-    return `<div class="track-step">
-      <div class="track-dot ${dotClass}">${icon}</div>
-      <div class="track-line"></div>
-      <div class="track-txt">
-        <div class="track-label" style="color:${isDone||isCurrent?'var(--text)':'var(--muted)'}">${step.label}</div>
-        ${isDone||isCurrent?`<div class="track-sub">${step.sub}</div>`:''}
-      </div>
-    </div>`;
-  }).join('');
+  const stepsHtml = isCancelled
+    ? `<div style="padding:16px;text-align:center;color:var(--danger);font-weight:700;font-size:14px">❌ Order Cancelled</div>`
+    : STEPS.map((step, idx) => {
+        const stepNum = idx + 1;
+        const isDone = stepNum < statusLevel;
+        const isCurrent = stepNum === statusLevel;
+        return `<div class="track-step">
+          <div class="track-dot ${isDone?'done':isCurrent?'current':''}">${isDone?'✓':isCurrent?'→':''}</div>
+          <div class="track-line"></div>
+          <div class="track-txt">
+            <div class="track-label" style="color:${isDone||isCurrent?'var(--text)':'var(--muted);opacity:.5'}">${step.label}</div>
+            ${(isDone||isCurrent)?`<div class="track-sub">${step.sub}</div>`:''}
+          </div>
+        </div>`;
+      }).join('');
 
-  content.innerHTML = `<div class="tracking-wrap">
-    <div style="margin-bottom:16px;padding:14px;background:var(--card);border-radius:14px;border:1px solid var(--border)">
-      ${itemsHtml}
-      <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;padding-top:10px;margin-top:4px">
-        <span>Total</span><span>₹${order.total}</span>
-      </div>
-    </div>
-    <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Order Tracking</div>
-    <div class="track-steps">${stepsHtml}</div>
-    ${order.status === 'delivered' ? `
+  // Return/Refund section — show for delivered orders
+  const returnSection = isDelivered ? `
     <div style="margin-top:12px;background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--border)">
-      <button onclick="openReturnModal(${order.id})" style="width:100%;padding:12px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-weight:600;cursor:pointer">
+      <button onclick="openReturnModal(${order.id})"
+        style="width:100%;padding:13px;background:rgba(239,68,68,.08);border:1.5px solid rgba(239,68,68,.2);border-radius:12px;color:#ef4444;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
         🔄 Request Return / Refund
       </button>
-    </div>` : ''}
-    <div style="margin-top:20px;background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border)">
-      <div style="font-size:14px;font-weight:700;margin-bottom:12px">⭐ Rate Your Order</div>
+    </div>` : '';
+
+  // Review section — show for delivered orders
+  const reviewSection = isDelivered ? `
+    <div style="margin-top:12px;background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border)">
+      <div style="font-size:15px;font-weight:800;margin-bottom:14px">⭐ Rate Your Order</div>
       ${(order.items||[]).map(item => `
-        <div class="review-item" id="review-${order.id}-${item.code}">
+        <div id="review-${order.id}-${item.code}" style="padding:10px 0;border-bottom:1px solid var(--border)">
           <div style="font-size:13px;font-weight:600;margin-bottom:8px">${item.name}</div>
-          <div class="star-row" data-order="${order.id}" data-code="${item.code}">
-            ${[1,2,3,4,5].map(s=>`<span class="star" data-val="${s}" onclick="setRating(this,${s})">★</span>`).join('')}
+          <div style="display:flex;gap:6px;margin-bottom:8px" id="stars-${order.id}-${item.code}">
+            ${[1,2,3,4,5].map(s=>`<span onclick="setReviewRating('${order.id}','${item.code}',${s})"
+              style="font-size:28px;cursor:pointer;color:var(--border);transition:color .15s" data-val="${s}">★</span>`).join('')}
           </div>
-          <textarea id="comment-${order.id}-${item.code}" placeholder="Your feedback (optional)..." 
-            style="width:100%;margin-top:8px;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;resize:none;height:60px"></textarea>
-          <button onclick="submitReview(${order.id},'${item.code}')" 
-            style="margin-top:8px;width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:13px">
+          <textarea id="rev-${order.id}-${item.code}" placeholder="Your feedback (optional)..."
+            style="width:100%;padding:10px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;resize:none;height:64px;outline:none"></textarea>
+          <button onclick="submitOrderReview(${order.id},'${item.code}')"
+            style="margin-top:8px;width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
             Submit Review
           </button>
-        </div>
-      `).join('<hr style="border:none;border-top:1px solid #333;margin:12px 0"/>')}
+        </div>`).join('')}
+    </div>` : `
+    <div style="margin-top:12px;background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--border);text-align:center">
+      <div style="font-size:13px;color:var(--muted)">⭐ You can rate this order after delivery</div>
+    </div>`;
+
+  content.innerHTML = `<div class="tracking-wrap">
+    <!-- Order summary -->
+    <div style="margin-bottom:12px;padding:14px;background:var(--card);border-radius:14px;border:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Items</div>
+      ${itemsHtml}
+      <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;padding-top:10px;margin-top:4px">
+        <span>Total</span><span style="color:var(--accent)">₹${order.total}</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">📍 ${order.address||'—'}</div>
     </div>
+
+    <!-- Tracking -->
+    <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Tracking</div>
+    <div class="track-steps">${stepsHtml}</div>
+
+    ${returnSection}
+    ${reviewSection}
+    <div style="height:16px"></div>
   </div>`;
 }
 
@@ -3078,45 +3101,119 @@ let _returnOrderId = null;
 
 function openReturnModal(orderId) {
   _returnOrderId = orderId;
-  document.getElementById('returnOrderInfo').textContent = `Order #${orderId}`;
-  document.getElementById('returnReason').value = 'quality_issue';
-  document.getElementById('returnDesc').value = '';
+  const infoEl = document.getElementById('returnOrderInfo');
+  if (infoEl) infoEl.textContent = `Order #${orderId}`;
+  const reasonEl = document.getElementById('returnReason');
+  if (reasonEl) reasonEl.value = 'quality_issue';
+  const descEl = document.getElementById('returnDesc');
+  if (descEl) descEl.value = '';
   document.getElementById('returnModal').classList.add('open');
 }
 
 async function submitReturn() {
   if (!USER || !USER.phone) { showToast('Login required', 'error'); return; }
   if (!_returnOrderId) return;
-  const reason = document.getElementById('returnReason').value;
-  const description = document.getElementById('returnDesc').value.trim();
+
+  const reason = document.getElementById('returnReason')?.value || 'quality_issue';
+  const description = document.getElementById('returnDesc')?.value?.trim() || '';
+
+  if (!reason) { showToast('Please select a reason', 'error'); return; }
+
+  const btn = document.querySelector('#returnModal button[onclick="submitReturn()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
+
   try {
+    const cleanPhone = USER.phone.replace(/\D/g,'');
     const r = await fetch('/api/returns', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone: USER.phone, order_id: _returnOrderId, reason, description })
+      body: JSON.stringify({ phone: cleanPhone, order_id: _returnOrderId, reason, description })
     });
     const d = await r.json();
-    if (!d.ok) throw new Error(d.error);
-    document.getElementById('returnModal').classList.remove('open');
-    showToast('✅ Return request submitted! We\'ll contact you within 24 hrs.', 'success', 3500);
+    if (d.ok) {
+      document.getElementById('returnModal').classList.remove('open');
+      showToast('✅ Return request submitted! We\'ll contact you within 24 hrs.', 'success', 3500);
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = 'Submit Return Request'; }
+      showToast(d.error || 'Failed to submit', 'error');
+    }
   } catch(e) {
-    showToast(e.message || 'Failed to submit', 'error', 2500);
+    if (btn) { btn.disabled = false; btn.textContent = 'Submit Return Request'; }
+    showToast('Failed. Check your connection.', 'error');
   }
 }
 
 // ═══════════════════════════════════════════
 //  Reviews & Ratings
 // ═══════════════════════════════════════════
-const _ratings = {}; // { 'orderId-code': rating }
+const _ratings = {};
 
 function setRating(el, val) {
   const row = el.closest('.star-row');
+  if (!row) return;
   const key = row.dataset.order + '-' + row.dataset.code;
   _ratings[key] = val;
   row.querySelectorAll('.star').forEach((s, i) => {
     s.classList.toggle('active', i < val);
   });
 }
+
+function setReviewRating(orderId, code, val) {
+  const container = document.getElementById(`stars-${orderId}-${code}`);
+  if (!container) return;
+  container.dataset.rating = val;
+  container.querySelectorAll('span').forEach(s => {
+    s.style.color = parseInt(s.dataset.val) <= val ? '#f59e0b' : 'var(--border)';
+  });
+}
+
+async function submitOrderReview(orderId, code) {
+  if (!USER || !USER.phone) { showToast('Please login first', 'error'); return; }
+
+  const container = document.getElementById(`stars-${orderId}-${code}`);
+  const rating = parseInt(container?.dataset.rating || 0);
+  const comment = document.getElementById(`rev-${orderId}-${code}`)?.value?.trim() || '';
+
+  if (!rating) { showToast('Please select a rating ⭐', 'error'); return; }
+
+  const btn = event?.target;
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
+
+  try {
+    const res = await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // Don't pass order_id — let server skip delivered check for reviews
+      body: JSON.stringify({ phone: USER.phone, order_id: orderId, item_code: code, rating, comment })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const wrap = document.getElementById(`review-${orderId}-${code}`);
+      if (wrap) wrap.innerHTML = `
+        <div style="text-align:center;padding:16px;color:var(--success)">
+          <div style="font-size:28px;margin-bottom:8px">⭐</div>
+          <div style="font-weight:700">Thank you for your review!</div>
+        </div>`;
+      showToast('Review submitted! ⭐', 'success', 2000);
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = 'Submit Review'; }
+      // If already reviewed, show as done
+      if (data.error && data.error.toLowerCase().includes('already')) {
+        const wrap = document.getElementById(`review-${orderId}-${code}`);
+        if (wrap) wrap.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted)">Already reviewed ✓</div>`;
+      } else {
+        showToast(data.error || 'Failed to submit', 'error');
+      }
+    }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Submit Review'; }
+    showToast('Failed to submit. Check connection.', 'error');
+  }
+}
+
+// Legacy
+async function submitReview(orderId, itemCode) { submitOrderReview(orderId, itemCode); }
+async function submitQuickReview(orderId, code) { submitOrderReview(orderId, code); }
 
 async function submitReview(orderId, itemCode) {
   const key = orderId + '-' + itemCode;
