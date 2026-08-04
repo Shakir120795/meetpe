@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MeatPe Admin — Reviews</title>
+  <title>MeatPe Admin — Returns & Refunds</title>
   <link rel="icon" type="image/png" href="/logo.png" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -11,6 +11,7 @@
       --primary: #d62828;
       --green: #16a34a;
       --orange: #f77f00;
+      --red: #ef4444;
       --gray: #6b7280;
       --light: #f3f4f6;
       --border: #e5e7eb;
@@ -47,7 +48,7 @@
       border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;
     }
     .stats {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 12px; margin-bottom: 18px;
     }
     .stat {
@@ -57,47 +58,55 @@
     .stat .label { font-size: 12px; color: var(--gray); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
     .stat .val { font-size: 26px; font-weight: 800; margin-top: 2px; }
     .stat.primary .val { color: var(--primary); }
-    .stat.green .val { color: var(--green); }
     .stat.orange .val { color: var(--orange); }
+    .stat.green .val { color: var(--green); }
+    .stat.red .val { color: var(--red); }
 
-    .review-card {
+    .return-card {
       background: white; border-radius: 12px; margin-bottom: 14px;
       padding: 18px 20px; box-shadow: 0 2px 8px rgba(0,0,0,.04);
       border-left: 4px solid var(--orange);
     }
-    .review-head {
+    .return-card.status-requested { border-color: var(--orange); }
+    .return-card.status-approved { border-color: var(--green); }
+    .return-card.status-rejected { border-color: var(--red); }
+    .return-card.status-refunded { border-color: var(--primary); }
+    
+    .return-head {
       display: flex; justify-content: space-between; align-items: flex-start;
       gap: 12px; margin-bottom: 12px; flex-wrap: wrap;
     }
-    .review-user {
-      display: flex; flex-direction: column;
+    .return-id { font-size: 16px; font-weight: 700; }
+    .return-time { font-size: 12px; color: var(--gray); margin-top: 2px; }
+    .badge {
+      display: inline-block; padding: 5px 12px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
     }
-    .review-name { font-size: 16px; font-weight: 700; }
-    .review-phone { font-size: 12px; color: var(--gray); margin-top: 2px; }
-    .review-time { font-size: 12px; color: var(--gray); }
-    .stars {
-      display: flex; gap: 2px; font-size: 18px; margin-bottom: 8px;
-    }
-    .review-body {
+    .badge.requested { background: #ffedd5; color: #9a3412; }
+    .badge.approved { background: #dcfce7; color: #14532d; }
+    .badge.rejected { background: #fee2e2; color: #991b1b; }
+    .badge.refunded { background: #dbeafe; color: #1e40af; }
+    
+    .return-body {
       display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
-      align-items: start;
+      margin-top: 12px;
     }
     @media (max-width: 700px) {
-      .review-body { grid-template-columns: 1fr; }
+      .return-body { grid-template-columns: 1fr; }
     }
-    .review-left {}
-    .review-item {
-      font-size: 14px; padding: 10px 12px; background: var(--light);
-      border-radius: 8px; margin-bottom: 8px;
-    }
-    .review-item strong { color: var(--primary); }
-    .review-comment {
-      font-size: 14px; line-height: 1.6; color: var(--dark);
+    .return-info { font-size: 14px; }
+    .return-info p { margin-bottom: 8px; line-height: 1.5; }
+    .return-info strong { color: var(--dark); }
+    .return-info .label { color: var(--gray); font-size: 12px; text-transform: uppercase; margin-right: 4px; }
+    .return-reason {
       background: var(--light); padding: 12px; border-radius: 8px;
+      font-size: 14px; line-height: 1.6;
     }
-    .review-order {
-      font-size: 12px; color: var(--gray); margin-top: 8px;
+    .return-items {
+      margin-top: 10px; padding: 10px; background: var(--light); border-radius: 8px;
+      font-size: 13px;
     }
+    .return-items div { padding: 4px 0; }
     .empty {
       text-align: center; padding: 60px 20px; color: var(--gray);
       background: white; border-radius: 12px;
@@ -108,16 +117,16 @@
 </head>
 <body>
 <div class="wrap">
-  <h1><img src="/logo.png" alt="MeatPe" />Reviews Dashboard</h1>
-  <p class="sub">Customer reviews and ratings for all products.</p>
+  <h1><img src="/logo.png" alt="MeatPe" />Returns & Refunds</h1>
+  <p class="sub">All return and refund requests from customers.</p>
 
   <div class="nav-links">
     <a href="/admin.html">📦 Stock</a>
     <a href="/orders.html">📋 Orders</a>
     <a href="/items.html">🍗 Items</a>
     <a href="/coupons.html">🏷️ Coupons</a>
-    <a href="/reviews.html" class="active">⭐ Reviews</a>
-    <a href="/returns.html">↩️ Returns</a>
+    <a href="/reviews.html">⭐ Reviews</a>
+    <a href="/returns.html" class="active">↩️ Returns</a>
     <a href="/users.html">👥 Users</a>
     <a href="/settings.html">⚙️ Settings</a>
     <a href="/" target="_blank">🌐 View Site</a>
@@ -126,7 +135,7 @@
   <div class="key-bar">
     <label>Admin key:</label>
     <input id="key" type="password" placeholder="Enter ADMIN_KEY" autocomplete="off" />
-    <button id="loadBtn">Load reviews</button>
+    <button id="loadBtn">Load returns</button>
   </div>
 
   <div id="msg"></div>
@@ -141,16 +150,16 @@ const content = $('content');
 const msg = $('msg');
 const statsEl = $('stats');
 
-let ALL_REVIEWS = [];
+let ALL_RETURNS = [];
 
 const saved = localStorage.getItem('meatpe_admin_key');
 if (saved) keyInput.value = saved;
 
-$('loadBtn').addEventListener('click', loadReviews);
-keyInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadReviews(); });
-if (saved) loadReviews();
+$('loadBtn').addEventListener('click', loadReturns);
+keyInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadReturns(); });
+if (saved) loadReturns();
 
-async function loadReviews() {
+async function loadReturns() {
   msg.innerHTML = '';
   const key = keyInput.value.trim();
   if (!key) {
@@ -159,10 +168,10 @@ async function loadReviews() {
   }
   localStorage.setItem('meatpe_admin_key', key);
   try {
-    const res = await fetch(`/admin/reviews?key=${encodeURIComponent(key)}`);
+    const res = await fetch(`/admin/returns?key=${encodeURIComponent(key)}`);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'load failed');
-    ALL_REVIEWS = data.reviews;
+    ALL_RETURNS = data.returns;
     render();
   } catch (e) {
     msg.innerHTML = `<div class="err">Failed: ${escapeHtml(e.message || 'unknown')}. Check the admin key.</div>`;
@@ -171,58 +180,63 @@ async function loadReviews() {
 
 function render() {
   // Stats
-  const totalReviews = ALL_REVIEWS.length;
-  const avgRating = totalReviews > 0 
-    ? (ALL_REVIEWS.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1)
-    : '0.0';
-  const star5 = ALL_REVIEWS.filter(r => r.rating === 5).length;
-  const star4 = ALL_REVIEWS.filter(r => r.rating === 4).length;
-  const star3 = ALL_REVIEWS.filter(r => r.rating === 3).length;
-  const star2 = ALL_REVIEWS.filter(r => r.rating === 2).length;
-  const star1 = ALL_REVIEWS.filter(r => r.rating === 1).length;
+  const totalReturns = ALL_RETURNS.length;
+  const requested = ALL_RETURNS.filter(r => r.status === 'requested').length;
+  const approved = ALL_RETURNS.filter(r => r.status === 'approved').length;
+  const rejected = ALL_RETURNS.filter(r => r.status === 'rejected').length;
+  const refunded = ALL_RETURNS.filter(r => r.status === 'refunded').length;
 
   statsEl.style.display = 'grid';
   statsEl.innerHTML = `
-    <div class="stat primary"><div class="label">Total Reviews</div><div class="val">${totalReviews}</div></div>
-    <div class="stat green"><div class="label">Avg Rating</div><div class="val">${avgRating} ⭐</div></div>
-    <div class="stat orange"><div class="label">5 Star</div><div class="val">${star5}</div></div>
-    <div class="stat orange"><div class="label">4 Star</div><div class="val">${star4}</div></div>
-    <div class="stat orange"><div class="label">3 Star</div><div class="val">${star3}</div></div>
+    <div class="stat primary"><div class="label">Total Returns</div><div class="val">${totalReturns}</div></div>
+    <div class="stat orange"><div class="label">Requested</div><div class="val">${requested}</div></div>
+    <div class="stat green"><div class="label">Approved</div><div class="val">${approved}</div></div>
+    <div class="stat red"><div class="label">Rejected</div><div class="val">${rejected}</div></div>
   `;
 
-  // Reviews
-  if (!ALL_REVIEWS.length) {
-    content.innerHTML = `<div class="empty"><div class="big">⭐</div><p>No reviews yet.</p></div>`;
+  // Returns
+  if (!ALL_RETURNS.length) {
+    content.innerHTML = `<div class="empty"><div class="big">↩️</div><p>No return requests yet.</p></div>`;
     return;
   }
 
-  content.innerHTML = ALL_REVIEWS.map(renderReview).join('');
+  content.innerHTML = ALL_RETURNS.map(renderReturn).join('');
 }
 
-function renderReview(r) {
+function renderReturn(r) {
   const phoneClean = (r.phone || '').replace(/\D/g, '');
   const ts = formatTime(r.created_at);
-  const stars = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
-  
+  const items = r.items || [];
+  const itemsList = items.length > 0 
+    ? items.map(i => `<div>• ${escapeHtml(i.name || i.code)} × ${i.qty}</div>`).join('')
+    : '<div>All items</div>';
+
   return `
-    <div class="review-card">
-      <div class="review-head">
-        <div class="review-user">
-          <div class="review-name">${escapeHtml(r.customer_name || 'Customer')}</div>
-          <div class="review-phone">📱 +${phoneClean}</div>
+    <div class="return-card status-${r.status}">
+      <div class="return-head">
+        <div>
+          <div class="return-id">Return Request #${r.id} (Order #${r.order_id})</div>
+          <div class="return-time">${ts}</div>
         </div>
-        <div class="review-time">${ts}</div>
+        <div class="badge ${r.status}">${r.status}</div>
       </div>
-      <div class="review-body">
-        <div class="review-left">
-          <div class="stars">${stars}</div>
-          <div class="review-item">
-            <strong>Product:</strong> ${escapeHtml(r.item_name || r.item_code || 'Unknown')}
+      <div class="return-body">
+        <div class="return-info">
+          <p><span class="label">Customer</span><strong>${escapeHtml(r.customer_name || 'Customer')}</strong></p>
+          <p><span class="label">Phone</span>+${phoneClean}</p>
+          <p><span class="label">Reason</span><strong>${escapeHtml(r.reason || 'N/A')}</strong></p>
+          <p><span class="label">Order Total</span>₹${r.order_total || 0}</p>
+          ${r.refund_amount ? `<p><span class="label">Refund Amount</span><strong style="color:var(--green)">₹${r.refund_amount}</strong></p>` : ''}
+          ${r.refund_method ? `<p><span class="label">Refund Method</span>${escapeHtml(r.refund_method)}</p>` : ''}
+          <div class="return-items">
+            <strong>Items:</strong>
+            ${itemsList}
           </div>
-          <div class="review-order">Order #${r.order_id}</div>
         </div>
-        <div class="review-comment">
-          ${escapeHtml(r.comment || 'No comment provided.')}
+        <div class="return-reason">
+          <strong>Description:</strong><br/>
+          ${escapeHtml(r.description || 'No description provided.')}
+          ${r.admin_note ? `<br/><br/><strong>Admin Note:</strong><br/>${escapeHtml(r.admin_note)}` : ''}
         </div>
       </div>
     </div>`;

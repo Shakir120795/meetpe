@@ -547,8 +547,9 @@ app.get('/admin/reviews', (req, res) => {
     `).all();
 
     // Add item names from catalog
+    const catalogItems = getCatalog();
     const reviewsWithItems = reviews.map(r => {
-      const item = catalog.items.find(i => i.code === r.item_code);
+      const item = catalogItems.find(i => i.code === r.item_code);
       return {
         ...r,
         item_name: item ? item.name : r.item_code
