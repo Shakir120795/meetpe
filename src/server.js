@@ -525,6 +525,93 @@ app.get('/admin/users', (req, res) => {
   res.json({ ok: true, users: formatted });
 });
 
+// ===== Admin: get user detail =====
+app.get('/admin/users/:phone/detail', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  
+  const phone = req.params.phone;
+  
+  try {
+    // Basic user info
+    const user = db.prepare(`
+      SELECT 
+        c.phone,
+        c.name,
+        c.wallet_balance,
+        COUNT(DISTINCT o.id) AS total_orders,
+        COALESCE(SUM(o.total), 0) AS total_spent,
+        MIN(o.created_at) AS first_order_date,
+        MAX(o.created_at) AS last_order_date
+      FROM customers c
+      LEFT JOIN orders o ON o.phone = c.phone
+      WHERE c.phone = ?
+      GROUP BY c.phone
+    `).get(phone);
+    
+    if (!user) {
+      return res.status(404).json({ ok: false, error: 'user not found' });
+    }
+    
+    // Recent orders (last 10)
+    const orders = db.prepare(`
+      SELECT id, items_json, total, status, created_at
+      FROM orders
+      WHERE phone = ?
+      ORDER BY created_at DESC
+      LIMIT 10
+    `).all(phone);
+    
+    // Top ordered items
+    const topItems = db.prepare(`
+      SELECT 
+        json_extract(value, '$.code') AS item_code,
+        json_extract(value, '$.name') AS item_name,
+        SUM(json_extract(value, '$.qty')) AS count
+      FROM orders, json_each(orders.items_json)
+      WHERE orders.phone = ?
+      GROUP BY item_code
+      ORDER BY count DESC
+      LIMIT 5
+    `).all(phone);
+    
+    // Reviews given by user
+    const reviews = db.prepare(`
+      SELECT r.*, c.name AS item_name
+      FROM reviews r
+      LEFT JOIN (SELECT code, name FROM json_each(?)) c ON c.code = r.item_code
+      WHERE r.phone = ?
+      ORDER BY r.created_at DESC
+      LIMIT 10
+    `).all(JSON.stringify(getCatalog().map(i => ({ code: i.code, name: i.name }))), phone);
+    
+    // Average rating given
+    const avgRating = db.prepare(`
+      SELECT AVG(rating) as avg_rating
+      FROM reviews
+      WHERE phone = ?
+    `).get(phone);
+    
+    // Get address from most recent order
+    const recentOrder = db.prepare(`
+      SELECT address FROM orders WHERE phone = ? ORDER BY created_at DESC LIMIT 1
+    `).get(phone);
+    
+    const userDetail = {
+      ...user,
+      address: recentOrder?.address || '',
+      orders,
+      top_items: topItems,
+      reviews,
+      avg_rating: avgRating?.avg_rating || 0
+    };
+    
+    res.json({ ok: true, user: userDetail });
+  } catch (e) {
+    console.error('User detail error:', e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // ===== Admin: list all reviews =====
 app.get('/admin/reviews', (req, res) => {
   if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
