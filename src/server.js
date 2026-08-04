@@ -474,6 +474,102 @@ app.post('/admin/orders/:id/status', (req, res) => {
   }
 });
 
+// ===== Admin: list all users =====
+app.get('/admin/users', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  
+  const users = db.prepare(`
+    SELECT 
+      c.phone,
+      c.name,
+      c.wallet_balance,
+      COUNT(DISTINCT o.id) AS total_orders,
+      COALESCE(SUM(o.total), 0) AS total_spent,
+      MAX(o.created_at) AS last_order_date,
+      o.address
+    FROM customers c
+    LEFT JOIN orders o ON o.phone = c.phone
+    GROUP BY c.phone
+    ORDER BY total_orders DESC, last_order_date DESC
+  `).all();
+
+  const formatted = users.map(u => ({
+    phone: u.phone,
+    name: u.name || 'Customer',
+    wallet_balance: u.wallet_balance || 0,
+    total_orders: u.total_orders || 0,
+    total_spent: u.total_spent || 0,
+    last_order_date: u.last_order_date,
+    address: u.address || '',
+  }));
+
+  res.json({ ok: true, users: formatted });
+});
+
+// ===== Admin: list all reviews =====
+app.get('/admin/reviews', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  
+  const reviews = db.prepare(`
+    SELECT 
+      r.id,
+      r.order_id,
+      r.phone,
+      r.item_code,
+      r.rating,
+      r.comment,
+      r.created_at,
+      c.name AS customer_name,
+      i.name AS item_name
+    FROM reviews r
+    LEFT JOIN customers c ON c.phone = r.phone
+    LEFT JOIN (
+      SELECT code, name FROM (VALUES
+        ${catalog.items.map(i => `('${i.code}', '${i.name.replace(/'/g, "''")}')`).join(',')}
+      )
+    ) i ON i.code = r.item_code
+    ORDER BY r.created_at DESC
+    LIMIT 100
+  `).all();
+
+  res.json({ ok: true, reviews });
+});
+
+// ===== Admin: list all returns/refunds =====
+app.get('/admin/returns', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  
+  const returns = db.prepare(`
+    SELECT 
+      ret.id,
+      ret.order_id,
+      ret.phone,
+      ret.reason,
+      ret.description,
+      ret.items_json,
+      ret.status,
+      ret.refund_amount,
+      ret.refund_method,
+      ret.admin_note,
+      ret.created_at,
+      ret.updated_at,
+      c.name AS customer_name,
+      o.total AS order_total
+    FROM returns ret
+    LEFT JOIN customers c ON c.phone = ret.phone
+    LEFT JOIN orders o ON o.id = ret.order_id
+    ORDER BY ret.created_at DESC
+    LIMIT 100
+  `).all();
+
+  const formatted = returns.map(r => ({
+    ...r,
+    items: JSON.parse(r.items_json || '[]'),
+  }));
+
+  res.json({ ok: true, returns: formatted });
+});
+
 // ===== Customer auth (bypass OTP — just phone) =====
 app.post('/api/auth/login', (req, res) => {
   const { phone, name } = req.body || {};
