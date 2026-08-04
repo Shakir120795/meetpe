@@ -306,7 +306,6 @@ function renderUser(u) {
           <a href="tel:+${phoneClean}" class="call">📞 Call</a>
         </div>
       </div>
-      ${u.address ? `<div style="font-size:13px;color:var(--gray);margin-bottom:10px">📍 ${escapeHtml(u.address)}</div>` : ''}
       <div class="user-stats">
         <div><span class="label">Total Orders</span><span class="value">${u.total_orders || 0}</span></div>
         <div><span class="label">Total Spent</span><span class="value">₹${u.total_spent || 0}</span></div>
@@ -384,21 +383,55 @@ function renderUserDetail(user) {
   
   const avgRating = user.avg_rating ? Number(user.avg_rating).toFixed(1) : '0.0';
   
+  // Address breakdown
+  const addressHtml = user.address_breakdown && user.address_breakdown.length > 0
+    ? user.address_breakdown.map(addr => {
+        const topItemsText = addr.top_items && addr.top_items.length > 0
+          ? addr.top_items.map(item => `${item.item_name} (${item.count}x)`).join(', ')
+          : 'No items';
+        
+        const ordersPreview = addr.orders.slice(0, 3).map(o => {
+          const items = JSON.parse(o.items_json || '[]');
+          return `#${o.id} - ${items.map(i => i.name).join(', ')} (₹${o.total})`;
+        }).join('<br/>');
+        
+        return `
+          <div style="background:var(--light);padding:14px;border-radius:10px;margin-bottom:12px">
+            <div style="font-weight:700;margin-bottom:6px">📍 ${escapeHtml(addr.address)}</div>
+            <div style="font-size:12px;color:var(--gray);margin-bottom:8px">
+              <strong>${addr.order_count}</strong> orders placed • Top items: ${topItemsText}
+            </div>
+            <details style="font-size:12px">
+              <summary style="cursor:pointer;color:var(--primary);font-weight:600">View orders to this address</summary>
+              <div style="margin-top:8px;padding:8px;background:white;border-radius:6px">
+                ${ordersPreview}
+                ${addr.orders.length > 3 ? `<div style="margin-top:4px;color:var(--gray)">...and ${addr.orders.length - 3} more</div>` : ''}
+              </div>
+            </details>
+          </div>
+        `;
+      }).join('')
+    : '<p style="color:var(--gray);font-size:13px">No addresses yet.</p>';
+  
   modalBody.innerHTML = `
     <div class="user-profile-header">
       <div class="user-profile-name">${escapeHtml(user.name || 'Customer')}</div>
       <div class="user-profile-phone">📱 +${phoneClean}</div>
-      ${user.address ? `<div style="margin-top:6px;opacity:.9;font-size:13px">📍 ${escapeHtml(user.address)}</div>` : ''}
       <div class="user-profile-stats">
         <div class="stat-box"><div class="label">Total Orders</div><div class="value">${user.total_orders || 0}</div></div>
         <div class="stat-box"><div class="label">Total Spent</div><div class="value">₹${user.total_spent || 0}</div></div>
+        <div class="stat-box"><div class="label">Delivery Addresses</div><div class="value">${user.addresses ? user.addresses.length : 0}</div></div>
         <div class="stat-box"><div class="label">Avg Rating Given</div><div class="value">${avgRating} ⭐</div></div>
-        <div class="stat-box"><div class="label">Member Since</div><div class="value">${formatTime(user.first_order_date)}</div></div>
       </div>
     </div>
     
     <div class="detail-section">
-      <h3>🔥 Favorite Items</h3>
+      <h3>📍 Delivery Addresses (${user.addresses ? user.addresses.length : 0})</h3>
+      ${addressHtml}
+    </div>
+    
+    <div class="detail-section">
+      <h3>🔥 Favorite Items (Overall)</h3>
       <div class="top-items-grid">
         ${topItemsHtml}
       </div>

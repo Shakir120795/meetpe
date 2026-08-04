@@ -504,8 +504,7 @@ app.get('/admin/users', (req, res) => {
       c.wallet_balance,
       COUNT(DISTINCT o.id) AS total_orders,
       COALESCE(SUM(o.total), 0) AS total_spent,
-      MAX(o.created_at) AS last_order_date,
-      o.address
+      MAX(o.created_at) AS last_order_date
     FROM customers c
     LEFT JOIN orders o ON o.phone = c.phone
     GROUP BY c.phone
@@ -518,8 +517,7 @@ app.get('/admin/users', (req, res) => {
     wallet_balance: u.wallet_balance || 0,
     total_orders: u.total_orders || 0,
     total_spent: u.total_spent || 0,
-    last_order_date: u.last_order_date,
-    address: u.address || '',
+    last_order_date: u.last_order_date
   }));
 
   res.json({ ok: true, users: formatted });
@@ -600,18 +598,53 @@ app.get('/admin/users/:phone/detail', (req, res) => {
       WHERE phone = ?
     `).get(phone);
     
-    // Get address from most recent order
-    const recentOrder = db.prepare(`
-      SELECT address FROM orders WHERE phone = ? ORDER BY created_at DESC LIMIT 1
-    `).get(phone);
+    // Get all unique addresses used by user
+    const addresses = db.prepare(`
+      SELECT DISTINCT address, COUNT(*) as order_count
+      FROM orders
+      WHERE phone = ?
+      GROUP BY address
+      ORDER BY order_count DESC
+    `).all(phone);
+    
+    // Get address-wise order breakdown with items
+    const addressBreakdown = addresses.map(addr => {
+      const addrOrders = db.prepare(`
+        SELECT id, items_json, total, status, created_at
+        FROM orders
+        WHERE phone = ? AND address = ?
+        ORDER BY created_at DESC
+      `).all(phone, addr.address);
+      
+      // Get top items ordered to this address
+      const addrTopItems = db.prepare(`
+        SELECT 
+          json_extract(value, '$.code') AS item_code,
+          json_extract(value, '$.name') AS item_name,
+          SUM(json_extract(value, '$.qty')) AS count
+        FROM orders, json_each(orders.items_json)
+        WHERE orders.phone = ? AND orders.address = ?
+        GROUP BY item_code
+        ORDER BY count DESC
+        LIMIT 3
+      `).all(phone, addr.address);
+      
+      return {
+        address: addr.address,
+        order_count: addr.order_count,
+        orders: addrOrders,
+        top_items: addrTopItems
+      };
+    });
     
     const userDetail = {
       ...user,
-      address: recentOrder?.address || '',
       orders,
       top_items: topItems,
       reviews: reviewsWithNames,
-      avg_rating: avgRating?.avg_rating || 0
+      avg_rating: avgRating?.avg_rating || 0,
+      addresses: addresses,
+      address_breakdown: addressBreakdown
     };
     
     res.json({ ok: true, user: userDetail });
