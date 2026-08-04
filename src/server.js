@@ -531,116 +531,121 @@ app.get('/admin/users/:phone/detail', (req, res) => {
   
   let phone = req.params.phone;
   
-  // Normalize phone: remove all non-digits, then remove leading 91 if length is 12
-  phone = phone.replace(/\D/g, ''); // Remove all non-digits (+ signs, spaces, etc)
-  if (phone.length === 12 && phone.startsWith('91')) {
-    phone = phone.substring(2); // Remove leading 91 from +91XXXXXXXXXX
-  }
+  // Clean: remove non-digits
+  phone = phone.replace(/\D/g, '');
   if (phone.length !== 10) {
-    return res.status(400).json({ ok: false, error: 'invalid phone format' });
+    return res.status(400).json({ ok: false, error: 'invalid phone' });
   }
   
-  // Now phone is clean (exactly 10 digits)
-  // We need to query all variants (web:+91..., whatsapp:+91..., +91...)
+  // Build the clean pattern for matching
+  const cleanPattern = `%${phone}%`;
   
   try {
-    // Basic user info - aggregate across all phone variants
+    // Get first matching phone from orders table with this clean phone
+    const firstMatch = db.prepare(`
+      SELECT phone FROM orders
+      WHERE phone LIKE ?
+      LIMIT 1
+    `).get(cleanPattern);
+    
+    if (!firstMatch) {
+      return res.status(404).json({ ok: false, error: 'user not found' });
+    }
+    
+    const matchPhone = firstMatch.phone; // e.g., "web:+918126812317"
+    
+    // Now fetch all data using this exact phone
     const user = db.prepare(`
       SELECT 
-        ? AS clean_phone,
-        MAX(c.name) AS name,
-        MAX(c.wallet_balance) AS wallet_balance,
+        c.phone,
+        c.name,
+        c.wallet_balance,
         COUNT(DISTINCT o.id) AS total_orders,
         COALESCE(SUM(o.total), 0) AS total_spent,
         MIN(o.created_at) AS first_order_date,
         MAX(o.created_at) AS last_order_date
-      FROM orders o
-      LEFT JOIN customers c ON REPLACE(REPLACE(c.phone, 'whatsapp:', ''), 'web:', '') = ?
-      WHERE REPLACE(REPLACE(o.phone, 'whatsapp:', ''), 'web:', '') = ?
-    `).get(phone, phone, phone);
+      FROM customers c
+      LEFT JOIN orders o ON o.phone = c.phone
+      WHERE c.phone = ?
+      GROUP BY c.phone
+    `).get(matchPhone);
     
-    if (!user || user.total_orders === 0) {
+    if (!user) {
       return res.status(404).json({ ok: false, error: 'user not found' });
     }
     
-    // Recent orders (last 10) - match by normalized phone
+    // Recent orders
     const orders = db.prepare(`
       SELECT id, items_json, total, status, created_at, address
       FROM orders
-      WHERE REPLACE(REPLACE(phone, 'whatsapp:', ''), 'web:', '') = ?
+      WHERE phone = ?
       ORDER BY created_at DESC
       LIMIT 10
-    `).all(phone);
+    `).all(matchPhone);
     
-    // Top ordered items - aggregate across all phone variants
+    // Top items
     const topItems = db.prepare(`
       SELECT 
         json_extract(value, '$.code') AS item_code,
         json_extract(value, '$.name') AS item_name,
         SUM(json_extract(value, '$.qty')) AS count
       FROM orders, json_each(orders.items_json)
-      WHERE REPLACE(REPLACE(orders.phone, 'whatsapp:', ''), 'web:', '') = ?
+      WHERE orders.phone = ?
       GROUP BY item_code
       ORDER BY count DESC
       LIMIT 5
-    `).all(phone);
+    `).all(matchPhone);
     
-    // Reviews given by user - match by normalized phone
+    // Reviews
     const reviews = db.prepare(`
       SELECT r.id, r.item_code, r.rating, r.comment, r.created_at
       FROM reviews r
-      WHERE REPLACE(REPLACE(r.phone, 'whatsapp:', ''), 'web:', '') = ?
+      WHERE r.phone = ?
       ORDER BY r.created_at DESC
       LIMIT 10
-    `).all(phone);
+    `).all(matchPhone);
     
-    // Add item names from catalog
+    // Add item names
     const catalogItems = getCatalog();
     const reviewsWithNames = reviews.map(r => {
       const item = catalogItems.find(i => i.code === r.item_code);
-      return {
-        ...r,
-        item_name: item ? item.name : r.item_code
-      };
+      return { ...r, item_name: item ? item.name : r.item_code };
     });
     
-    // Average rating given
+    // Average rating
     const avgRating = db.prepare(`
-      SELECT AVG(rating) as avg_rating
-      FROM reviews
-      WHERE REPLACE(REPLACE(phone, 'whatsapp:', ''), 'web:', '') = ?
-    `).get(phone);
+      SELECT AVG(rating) as avg_rating FROM reviews WHERE phone = ?
+    `).get(matchPhone);
     
-    // Get all unique addresses used by user
+    // Addresses
     const addresses = db.prepare(`
       SELECT DISTINCT address, COUNT(*) as order_count
       FROM orders
-      WHERE REPLACE(REPLACE(phone, 'whatsapp:', ''), 'web:', '') = ?
+      WHERE phone = ?
       GROUP BY address
       ORDER BY order_count DESC
-    `).all(phone);
+    `).all(matchPhone);
     
-    // Get address-wise order breakdown with items
+    // Address breakdown
     const addressBreakdown = addresses.map(addr => {
       const addrOrders = db.prepare(`
         SELECT id, items_json, total, status, created_at
         FROM orders
-        WHERE REPLACE(REPLACE(phone, 'whatsapp:', ''), 'web:', '') = ? AND address = ?
+        WHERE phone = ? AND address = ?
         ORDER BY created_at DESC
-      `).all(phone, addr.address);
+      `).all(matchPhone, addr.address);
       
-      // Get top items ordered to this address
       const addrTopItems = db.prepare(`
         SELECT 
           json_extract(value, '$.code') AS item_code,
           json_extract(value, '$.name') AS item_name,
           SUM(json_extract(value, '$.qty')) AS count
         FROM orders, json_each(orders.items_json)
-        WHERE REPLACE(REPLACE(orders.phone, 'whatsapp:', ''), 'web:', '') = ? AND orders.address = ?
+        WHERE orders.phone = ? AND orders.address = ?
         GROUP BY item_code
         ORDER BY count DESC
         LIMIT 3
-      `).all(phone, addr.address);
+      `).all(matchPhone, addr.address);
       
       return {
         address: addr.address,
@@ -651,7 +656,7 @@ app.get('/admin/users/:phone/detail', (req, res) => {
     });
     
     const userDetail = {
-      phone: phone, // Return clean phone
+      phone: phone, // Return clean 10 digits
       name: user.name || 'Customer',
       wallet_balance: user.wallet_balance || 0,
       total_orders: user.total_orders,
