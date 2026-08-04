@@ -113,6 +113,22 @@
     }
     .empty .big { font-size: 56px; margin-bottom: 10px; }
     .err { background: #fee; color: #b91c1c; padding: 12px; border-radius: 8px; margin-bottom: 14px; }
+    
+    .actions {
+      margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap;
+      padding-top: 12px; border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 8px 16px; border-radius: 8px; border: none;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all .15s;
+    }
+    .btn.approve { background: var(--green); color: white; }
+    .btn.approve:hover { opacity: .9; }
+    .btn.reject { background: var(--red); color: white; }
+    .btn.reject:hover { opacity: .9; }
+    .btn.refund { background: var(--primary); color: white; }
+    .btn.refund:hover { opacity: .9; }
   </style>
 </head>
 <body>
@@ -201,6 +217,15 @@ function render() {
   }
 
   content.innerHTML = ALL_RETURNS.map(renderReturn).join('');
+  
+  // Add event listeners for action buttons
+  content.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.action;
+      const id = parseInt(btn.dataset.id, 10);
+      handleAction(id, action);
+    });
+  });
 }
 
 function renderReturn(r) {
@@ -210,6 +235,21 @@ function renderReturn(r) {
   const itemsList = items.length > 0 
     ? items.map(i => `<div>• ${escapeHtml(i.name || i.code)} × ${i.qty}</div>`).join('')
     : '<div>All items</div>';
+
+  // Action buttons based on status
+  let actions = '';
+  if (r.status === 'requested') {
+    actions = `
+      <div class="actions">
+        <button class="btn approve" data-action="approve" data-id="${r.id}">✓ Approve Return</button>
+        <button class="btn reject" data-action="reject" data-id="${r.id}">✗ Reject Return</button>
+      </div>`;
+  } else if (r.status === 'approved') {
+    actions = `
+      <div class="actions">
+        <button class="btn refund" data-action="refund" data-id="${r.id}">₹ Mark as Refunded</button>
+      </div>`;
+  }
 
   return `
     <div class="return-card status-${r.status}">
@@ -239,7 +279,51 @@ function renderReturn(r) {
           ${r.admin_note ? `<br/><br/><strong>Admin Note:</strong><br/>${escapeHtml(r.admin_note)}` : ''}
         </div>
       </div>
+      ${actions}
     </div>`;
+}
+
+async function handleAction(id, action) {
+  const key = keyInput.value.trim();
+  let status, refund_amount, refund_method, admin_note;
+  
+  if (action === 'approve') {
+    status = 'approved';
+    admin_note = 'Return approved by admin';
+  } else if (action === 'reject') {
+    const reason = prompt('Rejection reason (optional):');
+    status = 'rejected';
+    admin_note = reason || 'Return rejected by admin';
+  } else if (action === 'refund') {
+    const amount = prompt('Refund amount (₹):');
+    const method = prompt('Refund method (UPI/Bank/Wallet):', 'UPI');
+    if (!amount || isNaN(amount)) {
+      msg.innerHTML = '<div class="err">Invalid refund amount.</div>';
+      setTimeout(() => msg.innerHTML = '', 3000);
+      return;
+    }
+    status = 'refunded';
+    refund_amount = parseInt(amount, 10);
+    refund_method = method || 'UPI';
+    admin_note = `Refund of ₹${refund_amount} via ${refund_method}`;
+  }
+  
+  try {
+    const res = await fetch(`/admin/returns/${id}/status?key=${encodeURIComponent(key)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, refund_amount, refund_method, admin_note })
+    });
+    
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'update failed');
+    
+    // Reload returns
+    loadReturns();
+  } catch (e) {
+    msg.innerHTML = `<div class="err">${escapeHtml(e.message)}</div>`;
+    setTimeout(() => msg.innerHTML = '', 3000);
+  }
 }
 
 function formatTime(s) {

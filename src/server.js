@@ -598,6 +598,51 @@ app.get('/admin/returns', (req, res) => {
   res.json({ ok: true, returns: formatted });
 });
 
+// ===== Admin: update return/refund status =====
+app.post('/admin/returns/:id/status', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  
+  const id = parseInt(req.params.id, 10);
+  const { status, refund_amount, refund_method, admin_note } = req.body || {};
+  
+  const allowed = ['requested', 'approved', 'rejected', 'refunded'];
+  if (!status || !allowed.includes(status)) {
+    return res.status(400).json({ ok: false, error: 'invalid status' });
+  }
+  
+  try {
+    // Update return status
+    const updates = ['status = ?', 'updated_at = CURRENT_TIMESTAMP'];
+    const params = [status];
+    
+    if (refund_amount !== undefined) {
+      updates.push('refund_amount = ?');
+      params.push(refund_amount);
+    }
+    if (refund_method) {
+      updates.push('refund_method = ?');
+      params.push(refund_method);
+    }
+    if (admin_note) {
+      updates.push('admin_note = ?');
+      params.push(admin_note);
+    }
+    
+    params.push(id);
+    
+    const info = db.prepare(`UPDATE returns SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+    
+    if (info.changes === 0) {
+      return res.status(404).json({ ok: false, error: 'return not found' });
+    }
+    
+    res.json({ ok: true, id, status });
+  } catch (e) {
+    console.error('Update return status error:', e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // ===== Customer auth (bypass OTP — just phone) =====
 app.post('/api/auth/login', (req, res) => {
   const { phone, name } = req.body || {};
