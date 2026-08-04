@@ -497,23 +497,24 @@ app.post('/admin/orders/:id/status', (req, res) => {
 app.get('/admin/users', (req, res) => {
   if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   
-  // Get unique users directly from orders, then get customer name
+  // Get unique users by normalized phone (remove prefixes like web:/whatsapp:)
   const users = db.prepare(`
     SELECT 
-      o.phone,
-      COUNT(DISTINCT o.id) AS total_orders,
-      COALESCE(SUM(o.total), 0) AS total_spent,
-      MAX(o.created_at) AS last_order_date
-    FROM orders o
-    GROUP BY o.phone
+      REPLACE(REPLACE(phone, 'whatsapp:', ''), 'web:', '') AS clean_phone,
+      COUNT(DISTINCT id) AS total_orders,
+      COALESCE(SUM(total), 0) AS total_spent,
+      MAX(created_at) AS last_order_date,
+      MAX(phone) AS original_phone
+    FROM orders
+    GROUP BY clean_phone
     ORDER BY total_orders DESC, last_order_date DESC
   `).all();
 
   const formatted = users.map(u => {
-    // Get customer name from customers table
-    const customer = db.prepare('SELECT name, wallet_balance FROM customers WHERE phone = ? LIMIT 1').get(u.phone);
+    // Get customer name using original phone format
+    const customer = db.prepare('SELECT name, wallet_balance FROM customers WHERE phone = ? LIMIT 1').get(u.original_phone);
     return {
-      phone: u.phone,
+      phone: u.original_phone,
       name: customer?.name || 'Customer',
       wallet_balance: customer?.wallet_balance || 0,
       total_orders: u.total_orders || 0,
