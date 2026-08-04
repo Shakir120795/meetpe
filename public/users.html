@@ -291,7 +291,9 @@ function render() {
 }
 
 function renderUser(u) {
-  const phoneClean = (u.phone || '').replace(/\D/g, '');
+  // Phone is already clean (just digits), add +91 for display
+  const phoneDisplay = u.phone.startsWith('+') ? u.phone : `+91${u.phone.replace(/\D/g, '')}`;
+  const phoneClean = u.phone.replace(/\D/g, '');
   const lastOrder = u.last_order_date ? formatTime(u.last_order_date) : 'Never';
   
   return `
@@ -299,10 +301,10 @@ function renderUser(u) {
       <div class="user-head">
         <div>
           <div class="user-name">${escapeHtml(u.name || 'Customer')}</div>
-          <div class="user-phone">📱 +${phoneClean}</div>
+          <div class="user-phone">📱 ${phoneDisplay}</div>
         </div>
         <div class="user-actions">
-          <button class="view" onclick="viewUserDetail('${u.phone}')">👁️ View Profile</button>
+          <button class="view" onclick="viewUserDetail('${phoneClean}')">👁️ View Profile</button>
           <a href="tel:+${phoneClean}" class="call">📞 Call</a>
         </div>
       </div>
@@ -333,7 +335,9 @@ async function viewUserDetail(phone) {
 }
 
 function renderUserDetail(user) {
-  const phoneClean = (user.phone || '').replace(/\D/g, '');
+  // Phone is already clean (just digits), add +91 for display
+  const phoneDisplay = user.phone.startsWith('+') ? user.phone : `+91${user.phone.replace(/\D/g, '')}`;
+  const phoneClean = user.phone.replace(/\D/g, '');
   const modalBody = document.getElementById('modalBody');
   
   // Top items
@@ -416,7 +420,7 @@ function renderUserDetail(user) {
   modalBody.innerHTML = `
     <div class="user-profile-header">
       <div class="user-profile-name">${escapeHtml(user.name || 'Customer')}</div>
-      <div class="user-profile-phone">📱 +${phoneClean}</div>
+      <div class="user-profile-phone">📱 ${phoneDisplay}</div>
       <div class="user-profile-stats">
         <div class="stat-box"><div class="label">Total Orders</div><div class="value">${user.total_orders || 0}</div></div>
         <div class="stat-box"><div class="label">Total Spent</div><div class="value">₹${user.total_spent || 0}</div></div>
