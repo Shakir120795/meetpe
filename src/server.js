@@ -529,29 +529,37 @@ app.get('/admin/users', (req, res) => {
 app.get('/admin/reviews', (req, res) => {
   if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   
-  const reviews = db.prepare(`
-    SELECT 
-      r.id,
-      r.order_id,
-      r.phone,
-      r.item_code,
-      r.rating,
-      r.comment,
-      r.created_at,
-      c.name AS customer_name,
-      i.name AS item_name
-    FROM reviews r
-    LEFT JOIN customers c ON c.phone = r.phone
-    LEFT JOIN (
-      SELECT code, name FROM (VALUES
-        ${catalog.items.map(i => `('${i.code}', '${i.name.replace(/'/g, "''")}')`).join(',')}
-      )
-    ) i ON i.code = r.item_code
-    ORDER BY r.created_at DESC
-    LIMIT 100
-  `).all();
+  try {
+    const reviews = db.prepare(`
+      SELECT 
+        r.id,
+        r.order_id,
+        r.phone,
+        r.item_code,
+        r.rating,
+        r.comment,
+        r.created_at,
+        c.name AS customer_name
+      FROM reviews r
+      LEFT JOIN customers c ON c.phone = r.phone
+      ORDER BY r.created_at DESC
+      LIMIT 100
+    `).all();
 
-  res.json({ ok: true, reviews });
+    // Add item names from catalog
+    const reviewsWithItems = reviews.map(r => {
+      const item = catalog.items.find(i => i.code === r.item_code);
+      return {
+        ...r,
+        item_name: item ? item.name : r.item_code
+      };
+    });
+
+    res.json({ ok: true, reviews: reviewsWithItems });
+  } catch (e) {
+    console.error('Reviews API error:', e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
 });
 
 // ===== Admin: list all returns/refunds =====
