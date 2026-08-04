@@ -55,7 +55,26 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // ===== Public menu API for the website =====
 app.get('/api/menu', (req, res) => {
-  res.json(catalogWithStock());
+  const items = catalogWithStock();
+  
+  // Add rating data for each item
+  const itemsWithRatings = items.map(item => {
+    const ratingData = db.prepare(`
+      SELECT 
+        COUNT(*) as review_count,
+        AVG(rating) as avg_rating
+      FROM reviews 
+      WHERE item_code = ?
+    `).get(item.code);
+    
+    return {
+      ...item,
+      rating: ratingData.avg_rating ? Number(ratingData.avg_rating.toFixed(1)) : 0,
+      review_count: ratingData.review_count || 0
+    };
+  });
+  
+  res.json(itemsWithRatings);
 });
 
 // ===== Image upload endpoint =====

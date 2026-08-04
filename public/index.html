@@ -1840,6 +1840,16 @@ function renderProducts() {
     const isBest = idx === 0 && CURRENT_CAT !== 'all';
     const oos = !item.inStock;
     const img = (item.images && item.images[0]) ? `<img src="${item.images[0]}" alt="${item.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span class="emoji-bg" style="display:none">${catEmoji(item.cat)}</span>` : `<span class="emoji-bg">${catEmoji(item.cat)}</span>`;
+    
+    // Rating display
+    const rating = item.rating || 0;
+    const reviewCount = item.review_count || 0;
+    const ratingDisplay = reviewCount > 0 
+      ? `<div style="display:flex;align-items:center;gap:4px;font-size:11px;margin-top:2px">
+           <span style="color:#f59e0b">⭐ ${rating.toFixed(1)}</span>
+           <span style="color:var(--muted)">(${reviewCount})</span>
+         </div>`
+      : '';
 
     return `<div class="prod-card" onclick="openProduct('${item.code}')">
       <div class="prod-img">
@@ -1850,6 +1860,7 @@ function renderProducts() {
       </div>
       <div class="prod-body">
         <div class="prod-name">${item.name}</div>
+        ${ratingDisplay}
         <div class="prod-unit">${item.unit || ''}</div>
         <div class="prod-pricing">
           <span class="prod-price">₹${item.price}</span>
@@ -2006,6 +2017,22 @@ function openProduct(code) {
   document.getElementById('pdCatBadge').textContent = (CAT_EMOJI[item.cat]||'🥩') + ' ' + (item.cat||'').replace(/_/g,' ');
   document.getElementById('pdDesc').textContent = item.description || 'Premium quality, farm-fresh meat. Hygienically cleaned and cut. Delivered within 30 minutes.';
 
+  // Rating display
+  const rating = item.rating || 0;
+  const reviewCount = item.review_count || 0;
+  const ratingEl = document.querySelector('.pd-rating');
+  if (reviewCount > 0) {
+    const fullStars = Math.floor(rating);
+    const hasHalf = rating - fullStars >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+    const starsHtml = '★'.repeat(fullStars) + (hasHalf ? '½' : '') + '☆'.repeat(emptyStars);
+    ratingEl.innerHTML = `<span style="color:#f59e0b">${starsHtml}</span> <span style="color:var(--muted)">${rating.toFixed(1)} (${reviewCount} reviews)</span>`;
+    ratingEl.style.display = 'block';
+  } else {
+    ratingEl.innerHTML = '<span style="color:var(--muted);font-size:13px">No reviews yet</span>';
+    ratingEl.style.display = 'block';
+  }
+
   // Image
   const imgEl = document.getElementById('pdImg');
   if (item.images && item.images[0]) {
@@ -2062,6 +2089,14 @@ function loadSimilarProducts(category, currentCode) {
     const img = item.images && item.images[0] 
       ? `<img src="${item.images[0]}" style="width:100%;height:100%;object-fit:cover" />`
       : `<div style="font-size:48px">${catEmoji(item.cat)}</div>`;
+    
+    // Rating for similar products
+    const rating = item.rating || 0;
+    const reviewCount = item.review_count || 0;
+    const ratingHtml = reviewCount > 0 
+      ? `<div style="font-size:11px;color:#f59e0b;margin-bottom:4px">⭐ ${rating.toFixed(1)} (${reviewCount})</div>`
+      : '';
+    
     return `
       <div onclick="openProduct('${item.code}')" style="background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer">
         <div style="aspect-ratio:1;background:linear-gradient(135deg,#1a1a1a,#252525);display:flex;align-items:center;justify-content:center">
@@ -2069,6 +2104,7 @@ function loadSimilarProducts(category, currentCode) {
         </div>
         <div style="padding:10px">
           <div style="font-size:13px;font-weight:700;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.name}</div>
+          ${ratingHtml}
           <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${item.unit}</div>
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div style="font-size:16px;font-weight:800;color:var(--accent)">₹${item.price}</div>
