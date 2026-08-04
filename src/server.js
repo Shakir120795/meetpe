@@ -531,13 +531,16 @@ app.get('/admin/users/:phone/detail', (req, res) => {
   
   let phone = req.params.phone;
   
-  // Normalize phone: if it's just digits or starts with +91, convert to clean format
-  phone = phone.replace(/\D/g, ''); // Remove all non-digits
-  if (phone.startsWith('91') && phone.length === 12) {
-    phone = phone.substring(2); // Remove +91
+  // Normalize phone: remove all non-digits, then remove leading 91 if length is 12
+  phone = phone.replace(/\D/g, ''); // Remove all non-digits (+ signs, spaces, etc)
+  if (phone.length === 12 && phone.startsWith('91')) {
+    phone = phone.substring(2); // Remove leading 91 from +91XXXXXXXXXX
+  }
+  if (phone.length !== 10) {
+    return res.status(400).json({ ok: false, error: 'invalid phone format' });
   }
   
-  // Now phone is clean (just 10 digits)
+  // Now phone is clean (exactly 10 digits)
   // We need to query all variants (web:+91..., whatsapp:+91..., +91...)
   
   try {

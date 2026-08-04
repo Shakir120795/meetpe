@@ -2978,6 +2978,12 @@ async function startWalletTopup() {
       });
     }
 
+    // Check if in test mode
+    const isTestMode = data.keyId && data.keyId.startsWith('rzp_test_');
+    if (isTestMode) {
+      console.warn('⚠️ RAZORPAY TEST MODE - Use test card: 4111 1111 1111 1111, any future date, any CVV');
+    }
+
     const options = {
       key: data.keyId,
       amount: data.order.amount,
