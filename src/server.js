@@ -576,13 +576,22 @@ app.get('/admin/users/:phone/detail', (req, res) => {
     
     // Reviews given by user
     const reviews = db.prepare(`
-      SELECT r.*, c.name AS item_name
+      SELECT r.id, r.item_code, r.rating, r.comment, r.created_at
       FROM reviews r
-      LEFT JOIN (SELECT code, name FROM json_each(?)) c ON c.code = r.item_code
       WHERE r.phone = ?
       ORDER BY r.created_at DESC
       LIMIT 10
-    `).all(JSON.stringify(getCatalog().map(i => ({ code: i.code, name: i.name }))), phone);
+    `).all(phone);
+    
+    // Add item names from catalog
+    const catalogItems = getCatalog();
+    const reviewsWithNames = reviews.map(r => {
+      const item = catalogItems.find(i => i.code === r.item_code);
+      return {
+        ...r,
+        item_name: item ? item.name : r.item_code
+      };
+    });
     
     // Average rating given
     const avgRating = db.prepare(`
@@ -601,7 +610,7 @@ app.get('/admin/users/:phone/detail', (req, res) => {
       address: recentOrder?.address || '',
       orders,
       top_items: topItems,
-      reviews,
+      reviews: reviewsWithNames,
       avg_rating: avgRating?.avg_rating || 0
     };
     

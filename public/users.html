@@ -304,7 +304,6 @@ function renderUser(u) {
         <div class="user-actions">
           <button class="view" onclick="viewUserDetail('${u.phone}')">👁️ View Profile</button>
           <a href="tel:+${phoneClean}" class="call">📞 Call</a>
-          <a href="https://wa.me/${phoneClean}" target="_blank" class="wa">💬 WhatsApp</a>
         </div>
       </div>
       ${u.address ? `<div style="font-size:13px;color:var(--gray);margin-bottom:10px">📍 ${escapeHtml(u.address)}</div>` : ''}

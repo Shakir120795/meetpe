@@ -230,7 +230,7 @@
 <body>
 <div class="wrap">
   <h1><img src="/logo.png" alt="MeatPe" />Orders Dashboard</h1>
-  <p class="sub">All incoming orders from website + WhatsApp.</p>
+  <p class="sub">All incoming orders from website.</p>
 
   <div class="nav-links">
     <a href="/admin.html">📦 Stock</a>
@@ -335,31 +335,9 @@ function render() {
       <div class="stat orange"><div class="label">Total Revenue</div><div class="val">₹${STATS_DATA.revenue || 0}</div></div>
     `;
   }
-  // Source filter chips
+  // Source filter chips - HIDDEN (no WhatsApp)
   const sourceBar = $('sourceBar');
-  if (STATS_DATA) {
-    sourceBar.style.display = 'flex';
-    const totalAll = STATS_DATA.total || 0;
-    const w = STATS_DATA.source_web || 0;
-    const wa = STATS_DATA.source_whatsapp || 0;
-    sourceBar.innerHTML = `
-      <button class="filter-chip ${CURRENT_SOURCE === '' ? 'active' : ''}" data-src="">
-        <span>📋 All Sources</span><span class="count">${totalAll}</span>
-      </button>
-      <button class="filter-chip ${CURRENT_SOURCE === 'web' ? 'active' : ''}" data-src="web">
-        <span>🌐 Web</span><span class="count">${w}</span>
-      </button>
-      <button class="filter-chip ${CURRENT_SOURCE === 'whatsapp' ? 'active' : ''}" data-src="whatsapp">
-        <span>💬 WhatsApp</span><span class="count">${wa}</span>
-      </button>
-    `;
-    sourceBar.querySelectorAll('.filter-chip').forEach(c => {
-      c.addEventListener('click', () => {
-        CURRENT_SOURCE = c.dataset.src;
-        loadOrders(false);
-      });
-    });
-  }
+  sourceBar.style.display = 'none';
 
   // Filters with live counts
   filtersEl.style.display = 'flex';
@@ -396,14 +374,6 @@ function renderOrder(o) {
   const statusActions = renderStatusActions(o);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.address || '')}`;
 
-  // Pre-built customer message templates for one-click WhatsApp
-  const itemsList = (o.items || []).map(i => `${i.name} × ${i.qty}`).join('\n');
-  const tplConfirm = `Hi ${o.name || ''}, your MeatPe order #${o.id} is confirmed ✅\n\n${itemsList}\n\nTotal: ₹${o.total}\nETA: ~30 min 🛵\n\n— MeatPe`;
-  const tplPreparing = `Hi ${o.name || ''}, your MeatPe order #${o.id} is being prepared 👨‍🍳 — fresh cleaning + cutting in progress.\n\n— MeatPe`;
-  const tplOnWay = `Hi ${o.name || ''}, your MeatPe order #${o.id} is on the way 🛵 — please keep ₹${o.total} ready.\n\n— MeatPe`;
-  const tplDelivered = `Hi ${o.name || ''}, your MeatPe order #${o.id} has been delivered ✅. Thank you!\n\nIf any issue, reply within 2 hours with a photo.\n\n— MeatPe`;
-  const waLink = (text) => `https://wa.me/${phoneClean}?text=${encodeURIComponent(text)}`;
-
   return `
     <div class="order s-${o.status}">
       <div class="order-head">
@@ -412,7 +382,7 @@ function renderOrder(o) {
             <div class="order-id">Order #${o.id}</div>
             <div class="order-time">${ts}</div>
           </div>
-          <span class="source-badge ${o.source}">${o.source === 'whatsapp' ? '💬 WhatsApp' : '🌐 Web'}</span>
+          <span class="source-badge web">🌐 Web</span>
         </div>
         <div class="badge s-${o.status}">${o.status.replace(/_/g, ' ')}</div>
       </div>
@@ -423,18 +393,8 @@ function renderOrder(o) {
           <p><span class="label-tag">Address</span>${escapeHtml(o.address || '-')}</p>
           <div class="call-row">
             <a href="tel:+${phoneClean}" class="call">📞 Call</a>
-            <a href="https://wa.me/${phoneClean}" target="_blank" class="wa">💬 WhatsApp</a>
             <a href="${mapsUrl}" target="_blank" class="maps">📍 Map</a>
           </div>
-          <details class="quick-msg">
-            <summary>📨 Quick WhatsApp templates</summary>
-            <div class="quick-msg-list">
-              <a href="${waLink(tplConfirm)}" target="_blank">✅ Confirm Order</a>
-              <a href="${waLink(tplPreparing)}" target="_blank">👨‍🍳 Preparing</a>
-              <a href="${waLink(tplOnWay)}" target="_blank">🛵 Out for Delivery</a>
-              <a href="${waLink(tplDelivered)}" target="_blank">✅ Delivered</a>
-            </div>
-          </details>
         </div>
         <div class="order-items">
           ${items}
