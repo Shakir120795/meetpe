@@ -1801,6 +1801,11 @@ async function loadMenu() {
   try {
     const res = await fetch('/api/menu');
     MENU = await res.json();
+    // Debug: Check first 5 items ratings
+    console.log('🔍 Rating Debug - First 5 items:');
+    MENU.slice(0, 5).forEach(item => {
+      console.log(`${item.code} (${item.name}): rating=${item.rating}, reviews=${item.review_count}`);
+    });
     renderProducts();
   } catch(e) {
     console.warn('Menu load failed:', e);
@@ -1841,11 +1846,11 @@ function renderProducts() {
     const oos = !item.inStock;
     const img = (item.images && item.images[0]) ? `<img src="${item.images[0]}" alt="${item.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span class="emoji-bg" style="display:none">${catEmoji(item.cat)}</span>` : `<span class="emoji-bg">${catEmoji(item.cat)}</span>`;
     
-    // Rating display
+    // Rating display - moved below unit and above price
     const rating = item.rating || 0;
     const reviewCount = item.review_count || 0;
     const ratingDisplay = reviewCount > 0 
-      ? `<div style="display:flex;align-items:center;gap:4px;font-size:11px;margin-top:2px">
+      ? `<div style="display:flex;align-items:center;gap:4px;font-size:11px;margin-bottom:6px">
            <span style="color:#f59e0b">⭐ ${rating.toFixed(1)}</span>
            <span style="color:var(--muted)">(${reviewCount})</span>
          </div>`
@@ -1860,8 +1865,8 @@ function renderProducts() {
       </div>
       <div class="prod-body">
         <div class="prod-name">${item.name}</div>
-        ${ratingDisplay}
         <div class="prod-unit">${item.unit || ''}</div>
+        ${ratingDisplay}
         <div class="prod-pricing">
           <span class="prod-price">₹${item.price}</span>
           <span class="prod-mrp">₹${mrp}</span>
