@@ -497,28 +497,30 @@ app.post('/admin/orders/:id/status', (req, res) => {
 app.get('/admin/users', (req, res) => {
   if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   
+  // Get unique users directly from orders, then get customer name
   const users = db.prepare(`
     SELECT 
-      c.phone,
-      c.name,
-      c.wallet_balance,
+      o.phone,
       COUNT(DISTINCT o.id) AS total_orders,
       COALESCE(SUM(o.total), 0) AS total_spent,
       MAX(o.created_at) AS last_order_date
-    FROM customers c
-    LEFT JOIN orders o ON o.phone = c.phone
-    GROUP BY c.phone
+    FROM orders o
+    GROUP BY o.phone
     ORDER BY total_orders DESC, last_order_date DESC
   `).all();
 
-  const formatted = users.map(u => ({
-    phone: u.phone,
-    name: u.name || 'Customer',
-    wallet_balance: u.wallet_balance || 0,
-    total_orders: u.total_orders || 0,
-    total_spent: u.total_spent || 0,
-    last_order_date: u.last_order_date
-  }));
+  const formatted = users.map(u => {
+    // Get customer name from customers table
+    const customer = db.prepare('SELECT name, wallet_balance FROM customers WHERE phone = ? LIMIT 1').get(u.phone);
+    return {
+      phone: u.phone,
+      name: customer?.name || 'Customer',
+      wallet_balance: customer?.wallet_balance || 0,
+      total_orders: u.total_orders || 0,
+      total_spent: u.total_spent || 0,
+      last_order_date: u.last_order_date
+    };
+  });
 
   res.json({ ok: true, users: formatted });
 });
