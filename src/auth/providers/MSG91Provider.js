@@ -221,11 +221,29 @@ class MSG91Provider extends IAuthProvider {
         return { ok: false, error: 'Invalid OTP format' };
       }
 
+      // DEMO MODE: Accept 123456 for any phone number
+      const isDemoMode = !this.authKey || this.authKey === 'your_msg91_auth_key_here';
+      if (isDemoMode && cleanOTP === '123456') {
+        console.log(`✅ [MSG91] DEMO MODE - OTP 123456 accepted for +91${cleanPhone}`);
+        // Clear session if exists
+        this.sessions.delete(cleanPhone);
+        return { 
+          ok: true, 
+          uid: `msg91_demo_${cleanPhone}_${Date.now()}`
+        };
+      }
+
       // Get session
       const session = this.sessions.get(cleanPhone);
       
       if (!session) {
         console.error(`❌ [MSG91] No session found for ${cleanPhone}. Available sessions:`, Array.from(this.sessions.keys()));
+        
+        // In demo mode, if 123456 was not entered, show helpful message
+        if (isDemoMode) {
+          return { ok: false, error: 'Invalid OTP. Use 123456 for demo mode.' };
+        }
+        
         return { ok: false, error: 'OTP not found. Please request a new one.' };
       }
 
