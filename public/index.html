@@ -1678,7 +1678,7 @@ function escapeHtml(text) {
     try { CART = JSON.parse(savedCart); } catch(e) {}
   }
 
-  // Show splash screen first
+  // Show splash screen first (quick)
   document.querySelectorAll('.screen').forEach(s => {
     s.classList.remove('active');
     s.style.display = 'none';
@@ -1691,8 +1691,13 @@ function escapeHtml(text) {
   document.getElementById('bottomNav').style.display = 'none';
   document.getElementById('cartBar').style.display = 'none';
 
-  // After 2 seconds, show actual screen
-  setTimeout(() => {
+  // Start loading data immediately (don't wait)
+  let dataReady = false;
+  let minSplashTime = 1200; // Minimum splash time
+  let splashTimeout;
+  
+  const showMainScreen = () => {
+    if (splashTimeout) clearTimeout(splashTimeout);
     document.querySelectorAll('.screen').forEach(s => {
       s.classList.remove('active');
       s.style.display = 'none';
@@ -1703,15 +1708,36 @@ function escapeHtml(text) {
       loadMenu();
       updateTopbarUser();
     } else {
-      // Show login screen
       const loginScreen = document.getElementById('screen-login');
       loginScreen.style.display = '';
       loginScreen.classList.add('active');
       document.getElementById('bottomNav').style.display = 'none';
       document.getElementById('cartBar').style.display = 'none';
     }
-  }, 2000);
+  };
+  
+  // Show main screen after minimum splash time
+  splashTimeout = setTimeout(showMainScreen, minSplashTime);
+  
+  // Load data in background and show screen ASAP if data is ready
+  Promise.all([
+    fetch('/api/settings').then(r => r.json()),
+    fetch('/api/menu').then(r => r.json())
+  ]).then(() => {
+    dataReady = true;
+    // If we've waited minimum time, show now
+    if (Date.now() - window.pageLoadTime >= minSplashTime) {
+      if (splashTimeout) clearTimeout(splashTimeout);
+      showMainScreen();
+    }
+  }).catch(e => {
+    // Even on error, show after minimum time
+    console.error('Data load error:', e);
+  });
 })();
+
+// Track when page started loading
+window.pageLoadTime = Date.now();
 
 // ═══════════════════════════════════════════
 //  Navigation
