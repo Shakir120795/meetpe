@@ -66,8 +66,14 @@ class MSG91Provider extends IAuthProvider {
 
   /**
    * Generate 6-digit OTP
+   * DEMO MODE: Always returns 123456 until real API is configured
    */
   _generateOTP() {
+    // DEMO MODE: Hard-coded OTP for development
+    if (!this.authKey || this.authKey === 'your_msg91_auth_key_here') {
+      return '123456';
+    }
+    // Production: Random OTP
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
@@ -105,13 +111,13 @@ class MSG91Provider extends IAuthProvider {
       console.log(`🔐 [MSG91] OTP for +91${cleanPhone}: ${otp} (${method})`);
 
       // Send OTP via MSG91
-      if (!this.authKey) {
-        console.log('📱 [MSG91] Demo mode - OTP not sent to API');
+      if (!this.authKey || this.authKey === 'your_msg91_auth_key_here') {
+        console.log('📱 [MSG91] Demo mode - OTP: 123456 (always use this OTP)');
         return { 
           ok: true, 
           sessionInfo: { sessionId },
           message: 'OTP sent (demo mode)',
-          dev_otp: process.env.NODE_ENV === 'development' ? otp : undefined
+          dev_otp: '123456' // Always show in demo
         };
       }
 

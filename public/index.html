@@ -2417,10 +2417,10 @@ async function sendOTP() {
       // Start resend timer
       startResendTimer();
       
-      // Demo mode - show OTP in console
+      // Demo mode - show OTP clearly
       if (data.dev_otp) {
-        console.log('🔐 DEV MODE - OTP:', data.dev_otp);
-        showToast(`⚠️ Demo: OTP is ${data.dev_otp}`, 'info');
+        console.log('🔐 DEMO MODE - Always use OTP:', data.dev_otp);
+        showToast(`🔐 DEMO OTP: ${data.dev_otp} (Always use this)`, 'info', 6000);
       }
     } else {
       showToast(data.error || 'Failed to send OTP','error');
@@ -2511,10 +2511,10 @@ async function resendOTP() {
       }
       startResendTimer();
       
-      // Demo mode - show OTP in console
+      // Demo mode - show OTP clearly
       if (data.dev_otp) {
-        console.log('🔐 DEV MODE - OTP:', data.dev_otp);
-        showToast(`⚠️ Demo: OTP is ${data.dev_otp}`, 'info');
+        console.log('🔐 DEMO MODE - Always use OTP:', data.dev_otp);
+        showToast(`🔐 DEMO OTP: ${data.dev_otp} (Always use this)`, 'info', 6000);
       }
     } else {
       showToast(data.error || 'Failed to resend OTP','error');
@@ -5423,6 +5423,14 @@ function openMapForCurrentLoc() {
 
 // "+ ADD NEW ADDRESS" button
 function openMapForNewAddr() {
+  // Check if user is logged in
+  if (!USER || !USER.phone) {
+    showToast('⚠️ Please login to save address', 'error', 2500);
+    closeLocMap();
+    setTimeout(() => showScreen('screen-login'), 500);
+    return;
+  }
+
   _mapMode = 'new_addr';
   document.getElementById('mapPickerTitle').textContent = 'Set Location on Map';
   document.getElementById('mapStep1').style.display = 'block';
@@ -5526,6 +5534,15 @@ function selectAddrType(type, el) {
 function showAddAddressForm() { openMapForNewAddr(); }
 
 function saveNewAddress() {
+  // Check if user is logged in
+  if (!USER || !USER.phone) {
+    showToast('⚠️ Please login to save address', 'error', 2500);
+    closeMapPicker();
+    closeLocMap();
+    setTimeout(() => showScreen('screen-login'), 500);
+    return;
+  }
+
   const flat = document.getElementById('newAddrFlat').value.trim();
   const street = document.getElementById('newAddrStreet').value.trim();
   const landmark = document.getElementById('newAddrLandmark').value.trim();
@@ -5659,7 +5676,7 @@ function detectGPSAndOpenMap() {
   if (!navigator.geolocation) {
     btn.innerHTML = origHTML; 
     btn.disabled = false;
-    showToast('❌ GPS not available on this device', 'error');
+    showToast('GPS not available. Opening map...', '', 2000);
     // Fallback: open map for manual selection
     setTimeout(() => openMapForCurrentLoc(), 1000);
     return;
@@ -5671,7 +5688,7 @@ function detectGPSAndOpenMap() {
     done = true;
     btn.innerHTML = origHTML; 
     btn.disabled = false;
-    showToast('⏱️ GPS timed out — opening map for manual selection', '', 3000);
+    showToast('GPS timeout. Opening map...', '', 2000);
     openMapForCurrentLoc();
   }, 15000); // 15 second timeout
 
@@ -5696,7 +5713,7 @@ function detectGPSAndOpenMap() {
         
         btn.innerHTML = origHTML; 
         btn.disabled = false;
-        showToast('✅ Location detected: ' + label, 'success', 2500);
+        showToast('✅ Location detected!', 'success', 2000);
         setTimeout(() => closeLocMap(), 800);
       } catch(e) {
         console.error('Reverse geocode error:', e);
@@ -5706,7 +5723,7 @@ function detectGPSAndOpenMap() {
         updateLocTopbar(label);
         btn.innerHTML = origHTML; 
         btn.disabled = false;
-        showToast('✅ Location detected!', 'success', 2000);
+        showToast('✅ Location set!', 'success', 2000);
         setTimeout(() => closeLocMap(), 800);
       }
     },
@@ -5717,16 +5734,22 @@ function detectGPSAndOpenMap() {
       btn.innerHTML = origHTML; 
       btn.disabled = false;
       
+      // Don't show error toast, just open map
       if (err.code === 1) {
-        showToast('❌ Location permission denied. Please enable GPS or add address manually.', 'error', 4000);
+        // Permission denied - silently open map
+        console.log('GPS permission denied, opening map for manual selection');
+        setTimeout(() => openMapForCurrentLoc(), 500);
       } else if (err.code === 2) {
-        showToast('❌ Location unavailable. Opening map for manual selection.', 'error', 3000);
-        setTimeout(() => openMapForCurrentLoc(), 1500);
+        // Position unavailable
+        showToast('GPS unavailable. Opening map...', '', 2000);
+        setTimeout(() => openMapForCurrentLoc(), 1000);
       } else if (err.code === 3) {
-        showToast('⏱️ Location timeout. Opening map for manual selection.', '', 3000);
-        setTimeout(() => openMapForCurrentLoc(), 1500);
+        // Timeout
+        showToast('GPS timeout. Opening map...', '', 2000);
+        setTimeout(() => openMapForCurrentLoc(), 1000);
       } else {
-        showToast('❌ Could not detect location. Add address manually.', 'error', 3000);
+        // Unknown error
+        setTimeout(() => openMapForCurrentLoc(), 500);
       }
     },
     { 
