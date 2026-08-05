@@ -327,6 +327,77 @@ app.get('/api/coupons', (req, res) => {
   res.json(list);
 });
 
+// ===== Distance-Based Delivery Zone Detection =====
+
+// Haversine formula to calculate distance between two coordinates (in km)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in km
+}
+
+// POST /api/zone/detect - Calculate delivery zone based on customer location
+app.post('/api/zone/detect', (req, res) => {
+  try {
+    const { lat, lon, phone } = req.body;
+    
+    if (!lat || !lon) {
+      return res.status(400).json({ ok: false, error: 'Missing coordinates' });
+    }
+    
+    // Get settings
+    const settingsData = settings.get();
+    const vendor = settingsData.vendorLocation;
+    const zones = settingsData.deliveryZones;
+    
+    // Calculate distance
+    const distance = calculateDistance(lat, lon, vendor.lat, vendor.lon);
+    
+    // Find matching zone
+    let zone = zones.find(z => distance >= z.minDistance && distance < z.maxDistance);
+    
+    // If outside all zones, default to last zone
+    if (!zone) {
+      zone = zones[zones.length - 1];
+    }
+    
+    // Update customer's zone if phone provided
+    if (phone) {
+      const cleanPhone = String(phone).replace(/\D/g, '');
+      if (cleanPhone.length === 10) {
+        const waPhone = `web:+91${cleanPhone}`;
+        db.prepare(`
+          UPDATE customers 
+          SET delivery_zone = ?, delivery_zone_distance = ? 
+          WHERE phone = ?
+        `).run(zone.id, distance, waPhone);
+      }
+    }
+    
+    res.json({ 
+      ok: true, 
+      zone: {
+        id: zone.id,
+        name: zone.name,
+        distanceRange: zone.distanceRange,
+        deliveryTime: zone.deliveryTime,
+        deliveryFee: zone.deliveryFee,
+        freeDeliveryAbove: zone.freeDeliveryAbove
+      },
+      distance: Math.round(distance * 10) / 10 // Round to 1 decimal
+    });
+  } catch (e) {
+    console.error('Zone detection error:', e);
+    res.status(500).json({ ok: false, error: 'Zone detection failed' });
+  }
+});
+
 // ===== Admin: toggle stock (protected by ADMIN_KEY) =====
 // Examples:
 //   POST /admin/stock/C1?key=meatpe_admin_123&inStock=false

@@ -1202,7 +1202,13 @@ input,textarea{font:inherit;color:inherit}
         <div class="section-box">
           <div class="section-box-title">🧾 Price Breakdown</div>
           <div class="price-row"><span>Items Subtotal</span><span id="priceSubtotal">₹0</span></div>
-          <div class="price-row" id="priceDeliveryRow"><span>Delivery Charge</span><span id="priceDelivery">₹0</span></div>
+          <div class="price-row" id="priceDeliveryRow">
+            <span>
+              Delivery Charge
+              <span id="deliveryZoneInfo" style="font-size:10px;color:var(--muted);display:block"></span>
+            </span>
+            <span id="priceDelivery">₹0</span>
+          </div>
           <div class="price-row" id="pricePackagingRow" style="display:none"><span>Packaging Charge</span><span id="pricePackaging">₹0</span></div>
           <div class="price-row" id="priceTaxRow" style="display:none"><span>GST (<span id="gstPercent">5</span>%)</span><span id="priceTax">₹0</span></div>
           <div class="price-row" id="priceTipRow" style="display:none"><span>Delivery Partner Tip</span><span id="priceTip">₹0</span></div>
@@ -1959,6 +1965,7 @@ input,textarea{font:inherit;color:inherit}
 let MENU = [];
 let CART = {};           // { code: qty }
 let USER = null;         // { phone, name, wallet }
+let USER_ZONE = null;    // { id, name, distance, deliveryFee, freeDeliveryAbove, deliveryTime }
 let OTP_METHOD = 'sms';  // 'sms' or 'whatsapp'
 let THEME = 'dark';
 let CURRENT_CAT = 'all';
@@ -2128,6 +2135,18 @@ function escapeHtml(text) {
   } else {
     console.log('🔵 [INIT] No USER in localStorage');
   }
+  
+  // Load USER_ZONE from localStorage
+  const savedZone = localStorage.getItem('now_user_zone');
+  if (savedZone) {
+    try {
+      USER_ZONE = JSON.parse(savedZone);
+      console.log('🔵 [INIT] USER_ZONE loaded from localStorage:', USER_ZONE);
+    } catch(e) {
+      console.error('🔴 [INIT] Error parsing USER_ZONE:', e);
+    }
+  }
+  
   const savedCart = localStorage.getItem('now_cart');
   if (savedCart) {
     try { 
@@ -2772,6 +2791,7 @@ function loginSuccess() {
   showScreen('screen-home');
   initLocation();
   updateTopbarUser();
+  detectDeliveryZone(); // Detect user's delivery zone
   showToast('Welcome! 🥩','success');
 }
 
@@ -2841,8 +2861,10 @@ function logout() {
   if (dropdown) dropdown.style.display = 'none';
   
   USER = null;
+  USER_ZONE = null; // Clear zone data
   CART = {};
   localStorage.removeItem('now_user');
+  localStorage.removeItem('now_user_zone'); // Clear zone from storage
   localStorage.removeItem('now_cart');
   document.getElementById('bottomNav').style.display = 'none';
   document.getElementById('cartBar').style.display = 'none';
@@ -3592,6 +3614,13 @@ function cartSubtotal() {
 }
 
 function deliveryFee(subtotal) {
+  // Zone-based delivery fee (if zone detected)
+  if (USER_ZONE) {
+    if (subtotal >= USER_ZONE.freeDeliveryAbove) return 0;
+    return USER_ZONE.deliveryFee;
+  }
+  
+  // Fallback to old logic (for users without zone detection)
   if (subtotal >= FREE_ABOVE) return 0;
   if (subtotal < FEE_LOW_BELOW) return FEE_LOW;
   return FEE_MID;
@@ -4026,18 +4055,35 @@ function renderBasket() {
   empty.style.display = 'none';
   content.style.display = 'block';
 
-  // Delivery bar
-  const freeLeft = Math.max(0, FREE_ABOVE - sub);
-  const pct = Math.min(100, Math.round((sub / FREE_ABOVE) * 100));
+  // Delivery bar - Zone-based
   const delMsg = document.getElementById('delBarMsg');
   const delFill = document.getElementById('delFill');
-  if (freeLeft === 0) {
-    delMsg.innerHTML = '<span style="color:var(--success)">🎉 You have FREE delivery!</span>';
+  
+  if (USER_ZONE) {
+    // Zone-based delivery
+    const freeLeft = Math.max(0, USER_ZONE.freeDeliveryAbove - sub);
+    const pct = Math.min(100, Math.round((sub / USER_ZONE.freeDeliveryAbove) * 100));
+    
+    if (freeLeft === 0) {
+      delMsg.innerHTML = `<span style="color:var(--success)">🎉 FREE delivery in ${USER_ZONE.name}!</span>`;
+    } else {
+      delMsg.textContent = `Add ₹${freeLeft} for FREE delivery (${USER_ZONE.name} - ${USER_ZONE.distance}km)`;
+    }
+    document.getElementById('delBarAmt').textContent = `₹${sub} / ₹${USER_ZONE.freeDeliveryAbove}`;
+    delFill.style.width = pct + '%';
   } else {
-    delMsg.textContent = `Add ₹${freeLeft} more for FREE delivery`;
+    // Fallback to old logic
+    const freeLeft = Math.max(0, FREE_ABOVE - sub);
+    const pct = Math.min(100, Math.round((sub / FREE_ABOVE) * 100));
+    
+    if (freeLeft === 0) {
+      delMsg.innerHTML = '<span style="color:var(--success)">🎉 You have FREE delivery!</span>';
+    } else {
+      delMsg.textContent = `Add ₹${freeLeft} more for FREE delivery`;
+    }
+    document.getElementById('delBarAmt').textContent = `₹${sub} / ₹${FREE_ABOVE}`;
+    delFill.style.width = pct + '%';
   }
-  document.getElementById('delBarAmt').textContent = `₹${sub} / ₹${FREE_ABOVE}`;
-  delFill.style.width = pct + '%';
 
   // Items list
   const list = document.getElementById('basketList');
@@ -4123,6 +4169,15 @@ function renderPrices(sub) {
   // Update UI
   document.getElementById('priceSubtotal').textContent = '₹' + sub;
   document.getElementById('priceDelivery').textContent = fee === 0 ? 'FREE' : '₹' + fee;
+  
+  // Show zone info if available
+  const zoneInfoEl = document.getElementById('deliveryZoneInfo');
+  if (zoneInfoEl && USER_ZONE) {
+    zoneInfoEl.textContent = `${USER_ZONE.name} (${USER_ZONE.distance}km) • ${USER_ZONE.deliveryTime}`;
+    zoneInfoEl.style.display = 'block';
+  } else if (zoneInfoEl) {
+    zoneInfoEl.style.display = 'none';
+  }
   
   // Packaging charge
   const packagingRow = document.getElementById('pricePackagingRow');
@@ -6416,6 +6471,10 @@ function getSelectedAddr() {
 }
 function setSelectedAddr(addr) {
   localStorage.setItem('now_location', JSON.stringify(addr));
+  // Trigger zone detection if user is logged in
+  if (USER) {
+    detectDeliveryZone();
+  }
 }
 
 function selectAddrType(type, el) {
@@ -6905,6 +6964,75 @@ function updateLocTopbar(label) {
 
 function getSavedLocation() {
   return getSelectedAddr();
+}
+
+// ═══════════════════════════════════════════
+//  Delivery Zone Detection
+// ═══════════════════════════════════════════
+
+async function detectDeliveryZone() {
+  if (!USER || !USER.phone) return;
+  
+  // Get saved location
+  const savedLoc = localStorage.getItem('now_location');
+  if (!savedLoc) {
+    // No location set, will detect when they set it
+    return;
+  }
+  
+  try {
+    const loc = JSON.parse(savedLoc);
+    if (!loc.lat || !loc.lon) return;
+    
+    console.log('🌍 Detecting delivery zone for:', loc);
+    
+    const res = await fetch('/api/zone/detect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        lat: loc.lat, 
+        lon: loc.lon, 
+        phone: USER.phone 
+      })
+    });
+    
+    const data = await res.json();
+    
+    if (data.ok) {
+      USER_ZONE = {
+        id: data.zone.id,
+        name: data.zone.name,
+        distanceRange: data.zone.distanceRange,
+        deliveryTime: data.zone.deliveryTime,
+        deliveryFee: data.zone.deliveryFee,
+        freeDeliveryAbove: data.zone.freeDeliveryAbove,
+        distance: data.distance
+      };
+      
+      localStorage.setItem('now_user_zone', JSON.stringify(USER_ZONE));
+      updateZoneDisplay();
+      
+      console.log('✅ Zone detected:', USER_ZONE);
+      
+      // Update cart if visible
+      if (Object.keys(CART).length > 0) {
+        renderPrices();
+      }
+    }
+  } catch(e) {
+    console.warn('Zone detection failed:', e);
+  }
+}
+
+function updateZoneDisplay() {
+  if (!USER_ZONE) return;
+  
+  // Update topbar with zone info
+  const topbar = document.querySelector('.topbar-text');
+  if (topbar) {
+    const zoneText = `🚚 ${USER_ZONE.name} (${USER_ZONE.distance}km) • ₹${USER_ZONE.deliveryFee} (Free above ₹${USER_ZONE.freeDeliveryAbove})`;
+    topbar.textContent = zoneText;
+  }
 }
 
 function initLocation() {

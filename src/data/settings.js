@@ -28,6 +28,13 @@ const defaults = {
     timing: '8:00 AM – 9:30 PM, all days',
     location: 'Live now, expanding to all major cities 🚀',
   },
+  // NEW: Vendor Location for distance calculation
+  vendorLocation: {
+    lat: 27.1767,  // Agra, UP (Default)
+    lon: 78.0081,
+    address: 'Agra, Uttar Pradesh',
+    name: 'MeatPe Main Warehouse'
+  },
   socials: [
     // { platform: 'instagram', handle: '@meatpe', url: 'https://instagram.com/meatpe', icon: '📷' },
     // { platform: 'facebook', handle: 'MeatPe', url: 'https://facebook.com/meatpe', icon: '👍' },
@@ -162,6 +169,7 @@ function read() {
       branding: { ...defaults.branding, ...data.branding },
       categories: Array.isArray(data.categories) ? data.categories : defaults.categories,
       contact: { ...defaults.contact, ...data.contact },
+      vendorLocation: { ...defaults.vendorLocation, ...data.vendorLocation },
       socials: Array.isArray(data.socials) ? data.socials : defaults.socials,
       pages: { ...defaults.pages, ...data.pages },
       trendingSearches: Array.isArray(data.trendingSearches) ? data.trendingSearches : defaults.trendingSearches,
@@ -190,6 +198,7 @@ function update(patch) {
   if (patch.branding) current.branding = { ...current.branding, ...patch.branding };
   if (Array.isArray(patch.categories)) current.categories = patch.categories;
   if (patch.contact) current.contact = { ...current.contact, ...patch.contact };
+  if (patch.vendorLocation) current.vendorLocation = { ...current.vendorLocation, ...patch.vendorLocation };
   if (Array.isArray(patch.socials)) current.socials = patch.socials;
   if (patch.pages) current.pages = { ...current.pages, ...patch.pages };
   if (Array.isArray(patch.trendingSearches)) current.trendingSearches = patch.trendingSearches;
