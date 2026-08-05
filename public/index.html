@@ -164,6 +164,12 @@ input,textarea{font:inherit;color:inherit}
   color:#fff;font-size:9px;font-weight:700;padding:3px 6px;border-radius:6px;backdrop-filter:blur(4px)}
 .badge-oos{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;
   align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
+.wishlist-btn{position:absolute;top:6px;right:6px;background:rgba(255,255,255,.9);
+  border:none;font-size:18px;width:32px;height:32px;border-radius:50%;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:0;transition:all .2s ease;
+  box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.wishlist-btn:hover{transform:scale(1.1);background:#fff}
+.wishlist-btn.active{background:rgba(255,107,107,.95)}
 .prod-body{padding:10px}
 .prod-name{font-size:13px;font-weight:600;line-height:1.3;margin-bottom:2px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -1042,6 +1048,11 @@ input,textarea{font:inherit;color:inherit}
             <div class="pm-label">My Reviews</div>
             <div class="pm-arrow">›</div>
           </div>
+          <div class="pm-item" onclick="showScreen('screen-wishlist')">
+            <div class="pm-icon">❤️</div>
+            <div class="pm-label">My Wishlist</div>
+            <div class="pm-arrow">›</div>
+          </div>
           <div style="padding:0 14px;margin:14px 0;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">MORE</div>
           <div class="pm-item" onclick="void(0)">
             <div class="pm-icon">⭐</div>
@@ -1111,6 +1122,17 @@ input,textarea{font:inherit;color:inherit}
       </div>
       <div id="reviewsContent" style="padding:14px">
         <div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div>
+      </div>
+    </div>
+
+    <!-- ═══ WISHLIST SCREEN ═══ -->
+    <div class="screen" id="screen-wishlist">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">❤️ My Wishlist</div>
+      </div>
+      <div id="wishlistContent" style="padding:14px">
+        <div class="empty"><div class="empty-icon">❤️</div><p>No saved items yet</p></div>
       </div>
     </div>
 
@@ -1574,13 +1596,14 @@ function showScreen(id) {
   if (id === 'screen-returns') loadReturns();
   if (id === 'screen-wallet') loadWallet();
   if (id === 'screen-reviews') loadMyReviews();
+  if (id === 'screen-wishlist') loadWishlist();
 
   // Update nav highlight
   const navMap = {
     'screen-home':'nav-home','screen-basket':'nav-profile',
     'screen-product':'nav-home','screen-orders':'nav-orders','screen-profile':'nav-home',
     'screen-subscriptions':'nav-home','screen-returns':'nav-home',
-    'screen-wallet':'nav-home','screen-reviews':'nav-home',
+    'screen-wallet':'nav-home','screen-reviews':'nav-home','screen-wishlist':'nav-home',
     'screen-about':'nav-home'
   };
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -1856,6 +1879,10 @@ function renderProducts() {
     const oos = !item.inStock;
     const img = (item.images && item.images[0]) ? `<img src="${item.images[0]}" alt="${item.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span class="emoji-bg" style="display:none">${catEmoji(item.cat)}</span>` : `<span class="emoji-bg">${catEmoji(item.cat)}</span>`;
     
+    // Check if in wishlist
+    const wishlist = JSON.parse(localStorage.getItem('now_wishlist') || '[]');
+    const inWishlist = wishlist.some(w => w.code === item.code);
+    
     // Rating display - moved below unit and above price
     const rating = item.rating || 0;
     const reviewCount = item.review_count || 0;
@@ -1872,6 +1899,9 @@ function renderProducts() {
         <div class="badge-temp">❄️ Fresh</div>
         ${isBest ? '<div class="badge-best">BESTSELLER</div>' : ''}
         ${oos ? '<div class="badge-oos">Out of Stock</div>' : ''}
+        <button class="wishlist-btn ${inWishlist ? 'active' : ''}" onclick="event.stopPropagation();toggleWishlist('${item.code}','${item.name.replace(/'/g,"\\'")}','${item.unit || ''}',${item.price},'${(item.images && item.images[0]) ? item.images[0].replace(/'/g,"\\'") : '/logo.png'}');" title="Add to wishlist">
+          ${inWishlist ? '❤️' : '🤍'}
+        </button>
       </div>
       <div class="prod-body">
         <div class="prod-name">${item.name}</div>
@@ -3108,6 +3138,72 @@ async function submitQuickReview(orderId, code) {
     else showToast(data.error || 'Already reviewed', 'error');
   } catch(e) { showToast('Failed to submit', 'error'); }
 }
+
+// ═══════════════════════════════════════════
+//  Wishlist Screen
+// ═══════════════════════════════════════════
+function toggleWishlist(code, name, unit, price, img) {
+  let wishlist = JSON.parse(localStorage.getItem('now_wishlist') || '[]');
+  const existingIdx = wishlist.findIndex(w => w.code === code);
+  
+  if (existingIdx >= 0) {
+    // Remove from wishlist
+    wishlist.splice(existingIdx, 1);
+    showToast('Removed from wishlist ❌', 'info');
+  } else {
+    // Add to wishlist
+    wishlist.push({ code, name, unit, price, img });
+    showToast('Added to wishlist ❤️', 'success');
+  }
+  
+  localStorage.setItem('now_wishlist', JSON.stringify(wishlist));
+  renderProducts(); // Re-render to update heart icon
+}
+
+function loadWishlist() {
+  const el = document.getElementById('wishlistContent');
+  const wishlist = JSON.parse(localStorage.getItem('now_wishlist') || '[]');
+  
+  if (!wishlist.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">❤️</div><h3>No Saved Items</h3><p>Save your favorite items to your wishlist</p></div>`;
+    return;
+  }
+  
+  el.innerHTML = wishlist.map((item, idx) => `
+    <div style="background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:12px;border:1px solid var(--border);display:flex;gap:12px;padding:12px">
+      <img src="${item.img || '/logo.png'}" alt="${item.name}" style="width:80px;height:80px;border-radius:10px;object-fit:cover;flex-shrink:0" onerror="this.src='/logo.png'"/>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">${item.name}</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${item.unit}</div>
+        <div style="font-size:14px;font-weight:800;color:var(--accent);margin-bottom:8px">₹${item.price}</div>
+        <div style="display:flex;gap:6px">
+          <button onclick="addToCartFromWishlist('${item.code}',${idx})" style="flex:1;padding:8px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Add to Cart</button>
+          <button onclick="removeFromWishlist(${idx})" style="padding:8px 12px;background:var(--border);color:var(--text);border:none;border-radius:8px;cursor:pointer;font-size:14px">❌</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function removeFromWishlist(idx) {
+  let wishlist = JSON.parse(localStorage.getItem('now_wishlist') || '[]');
+  wishlist.splice(idx, 1);
+  localStorage.setItem('now_wishlist', JSON.stringify(wishlist));
+  loadWishlist();
+  showToast('Removed from wishlist', 'info');
+}
+
+function addToCartFromWishlist(code, idx) {
+  const item = MENU.find(m => m.code === code);
+  if (!item || !item.inStock) {
+    showToast('Item not available', 'error');
+    return;
+  }
+  CART[code] = (CART[code] || 0) + 1;
+  saveCart();
+  removeFromWishlist(idx);
+  showToast('Added to cart 🛒', 'success');
+}
+
 
 // ═══════════════════════════════════════════
 //  Coupons Modal
