@@ -49,15 +49,21 @@ const defaults = {
     'marinated chicken',
     'tandoori',
   ],
-  // NEW: Cart & Pricing Settings (admin-editable)
-  cartSettings: {
-    taxRate: 5,               // GST percentage (5%)
-    platformFee: 0,            // Platform fee (₹0)
-    memberDiscountPercent: 5,  // Plus member discount (5%)
-    tipOptions: [10, 20, 30, 50], // Tip options in rupees
-    maxTip: 500,               // Maximum tip allowed (₹500)
-    showTaxBreakdown: true,    // Show tax breakdown (CGST/SGST)
-    showMemberDiscount: true,  // Show member discount in cart
+  // NEW: Cart & Checkout Settings (admin-editable)
+  cart: {
+    enableMembershipDiscount: true,
+    membershipDiscountPercent: 5,
+    showTaxesBreakdown: true,
+    gstPercent: 5,
+    packagingCharge: 10,
+    enableTipDeliveryPartner: true,
+    tipOptions: [10, 20, 30, 50], // In rupees
+    deliveryCharges: {
+      freeAbove: 699,
+      belowThreshold: 399,
+      lowOrderFee: 29,
+      regularOrderFee: 19
+    }
   },
 };
 
@@ -81,7 +87,7 @@ function read() {
       socials: Array.isArray(data.socials) ? data.socials : defaults.socials,
       pages: { ...defaults.pages, ...data.pages },
       trendingSearches: Array.isArray(data.trendingSearches) ? data.trendingSearches : defaults.trendingSearches,
-      cartSettings: { ...defaults.cartSettings, ...data.cartSettings },
+      cart: { ...defaults.cart, ...data.cart, deliveryCharges: { ...defaults.cart.deliveryCharges, ...(data.cart?.deliveryCharges || {}) } },
     };
   } catch (e) {
     console.warn('settings.json read failed:', e.message);
@@ -107,7 +113,7 @@ function update(patch) {
   if (Array.isArray(patch.socials)) current.socials = patch.socials;
   if (patch.pages) current.pages = { ...current.pages, ...patch.pages };
   if (Array.isArray(patch.trendingSearches)) current.trendingSearches = patch.trendingSearches;
-  if (patch.cartSettings) current.cartSettings = { ...current.cartSettings, ...patch.cartSettings };
+  if (patch.cart) current.cart = { ...current.cart, ...patch.cart, deliveryCharges: { ...current.cart.deliveryCharges, ...(patch.cart.deliveryCharges || {}) } };
   write(current);
   return { ok: true, settings: current };
 }
