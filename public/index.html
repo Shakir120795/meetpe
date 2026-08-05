@@ -1022,14 +1022,14 @@ input,textarea{font:inherit;color:inherit}
           </div>
         </div>
 
-        <div class="section-box" style="margin:0 14px 12px">
+        <div class="section-box" id="membershipCard" style="margin:0 14px 12px">
           <div style="display:flex;align-items:center;gap:10px;padding:12px 14px">
             <span style="font-size:22px">🎖️</span>
             <div style="flex:1">
               <div style="font-size:13px;font-weight:700">NOW Plus Membership</div>
-              <div style="font-size:11px;color:var(--muted)">Free delivery • Priority slots • Member offers</div>
+              <div style="font-size:11px;color:var(--muted)" id="membershipSubtext">Free delivery • Priority slots • Member offers</div>
             </div>
-            <button style="background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700"
+            <button id="membershipBtn" style="background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer"
               onclick="showScreen('screen-membership')">View</button>
           </div>
         </div>
@@ -1065,11 +1065,6 @@ input,textarea{font:inherit;color:inherit}
 
         <!-- Profile Menu (all items from drawer merged here) -->
         <div class="profile-menu">
-          <div class="pm-item" onclick="showScreen('screen-subscriptions')">
-            <div class="pm-icon">🔁</div>
-            <div class="pm-label">My Subscriptions</div>
-            <div class="pm-arrow">›</div>
-          </div>
           <div class="pm-item" onclick="showScreen('screen-returns')">
             <div class="pm-icon">🔄</div>
             <div class="pm-label">Returns &amp; Refunds</div>
@@ -3391,6 +3386,8 @@ async function loadProfile() {
   const phoneEl = document.getElementById('profilePhone');
   const walletBoxEl = document.getElementById('profileWalletBox');
   const guestLoginBtn = document.getElementById('guestLoginBtn');
+  const membershipBtn = document.getElementById('membershipBtn');
+  const membershipSubtext = document.getElementById('membershipSubtext');
 
   const displayName = USER.name || 'Guest';
   avatarEl.textContent = displayName.charAt(0).toUpperCase() || '?';
@@ -3416,7 +3413,10 @@ async function loadProfile() {
         const c = data.customer;
         USER.wallet = c.wallet || 0;
         USER.name = c.name || USER.name;
+        USER.membership_active = c.membership_active || false;
+        USER.membership_expiry = c.membership_expiry || null;
         saveUser();
+        
         avatarEl.textContent = (USER.name || 'G').charAt(0).toUpperCase();
         nameEl.textContent = USER.name || 'Guest';
         if (walletBoxEl) walletBoxEl.textContent = USER.wallet;
@@ -3427,6 +3427,48 @@ async function loadProfile() {
     } catch(e) {
       console.error('Failed to load profile:', e);
     }
+  }
+  
+  // Update membership card based on status
+  updateMembershipCard();
+}
+
+function updateMembershipCard() {
+  const membershipBtn = document.getElementById('membershipBtn');
+  const membershipSubtext = document.getElementById('membershipSubtext');
+  
+  if (!membershipBtn || !membershipSubtext) return;
+  
+  // Check if user has active membership
+  const membershipActive = USER.membership_active || false;
+  const membershipExpiry = USER.membership_expiry || null;
+  
+  let isActive = false;
+  if (membershipActive && membershipExpiry) {
+    const expiryDate = new Date(membershipExpiry);
+    const now = new Date();
+    const daysLeft = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+    isActive = daysLeft > 0;
+    
+    if (isActive) {
+      // Show active status
+      membershipBtn.style.background = '#22c55e';
+      membershipBtn.textContent = '✓ ACTIVE';
+      membershipSubtext.textContent = `Expires in ${daysLeft} days`;
+      membershipSubtext.style.color = '#22c55e';
+    } else {
+      // Expired
+      membershipBtn.style.background = 'var(--accent)';
+      membershipBtn.textContent = 'Renew';
+      membershipSubtext.textContent = 'Membership expired';
+      membershipSubtext.style.color = 'var(--danger)';
+    }
+  } else {
+    // Not a member
+    membershipBtn.style.background = 'var(--accent)';
+    membershipBtn.textContent = 'View';
+    membershipSubtext.textContent = 'Free delivery • Priority slots • Member offers';
+    membershipSubtext.style.color = 'var(--muted)';
   }
 }
 
