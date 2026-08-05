@@ -623,70 +623,12 @@ input,textarea{font:inherit;color:inherit}
       </div>
     </div>
 
-    <!-- ═══ SIDE DRAWER ═══ -->
-    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
-    <div class="side-drawer" id="sideDrawer">
-      <div class="drawer-head">
-        <div class="drawer-user-info" id="drawerUserInfo">
-          <div class="drawer-avatar" id="drawerAvatar">👤</div>
-          <div>
-            <div class="drawer-username" id="drawerUsername">Guest</div>
-            <div class="drawer-phone" id="drawerPhone">Login to access all features</div>
-          </div>
-        </div>
-        <button class="drawer-close-btn" onclick="closeDrawer()">✕</button>
-      </div>
-      <!-- Login button — only shown for guests -->
-      <div id="drawerLoginBtn" style="padding:12px 16px;border-bottom:1px solid var(--border);display:none">
-        <button onclick="closeDrawer();logout();" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer">
-          🔑 Login / Switch Account
-        </button>
-      </div>
-      <div class="drawer-body-scroll">
-        <!-- Wallet Card -->
-        <div class="drawer-wallet-card" onclick="showScreen('screen-profile');closeDrawer()">
-          <div>
-            <div class="drawer-wallet-label">💳 NOW Wallet</div>
-            <div class="drawer-wallet-bal" id="drawerWalletBal">₹0</div>
-          </div>
-          <div class="drawer-wallet-arrow">›</div>
-        </div>
-        <!-- Menu Items -->
-        <div class="drawer-section-title">MY ACCOUNT</div>
-        <button class="drawer-item" onclick="showScreen('screen-orders');closeDrawer()">
-          <span class="di-icon">📦</span><span class="di-label">My Orders</span><span class="di-arrow">›</span>
-        </button>
-        <button class="drawer-item" onclick="showSavedAddresses();closeDrawer()">
-          <span class="di-icon">📍</span><span class="di-label">Saved Addresses</span><span class="di-arrow">›</span>
-        </button>
-        <button class="drawer-item" onclick="showCouponsModal();closeDrawer()">
-          <span class="di-icon">🎁</span><span class="di-label">Coupons &amp; Rewards</span><span class="di-arrow">›</span>
-        </button>
-        <div class="drawer-section-title">MORE</div>
-        <button class="drawer-item" onclick="closeDrawer()">
-          <span class="di-icon">⭐</span><span class="di-label">Rate the App</span><span class="di-arrow">›</span>
-        </button>
-        <button class="drawer-item" onclick="closeDrawer()">
-          <span class="di-icon">🤝</span><span class="di-label">Refer &amp; Earn</span><span class="di-arrow">›</span>
-        </button>
-        <button class="drawer-item" onclick="closeDrawer()">
-          <span class="di-icon">❓</span><span class="di-label">Help &amp; Support</span><span class="di-arrow">›</span>
-        </button>
-        <button class="drawer-item" onclick="showScreen('screen-about');closeDrawer()">
-          <span class="di-icon">ℹ️</span><span class="di-label">About <span data-brand-name>NOW</span></span><span class="di-arrow">›</span>
-        </button>
-        <div class="drawer-divider"></div>
-        <button class="drawer-item drawer-logout" id="drawerLogoutBtn" onclick="logout();closeDrawer()" style="display:none">
-          <span class="di-icon">⎋</span><span class="di-label">Logout</span>
-        </button>
-      </div>
-      <div class="drawer-footer">NOW — Fresh Meat Delivered Fast 🥩</div>
-    </div>
+    <!-- ═══ SIDE DRAWER REMOVED ═══ -->
 
     <!-- ═══ HOME SCREEN ═══ -->
     <div class="screen" id="screen-home">
       <div class="home-topbar">
-        <button class="icon-btn drawer-trigger" onclick="openDrawer()" title="Menu">
+        <button class="icon-btn drawer-trigger" onclick="openDrawer()" title="Menu" style="display:none">
           <span class="hamburger">☰</span>
         </button>
         <!-- Location in center — Blinkit style -->
@@ -1017,11 +959,16 @@ input,textarea{font:inherit;color:inherit}
           </div>
         </div>
 
-        <!-- Profile Menu (restored to list style) -->
+        <!-- Profile Menu (all items from drawer merged here) -->
         <div class="profile-menu">
           <div class="pm-item" onclick="showScreen('screen-orders')">
             <div class="pm-icon">📦</div>
-            <div class="pm-label">Order History</div>
+            <div class="pm-label">My Orders</div>
+            <div class="pm-arrow">›</div>
+          </div>
+          <div class="pm-item" onclick="showSavedAddresses()">
+            <div class="pm-icon">📍</div>
+            <div class="pm-label">Saved Addresses</div>
             <div class="pm-arrow">›</div>
           </div>
           <div class="pm-item" onclick="showScreen('screen-subscriptions')">
@@ -1040,13 +987,34 @@ input,textarea{font:inherit;color:inherit}
             <div class="pm-arrow">›</div>
           </div>
           <div class="pm-item" onclick="showCouponsModal()">
-            <div class="pm-icon">🎫</div>
+            <div class="pm-icon">🎁</div>
             <div class="pm-label">Coupons &amp; Offers</div>
             <div class="pm-arrow">›</div>
           </div>
           <div class="pm-item" onclick="showScreen('screen-reviews')">
             <div class="pm-icon">⭐</div>
             <div class="pm-label">My Reviews</div>
+            <div class="pm-arrow">›</div>
+          </div>
+          <div style="padding:0 14px;margin:14px 0;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">MORE</div>
+          <div class="pm-item" onclick="void(0)">
+            <div class="pm-icon">⭐</div>
+            <div class="pm-label">Rate the App</div>
+            <div class="pm-arrow">›</div>
+          </div>
+          <div class="pm-item" onclick="void(0)">
+            <div class="pm-icon">🤝</div>
+            <div class="pm-label">Refer &amp; Earn</div>
+            <div class="pm-arrow">›</div>
+          </div>
+          <div class="pm-item" onclick="void(0)">
+            <div class="pm-icon">❓</div>
+            <div class="pm-label">Help &amp; Support</div>
+            <div class="pm-arrow">›</div>
+          </div>
+          <div class="pm-item" onclick="showScreen('screen-about')">
+            <div class="pm-icon">ℹ️</div>
+            <div class="pm-label">About <span data-brand-name>NOW</span></div>
             <div class="pm-arrow">›</div>
           </div>
         </div>
