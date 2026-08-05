@@ -35,9 +35,16 @@ class MSG91Provider extends IAuthProvider {
 
   /**
    * Check rate limit for phone number
-   * Max 3 OTP requests per 15 minutes
+   * Max 3 OTP requests per 15 minutes (disabled in demo mode)
    */
   _checkRateLimit(phone) {
+    // DEMO MODE: Disable rate limiting for easier testing
+    const isDemoMode = !this.authKey || this.authKey === 'your_msg91_auth_key_here';
+    if (isDemoMode) {
+      console.log(`⚡ [MSG91] Demo mode - Rate limiting disabled for ${phone}`);
+      return { ok: true };
+    }
+
     const limit = this.rateLimits.get(phone);
     const now = Date.now();
     
@@ -99,7 +106,13 @@ class MSG91Provider extends IAuthProvider {
       const expiry = Date.now() + 10 * 60 * 1000; // 10 minutes
       const sessionId = `${cleanPhone}_${Date.now()}`;
 
-      // Store session
+      // IMPORTANT: Clear existing session for re-login (allow same number multiple times)
+      if (this.sessions.has(cleanPhone)) {
+        console.log(`🔄 [MSG91] Clearing existing session for +91${cleanPhone}`);
+        this.sessions.delete(cleanPhone);
+      }
+
+      // Store NEW session
       this.sessions.set(cleanPhone, {
         otp,
         expiry,
