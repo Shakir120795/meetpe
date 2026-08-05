@@ -987,6 +987,11 @@ input,textarea{font:inherit;color:inherit}
           <div class="avatar" id="profileAvatar">?</div>
           <div class="profile-name" id="profileName">Guest User</div>
           <div class="profile-phone" id="profilePhone">Not logged in</div>
+          
+          <!-- Login button for guest users - right below phone -->
+          <button class="login-prompt-btn" id="guestLoginBtn" onclick="showScreen('screen-login')" style="display:none;margin-top:12px;padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">
+            🔐 Login / Sign Up
+          </button>
         </div>
 
         <div class="wallet-card">
@@ -1105,11 +1110,6 @@ input,textarea{font:inherit;color:inherit}
             <div class="pm-arrow">›</div>
           </div>
         </div>
-
-        <!-- Login button for guest users -->
-        <button class="login-prompt-btn" id="guestLoginBtn" onclick="showScreen('screen-login')" style="display:none;width:calc(100% - 28px);margin:16px 14px;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">
-          🔐 Login / Sign Up
-        </button>
 
         <button class="logout-btn" id="logoutBtn" onclick="logout()">Log Out</button>
         <div style="height:12px"></div>
