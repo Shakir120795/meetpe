@@ -4844,6 +4844,226 @@ window.addEventListener('load', () => {
 
 @keyframes fadeIn { from { opacity:0;transform:scale(.9); } to { opacity:1;transform:scale(1); } }
 
+/* ═══════════════════════════════════════════
+   ADVANCED UI POLISH - Animations & Transitions
+   ═══════════════════════════════════════════ */
+
+/* Smooth page transitions */
+.screen { transition:opacity .35s cubic-bezier(.4,0,.2,1); }
+.screen.active { animation:screenEnter .35s cubic-bezier(.4,0,.2,1) forwards; }
+
+@keyframes screenEnter {
+  0% { opacity:0;transform:translateY(8px); }
+  100% { opacity:1;transform:translateY(0); }
+}
+
+/* Enhanced button interactions */
+button {
+  transition:all .2s cubic-bezier(.4,0,.2,1);
+  position:relative;
+  overflow:hidden;
+}
+
+button:not(:disabled):active {
+  transform:scale(.97);
+}
+
+button:not(:disabled):hover {
+  transform:translateY(-1px);
+}
+
+/* Ripple effect for buttons */
+button::before {
+  content:'';
+  position:absolute;
+  top:50%;left:50%;
+  width:0;height:0;
+  border-radius:50%;
+  background:rgba(255,255,255,.2);
+  transform:translate(-50%,-50%);
+  transition:width .6s,height .6s;
+  pointer-events:none;
+}
+
+button:active::before {
+  width:300px;height:300px;
+}
+
+/* Card hover effects */
+.prod-card {
+  transition:all .25s cubic-bezier(.4,0,.2,1);
+}
+
+.prod-card:hover {
+  transform:translateY(-4px);
+  box-shadow:0 12px 24px rgba(232,69,10,.15);
+}
+
+/* Input field polish */
+input, textarea {
+  transition:all .2s ease;
+}
+
+input:focus, textarea:focus {
+  transform:scale(1.01);
+}
+
+/* Badge animations */
+.badge-best, .badge-temp, .badge-fresh, .badge-oos {
+  animation:badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% { transform:scale(1);opacity:1; }
+  50% { transform:scale(1.05);opacity:.9; }
+}
+
+/* Modal smooth scaling */
+.modal-overlay.show .modal-box {
+  animation:modalScale .35s cubic-bezier(.34,.1,.68,.55);
+}
+
+@keyframes modalScale {
+  0% { transform:translateY(100%) scale(.95);opacity:0; }
+  100% { transform:translateY(0) scale(1);opacity:1; }
+}
+
+/* Drawer slide animation */
+.side-drawer.open {
+  animation:drawerSlide .3s cubic-bezier(.34,.1,.68,.55) forwards;
+}
+
+@keyframes drawerSlide {
+  0% { transform:translateX(-100%); }
+  100% { transform:translateX(0); }
+}
+
+/* Stagger animations for list items */
+.screen-header {
+  animation:slideDown .3s cubic-bezier(.4,0,.2,1);
+}
+
+@keyframes slideDown {
+  0% { opacity:0;transform:translateY(-8px); }
+  100% { opacity:1;transform:translateY(0); }
+}
+
+/* Smooth scroll behavior */
+html { scroll-behavior:smooth; }
+
+/* Toast notifications */
+.toast {
+  animation:toastSlide .25s cubic-bezier(.4,0,.2,1);
+}
+
+@keyframes toastSlide {
+  0% { opacity:0;transform:translateX(-50%) translateY(20px); }
+  100% { opacity:1;transform:translateX(-50%) translateY(0); }
+}
+
+/* Product grid stagger */
+.product-grid {
+  animation:gridFade .4s ease forwards;
+}
+
+@keyframes gridFade {
+  0% { opacity:0; }
+  100% { opacity:1; }
+}
+
+/* Smooth color transitions */
+.section-title, .prod-name, .prod-price {
+  transition:color .2s ease;
+}
+
+/* Bottom nav smooth appearance */
+.bottom-nav {
+  animation:navSlideUp .3s cubic-bezier(.4,0,.2,1);
+}
+
+@keyframes navSlideUp {
+  0% { opacity:0;transform:translateY(100%); }
+  100% { opacity:1;transform:translateY(0); }
+}
+
+/* Responsive polish for small screens */
+@media(max-width:640px) {
+  .chat-widget { width:calc(100% - 28px);bottom:100px;right:14px;left:14px; }
+  .chat-messages { max-height:300px; }
+  
+  /* Larger touch targets on mobile */
+  button { min-height:44px;min-width:44px; }
+  
+  /* Better spacing on mobile */
+  .prod-card {
+    transition:all .2s cubic-bezier(.4,0,.2,1);
+  }
+  
+  /* Reduced animation on slower devices */
+  @media(prefers-reduced-motion:reduce) {
+    * {
+      animation-duration:.01ms !important;
+      animation-iteration-count:1 !important;
+      transition-duration:.01ms !important;
+    }
+  }
+}
+
+/* Desktop enhancements */
+@media(min-width:768px) {
+  button:hover {
+    box-shadow:0 4px 12px rgba(232,69,10,.15);
+  }
+  
+  .prod-card:hover {
+    box-shadow:0 16px 32px rgba(232,69,10,.2);
+  }
+}
+
+/* Dark mode smooth transitions */
+body {
+  transition:background .3s ease, color .3s ease;
+}
+
+/* Accessibility - respect motion preferences */
+@media(prefers-reduced-motion:reduce) {
+  *, *::before, *::after {
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
+}
+
+/* Loading states */
+.skel {
+  animation:skeleton 1.5s infinite;
+}
+
+@keyframes skeleton {
+  0% { opacity:0.6; }
+  50% { opacity:1; }
+  100% { opacity:0.6; }
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+  width:6px;
+  height:6px;
+}
+
+::-webkit-scrollbar-track {
+  background:transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background:var(--border);
+  border-radius:3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background:var(--muted);
+}
+
 @media(max-width:480px) {
   .chat-widget { width:calc(100% - 28px);bottom:100px;right:14px;left:14px; }
   .chat-messages { max-height:300px; }
