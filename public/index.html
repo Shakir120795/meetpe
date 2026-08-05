@@ -1668,53 +1668,61 @@ function escapeHtml(text) {
     try { CART = JSON.parse(savedCart); } catch(e) {}
   }
 
-  // SUPER SIMPLE INIT - NO BULLSHIT
+  // WAIT FOR DOM TO BE READY!
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+  } else {
+    // DOM already loaded
+    initializeApp();
+  }
+})();
+
+// Initialize app after DOM is ready
+function initializeApp() {
   console.log('🚀 App starting...');
   console.log('👤 USER:', USER);
   
   // Force hide ALL screens
-  setTimeout(() => {
-    document.querySelectorAll('.screen').forEach(s => {
-      s.style.display = 'none';
-      s.classList.remove('active');
-    });
+  document.querySelectorAll('.screen').forEach(s => {
+    s.style.display = 'none';
+    s.classList.remove('active');
+  });
+  
+  if (USER) {
+    console.log('✅ Showing HOME');
+    // Show home
+    document.getElementById('screen-home').style.display = '';
+    document.getElementById('screen-home').classList.add('active');
+    document.getElementById('bottomNav').style.display = 'flex';
     
-    if (USER) {
-      console.log('✅ Showing HOME');
-      // Show home
-      document.getElementById('screen-home').style.display = '';
-      document.getElementById('screen-home').classList.add('active');
-      document.getElementById('bottomNav').style.display = 'flex';
+    // Load menu NOW
+    fetch('/api/menu')
+      .then(r => r.json())
+      .then(data => {
+        MENU = data;
+        console.log('📦 MENU loaded:', MENU.length);
+        renderProducts();
+        updateTopbarUser();
+        updateCartBar();
+      })
+      .catch(e => {
+        console.error('❌ Menu error:', e);
+        document.getElementById('productGrid').innerHTML = '<div style="padding:40px;text-align:center;color:red">Menu load failed. Check console.</div>';
+      });
+    
+    // Load settings
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(s => { APP_SETTINGS = s; applyBranding(); })
+      .catch(e => console.log('Settings error:', e));
       
-      // Load menu NOW
-      fetch('/api/menu')
-        .then(r => r.json())
-        .then(data => {
-          MENU = data;
-          console.log('📦 MENU loaded:', MENU.length);
-          renderProducts();
-          updateTopbarUser();
-          updateCartBar();
-        })
-        .catch(e => {
-          console.error('❌ Menu error:', e);
-          document.getElementById('productGrid').innerHTML = '<div style="padding:40px;text-align:center;color:red">Menu load failed. Check console.</div>';
-        });
-      
-      // Load settings
-      fetch('/api/settings')
-        .then(r => r.json())
-        .then(s => { APP_SETTINGS = s; applyBranding(); })
-        .catch(e => console.log('Settings error:', e));
-        
-    } else {
-      console.log('❌ NO USER - showing login');
-      document.getElementById('screen-login').style.display = '';
-      document.getElementById('screen-login').classList.add('active');
-      document.getElementById('bottomNav').style.display = 'none';
-    }
-  }, 100); // Small delay to let DOM settle
-})();
+  } else {
+    console.log('❌ NO USER - showing login');
+    document.getElementById('screen-login').style.display = '';
+    document.getElementById('screen-login').classList.add('active');
+    document.getElementById('bottomNav').style.display = 'none';
+  }
+}
 
 // Track when page started loading
 window.pageLoadTime = Date.now();
