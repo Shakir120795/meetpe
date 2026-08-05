@@ -858,6 +858,38 @@ input,textarea{font:inherit;color:inherit}
         </div>
       </div>
 
+      <!-- Best Sellers Section -->
+      <div id="bestSellersSection" style="display:none">
+        <div class="section-title" style="margin-top:8px">
+          <span>🔥 Best Sellers</span>
+        </div>
+        <div class="product-grid" id="bestSellersGrid"></div>
+      </div>
+
+      <!-- Recommended Products Section -->
+      <div id="recommendedSection" style="display:none">
+        <div class="section-title" style="margin-top:8px">
+          <span>⭐ Recommended for You</span>
+        </div>
+        <div class="product-grid" id="recommendedGrid"></div>
+      </div>
+
+      <!-- Recently Ordered Section -->
+      <div id="recentlyOrderedSection" style="display:none">
+        <div class="section-title" style="margin-top:8px">
+          <span>🕒 Buy Again</span>
+        </div>
+        <div class="product-grid" id="recentlyOrderedGrid"></div>
+      </div>
+
+      <!-- New Arrivals Section -->
+      <div id="newArrivalsSection" style="display:none">
+        <div class="section-title" style="margin-top:8px">
+          <span>✨ New Arrivals</span>
+        </div>
+        <div class="product-grid" id="newArrivalsGrid"></div>
+      </div>
+
       <div class="section-title" id="productSectionTitle" style="display:flex;align-items:center;justify-content:space-between">
         <span>All Products</span>
         <button class="filter-btn" onclick="showFiltersModal()" title="Filters" style="border:1px solid var(--border);background:var(--card);color:var(--text);padding:6px 12px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:4px">⚙️ Filter</button>
@@ -2771,11 +2803,182 @@ async function loadMenu() {
       console.log(`${item.code} (${item.name}): rating=${item.rating}, reviews=${item.review_count}`);
     });
     renderProducts();
+    renderSpecialSections();
   } catch(e) {
     console.warn('Menu load failed:', e);
     document.getElementById('productGrid').innerHTML =
       '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:40px 0">Unable to load menu. Please refresh.</div>';
   }
+}
+
+// Render special sections: Best Sellers, Recommended, Recently Ordered, New Arrivals
+async function renderSpecialSections() {
+  await renderBestSellers();
+  await renderRecommended();
+  await renderRecentlyOrdered();
+  await renderNewArrivals();
+}
+
+// Best Sellers - Top 6 items by review count and rating
+async function renderBestSellers() {
+  const section = document.getElementById('bestSellersSection');
+  const grid = document.getElementById('bestSellersGrid');
+  
+  // Sort by rating * review_count (popularity score)
+  const bestSellers = [...MENU]
+    .filter(item => item.inStock && (item.review_count || 0) > 0)
+    .sort((a, b) => {
+      const scoreA = (a.rating || 0) * (a.review_count || 0);
+      const scoreB = (b.rating || 0) * (b.review_count || 0);
+      return scoreB - scoreA;
+    })
+    .slice(0, 6);
+  
+  if (bestSellers.length > 0) {
+    grid.innerHTML = bestSellers.map(item => renderProductCardHTML(item, true)).join('');
+    section.style.display = 'block';
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+// Recommended - Items from different categories (variety)
+async function renderRecommended() {
+  const section = document.getElementById('recommendedSection');
+  const grid = document.getElementById('recommendedGrid');
+  
+  // Get 2 items from each category
+  const categories = ['chicken', 'mutton', 'fish'];
+  const recommended = [];
+  
+  categories.forEach(cat => {
+    const items = MENU.filter(item => item.cat === cat && item.inStock).slice(0, 2);
+    recommended.push(...items);
+  });
+  
+  if (recommended.length > 0) {
+    grid.innerHTML = recommended.map(item => renderProductCardHTML(item, false)).join('');
+    section.style.display = 'block';
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+// Recently Ordered - Fetch from user's order history
+async function renderRecentlyOrdered() {
+  const section = document.getElementById('recentlyOrderedSection');
+  const grid = document.getElementById('recentlyOrderedGrid');
+  
+  if (!USER || !USER.phone) {
+    section.style.display = 'none';
+    return;
+  }
+  
+  try {
+    const res = await fetch(`/api/orders?phone=${USER.phone}&limit=5`);
+    const orders = await res.json();
+    
+    // Extract unique item codes from last 5 orders
+    const recentItemCodes = new Set();
+    orders.forEach(order => {
+      try {
+        const items = typeof order.items_json === 'string' 
+          ? JSON.parse(order.items_json) 
+          : order.items_json;
+        items.forEach(i => recentItemCodes.add(i.code));
+      } catch(e) {}
+    });
+    
+    // Get items from menu
+    const recentItems = MENU.filter(item => 
+      recentItemCodes.has(item.code) && item.inStock
+    ).slice(0, 6);
+    
+    if (recentItems.length > 0) {
+      grid.innerHTML = recentItems.map(item => renderProductCardHTML(item, false)).join('');
+      section.style.display = 'block';
+    } else {
+      section.style.display = 'none';
+    }
+  } catch(e) {
+    console.warn('Failed to load recent orders:', e);
+    section.style.display = 'none';
+  }
+}
+
+// New Arrivals - Last 6 items (assuming newer items have higher codes or recent addition)
+async function renderNewArrivals() {
+  const section = document.getElementById('newArrivalsSection');
+  const grid = document.getElementById('newArrivalsGrid');
+  
+  // Get last 6 in-stock items (assuming they're added recently)
+  const newItems = MENU.filter(item => item.inStock).slice(-6).reverse();
+  
+  if (newItems.length > 0) {
+    grid.innerHTML = newItems.map(item => renderProductCardHTML(item, false)).join('');
+    section.style.display = 'block';
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+// Reusable product card HTML generator
+function renderProductCardHTML(item, isBestSeller = false) {
+  const mrp = Math.round(item.price * 1.1);
+  const save = Math.round(((mrp - item.price) / mrp) * 100);
+  const qty = CART[item.code] || 0;
+  const oos = !item.inStock;
+  const img = (item.images && item.images[0]) 
+    ? `<img src="${item.images[0]}" alt="${item.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span class="emoji-bg" style="display:none">${catEmoji(item.cat)}</span>` 
+    : `<span class="emoji-bg">${catEmoji(item.cat)}</span>`;
+  
+  // Check if in wishlist
+  const wishlist = JSON.parse(localStorage.getItem('now_wishlist') || '[]');
+  const inWishlist = wishlist.some(w => w.code === item.code);
+  
+  // Rating display
+  const rating = item.rating || 0;
+  const reviewCount = item.review_count || 0;
+  const ratingDisplay = reviewCount > 0 
+    ? `<div style="display:flex;align-items:center;gap:4px;font-size:11px;margin-bottom:6px">
+         <span style="color:#f59e0b">⭐ ${rating.toFixed(1)}</span>
+         <span style="color:var(--muted)">(${reviewCount})</span>
+       </div>`
+    : '';
+
+  return `<div class="prod-card" onclick="openProduct('${item.code}')">
+    <div class="prod-img">
+      ${img}
+      <div class="badge-temp">❄️ Fresh</div>
+      ${isBestSeller ? '<div class="badge-best">BESTSELLER</div>' : ''}
+      ${oos ? '<div class="badge-oos">Out of Stock</div>' : ''}
+      <button class="wishlist-btn ${inWishlist ? 'active' : ''}" onclick="event.stopPropagation();toggleWishlist('${item.code}','${item.name.replace(/'/g,"\\'")}','${item.unit || ''}',${item.price},'${(item.images && item.images[0]) ? item.images[0].replace(/'/g,"\\'") : '/logo.png'}');" title="Add to wishlist">
+        ${inWishlist ? '❤️' : '🤍'}
+      </button>
+    </div>
+    <div class="prod-body">
+      <div class="prod-name">${item.name}</div>
+      <div class="prod-unit">${item.unit || ''}</div>
+      ${ratingDisplay}
+      <div class="prod-pricing">
+        <span class="prod-price">₹${item.price}</span>
+        <span class="prod-mrp">₹${mrp}</span>
+        <span class="prod-save">${save}% off</span>
+      </div>
+      <div class="prod-footer">
+        ${oos ? '<span style="font-size:11px;color:var(--danger);font-weight:600">Unavailable</span>' :
+          qty > 0
+          ? `<div class="stepper" onclick="event.stopPropagation()">
+              <button class="step-btn" onclick="changeCart('${item.code}',-1)">−</button>
+              <span class="step-qty" id="qty-${item.code}">${qty}</span>
+              <button class="step-btn" onclick="changeCart('${item.code}',1)">+</button>
+             </div>`
+          : `<button class="add-btn" onclick="event.stopPropagation();addToCart('${item.code}')">ADD</button>`
+        }
+      </div>
+      <div class="prod-inspect">📹 Ask to inspect live</div>
+    </div>
+  </div>`;
 }
 
 function filteredItems() {
