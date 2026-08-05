@@ -210,7 +210,9 @@ class MSG91Provider extends IAuthProvider {
         return { ok: false, error: 'Invalid phone number' };
       }
 
-      if (!otp || otp.length !== 6) {
+      // Ensure OTP is string and clean it
+      const cleanOTP = String(otp || '').trim();
+      if (!cleanOTP || cleanOTP.length !== 6) {
         return { ok: false, error: 'Invalid OTP format' };
       }
 
@@ -233,10 +235,12 @@ class MSG91Provider extends IAuthProvider {
         return { ok: false, error: 'Too many failed attempts. Please request a new OTP.' };
       }
 
-      // Verify OTP
-      if (session.otp !== otp) {
+      // Verify OTP (compare as strings)
+      const storedOTP = String(session.otp).trim();
+      if (storedOTP !== cleanOTP) {
         session.attempts++;
         const remaining = 5 - session.attempts;
+        console.log(`❌ [MSG91] OTP mismatch for +91${cleanPhone}: entered=${cleanOTP}, expected=${storedOTP}`);
         return { 
           ok: false, 
           error: `Invalid OTP. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.` 

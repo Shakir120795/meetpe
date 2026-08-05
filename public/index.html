@@ -5410,6 +5410,8 @@ function _tryGPS() {
 
 // "Use current location" button
 function openMapForCurrentLoc() {
+  // Guest users can use map for temporary location selection (no save)
+  // Addresses will only be saved when they try to save explicitly
   _mapMode = 'select';
   document.getElementById('mapPickerTitle').textContent = 'Set Location on Map';
   document.getElementById('mapStep1').style.display = 'block';
@@ -5457,12 +5459,20 @@ function closeMapPicker() {
 function mapConfirmStep1() {
   if (!_mapLabel) { showToast('Move map to set your location', '', 2000); return; }
   if (_mapMode === 'select') {
+    // Temporary location set (not saved to addresses list)
     setSelectedAddr({ label: _mapLabel, full: _mapFull, lat: _mapLat, lon: _mapLon });
     updateLocTopbar(_mapLabel);
     closeMapPicker();
     closeLocMap();
-    showToast('📍 Location set!', 'success', 2000);
+    
+    // Different message for guest vs logged-in
+    if (!USER || !USER.phone) {
+      showToast('✅ Temporary location set. Login to save addresses.', 'success', 2500);
+    } else {
+      showToast('📍 Location set!', 'success', 2000);
+    }
   } else {
+    // Mode: new_addr - Go to step 2 to fill details
     document.getElementById('mapStep1').style.display = 'none';
     document.getElementById('mapStep2').style.display = 'block';
     var locText = _mapLabel.length > 45 ? _mapLabel.slice(0,43)+'…' : _mapLabel;
@@ -5677,7 +5687,6 @@ function detectGPSAndOpenMap() {
     btn.innerHTML = origHTML; 
     btn.disabled = false;
     showToast('GPS not available. Opening map...', '', 2000);
-    // Fallback: open map for manual selection
     setTimeout(() => openMapForCurrentLoc(), 1000);
     return;
   }
@@ -5690,7 +5699,7 @@ function detectGPSAndOpenMap() {
     btn.disabled = false;
     showToast('GPS timeout. Opening map...', '', 2000);
     openMapForCurrentLoc();
-  }, 15000); // 15 second timeout
+  }, 15000);
 
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
@@ -5701,19 +5710,25 @@ function detectGPSAndOpenMap() {
       const { latitude: lat, longitude: lon } = pos.coords;
       
       try {
-        // Reverse geocode to get address
         const r = await fetch(`/api/location/reverse?lat=${lat}&lon=${lon}`);
         const data = await r.json();
         const label = data.label || 'Current Location';
         const full = data.full || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
         
-        // Set as selected location
+        // Set as TEMPORARY location (not saved to addresses)
         setSelectedAddr({ label: 'Current Location', full, lat, lon });
         updateLocTopbar(label);
         
         btn.innerHTML = origHTML; 
         btn.disabled = false;
-        showToast('✅ Location detected!', 'success', 2000);
+        
+        // Show different message for guest vs logged-in users
+        if (!USER || !USER.phone) {
+          showToast('✅ Temporary location set. Login to save addresses.', 'success', 3000);
+        } else {
+          showToast('✅ Location detected!', 'success', 2000);
+        }
+        
         setTimeout(() => closeLocMap(), 800);
       } catch(e) {
         console.error('Reverse geocode error:', e);
@@ -5734,21 +5749,17 @@ function detectGPSAndOpenMap() {
       btn.innerHTML = origHTML; 
       btn.disabled = false;
       
-      // Don't show error toast, just open map
+      // Silently open map on error
       if (err.code === 1) {
-        // Permission denied - silently open map
-        console.log('GPS permission denied, opening map for manual selection');
+        console.log('GPS permission denied, opening map');
         setTimeout(() => openMapForCurrentLoc(), 500);
       } else if (err.code === 2) {
-        // Position unavailable
         showToast('GPS unavailable. Opening map...', '', 2000);
         setTimeout(() => openMapForCurrentLoc(), 1000);
       } else if (err.code === 3) {
-        // Timeout
         showToast('GPS timeout. Opening map...', '', 2000);
         setTimeout(() => openMapForCurrentLoc(), 1000);
       } else {
-        // Unknown error
         setTimeout(() => openMapForCurrentLoc(), 500);
       }
     },
