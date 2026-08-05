@@ -344,8 +344,6 @@ input,textarea{font:inherit;color:inherit}
   display:flex;align-items:center;justify-content:center;font-size:18px}
 .pm-label{flex:1;font-size:14px;font-weight:600}
 .pm-arrow{color:var(--muted);font-size:14px}
-.grid-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;min-height:90px}
-.grid-item:active{background:var(--bg);transform:scale(.98)}
 .pm-label{flex:1;font-size:14px;font-weight:500}
 .pm-arrow{color:var(--muted);font-size:18px}
 .logout-btn{margin:14px;width:calc(100% - 28px);padding:14px;background:rgba(239,68,68,.1);
@@ -1019,28 +1017,8 @@ input,textarea{font:inherit;color:inherit}
           </div>
         </div>
 
-        <!-- 2x2 Grid Menu -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px;margin-bottom:16px">
-          <div class="grid-item" onclick="showScreen('screen-orders')">
-            <div style="font-size:28px">📦</div>
-            <div style="font-size:12px;font-weight:600;margin-top:4px">Orders</div>
-          </div>
-          <div class="grid-item" onclick="showScreen('screen-returns')">
-            <div style="font-size:28px">🔄</div>
-            <div style="font-size:12px;font-weight:600;margin-top:4px">Returns</div>
-          </div>
-          <div class="grid-item" onclick="showScreen('screen-reviews')">
-            <div style="font-size:28px">⭐</div>
-            <div style="font-size:12px;font-weight:600;margin-top:4px">Reviews</div>
-          </div>
-          <div class="grid-item" onclick="showScreen('screen-subscriptions')">
-            <div style="font-size:28px">🔁</div>
-            <div style="font-size:12px;font-weight:600;margin-top:4px">Subscriptions</div>
-          </div>
-        </div>
-
-        <!-- Profile Menu (below grid) -->
-        <div class="profile-menu" style="display:none">
+        <!-- Profile Menu (restored to list style) -->
+        <div class="profile-menu">
           <div class="pm-item" onclick="showScreen('screen-orders')">
             <div class="pm-icon">📦</div>
             <div class="pm-label">Order History</div>
