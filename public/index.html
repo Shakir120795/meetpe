@@ -3548,29 +3548,45 @@ async function loadWallet() {
   
   el.innerHTML = `<div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div>`;
   
+  let customerData = { wallet: USER.wallet || 0, rewards: 0, orders: 0 };
+  
   try {
     const res = await fetch('/api/customer/' + USER.phone);
-    if (!res.ok) throw new Error('Failed to fetch');
-    const data = await res.json();
-    const c = data.customer || {};
-    
-    // Update USER with membership and referral data
-    USER.membership_active = c.membership_active || false;
-    USER.membership_expiry = c.membership_expiry || null;
-    USER.referral_earnings = c.referral_earnings || 0;
-    USER.referred_count = c.referred_count || 0;
-    USER.wallet = c.wallet || 0;
-    saveUser();
-    
-    // Update wallet balance in profile box too
-    const walletBoxEl = document.getElementById('profileWalletBox');
-    if (walletBoxEl) walletBoxEl.textContent = USER.wallet;
-    
-    el.innerHTML = `
+    if (res.ok) {
+      const data = await res.json();
+      const c = data.customer || {};
+      
+      // Update USER with fresh data
+      USER.membership_active = c.membership_active || false;
+      USER.membership_expiry = c.membership_expiry || null;
+      USER.referral_earnings = c.referral_earnings || 0;
+      USER.referred_count = c.referred_count || 0;
+      USER.wallet = c.wallet || 0;
+      saveUser();
+      
+      customerData = {
+        wallet: c.wallet || 0,
+        rewards: c.rewards || 0,
+        orders: c.orders || 0
+      };
+      
+      // Update wallet balance in profile box too
+      const walletBoxEl = document.getElementById('profileWalletBox');
+      if (walletBoxEl) walletBoxEl.textContent = USER.wallet;
+    } else {
+      console.warn('Wallet API returned error, using cached data');
+    }
+  } catch(e) {
+    console.error('Load wallet error:', e);
+    // Continue with cached data from USER
+  }
+  
+  // Always show wallet UI with available data
+  el.innerHTML = `
       <!-- Wallet Balance Card -->
       <div style="background:linear-gradient(135deg,#1a0800,#3d1a00);border-radius:20px;padding:24px;margin-bottom:16px;border:1px solid #5a2d00">
         <div style="font-size:13px;color:#f97316;font-weight:600;margin-bottom:4px">NOW Wallet Balance</div>
-        <div style="font-size:42px;font-weight:900;color:#fff" id="walletBalDisplay">₹${c.wallet||0}</div>
+        <div style="font-size:42px;font-weight:900;color:#fff" id="walletBalDisplay">₹${customerData.wallet}</div>
         <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:4px">Use at checkout for instant discount</div>
       </div>
 
@@ -3598,7 +3614,7 @@ async function loadWallet() {
       <!-- Rewards -->
       <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid var(--border)">
         <div style="font-size:13px;font-weight:700;margin-bottom:8px">🎁 Reward Points</div>
-        <div style="font-size:28px;font-weight:800;color:var(--accent)">₹${c.rewards||0}</div>
+        <div style="font-size:28px;font-weight:800;color:var(--accent)">₹${customerData.rewards}</div>
         <div style="font-size:12px;color:var(--muted);margin-top:4px">Earn ₹30 on every order above ₹500</div>
       </div>
 
@@ -3607,11 +3623,11 @@ async function loadWallet() {
         <div style="font-size:13px;font-weight:700;margin-bottom:12px">📊 Your Stats</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div style="text-align:center;padding:12px;background:var(--bg);border-radius:10px">
-            <div style="font-size:22px;font-weight:800;color:var(--accent)">${c.orders||0}</div>
+            <div style="font-size:22px;font-weight:800;color:var(--accent)">${customerData.orders}</div>
             <div style="font-size:11px;color:var(--muted)">Total Orders</div>
           </div>
           <div style="text-align:center;padding:12px;background:var(--bg);border-radius:10px">
-            <div style="font-size:22px;font-weight:800;color:#22c55e">₹${c.wallet||0}</div>
+            <div style="font-size:22px;font-weight:800;color:#22c55e">₹${customerData.wallet}</div>
             <div style="font-size:11px;color:var(--muted)">Wallet</div>
           </div>
         </div>
@@ -3626,25 +3642,6 @@ async function loadWallet() {
           • Rewards valid for 15 days
         </div>
       </div>`;
-  } catch(e) {
-    console.error('Load wallet error:', e);
-    // Show fallback wallet UI even if API fails
-    el.innerHTML = `
-      <!-- Wallet Balance Card (Fallback) -->
-      <div style="background:linear-gradient(135deg,#1a0800,#3d1a00);border-radius:20px;padding:24px;margin-bottom:16px;border:1px solid #5a2d00">
-        <div style="font-size:13px;color:#f97316;font-weight:600;margin-bottom:4px">NOW Wallet Balance</div>
-        <div style="font-size:42px;font-weight:900;color:#fff">₹${USER.wallet||0}</div>
-        <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:4px">Use at checkout for instant discount</div>
-      </div>
-
-      <div style="padding:16px;background:rgba(239,68,68,.08);border-radius:12px;border:1px solid rgba(239,68,68,.2);text-align:center">
-        <div style="font-size:14px;font-weight:600;color:var(--danger);margin-bottom:4px">⚠️ Connection Issue</div>
-        <div style="font-size:12px;color:var(--text);margin-bottom:12px">Unable to load full wallet details. Your balance is shown above.</div>
-        <button onclick="loadWallet()" style="padding:8px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
-          🔄 Retry
-        </button>
-      </div>`;
-  }
 }
 
 let _walletAddAmt = 0;
