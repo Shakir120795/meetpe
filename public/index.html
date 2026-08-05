@@ -726,20 +726,20 @@ input,textarea{font:inherit;color:inherit}
         <!-- Search -->
         <div class="loc-search-row">
           <span style="font-size:18px;color:var(--muted)">🔍</span>
-          <input id="locSearchInput" class="loc-search-input" placeholder="Search for location"
+          <input id="locSearchInput" class="loc-search-input" placeholder="Search for area, street, landmark..."
             oninput="locSearchDebounce(this.value)" autocomplete="off"/>
-          <button onclick="clearLocSearch()" style="color:var(--muted);font-size:16px;padding:4px">✕</button>
+          <button onclick="clearLocSearch()" style="color:var(--muted);font-size:16px;padding:4px;background:none;border:none;cursor:pointer">✕</button>
         </div>
 
         <!-- Search results -->
         <div id="locSearchResults" class="loc-search-results" style="display:none"></div>
 
         <!-- Use current location -->
-        <button class="loc-gps-btn" id="locGpsBtn" onclick="openMapForCurrentLoc()">
+        <button class="loc-gps-btn" id="locGpsBtn" onclick="detectGPSAndOpenMap()">
           <span style="font-size:22px">🎯</span>
-          <div style="text-align:left">
+          <div style="text-align:left;flex:1">
             <div style="font-size:14px;font-weight:700;color:var(--accent)">Use current location</div>
-            <div style="font-size:11px;color:var(--muted);font-weight:400;margin-top:1px">Pick on map</div>
+            <div style="font-size:11px;color:var(--muted);font-weight:400;margin-top:1px">Auto-detect via GPS</div>
           </div>
         </button>
 
@@ -5374,21 +5374,24 @@ function onMapMove() {
   const areaEl = document.getElementById('mapAddrArea');
   const fullEl = document.getElementById('mapAddrFull');
   if (areaEl) areaEl.textContent = 'Locating...';
-  if (fullEl) fullEl.textContent = '';
+  if (fullEl) fullEl.textContent = 'Move map to adjust location';
   clearTimeout(_geocodeTimer);
   _geocodeTimer = setTimeout(async () => {
     try {
       const r = await fetch('/api/location/reverse?lat=' + _mapLat + '&lon=' + _mapLon);
       const d = await r.json();
-      _mapLabel = d.label || (_mapLat.toFixed(5) + ', ' + _mapLon.toFixed(5));
-      _mapFull = d.full || '';
+      _mapLabel = d.label || `${_mapLat.toFixed(4)}, ${_mapLon.toFixed(4)}`;
+      _mapFull = d.full || d.label || 'Location found';
+      if (areaEl) areaEl.textContent = _mapLabel;
+      if (fullEl) fullEl.textContent = _mapFull.length > 100 ? _mapFull.slice(0,98)+'...' : _mapFull;
     } catch(e) {
-      _mapLabel = _mapLat.toFixed(5) + ', ' + _mapLon.toFixed(5);
-      _mapFull = '';
+      console.error('Reverse geocode error:', e);
+      _mapLabel = `${_mapLat.toFixed(4)}, ${_mapLon.toFixed(4)}`;
+      _mapFull = 'Drag map to set precise location';
+      if (areaEl) areaEl.textContent = _mapLabel;
+      if (fullEl) fullEl.textContent = _mapFull;
     }
-    if (areaEl) areaEl.textContent = _mapLabel;
-    if (fullEl) fullEl.textContent = _mapFull ? (_mapFull.length > 80 ? _mapFull.slice(0,78)+'…' : _mapFull) : 'Drag map to adjust pin';
-  }, 600);
+  }, 800);
 }
 
 function _tryGPS() {
@@ -5526,17 +5529,18 @@ function saveNewAddress() {
   const flat = document.getElementById('newAddrFlat').value.trim();
   const street = document.getElementById('newAddrStreet').value.trim();
   const landmark = document.getElementById('newAddrLandmark').value.trim();
-  const pin = document.getElementById('newAddrPin').value.trim();
 
-  if (!flat || !street) { showToast('Please enter house no. and street', 'error'); return; }
+  if (!flat) { showToast('Please enter house/flat number', 'error'); return; }
 
-  const full = [flat, street, landmark, pin].filter(Boolean).join(', ');
+  const full = [flat, street, landmark].filter(Boolean).join(', ');
   const addr = {
     id: Date.now(),
     type: _newAddrType,
     label: _newAddrType,
-    flat, street, landmark, pin,
-    full
+    flat, street, landmark,
+    full,
+    lat: _mapLat || null,
+    lon: _mapLon || null
   };
 
   const addresses = getSavedAddresses();
@@ -5544,10 +5548,18 @@ function saveNewAddress() {
   saveAddresses(addresses);
 
   // Auto-select new address
-  setSelectedAddr({ label: _newAddrType, full, lat: null, lon: null });
-  updateLocTopbar(full);
+  setSelectedAddr({ label: _newAddrType, full, lat: addr.lat, lon: addr.lon });
+  updateLocTopbar(_newAddrType + ' - ' + flat);
 
-  document.getElementById('addAddrForm').style.display = 'none';
+  // Clear form
+  document.getElementById('newAddrFlat').value = '';
+  document.getElementById('newAddrStreet').value = '';
+  document.getElementById('newAddrLandmark').value = '';
+
+  // Close map and location screens
+  closeMapPicker();
+  closeLocMap();
+  
   renderSavedAddresses();
   showToast('✅ Address saved!', 'success');
 }
@@ -5558,8 +5570,10 @@ function renderSavedAddresses() {
   const selected = getSelectedAddr();
 
   if (!addresses.length) {
-    list.innerHTML = `<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">
-      No saved addresses yet.<br/>Add your first address above ↑
+    list.innerHTML = `<div style="text-align:center;padding:32px 16px;color:var(--muted)">
+      <div style="font-size:48px;margin-bottom:12px">📍</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:6px">No saved addresses yet</div>
+      <div style="font-size:12px">Add your first address to get started</div>
     </div>`;
     return;
   }
@@ -5567,107 +5581,165 @@ function renderSavedAddresses() {
   const typeIcon = { Home: '🏠', Work: '🏢', Other: '📍' };
 
   list.innerHTML = addresses.map(addr => {
-    const isSelected = selected && selected.full === addr.full;
-    return `<div class="addr-card ${isSelected ? 'selected' : ''}" onclick="selectAddress('${addr.id}')">
+    const isSelected = selected && (selected.full === addr.full || selected.label === addr.label);
+    // Display format: "Type - flat/street"
+    const displayLabel = addr.flat ? `${addr.label} - ${addr.flat}` : addr.label;
+    const displayFull = addr.full.length > 60 ? addr.full.slice(0, 57) + '...' : addr.full;
+    
+    return `<div class="addr-card ${isSelected ? 'selected' : ''}" onclick="selectAddress(${addr.id})">
       <div class="addr-icon">${typeIcon[addr.type] || '📍'}</div>
       <div class="addr-info">
         <div class="addr-tag-row">
-          <span class="addr-tag">${addr.label}</span>
+          <span class="addr-tag">${displayLabel}</span>
           ${isSelected ? '<span class="addr-selected-badge">SELECTED</span>' : ''}
         </div>
-        <div class="addr-full" title="${addr.full}">${addr.full}</div>
+        <div class="addr-full" title="${addr.full}">${displayFull}</div>
       </div>
-      <button class="addr-menu-btn" onclick="event.stopPropagation();deleteAddress(${addr.id})">🗑️</button>
+      <button class="addr-menu-btn" onclick="event.stopPropagation();deleteAddress(${addr.id})" title="Delete address">🗑️</button>
     </div>`;
   }).join('');
 }
 
 function selectAddress(id) {
   const addresses = getSavedAddresses();
-  const addr = addresses.find(a => a.id === id);
+  const addr = addresses.find(a => a.id == id); // Use == for loose comparison
   if (!addr) return;
-  setSelectedAddr({ label: addr.label, full: addr.full, lat: null, lon: null });
-  updateLocTopbar(addr.full);
+  
+  // Display format: "Type - flat"
+  const displayLabel = addr.flat ? `${addr.label} - ${addr.flat}` : addr.label;
+  
+  setSelectedAddr({ 
+    label: displayLabel, 
+    full: addr.full, 
+    lat: addr.lat || null, 
+    lon: addr.lon || null 
+  });
+  
+  updateLocTopbar(displayLabel);
   renderSavedAddresses();
-  showToast('📍 ' + addr.label + ' selected', 'success', 1500);
+  showToast('📍 ' + displayLabel + ' selected', 'success', 1500);
   setTimeout(() => closeLocMap(), 600);
 }
 
 function deleteAddress(id) {
-  const addresses = getSavedAddresses().filter(a => a.id !== id);
-  saveAddresses(addresses);
-  // If deleted was selected, clear
+  if (!confirm('Delete this address?')) return;
+  
+  const addresses = getSavedAddresses();
+  const toDelete = addresses.find(a => a.id == id);
+  const newAddresses = addresses.filter(a => a.id != id);
+  saveAddresses(newAddresses);
+  
+  // If deleted was selected, clear selection
   const selected = getSelectedAddr();
-  const deleted = getSavedAddresses().find ? null : null;
+  if (selected && toDelete && selected.full === toDelete.full) {
+    localStorage.removeItem('now_location');
+    updateLocTopbar('Set Location');
+  }
+  
   renderSavedAddresses();
-  showToast('Address removed', '', 1500);
+  showToast('🗑️ Address removed', '', 1500);
 }
 
 function showSavedAddresses() {
   openLocMap();
 }
 
-// --- GPS Detection ---
-function detectGPS() {
+// --- GPS Detection (Improved) ---
+function detectGPSAndOpenMap() {
   const btn = document.getElementById('locGpsBtn');
   const origHTML = btn.innerHTML;
+  
   btn.innerHTML = `<span style="font-size:22px">⏳</span>
-    <div style="text-align:left">
-      <div style="font-size:14px;font-weight:700">Detecting location...</div>
+    <div style="text-align:left;flex:1">
+      <div style="font-size:14px;font-weight:700;color:var(--accent)">Detecting location...</div>
       <div style="font-size:11px;color:var(--muted);font-weight:400;margin-top:1px">Please wait</div>
     </div>`;
   btn.disabled = true;
 
   if (!navigator.geolocation) {
-    btn.innerHTML = origHTML; btn.disabled = false;
-    showToast('GPS not available on this device', 'error');
+    btn.innerHTML = origHTML; 
+    btn.disabled = false;
+    showToast('❌ GPS not available on this device', 'error');
+    // Fallback: open map for manual selection
+    setTimeout(() => openMapForCurrentLoc(), 1000);
     return;
   }
 
   let done = false;
   const timer = setTimeout(() => {
-    if (done) return; done = true;
-    btn.innerHTML = origHTML; btn.disabled = false;
-    showToast('GPS timed out — enter address manually', 'error', 3000);
-  }, 12000);
+    if (done) return; 
+    done = true;
+    btn.innerHTML = origHTML; 
+    btn.disabled = false;
+    showToast('⏱️ GPS timed out — opening map for manual selection', '', 3000);
+    openMapForCurrentLoc();
+  }, 15000); // 15 second timeout
 
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
-      if (done) return; done = true;
+      if (done) return; 
+      done = true;
       clearTimeout(timer);
+      
       const { latitude: lat, longitude: lon } = pos.coords;
+      
       try {
+        // Reverse geocode to get address
         const r = await fetch(`/api/location/reverse?lat=${lat}&lon=${lon}`);
         const data = await r.json();
         const label = data.label || 'Current Location';
         const full = data.full || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-        setSelectedAddr({ label, full, lat, lon });
+        
+        // Set as selected location
+        setSelectedAddr({ label: 'Current Location', full, lat, lon });
         updateLocTopbar(label);
-        btn.innerHTML = origHTML; btn.disabled = false;
-        showToast('📍 Location detected!', 'success', 2000);
-        setTimeout(() => closeLocMap(), 600);
+        
+        btn.innerHTML = origHTML; 
+        btn.disabled = false;
+        showToast('✅ Location detected: ' + label, 'success', 2500);
+        setTimeout(() => closeLocMap(), 800);
       } catch(e) {
+        console.error('Reverse geocode error:', e);
         const label = 'Current Location';
         const full = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
         setSelectedAddr({ label, full, lat, lon });
         updateLocTopbar(label);
-        btn.innerHTML = origHTML; btn.disabled = false;
-        showToast('📍 Location set!', 'success', 2000);
-        setTimeout(() => closeLocMap(), 600);
+        btn.innerHTML = origHTML; 
+        btn.disabled = false;
+        showToast('✅ Location detected!', 'success', 2000);
+        setTimeout(() => closeLocMap(), 800);
       }
     },
     (err) => {
-      if (done) return; done = true;
+      if (done) return; 
+      done = true;
       clearTimeout(timer);
-      btn.innerHTML = origHTML; btn.disabled = false;
+      btn.innerHTML = origHTML; 
+      btn.disabled = false;
+      
       if (err.code === 1) {
-        showToast('Location permission denied. Add address manually.', 'error', 3500);
+        showToast('❌ Location permission denied. Please enable GPS or add address manually.', 'error', 4000);
+      } else if (err.code === 2) {
+        showToast('❌ Location unavailable. Opening map for manual selection.', 'error', 3000);
+        setTimeout(() => openMapForCurrentLoc(), 1500);
+      } else if (err.code === 3) {
+        showToast('⏱️ Location timeout. Opening map for manual selection.', '', 3000);
+        setTimeout(() => openMapForCurrentLoc(), 1500);
       } else {
-        showToast('Could not detect location. Add address manually.', 'error', 3000);
+        showToast('❌ Could not detect location. Add address manually.', 'error', 3000);
       }
     },
-    { enableHighAccuracy: false, timeout: 10000, maximumAge: 30000 }
+    { 
+      enableHighAccuracy: true, 
+      timeout: 12000, 
+      maximumAge: 5000 
+    }
   );
+}
+
+// --- GPS Detection (Legacy - for backward compatibility) ---
+function detectGPS() {
+  detectGPSAndOpenMap();
 }
 
 // --- Search ---
@@ -5682,28 +5754,47 @@ function locSearchDebounce(val) {
 async function locSearch(q) {
   const res_el = document.getElementById('locSearchResults');
   res_el.style.display = 'block';
-  res_el.innerHTML = `<div class="loc-result-item"><div class="loc-result-name" style="color:var(--muted)">Searching...</div></div>`;
+  res_el.innerHTML = `<div class="loc-result-item" style="pointer-events:none">
+    <span style="font-size:18px;flex-shrink:0">🔍</span>
+    <div class="loc-result-name" style="color:var(--muted)">Searching...</div>
+  </div>`;
+  
   try {
     const r = await fetch(`/api/location/search?q=${encodeURIComponent(q)}`);
     const data = await r.json();
+    
     if (!data.length) {
-      res_el.innerHTML = `<div class="loc-result-item"><div class="loc-result-name" style="color:var(--muted)">No results. Try different keyword.</div></div>`;
+      res_el.innerHTML = `<div class="loc-result-item" style="pointer-events:none">
+        <span style="font-size:18px;flex-shrink:0">❌</span>
+        <div>
+          <div class="loc-result-name" style="color:var(--muted)">No results found</div>
+          <div class="loc-result-sub">Try different keyword or use GPS</div>
+        </div>
+      </div>`;
       return;
     }
+    
     res_el.innerHTML = data.map(d => {
-      const sub = [d.city, d.state].filter(Boolean).join(', ') || (d.display||'').slice(0,50);
-      const safeName = (d.name+'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-      const safeFull = (d.display+'').replace(/'/g,"\\'").replace(/"/g,'&quot;').slice(0,120);
+      const sub = [d.city, d.state].filter(Boolean).join(', ') || (d.display||'').slice(0,60);
+      const safeName = String(d.name||'').replace(/'/g,"&#39;").replace(/"/g,'&quot;');
+      const safeFull = String(d.display||'').replace(/'/g,"&#39;").replace(/"/g,'&quot;').slice(0,150);
       return `<div class="loc-result-item" onclick="selectSearchResult(${d.lat},${d.lon},'${safeName}','${safeFull}')">
         <span style="font-size:18px;flex-shrink:0">📍</span>
-        <div>
+        <div style="flex:1;min-width:0">
           <div class="loc-result-name">${d.name}</div>
           <div class="loc-result-sub">${sub}</div>
         </div>
       </div>`;
     }).join('');
   } catch(e) {
-    res_el.innerHTML = `<div class="loc-result-item"><div class="loc-result-name" style="color:var(--danger)">Search failed. Enter address manually.</div></div>`;
+    console.error('Location search error:', e);
+    res_el.innerHTML = `<div class="loc-result-item" style="pointer-events:none">
+      <span style="font-size:18px;flex-shrink:0">⚠️</span>
+      <div>
+        <div class="loc-result-name" style="color:var(--danger)">Search failed</div>
+        <div class="loc-result-sub">Check internet connection or use GPS</div>
+      </div>
+    </div>`;
   }
 }
 
@@ -5737,7 +5828,25 @@ function closeLocMap() {
 // --- Update topbar ---
 function updateLocTopbar(label) {
   const txt = document.getElementById('locText');
-  if (txt) txt.textContent = label && label.length > 22 ? label.slice(0, 20) + '…' : (label || 'Set Location');
+  if (!txt) return;
+  
+  // Truncate if too long
+  let displayText = label || 'Set Location';
+  if (displayText.length > 28) {
+    displayText = displayText.slice(0, 26) + '...';
+  }
+  
+  txt.textContent = displayText;
+  
+  // Update topbar styling based on whether location is set
+  const pill = document.getElementById('locPill');
+  if (pill) {
+    if (label && label !== 'Set Location') {
+      pill.style.opacity = '1';
+    } else {
+      pill.style.opacity = '0.8';
+    }
+  }
 }
 
 function getSavedLocation() {
@@ -5746,9 +5855,15 @@ function getSavedLocation() {
 
 function initLocation() {
   const saved = getSelectedAddr();
-  updateLocTopbar(saved ? saved.label : 'Set Location');
-  if (!saved) {
-    setTimeout(() => openLocMap(), 900);
+  if (saved) {
+    updateLocTopbar(saved.label || saved.full || 'Set Location');
+  } else {
+    updateLocTopbar('Set Location');
+    // Auto-open location selector on first load (after a delay for better UX)
+    setTimeout(() => {
+      openLocMap();
+      showToast('📍 Please set your delivery location', 'info', 3000);
+    }, 1200);
   }
 }
 
