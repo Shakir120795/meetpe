@@ -125,6 +125,8 @@ input,textarea{font:inherit;color:inherit}
   padding:10px 14px;transition:border-color .2s}
 .search-bar:focus-within{border-color:var(--accent)}
 .search-bar input{flex:1;background:none;border:none;outline:none;font-size:14px}
+.voice-search-btn{transition:color .2s,transform .1s}
+.voice-search-btn:active{transform:scale(.95)}
 .hero-banner{margin:0 14px 14px;background:linear-gradient(120deg,#1a0500,#2d0a00);
   border-radius:16px;padding:18px 18px;border:1px solid #4a1200;
   display:flex;align-items:center;justify-content:space-between;overflow:hidden;position:relative}
@@ -684,6 +686,7 @@ input,textarea{font:inherit;color:inherit}
       <div class="search-bar">
         <span style="font-size:16px">🔍</span>
         <input id="searchInput" placeholder="Search for fresh meat..." oninput="searchProducts(this.value)"/>
+        <button class="voice-search-btn" id="voiceSearchBtn" onclick="startVoiceSearch()" title="Voice search" style="border:none;background:none;font-size:16px;cursor:pointer;padding:4px;color:var(--muted)">🎤</button>
         <span style="font-size:16px;cursor:pointer" onclick="clearSearch()">✕</span>
       </div>
 
@@ -1515,6 +1518,9 @@ function escapeHtml(text) {
   
   // Load settings first
   loadAppSettings();
+  
+  // Initialize voice search
+  initVoiceSearch();
 
   const saved = localStorage.getItem('now_user');
   if (saved) {
@@ -1951,6 +1957,63 @@ function clearSearch() {
   document.getElementById('searchInput').value = '';
   SEARCH_Q = '';
   renderProducts();
+}
+
+// ═══════════════════════════════════════════
+//  Voice Search
+// ═══════════════════════════════════════════
+let voiceRecognition = null;
+
+function initVoiceSearch() {
+  if (typeof window !== 'undefined') {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      voiceRecognition = new SpeechRecognition();
+      voiceRecognition.lang = 'en-IN'; // Indian English
+      voiceRecognition.continuous = false;
+      voiceRecognition.interimResults = true;
+      
+      voiceRecognition.onstart = () => {
+        const btn = document.getElementById('voiceSearchBtn');
+        if (btn) btn.style.color = '#e74c3c';
+        showToast('Listening... 🎤', 'info');
+      };
+      
+      voiceRecognition.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const isFinal = event.results[i].isFinal;
+          transcript += event.results[i][0].transcript;
+          if (isFinal) break;
+        }
+        
+        if (transcript.trim()) {
+          document.getElementById('searchInput').value = transcript;
+          searchProducts(transcript);
+        }
+      };
+      
+      voiceRecognition.onerror = (event) => {
+        const btn = document.getElementById('voiceSearchBtn');
+        if (btn) btn.style.color = 'var(--muted)';
+        showToast(`Voice error: ${event.error}`, 'error');
+      };
+      
+      voiceRecognition.onend = () => {
+        const btn = document.getElementById('voiceSearchBtn');
+        if (btn) btn.style.color = 'var(--muted)';
+      };
+    }
+  }
+}
+
+function startVoiceSearch() {
+  if (!voiceRecognition) initVoiceSearch();
+  if (!voiceRecognition) {
+    showToast('Voice search not supported on this device', 'error');
+    return;
+  }
+  voiceRecognition.start();
 }
 
 // ═══════════════════════════════════════════
