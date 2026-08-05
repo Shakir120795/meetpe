@@ -109,6 +109,7 @@ class MSG91Provider extends IAuthProvider {
       });
 
       console.log(`🔐 [MSG91] OTP for +91${cleanPhone}: ${otp} (${method})`);
+      console.log(`📦 [MSG91] Session stored for ${cleanPhone}, total sessions: ${this.sessions.size}`);
 
       // Send OTP via MSG91
       if (!this.authKey || this.authKey === 'your_msg91_auth_key_here') {
@@ -206,12 +207,16 @@ class MSG91Provider extends IAuthProvider {
   async verifyOTP(phone, otp, sessionInfo) {
     try {
       const cleanPhone = String(phone).replace(/\D/g, '');
+      console.log(`🔍 [MSG91] Verifying OTP for +91${cleanPhone}, total sessions: ${this.sessions.size}`);
+      
       if (cleanPhone.length !== 10) {
         return { ok: false, error: 'Invalid phone number' };
       }
 
       // Ensure OTP is string and clean it
       const cleanOTP = String(otp || '').trim();
+      console.log(`🔍 [MSG91] Entered OTP: "${cleanOTP}"`);
+      
       if (!cleanOTP || cleanOTP.length !== 6) {
         return { ok: false, error: 'Invalid OTP format' };
       }
@@ -220,8 +225,11 @@ class MSG91Provider extends IAuthProvider {
       const session = this.sessions.get(cleanPhone);
       
       if (!session) {
+        console.error(`❌ [MSG91] No session found for ${cleanPhone}. Available sessions:`, Array.from(this.sessions.keys()));
         return { ok: false, error: 'OTP not found. Please request a new one.' };
       }
+
+      console.log(`📦 [MSG91] Session found for ${cleanPhone}, stored OTP: "${session.otp}"`);
 
       // Check expiry
       if (Date.now() > session.expiry) {
@@ -240,7 +248,7 @@ class MSG91Provider extends IAuthProvider {
       if (storedOTP !== cleanOTP) {
         session.attempts++;
         const remaining = 5 - session.attempts;
-        console.log(`❌ [MSG91] OTP mismatch for +91${cleanPhone}: entered=${cleanOTP}, expected=${storedOTP}`);
+        console.log(`❌ [MSG91] OTP mismatch for +91${cleanPhone}: entered="${cleanOTP}", expected="${storedOTP}"`);
         return { 
           ok: false, 
           error: `Invalid OTP. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.` 
