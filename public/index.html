@@ -5431,9 +5431,14 @@ function _tryGPS() {
 
 // "Use current location" button
 function openMapForCurrentLoc() {
-  // Guest users can use map for temporary location selection (no save)
-  // Addresses will only be saved when they try to save explicitly
-  _mapMode = 'select';
+  // If user is logged in, open in 'new_addr' mode to save address
+  // If guest, open in 'select' mode for temporary location
+  if (USER && USER.phone) {
+    _mapMode = 'new_addr';  // Logged-in users can save address
+  } else {
+    _mapMode = 'select';    // Guest users get temporary location
+  }
+  
   document.getElementById('mapPickerTitle').textContent = 'Set Location on Map';
   document.getElementById('mapStep1').style.display = 'block';
   document.getElementById('mapStep2').style.display = 'none';
@@ -5736,31 +5741,66 @@ function detectGPSAndOpenMap() {
         const label = data.label || 'Current Location';
         const full = data.full || `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
         
-        // Set as TEMPORARY location (not saved to addresses)
-        setSelectedAddr({ label: 'Current Location', full, lat, lon });
-        updateLocTopbar(label);
-        
         btn.innerHTML = origHTML; 
         btn.disabled = false;
         
-        // Show different message for guest vs logged-in users
-        if (!USER || !USER.phone) {
-          showToast('✅ Temporary location set. Login to save addresses.', 'success', 3000);
+        // If logged in: Open map with address form to save
+        // If guest: Set temporary location and close
+        if (USER && USER.phone) {
+          _mapLat = lat;
+          _mapLon = lon;
+          _mapLabel = label;
+          _mapFull = full;
+          _mapMode = 'new_addr';
+          
+          // Open map picker with detected location
+          document.getElementById('mapPickerTitle').textContent = 'Set Location on Map';
+          document.getElementById('mapStep1').style.display = 'block';
+          document.getElementById('mapStep2').style.display = 'none';
+          document.getElementById('mapPickerScreen').classList.add('open');
+          
+          setTimeout(() => { 
+            _initMap(lat, lon);
+            // Auto-update map label
+            if (_map) {
+              _map.setView([lat, lon], 16);
+              if (_marker) {
+                _marker.setLatLng([lat, lon]);
+              }
+            }
+            showToast('📍 GPS detected! Confirm to save address', 'success', 2500);
+          }, 150);
         } else {
-          showToast('✅ Location detected!', 'success', 2000);
+          // Guest: Set temporary location
+          setSelectedAddr({ label: 'Current Location', full, lat, lon });
+          updateLocTopbar(label);
+          showToast('✅ Temporary location set. Login to save addresses.', 'success', 3000);
+          setTimeout(() => closeLocMap(), 800);
         }
-        
-        setTimeout(() => closeLocMap(), 800);
       } catch(e) {
         console.error('Reverse geocode error:', e);
         const label = 'Current Location';
         const full = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-        setSelectedAddr({ label, full, lat, lon });
-        updateLocTopbar(label);
+        
         btn.innerHTML = origHTML; 
         btn.disabled = false;
-        showToast('✅ Location set!', 'success', 2000);
-        setTimeout(() => closeLocMap(), 800);
+        
+        // Same logic: logged in → open form, guest → temporary
+        if (USER && USER.phone) {
+          _mapLat = lat;
+          _mapLon = lon;
+          _mapLabel = label;
+          _mapFull = full;
+          _mapMode = 'new_addr';
+          document.getElementById('mapPickerScreen').classList.add('open');
+          setTimeout(() => { _initMap(lat, lon); }, 150);
+          showToast('📍 Location detected! Add details to save', 'success', 2500);
+        } else {
+          setSelectedAddr({ label, full, lat, lon });
+          updateLocTopbar(label);
+          showToast('✅ Location set!', 'success', 2000);
+          setTimeout(() => closeLocMap(), 800);
+        }
       }
     },
     (err) => {
