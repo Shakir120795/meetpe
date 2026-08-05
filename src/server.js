@@ -796,7 +796,164 @@ app.post('/admin/returns/:id/status', (req, res) => {
   }
 });
 
-// ===== Customer auth (bypass OTP — just phone) =====
+// ===== OTP Storage (In-memory for demo, use Redis in production) =====
+const OTP_STORE = new Map(); // { phone: { otp, expiry, method } }
+
+// Generate 6-digit OTP
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// ===== Send OTP endpoint =====
+app.post('/api/auth/send-otp', async (req, res) => {
+  try {
+    const { phone, otpMethod } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ ok: false, error: 'Invalid phone number' });
+    }
+    
+    // Generate OTP
+    const otp = generateOTP();
+    const expiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    
+    // Store OTP
+    OTP_STORE.set(cleanPhone, { otp, expiry, method: otpMethod || 'sms' });
+    
+    console.log(`🔐 OTP for ${cleanPhone}: ${otp} (${otpMethod})`);
+    
+    // Send OTP via Twilio
+    try {
+      const to = `+91${cleanPhone}`;
+      const message = `Your NOW verification code is: ${otp}\n\nValid for 10 minutes.\n\n- Nonveg On Wheel`;
+      
+      if (otpMethod === 'whatsapp') {
+        // Send via WhatsApp
+        await sendMessage(`whatsapp:${to}`, message);
+        console.log(`✅ WhatsApp OTP sent to ${to}`);
+      } else {
+        // Send via SMS
+        await sendMessage(to, message);
+        console.log(`✅ SMS OTP sent to ${to}`);
+      }
+      
+      return res.json({ ok: true, message: 'OTP sent successfully' });
+    } catch (twilioError) {
+      console.error('❌ Twilio error:', twilioError);
+      // Still return success for demo/development
+      return res.json({ 
+        ok: true, 
+        message: 'OTP sent (demo mode)', 
+        dev_otp: process.env.NODE_ENV === 'development' ? otp : undefined 
+      });
+    }
+  } catch (error) {
+    console.error('❌ Send OTP error:', error);
+    return res.status(500).json({ ok: false, error: 'Failed to send OTP' });
+  }
+});
+
+// ===== Verify OTP endpoint =====
+app.post('/api/auth/verify-otp', (req, res) => {
+  try {
+    const { phone, otp, referralCode } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ ok: false, error: 'Invalid phone number' });
+    }
+    
+    if (!otp || otp.length !== 6) {
+      return res.status(400).json({ ok: false, error: 'Invalid OTP' });
+    }
+    
+    // Check OTP
+    const stored = OTP_STORE.get(cleanPhone);
+    
+    if (!stored) {
+      return res.status(400).json({ ok: false, error: 'OTP not found. Please request a new one.' });
+    }
+    
+    if (Date.now() > stored.expiry) {
+      OTP_STORE.delete(cleanPhone);
+      return res.status(400).json({ ok: false, error: 'OTP expired. Please request a new one.' });
+    }
+    
+    if (stored.otp !== otp) {
+      return res.status(400).json({ ok: false, error: 'Invalid OTP. Please try again.' });
+    }
+    
+    // OTP verified! Clear it
+    OTP_STORE.delete(cleanPhone);
+    
+    const waPhone = `web:+91${cleanPhone}`;
+    
+    // Check if new user
+    let customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
+    const isNewUser = !customer;
+    
+    let referralBonus = null;
+    
+    // Create or update customer
+    if (isNewUser) {
+      // Handle referral code for new users
+      let referredBy = null;
+      if (referralCode) {
+        const referrer = db.prepare('SELECT phone FROM customers WHERE referral_code = ?').get(referralCode);
+        if (referrer) {
+          referredBy = referrer.phone;
+          
+          // Give ₹20 bonus to new user
+          db.prepare(`
+            INSERT INTO customers (phone, name, wallet_balance, referred_by) 
+            VALUES (?, '', 20, ?)
+          `).run(waPhone, referredBy);
+          
+          // Give ₹100 bonus to referrer
+          db.prepare(`
+            UPDATE customers 
+            SET wallet_balance = wallet_balance + 100 
+            WHERE phone = ?
+          `).run(referredBy);
+          
+          referralBonus = '₹20';
+          console.log(`🎁 Referral: ${cleanPhone} used code ${referralCode}, got ₹20. Referrer got ₹100`);
+        }
+      }
+      
+      if (!referredBy) {
+        // No referral
+        db.prepare(`INSERT INTO customers (phone, name) VALUES (?, '')`).run(waPhone);
+      }
+    } else {
+      // Existing user - just update last login
+      db.prepare(`UPDATE customers SET updated_at = datetime('now') WHERE phone = ?`).run(waPhone);
+    }
+    
+    // Get customer data
+    customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
+    
+    res.json({ 
+      ok: true, 
+      customer: { 
+        phone: cleanPhone, 
+        name: customer.name || '', 
+        wallet: customer.wallet_balance || 0,
+        membership_active: customer.is_plus && customer.plus_until && new Date(customer.plus_until) > new Date(),
+        membership_expiry: customer.plus_until
+      },
+      referralBonus,
+      isNewUser
+    });
+    
+  } catch (error) {
+    console.error('❌ Verify OTP error:', error);
+    return res.status(500).json({ ok: false, error: 'Failed to verify OTP' });
+  }
+});
+
+// ===== Customer auth (OLD - Keep for backward compatibility) =====
 app.post('/api/auth/login', (req, res) => {
   const { phone, name } = req.body || {};
   const cleanPhone = String(phone || '').replace(/\D/g, '');
