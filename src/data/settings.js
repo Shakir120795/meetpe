@@ -48,6 +48,25 @@ const defaults = {
     privacy: 'We collect only what is needed to deliver your order: name, phone, address, and order history. We do not sell your data. You can request deletion anytime by messaging us on WhatsApp.',
     terms: 'Orders can be cancelled before processing begins (within 5 minutes). Once meat is cleaned/cut, cancellation is not possible. Quality issues reported within 2 hours with a photo will be replaced or refunded.',
   },
+  // NEW: Checkout Settings (admin-editable)
+  checkout: {
+    deliverySlots: [
+      { id: 'asap', label: 'ASAP (30-45 min)', enabled: true },
+      { id: 'morning', label: '8:00 AM - 12:00 PM', enabled: true },
+      { id: 'afternoon', label: '12:00 PM - 4:00 PM', enabled: true },
+      { id: 'evening', label: '4:00 PM - 8:00 PM', enabled: true },
+      { id: 'night', label: '8:00 PM - 10:00 PM', enabled: true }
+    ],
+    paymentMethods: [
+      { id: 'cod', label: 'Cash on Delivery', icon: '💵', enabled: true, description: 'Pay when order arrives' },
+      { id: 'upi', label: 'UPI / QR Code', icon: '📱', enabled: true, description: 'Pay via UPI apps' },
+      { id: 'online', label: 'Pay Online', icon: '💳', enabled: true, description: 'Cards, Wallets, NetBanking' }
+    ],
+    enableSavedAddresses: true,
+    maxSavedAddresses: 5,
+    requirePhone: true,
+    allowGuestCheckout: false
+  },
   // NEW: Trending Searches (admin-editable)
   trendingSearches: [
     'chicken breast',
@@ -174,6 +193,12 @@ function read() {
       pages: { ...defaults.pages, ...data.pages },
       trendingSearches: Array.isArray(data.trendingSearches) ? data.trendingSearches : defaults.trendingSearches,
       cart: { ...defaults.cart, ...data.cart, deliveryCharges: { ...defaults.cart.deliveryCharges, ...(data.cart?.deliveryCharges || {}) } },
+      checkout: { 
+        ...defaults.checkout, 
+        ...data.checkout,
+        deliverySlots: Array.isArray(data.checkout?.deliverySlots) ? data.checkout.deliverySlots : defaults.checkout.deliverySlots,
+        paymentMethods: Array.isArray(data.checkout?.paymentMethods) ? data.checkout.paymentMethods : defaults.checkout.paymentMethods
+      },
       deliveryZones: Array.isArray(data.deliveryZones) ? data.deliveryZones : defaults.deliveryZones,
       membershipPlans: Array.isArray(data.membershipPlans) ? data.membershipPlans : defaults.membershipPlans,
     };
@@ -201,8 +226,14 @@ function update(patch) {
   if (patch.vendorLocation) current.vendorLocation = { ...current.vendorLocation, ...patch.vendorLocation };
   if (Array.isArray(patch.socials)) current.socials = patch.socials;
   if (patch.pages) current.pages = { ...current.pages, ...patch.pages };
-  if (Array.isArray(patch.trendingSearches)) current.trendingSearches = patch.trendingSearches;
+  if (patch.trendingSearches) current.trendingSearches = patch.trendingSearches;
   if (patch.cart) current.cart = { ...current.cart, ...patch.cart, deliveryCharges: { ...current.cart.deliveryCharges, ...(patch.cart.deliveryCharges || {}) } };
+  if (patch.checkout) current.checkout = { 
+    ...current.checkout, 
+    ...patch.checkout,
+    deliverySlots: Array.isArray(patch.checkout.deliverySlots) ? patch.checkout.deliverySlots : current.checkout.deliverySlots,
+    paymentMethods: Array.isArray(patch.checkout.paymentMethods) ? patch.checkout.paymentMethods : current.checkout.paymentMethods
+  };
   if (Array.isArray(patch.deliveryZones)) current.deliveryZones = patch.deliveryZones;
   if (Array.isArray(patch.membershipPlans)) current.membershipPlans = patch.membershipPlans;
   write(current);

@@ -1776,44 +1776,86 @@ input,textarea{font:inherit;color:inherit}
 <div class="toast" id="toast"></div>
 
 <!-- ── Checkout Modal ── -->
+<!-- ── Complete Checkout Modal ── -->
 <div class="modal-overlay" id="checkoutModal">
-  <div class="modal-box">
+  <div class="modal-box" style="max-height:90vh;overflow-y:auto">
     <div class="modal-handle"></div>
-    <div class="modal-title">📦 Place Order</div>
-    <div class="modal-sub">Fill in your details and we'll deliver in ~30 minutes 🛵</div>
-    <form id="checkoutForm" onsubmit="submitOrder(event)">
-      <div style="margin-bottom:12px">
-        <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">Your Name *</label>
-        <input id="oName" required placeholder="Enter your name"
-          style="width:100%;padding:12px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;outline:none;font-size:14px"/>
-      </div>
-      <div style="margin-bottom:12px">
-        <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">Phone Number *</label>
-        <div style="display:flex;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;background:var(--bg)">
-          <span style="padding:0 10px;display:flex;align-items:center;color:var(--muted);font-size:13px;border-right:1.5px solid var(--border)">+91</span>
-          <input id="oPhone" type="tel" maxlength="10" required placeholder="10-digit number"
-            style="flex:1;padding:12px;background:none;border:none;outline:none;font-size:14px"/>
+    <div class="modal-title">📦 Complete Your Order</div>
+    <div class="modal-sub">Review details and place your order 🛵</div>
+    
+    <form id="checkoutForm" onsubmit="submitOrder(event)" style="padding:0 14px">
+      
+      <!-- Contact Details -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)">👤 CONTACT DETAILS</div>
+        <div style="background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border)">
+          <div style="margin-bottom:12px">
+            <label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">Full Name *</label>
+            <input id="oName" required placeholder="Enter your name"
+              style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;outline:none;font-size:14px"/>
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">Phone Number *</label>
+            <div style="display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg)">
+              <span style="padding:0 10px;display:flex;align-items:center;color:var(--muted);font-size:13px;border-right:1px solid var(--border)">+91</span>
+              <input id="oPhone" type="tel" maxlength="10" required placeholder="10-digit number"
+                style="flex:1;padding:10px;background:none;border:none;outline:none;font-size:14px"/>
+            </div>
+          </div>
         </div>
       </div>
+      
+      <!-- Delivery Address -->
       <div style="margin-bottom:16px">
-        <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">Delivery Address *</label>
-        <div style="display:flex;align-items:flex-start;gap:8px">
-          <textarea id="oAddress" required rows="3" placeholder="House no, street, area, landmark..."
-            style="flex:1;padding:12px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;outline:none;font-size:14px;resize:none"></textarea>
-          <button type="button" onclick="closeCheckoutModal();openLocMap()" 
-            style="padding:8px 10px;background:rgba(232,69,10,.1);color:var(--accent);border:1.5px solid rgba(232,69,10,.3);border-radius:10px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0">
-            📍 Change
-          </button>
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)">📍 DELIVERY ADDRESS</div>
+        <div style="background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border)">
+          <div id="savedAddressesList" style="margin-bottom:10px"></div>
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <textarea id="oAddress" required rows="3" placeholder="House no, street, area, landmark..."
+              style="flex:1;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;outline:none;font-size:13px;resize:none"></textarea>
+            <button type="button" onclick="closeCheckoutModal();openLocMap()" 
+              style="padding:8px 10px;background:rgba(232,69,10,.1);color:var(--accent);border:1px solid rgba(232,69,10,.3);border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0">
+              📍 Change
+            </button>
+          </div>
         </div>
       </div>
+      
+      <!-- Delivery Slot -->
       <div style="margin-bottom:16px">
-        <label style="font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">Notes (optional)</label>
-        <input id="oNotes" placeholder="Cleaning preference, cut style..."
-          style="width:100%;padding:12px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;outline:none;font-size:14px"/>
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)">⏰ DELIVERY SLOT</div>
+        <div style="background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border)">
+          <div id="deliverySlotsList" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px"></div>
+        </div>
       </div>
-      <div id="modalSummary" style="background:var(--bg);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px"></div>
-      <button type="submit" id="submitOrderBtn" class="btn-accent">🛵 Confirm Order</button>
-      <div style="height:8px"></div>
+      
+      <!-- Special Instructions -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)">📝 SPECIAL INSTRUCTIONS</div>
+        <div style="background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border)">
+          <textarea id="oNotes" placeholder="Cleaning preference, cut style, any special requests..."
+            style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;outline:none;font-size:13px;resize:none" rows="2"></textarea>
+        </div>
+      </div>
+      
+      <!-- Payment Method -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)">💳 PAYMENT METHOD</div>
+        <div style="background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border)">
+          <div id="paymentMethodsList" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+      </div>
+      
+      <!-- Order Summary -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)">🧾 ORDER SUMMARY</div>
+        <div id="modalSummary" style="background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border);font-size:13px"></div>
+      </div>
+      
+      <!-- Submit Button -->
+      <button type="submit" id="submitOrderBtn" class="btn-accent" style="width:100%;padding:16px;font-size:15px;font-weight:700;margin-bottom:16px">
+        🛵 Place Order
+      </button>
     </form>
   </div>
 </div>
@@ -4325,6 +4367,95 @@ function applyCustomTip() {
 // ═══════════════════════════════════════════
 //  Checkout / Order
 // ═══════════════════════════════════════════
+
+// Global checkout state
+let SELECTED_DELIVERY_SLOT = 'asap';
+let SELECTED_PAYMENT_METHOD = 'cod';
+
+function renderDeliverySlots() {
+  const container = document.getElementById('deliverySlotsList');
+  if (!container) return;
+  
+  const checkoutSettings = (APP_SETTINGS && APP_SETTINGS.checkout) || {};
+  const slots = checkoutSettings.deliverySlots || [];
+  
+  if (!slots.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">No delivery slots available</div>';
+    return;
+  }
+  
+  container.innerHTML = slots
+    .filter(slot => slot.enabled)
+    .map(slot => `
+      <div onclick="selectDeliverySlot('${slot.id}')" 
+        id="slot-${slot.id}"
+        style="padding:12px;background:${SELECTED_DELIVERY_SLOT === slot.id ? 'rgba(232,69,10,.1)' : 'var(--bg)'};
+               border:2px solid ${SELECTED_DELIVERY_SLOT === slot.id ? 'var(--accent)' : 'var(--border)'};
+               border-radius:10px;cursor:pointer;text-align:center;transition:all .2s">
+        <div style="font-size:13px;font-weight:${SELECTED_DELIVERY_SLOT === slot.id ? '700' : '600'};
+                    color:${SELECTED_DELIVERY_SLOT === slot.id ? 'var(--accent)' : 'var(--text)'}">
+          ${slot.label}
+        </div>
+      </div>
+    `).join('');
+}
+
+function selectDeliverySlot(slotId) {
+  SELECTED_DELIVERY_SLOT = slotId;
+  renderDeliverySlots();
+}
+
+function renderPaymentMethods() {
+  const container = document.getElementById('paymentMethodsList');
+  if (!container) return;
+  
+  const checkoutSettings = (APP_SETTINGS && APP_SETTINGS.checkout) || {};
+  const methods = checkoutSettings.paymentMethods || [];
+  
+  if (!methods.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px">No payment methods available</div>';
+    return;
+  }
+  
+  container.innerHTML = methods
+    .filter(method => method.enabled)
+    .map(method => `
+      <div onclick="selectPaymentMethod('${method.id}')" 
+        id="payment-${method.id}"
+        style="display:flex;align-items:center;gap:12px;padding:14px;background:${SELECTED_PAYMENT_METHOD === method.id ? 'rgba(232,69,10,.1)' : 'var(--bg)'};
+               border:2px solid ${SELECTED_PAYMENT_METHOD === method.id ? 'var(--accent)' : 'var(--border)'};
+               border-radius:10px;cursor:pointer;transition:all .2s">
+        <div style="font-size:24px">${method.icon}</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:${SELECTED_PAYMENT_METHOD === method.id ? '700' : '600'};
+                      color:${SELECTED_PAYMENT_METHOD === method.id ? 'var(--accent)' : 'var(--text)'}">
+            ${method.label}
+          </div>
+          <div style="font-size:11px;color:var(--muted)">${method.description}</div>
+        </div>
+        <div style="width:20px;height:20px;border-radius:50%;border:2px solid ${SELECTED_PAYMENT_METHOD === method.id ? 'var(--accent)' : 'var(--border)'};
+                    display:flex;align-items:center;justify-content:center">
+          ${SELECTED_PAYMENT_METHOD === method.id ? '<div style="width:12px;height:12px;background:var(--accent);border-radius:50%"></div>' : ''}
+        </div>
+      </div>
+    `).join('');
+}
+
+function selectPaymentMethod(methodId) {
+  SELECTED_PAYMENT_METHOD = methodId;
+  PAYMENT = methodId === 'online' ? 'pay_online' : methodId;
+  renderPaymentMethods();
+}
+
+function renderSavedAddresses() {
+  const container = document.getElementById('savedAddressesList');
+  if (!container) return;
+  
+  // TODO: Implement saved addresses from localStorage or backend
+  // For now, just show empty
+  container.innerHTML = '';
+}
+
 function showCheckoutModal() {
   const modal = document.getElementById('checkoutModal');
   modal.classList.add('show');
@@ -4334,6 +4465,15 @@ function showCheckoutModal() {
     if (USER.name) document.getElementById('oName').value = USER.name;
     if (USER.phone) document.getElementById('oPhone').value = USER.phone;
   }
+
+  // Render delivery slots
+  renderDeliverySlots();
+  
+  // Render payment methods
+  renderPaymentMethods();
+  
+  // Render saved addresses (if any)
+  renderSavedAddresses();
 
   // Auto-fill selected delivery address
   const saved = getSelectedAddr();
