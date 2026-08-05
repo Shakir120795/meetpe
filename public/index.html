@@ -1106,7 +1106,6 @@ input,textarea{font:inherit;color:inherit}
           </div>
         </div>
 
-        <button class="logout-btn" id="logoutBtn" onclick="logout()">Log Out</button>
         <div style="height:12px"></div>
       </div>
     </div>
@@ -3352,7 +3351,6 @@ async function loadProfile() {
   const nameEl = document.getElementById('profileName');
   const phoneEl = document.getElementById('profilePhone');
   const walletEl = document.getElementById('profileWallet');
-  const logoutBtn = document.getElementById('logoutBtn');
   const guestLoginBtn = document.getElementById('guestLoginBtn');
 
   const displayName = USER.name || 'Guest';
@@ -3365,13 +3363,11 @@ async function loadProfile() {
   const isGuest = !USER.phone;
   
   if (isGuest) {
-    // Show login button, hide logout button for guest
+    // Show login button for guest
     if (guestLoginBtn) guestLoginBtn.style.display = 'block';
-    if (logoutBtn) logoutBtn.style.display = 'none';
   } else {
-    // Show logout button, hide login button for logged-in user
+    // Hide login button for logged-in user
     if (guestLoginBtn) guestLoginBtn.style.display = 'none';
-    if (logoutBtn) logoutBtn.style.display = 'block';
     
     // Fetch user details from backend
     try {
