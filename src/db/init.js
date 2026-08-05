@@ -23,7 +23,13 @@ db.exec(`
     referred_by  TEXT,
     referral_code TEXT,
     created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at   TEXT DEFAULT CURRENT_TIMESTAMP
+    updated_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+    delivery_zone TEXT DEFAULT 'zone_a',
+    delivery_zone_distance REAL DEFAULT 0,
+    membership_zone TEXT,
+    membership_price INTEGER DEFAULT 0,
+    delivery_credits INTEGER DEFAULT 0,
+    membership_start TEXT
   );
 
   CREATE TABLE IF NOT EXISTS sessions (

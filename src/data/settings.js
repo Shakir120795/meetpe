@@ -65,6 +65,84 @@ const defaults = {
       regularOrderFee: 19
     }
   },
+  // NEW: Distance-Based Delivery Zones (admin-editable)
+  deliveryZones: [
+    {
+      id: 'zone_a',
+      name: 'Zone A',
+      distanceRange: '0-3 km',
+      minDistance: 0,
+      maxDistance: 3,
+      deliveryTime: '20-30 Minutes',
+      deliveryFee: 29,
+      freeDeliveryAbove: 699
+    },
+    {
+      id: 'zone_b',
+      name: 'Zone B',
+      distanceRange: '3-7 km',
+      minDistance: 3,
+      maxDistance: 7,
+      deliveryTime: '30-45 Minutes',
+      deliveryFee: 39,
+      freeDeliveryAbove: 899
+    },
+    {
+      id: 'zone_c',
+      name: 'Zone C',
+      distanceRange: '7-12 km',
+      minDistance: 7,
+      maxDistance: 12,
+      deliveryTime: '45-60 Minutes',
+      deliveryFee: 59,
+      freeDeliveryAbove: 1199
+    },
+    {
+      id: 'zone_d',
+      name: 'Zone D',
+      distanceRange: '12-20 km',
+      minDistance: 12,
+      maxDistance: 20,
+      deliveryTime: '60-90 Minutes',
+      deliveryFee: 79,
+      freeDeliveryAbove: 1499
+    }
+  ],
+  // NEW: Zone-Based Membership Plans (admin-editable)
+  membershipPlans: [
+    {
+      zoneId: 'zone_a',
+      zoneName: 'Zone A (0-3 km)',
+      price: 249,
+      deliveryCredits: 10,
+      saving: 41,
+      benefits: ['10 delivery credits', 'Priority order processing', 'Exclusive member-only offers']
+    },
+    {
+      zoneId: 'zone_b',
+      zoneName: 'Zone B (3-7 km)',
+      price: 349,
+      deliveryCredits: 10,
+      saving: 41,
+      benefits: ['10 delivery credits', 'Priority order processing', 'Exclusive member-only offers']
+    },
+    {
+      zoneId: 'zone_c',
+      zoneName: 'Zone C (7-12 km)',
+      price: 529,
+      deliveryCredits: 10,
+      saving: 61,
+      benefits: ['10 delivery credits', 'Premium support', 'Exclusive member-only offers']
+    },
+    {
+      zoneId: 'zone_d',
+      zoneName: 'Zone D (12-20 km)',
+      price: 699,
+      deliveryCredits: 10,
+      saving: 91,
+      benefits: ['10 delivery credits', 'Priority handling', 'Premium customer support']
+    }
+  ],
 };
 
 function ensureDir() {
@@ -88,6 +166,8 @@ function read() {
       pages: { ...defaults.pages, ...data.pages },
       trendingSearches: Array.isArray(data.trendingSearches) ? data.trendingSearches : defaults.trendingSearches,
       cart: { ...defaults.cart, ...data.cart, deliveryCharges: { ...defaults.cart.deliveryCharges, ...(data.cart?.deliveryCharges || {}) } },
+      deliveryZones: Array.isArray(data.deliveryZones) ? data.deliveryZones : defaults.deliveryZones,
+      membershipPlans: Array.isArray(data.membershipPlans) ? data.membershipPlans : defaults.membershipPlans,
     };
   } catch (e) {
     console.warn('settings.json read failed:', e.message);
@@ -114,6 +194,8 @@ function update(patch) {
   if (patch.pages) current.pages = { ...current.pages, ...patch.pages };
   if (Array.isArray(patch.trendingSearches)) current.trendingSearches = patch.trendingSearches;
   if (patch.cart) current.cart = { ...current.cart, ...patch.cart, deliveryCharges: { ...current.cart.deliveryCharges, ...(patch.cart.deliveryCharges || {}) } };
+  if (Array.isArray(patch.deliveryZones)) current.deliveryZones = patch.deliveryZones;
+  if (Array.isArray(patch.membershipPlans)) current.membershipPlans = patch.membershipPlans;
   write(current);
   return { ok: true, settings: current };
 }
