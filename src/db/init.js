@@ -21,7 +21,9 @@ db.exec(`
     is_plus      INTEGER DEFAULT 0,
     plus_until   TEXT,
     referred_by  TEXT,
-    created_at   TEXT DEFAULT CURRENT_TIMESTAMP
+    referral_code TEXT UNIQUE,
+    created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS sessions (

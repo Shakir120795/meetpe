@@ -834,6 +834,8 @@ app.post('/api/auth/verify-otp', async (req, res) => {
     const { phone, otp, referralCode, sessionInfo } = req.body || {};
     const cleanPhone = String(phone || '').replace(/\D/g, '');
     
+    console.log(`📞 [VERIFY-OTP] Request for phone: ${cleanPhone}, otp: ${otp}`);
+    
     if (cleanPhone.length !== 10) {
       return res.status(400).json({ ok: false, error: 'Invalid phone number' });
     }
@@ -843,23 +845,32 @@ app.post('/api/auth/verify-otp', async (req, res) => {
     }
     
     // Use auth service (provider-agnostic)
+    console.log(`🔐 [VERIFY-OTP] Calling authService.verifyOTP...`);
     const result = await authService.verifyOTP(cleanPhone, otp, sessionInfo);
+    console.log(`🔐 [VERIFY-OTP] Result:`, result);
     
     if (!result.ok) {
+      console.log(`❌ [VERIFY-OTP] Verification failed: ${result.error}`);
       return res.status(400).json({ ok: false, error: result.error });
     }
     
+    console.log(`✅ [VERIFY-OTP] OTP verified successfully`);
+    
     // OTP verified! Now handle customer creation/update
     const waPhone = `web:+91${cleanPhone}`;
+    console.log(`📦 [VERIFY-OTP] Looking up customer: ${waPhone}`);
     
     // Check if new user
     let customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
     const isNewUser = !customer;
     
+    console.log(`👤 [VERIFY-OTP] Customer found:`, isNewUser ? 'NEW USER' : 'EXISTING USER');
+    
     let referralBonus = null;
     
     // Create or update customer
     if (isNewUser) {
+      console.log(`🆕 [VERIFY-OTP] Creating new customer...`);
       // Handle referral code for new users
       let referredBy = null;
       if (referralCode) {
@@ -868,10 +879,11 @@ app.post('/api/auth/verify-otp', async (req, res) => {
           referredBy = referrer.phone;
           
           // Give ₹20 bonus to new user
+          const userReferralCode = `MEET${cleanPhone.slice(-4)}`;
           db.prepare(`
-            INSERT INTO customers (phone, name, wallet_balance, referred_by) 
-            VALUES (?, '', 20, ?)
-          `).run(waPhone, referredBy);
+            INSERT INTO customers (phone, name, wallet_balance, referred_by, referral_code) 
+            VALUES (?, '', 20, ?, ?)
+          `).run(waPhone, referredBy, userReferralCode);
           
           // Give ₹100 bonus to referrer
           db.prepare(`
@@ -886,16 +898,27 @@ app.post('/api/auth/verify-otp', async (req, res) => {
       }
       
       if (!referredBy) {
-        // No referral
-        db.prepare(`INSERT INTO customers (phone, name) VALUES (?, '')`).run(waPhone);
+        // No referral - generate referral code for new user
+        console.log(`📝 [VERIFY-OTP] Inserting customer without referral...`);
+        const userReferralCode = `MEET${cleanPhone.slice(-4)}`;
+        db.prepare(`INSERT INTO customers (phone, name, referral_code) VALUES (?, '', ?)`).run(waPhone, userReferralCode);
       }
     } else {
       // Existing user - just update last login
+      console.log(`🔄 [VERIFY-OTP] Updating existing customer last login...`);
       db.prepare(`UPDATE customers SET updated_at = datetime('now') WHERE phone = ?`).run(waPhone);
     }
     
     // Get customer data
+    console.log(`📊 [VERIFY-OTP] Fetching final customer data...`);
     customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
+    
+    if (!customer) {
+      console.error(`❌ [VERIFY-OTP] Customer not found after insert! Phone: ${waPhone}`);
+      return res.status(500).json({ ok: false, error: 'Failed to create customer account' });
+    }
+    
+    console.log(`✅ [VERIFY-OTP] Success! Returning customer data...`);
     
     res.json({ 
       ok: true, 
@@ -911,8 +934,9 @@ app.post('/api/auth/verify-otp', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Verify OTP error:', error);
-    return res.status(500).json({ ok: false, error: 'Failed to verify OTP' });
+    console.error('❌❌❌ [VERIFY-OTP] FATAL ERROR:', error);
+    console.error('Stack:', error.stack);
+    return res.status(500).json({ ok: false, error: 'Failed to verify OTP: ' + error.message });
   }
 });
 
