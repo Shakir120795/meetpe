@@ -1696,7 +1696,7 @@ function escapeHtml(text) {
   let minSplashTime = 1200; // Minimum splash time
   let splashTimeout;
   
-  const showMainScreen = () => {
+  const showMainScreen = async () => {
     if (splashTimeout) clearTimeout(splashTimeout);
     document.querySelectorAll('.screen').forEach(s => {
       s.classList.remove('active');
@@ -1705,7 +1705,10 @@ function escapeHtml(text) {
 
     if (USER) {
       showScreen('screen-home');
-      loadMenu();
+      // Load menu if not already loaded
+      if (!MENU || MENU.length === 0) {
+        await loadMenu();
+      }
       updateTopbarUser();
     } else {
       const loginScreen = document.getElementById('screen-login');
@@ -1716,24 +1719,28 @@ function escapeHtml(text) {
     }
   };
   
+  // Preload data in background
+  const preloadData = async () => {
+    try {
+      const settingsRes = await fetch('/api/settings');
+      await settingsRes.json();
+      
+      // Load menu
+      if (USER) {
+        await loadMenu();
+      }
+      dataReady = true;
+      console.log('✅ Data preloaded');
+    } catch(e) {
+      console.warn('Data preload error:', e);
+    }
+  };
+  
+  // Start preloading immediately
+  preloadData();
+  
   // Show main screen after minimum splash time
   splashTimeout = setTimeout(showMainScreen, minSplashTime);
-  
-  // Load data in background and show screen ASAP if data is ready
-  Promise.all([
-    fetch('/api/settings').then(r => r.json()),
-    fetch('/api/menu').then(r => r.json())
-  ]).then(() => {
-    dataReady = true;
-    // If we've waited minimum time, show now
-    if (Date.now() - window.pageLoadTime >= minSplashTime) {
-      if (splashTimeout) clearTimeout(splashTimeout);
-      showMainScreen();
-    }
-  }).catch(e => {
-    // Even on error, show after minimum time
-    console.error('Data load error:', e);
-  });
 })();
 
 // Track when page started loading
@@ -1769,6 +1776,13 @@ function showScreen(id) {
 
   // Load data for screen
   if (id === 'screen-basket') renderBasket();
+  if (id === 'screen-home') {
+    if (!MENU || MENU.length === 0) {
+      loadMenu();
+    } else {
+      renderProducts();
+    }
+  }
   if (id === 'screen-orders') loadOrders();
   if (id === 'screen-profile') loadProfile();
   if (id === 'screen-subscriptions') loadSubscriptions();
