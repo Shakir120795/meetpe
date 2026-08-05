@@ -216,7 +216,27 @@ app.post('/api/order', (req, res) => {
     const lowBelow = Number(process.env.DELIVERY_LOW_BELOW || 399);
     const feeLow = Number(process.env.DELIVERY_FEE_LOW || 29);
     const feeMid = Number(process.env.DELIVERY_FEE_MID || 19);
-    const delivery = subtotal >= free ? 0 : (subtotal < lowBelow ? feeLow : feeMid);
+    let delivery = subtotal >= free ? 0 : (subtotal < lowBelow ? feeLow : feeMid);
+    
+    // Check for membership credits
+    let usedCredit = false;
+    const customer = db.prepare(`
+      SELECT delivery_credits, membership_start, membership_zone 
+      FROM customers WHERE phone = ?
+    `).get(webPhone);
+    
+    if (customer && customer.delivery_credits > 0 && customer.membership_start) {
+      // Check if membership is still valid (within 30 days)
+      const startDate = new Date(customer.membership_start);
+      const now = new Date();
+      const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 1000));
+      
+      if (daysSinceStart < 30) {
+        // Use credit - delivery becomes free
+        delivery = 0;
+        usedCredit = true;
+      }
+    }
 
     // Server-side wallet deduction (validated)
     const walletAmt = parseInt(walletAmount || 0, 10);
@@ -254,6 +274,12 @@ app.post('/api/order', (req, res) => {
     if (actualWalletDeducted > 0) {
       db.prepare('UPDATE customers SET wallet_balance = wallet_balance - ? WHERE phone = ?')
         .run(actualWalletDeducted, webPhone);
+    }
+    
+    // Deduct membership credit if used
+    if (usedCredit) {
+      db.prepare('UPDATE customers SET delivery_credits = delivery_credits - 1 WHERE phone = ?')
+        .run(webPhone);
     }
 
     let earnedReward = 0;
@@ -295,6 +321,8 @@ Delivery: ₹${delivery}
       couponDiscount, couponCode: appliedCouponCode,
       walletDeducted: actualWalletDeducted,
       delivery, total, reward: earnedReward,
+      creditUsed: usedCredit,
+      creditsRemaining: usedCredit && customer ? customer.delivery_credits - 1 : null
     });
 
     // Notify customer
@@ -395,6 +423,206 @@ app.post('/api/zone/detect', (req, res) => {
   } catch (e) {
     console.error('Zone detection error:', e);
     res.status(500).json({ ok: false, error: 'Zone detection failed' });
+  }
+});
+
+// ===== Zone-Based Membership System =====
+
+// GET /api/membership/plans - Get available membership plans for user's zone
+app.get('/api/membership/plans', (req, res) => {
+  try {
+    const { phone } = req.query;
+    
+    if (!phone) {
+      return res.status(400).json({ ok: false, error: 'Phone required' });
+    }
+    
+    const cleanPhone = String(phone).replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ ok: false, error: 'Invalid phone' });
+    }
+    
+    const waPhone = `web:+91${cleanPhone}`;
+    
+    // Get customer's zone
+    const customer = db.prepare('SELECT delivery_zone FROM customers WHERE phone = ?').get(waPhone);
+    
+    if (!customer || !customer.delivery_zone) {
+      return res.status(400).json({ ok: false, error: 'Zone not detected. Please set your location first.' });
+    }
+    
+    // Get membership plans from settings
+    const settingsData = settings.get();
+    const allPlans = settingsData.membershipPlans || [];
+    
+    // Filter plan for user's zone
+    const plan = allPlans.find(p => p.zoneId === customer.delivery_zone);
+    
+    if (!plan) {
+      return res.status(404).json({ ok: false, error: 'No membership plan for your zone' });
+    }
+    
+    res.json({ ok: true, plan, currentZone: customer.delivery_zone });
+  } catch (e) {
+    console.error('Get membership plans error:', e);
+    res.status(500).json({ ok: false, error: 'Failed to fetch plans' });
+  }
+});
+
+// POST /api/membership/purchase - Purchase membership (mock payment for now)
+app.post('/api/membership/purchase', (req, res) => {
+  try {
+    const { phone, zoneId, paymentMethod } = req.body;
+    
+    if (!phone || !zoneId) {
+      return res.status(400).json({ ok: false, error: 'Phone and zone required' });
+    }
+    
+    const cleanPhone = String(phone).replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ ok: false, error: 'Invalid phone' });
+    }
+    
+    const waPhone = `web:+91${cleanPhone}`;
+    
+    // Get membership plan
+    const settingsData = settings.get();
+    const plan = (settingsData.membershipPlans || []).find(p => p.zoneId === zoneId);
+    
+    if (!plan) {
+      return res.status(404).json({ ok: false, error: 'Invalid membership plan' });
+    }
+    
+    // Check if customer exists
+    const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
+    
+    if (!customer) {
+      return res.status(404).json({ ok: false, error: 'Customer not found' });
+    }
+    
+    // Check if already has active membership
+    if (customer.membership_zone && customer.membership_start) {
+      const startDate = new Date(customer.membership_start);
+      const now = new Date();
+      const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+      
+      if (daysSinceStart < 30 && customer.delivery_credits > 0) {
+        return res.status(400).json({ 
+          ok: false, 
+          error: 'You already have an active membership',
+          daysRemaining: 30 - daysSinceStart,
+          creditsRemaining: customer.delivery_credits
+        });
+      }
+    }
+    
+    // TODO: Real payment integration (Razorpay, etc.)
+    // For now, we'll just activate membership
+    
+    // Activate membership
+    const now = new Date().toISOString();
+    db.prepare(`
+      UPDATE customers 
+      SET membership_zone = ?,
+          membership_price = ?,
+          delivery_credits = ?,
+          membership_start = ?
+      WHERE phone = ?
+    `).run(zoneId, plan.price, plan.deliveryCredits, now, waPhone);
+    
+    // Notify admin (optional)
+    if (process.env.ADMIN_WHATSAPP) {
+      const adminMsg = `🎉 *New Membership Purchased!*
+
+👤 ${customer.name || 'Customer'}
+📞 +91${cleanPhone}
+💳 ${plan.zoneName} Membership
+💰 ₹${plan.price}/month
+🎟️ ${plan.deliveryCredits} delivery credits activated
+
+Valid for 30 days from today.`;
+      
+      sendMessage(process.env.ADMIN_WHATSAPP, adminMsg).catch(err =>
+        console.warn('Admin membership notification failed:', err.message));
+    }
+    
+    res.json({ 
+      ok: true, 
+      message: 'Membership activated successfully!',
+      membership: {
+        zone: zoneId,
+        zoneName: plan.zoneName,
+        price: plan.price,
+        credits: plan.deliveryCredits,
+        startDate: now,
+        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    });
+  } catch (e) {
+    console.error('Purchase membership error:', e);
+    res.status(500).json({ ok: false, error: 'Failed to purchase membership' });
+  }
+});
+
+// GET /api/membership/status - Get membership status for customer
+app.get('/api/membership/status', (req, res) => {
+  try {
+    const { phone } = req.query;
+    
+    if (!phone) {
+      return res.status(400).json({ ok: false, error: 'Phone required' });
+    }
+    
+    const cleanPhone = String(phone).replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      return res.status(400).json({ ok: false, error: 'Invalid phone' });
+    }
+    
+    const waPhone = `web:+91${cleanPhone}`;
+    
+    const customer = db.prepare(`
+      SELECT membership_zone, membership_price, delivery_credits, membership_start
+      FROM customers WHERE phone = ?
+    `).get(waPhone);
+    
+    if (!customer || !customer.membership_zone) {
+      return res.json({ ok: true, hasActiveMembership: false });
+    }
+    
+    const startDate = new Date(customer.membership_start);
+    const now = new Date();
+    const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+    const daysRemaining = Math.max(0, 30 - daysSinceStart);
+    
+    // Check if expired
+    if (daysRemaining === 0 || customer.delivery_credits === 0) {
+      return res.json({ 
+        ok: true, 
+        hasActiveMembership: false,
+        expired: true
+      });
+    }
+    
+    // Get zone name
+    const settingsData = settings.get();
+    const plan = (settingsData.membershipPlans || []).find(p => p.zoneId === customer.membership_zone);
+    
+    res.json({ 
+      ok: true, 
+      hasActiveMembership: true,
+      membership: {
+        zone: customer.membership_zone,
+        zoneName: plan ? plan.zoneName : customer.membership_zone,
+        price: customer.membership_price,
+        credits: customer.delivery_credits,
+        startDate: customer.membership_start,
+        daysRemaining,
+        benefits: plan ? plan.benefits : []
+      }
+    });
+  } catch (e) {
+    console.error('Get membership status error:', e);
+    res.status(500).json({ ok: false, error: 'Failed to fetch status' });
   }
 });
 
