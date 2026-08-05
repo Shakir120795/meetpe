@@ -739,7 +739,10 @@ input,textarea{font:inherit;color:inherit}
         </div>
       </div>
 
-      <div class="section-title" id="productSectionTitle">All Products</div>
+      <div class="section-title" id="productSectionTitle" style="display:flex;align-items:center;justify-content:space-between">
+        <span>All Products</span>
+        <button class="filter-btn" onclick="showFiltersModal()" title="Filters" style="border:1px solid var(--border);background:var(--card);color:var(--text);padding:6px 12px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:4px">⚙️ Filter</button>
+      </div>
       <div class="product-grid" id="productGrid">
         <!-- skeleton -->
         <div class="prod-card"><div class="prod-img skel" style="aspect-ratio:1"></div><div class="prod-body"><div class="skel" style="height:14px;margin-bottom:6px"></div><div class="skel" style="height:10px;width:60%"></div></div></div>
@@ -1374,6 +1377,76 @@ input,textarea{font:inherit;color:inherit}
   </div>
 </div>
 
+<!-- Filters Modal -->
+<div class="modal-overlay" id="filtersModal">
+  <div class="modal-box">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙️ Filter Products</div>
+    
+    <div style="max-height:400px;overflow-y:auto;padding:0 14px;margin-bottom:16px">
+      <!-- Price Range -->
+      <div style="margin-bottom:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:8px">💰 PRICE RANGE</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="number" id="priceMin" placeholder="Min" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:13px"/>
+          <span style="color:var(--muted)">-</span>
+          <input type="number" id="priceMax" placeholder="Max" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:13px"/>
+        </div>
+      </div>
+      
+      <!-- Weight -->
+      <div style="margin-bottom:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:8px">⚖️ WEIGHT</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px">
+            <input type="checkbox" name="weight" value="500g" class="filter-checkbox"/> 500g
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px">
+            <input type="checkbox" name="weight" value="1kg" class="filter-checkbox"/> 1kg
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px">
+            <input type="checkbox" name="weight" value="2kg" class="filter-checkbox"/> 2kg+
+          </label>
+        </div>
+      </div>
+      
+      <!-- Type -->
+      <div style="margin-bottom:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:8px">🥩 TYPE</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px">
+            <input type="checkbox" name="type" value="boneless" class="filter-checkbox"/> Boneless
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px">
+            <input type="checkbox" name="type" value="skinless" class="filter-checkbox"/> Skinless
+          </label>
+        </div>
+      </div>
+      
+      <!-- Attributes -->
+      <div style="margin-bottom:18px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:8px">✨ ATTRIBUTES</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px">
+            <input type="checkbox" name="attr" value="fresh" class="filter-checkbox"/> 🌿 Fresh
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px">
+            <input type="checkbox" name="attr" value="marinated" class="filter-checkbox"/> 🌶️ Marinated
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px">
+            <input type="checkbox" name="attr" value="offer" class="filter-checkbox"/> 🎁 Has Offer
+          </label>
+        </div>
+      </div>
+    </div>
+    
+    <div style="display:flex;gap:8px">
+      <button class="btn-accent" style="flex:1" onclick="applyFilters()">Apply Filters</button>
+      <button style="flex:1;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:10px;font-weight:600;cursor:pointer" onclick="clearFilters()">Clear</button>
+    </div>
+  </div>
+</div>
+
 
 <script>
 /* ═══════════════════════════════════════════
@@ -1395,6 +1468,13 @@ let COUPON = null;       // { code, discount }
 let WALLET_APPLIED = false;
 let ADDONS = { 1: true, 2: false }; // addon states on product screen
 let APP_SETTINGS = null; // Store branding/settings from backend
+let ACTIVE_FILTERS = {   // Active filters state
+  priceMin: null,
+  priceMax: null,
+  weights: [],
+  types: [],
+  attrs: []
+};
 
 const FREE_ABOVE = 699;
 const FEE_LOW_BELOW = 399;
@@ -1860,6 +1940,53 @@ function filteredItems() {
     const q = SEARCH_Q.toLowerCase();
     items = items.filter(i => i.name.toLowerCase().includes(q) || (i.description||'').toLowerCase().includes(q));
   }
+  
+  // Apply active filters
+  if (ACTIVE_FILTERS.priceMin !== null) {
+    items = items.filter(i => i.price >= ACTIVE_FILTERS.priceMin);
+  }
+  if (ACTIVE_FILTERS.priceMax !== null) {
+    items = items.filter(i => i.price <= ACTIVE_FILTERS.priceMax);
+  }
+  
+  // Weight filter
+  if (ACTIVE_FILTERS.weights.length > 0) {
+    items = items.filter(i => {
+      const unit = i.unit?.toLowerCase() || '';
+      return ACTIVE_FILTERS.weights.some(w => {
+        if (w === '500g') return unit.includes('500') || unit.includes('200') || unit.includes('450');
+        if (w === '1kg') return unit.includes('1kg') || unit.includes('1 kg');
+        if (w === '2kg') return parseInt(unit) >= 2;
+        return false;
+      });
+    });
+  }
+  
+  // Type filter (Boneless, Skinless)
+  if (ACTIVE_FILTERS.types.length > 0) {
+    items = items.filter(i => {
+      const name = i.name.toLowerCase();
+      return ACTIVE_FILTERS.types.some(t => {
+        if (t === 'boneless') return name.includes('boneless');
+        if (t === 'skinless') return name.includes('skinless');
+        return false;
+      });
+    });
+  }
+  
+  // Attributes filter (Fresh, Marinated, Offer)
+  if (ACTIVE_FILTERS.attrs.length > 0) {
+    items = items.filter(i => {
+      const name = i.name.toLowerCase();
+      return ACTIVE_FILTERS.attrs.some(a => {
+        if (a === 'fresh') return name.includes('fresh');
+        if (a === 'marinated') return name.includes('marinated');
+        if (a === 'offer') return (i.discount || 0) > 0; // Has discount
+        return false;
+      });
+    });
+  }
+  
   return items;
 }
 
@@ -3301,6 +3428,85 @@ function closeCouponsModal() {
   document.getElementById('couponsModal').classList.remove('show');
 }
 
+// ═══════════════════════════════════════════
+//  Advanced Filters
+// ═══════════════════════════════════════════
+function showFiltersModal() {
+  const modal = document.getElementById('filtersModal');
+  modal.classList.add('show');
+  
+  // Pre-fill current filters
+  if (ACTIVE_FILTERS.priceMin !== null) {
+    document.getElementById('priceMin').value = ACTIVE_FILTERS.priceMin;
+  }
+  if (ACTIVE_FILTERS.priceMax !== null) {
+    document.getElementById('priceMax').value = ACTIVE_FILTERS.priceMax;
+  }
+  
+  // Check active checkboxes
+  document.querySelectorAll('.filter-checkbox').forEach(cb => {
+    cb.checked = false;
+  });
+  
+  ACTIVE_FILTERS.weights.forEach(w => {
+    const cb = document.querySelector(`input[name="weight"][value="${w}"]`);
+    if (cb) cb.checked = true;
+  });
+  
+  ACTIVE_FILTERS.types.forEach(t => {
+    const cb = document.querySelector(`input[name="type"][value="${t}"]`);
+    if (cb) cb.checked = true;
+  });
+  
+  ACTIVE_FILTERS.attrs.forEach(a => {
+    const cb = document.querySelector(`input[name="attr"][value="${a}"]`);
+    if (cb) cb.checked = true;
+  });
+}
+
+function applyFilters() {
+  // Get price range
+  const priceMin = document.getElementById('priceMin').value;
+  const priceMax = document.getElementById('priceMax').value;
+  
+  ACTIVE_FILTERS.priceMin = priceMin ? parseInt(priceMin) : null;
+  ACTIVE_FILTERS.priceMax = priceMax ? parseInt(priceMax) : null;
+  
+  // Get selected weights
+  ACTIVE_FILTERS.weights = Array.from(document.querySelectorAll('input[name="weight"]:checked'))
+    .map(cb => cb.value);
+  
+  // Get selected types
+  ACTIVE_FILTERS.types = Array.from(document.querySelectorAll('input[name="type"]:checked'))
+    .map(cb => cb.value);
+  
+  // Get selected attributes
+  ACTIVE_FILTERS.attrs = Array.from(document.querySelectorAll('input[name="attr"]:checked'))
+    .map(cb => cb.value);
+  
+  document.getElementById('filtersModal').classList.remove('show');
+  renderProducts();
+  showToast(`Filters applied ✓`, 'success');
+}
+
+function clearFilters() {
+  ACTIVE_FILTERS = {
+    priceMin: null,
+    priceMax: null,
+    weights: [],
+    types: [],
+    attrs: []
+  };
+  
+  document.getElementById('priceMin').value = '';
+  document.getElementById('priceMax').value = '';
+  document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = false);
+  
+  document.getElementById('filtersModal').classList.remove('show');
+  renderProducts();
+  showToast('Filters cleared', 'info');
+}
+
 function copyAndApplyCoupon(code) {
   closeCouponsModal();
   showScreen('screen-basket');
@@ -3320,6 +3526,10 @@ document.getElementById('couponsModal').addEventListener('click', function(e) {
   if (e.target === this) closeCouponsModal();
 });
 
+document.getElementById('filtersModal').addEventListener('click', function(e) {
+  if (e.target === this) document.getElementById('filtersModal').classList.remove('show');
+});
+
 // ═══════════════════════════════════════════
 //  Keyboard: close modals on Escape
 // ═══════════════════════════════════════════
@@ -3327,6 +3537,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeCheckoutModal();
     closeCouponsModal();
+    document.getElementById('filtersModal').classList.remove('show');
   }
 });
 
