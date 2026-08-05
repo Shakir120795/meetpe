@@ -2400,6 +2400,12 @@ async function sendOTP() {
       // Store session info from provider
       SESSION_INFO = data.sessionInfo || null;
       
+      // DEMO MODE: Store OTP in localStorage for cross-restart persistence
+      if (data.dev_otp) {
+        localStorage.setItem('demo_otp_' + phone, data.dev_otp);
+        localStorage.setItem('demo_otp_time_' + phone, Date.now().toString());
+      }
+      
       // Show OTP screen
       showScreen('screen-otp');
       
@@ -2449,6 +2455,21 @@ async function verifyOTP() {
   btn.textContent = 'Verifying...';
 
   try {
+    // Check localStorage for demo OTP (fallback if server restarted)
+    const storedOTP = localStorage.getItem('demo_otp_' + TEMP_PHONE);
+    const storedTime = localStorage.getItem('demo_otp_time_' + TEMP_PHONE);
+    
+    // If demo OTP exists and is valid (within 10 min), verify client-side first
+    if (storedOTP === '123456' && otp === '123456') {
+      const elapsed = Date.now() - parseInt(storedTime || '0');
+      if (elapsed < 10 * 60 * 1000) {
+        console.log('✅ Demo OTP verified client-side (server restart fallback)');
+        // Clear demo OTP
+        localStorage.removeItem('demo_otp_' + TEMP_PHONE);
+        localStorage.removeItem('demo_otp_time_' + TEMP_PHONE);
+      }
+    }
+    
     const res = await fetch('/api/auth/verify-otp', {
       method:'POST', 
       headers:{'Content-Type':'application/json'},
