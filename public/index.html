@@ -1650,77 +1650,170 @@ function escapeHtml(text) {
 
 // ── Init ──
 (function init() {
+  console.log('🔵 [INIT] Starting initialization');
+  console.log('🔵 [INIT] document.readyState:', document.readyState);
+  
   THEME = localStorage.getItem('now_theme') || 'dark';
   applyTheme();
+  console.log('🔵 [INIT] Theme applied:', THEME);
   
   // Load settings first
   loadAppSettings();
+  console.log('🔵 [INIT] loadAppSettings() called');
   
   // Initialize voice search
   initVoiceSearch();
+  console.log('🔵 [INIT] initVoiceSearch() called');
 
   const saved = localStorage.getItem('now_user');
   if (saved) {
-    try { USER = JSON.parse(saved); } catch(e) {}
+    try { 
+      USER = JSON.parse(saved);
+      console.log('🔵 [INIT] USER loaded from localStorage:', USER);
+    } catch(e) {
+      console.error('🔴 [INIT] Error parsing USER:', e);
+    }
+  } else {
+    console.log('🔵 [INIT] No USER in localStorage');
   }
   const savedCart = localStorage.getItem('now_cart');
   if (savedCart) {
-    try { CART = JSON.parse(savedCart); } catch(e) {}
+    try { 
+      CART = JSON.parse(savedCart);
+      console.log('🔵 [INIT] CART loaded:', Object.keys(CART).length, 'items');
+    } catch(e) {
+      console.error('🔴 [INIT] Error parsing CART:', e);
+    }
   }
 
+  console.log('🔵 [INIT] Checking DOM readyState before initializeApp...');
   // WAIT FOR DOM TO BE READY!
   if (document.readyState === 'loading') {
+    console.log('🟡 [INIT] DOM still loading, adding DOMContentLoaded listener');
     document.addEventListener('DOMContentLoaded', initializeApp);
   } else {
-    // DOM already loaded
+    console.log('🟢 [INIT] DOM already loaded, calling initializeApp() immediately');
     initializeApp();
   }
 })();
 
 // Initialize app after DOM is ready
 function initializeApp() {
-  console.log('🚀 App starting...');
-  console.log('👤 USER:', USER);
+  console.log('🚀 [INIT_APP] === initializeApp() START ===');
+  console.log('🚀 [INIT_APP] document.readyState:', document.readyState);
+  console.log('🚀 [INIT_APP] USER:', USER);
+  console.log('🚀 [INIT_APP] MENU length:', MENU.length);
   
-  // Force hide ALL screens
-  document.querySelectorAll('.screen').forEach(s => {
-    s.style.display = 'none';
-    s.classList.remove('active');
-  });
-  
-  if (USER) {
-    console.log('✅ Showing HOME');
-    // Show home
-    document.getElementById('screen-home').style.display = '';
-    document.getElementById('screen-home').classList.add('active');
-    document.getElementById('bottomNav').style.display = 'flex';
+  try {
+    // Force hide ALL screens
+    const allScreens = document.querySelectorAll('.screen');
+    console.log('🚀 [INIT_APP] Found', allScreens.length, 'screens');
     
-    // Load menu NOW
-    fetch('/api/menu')
-      .then(r => r.json())
-      .then(data => {
-        MENU = data;
-        console.log('📦 MENU loaded:', MENU.length);
-        renderProducts();
-        updateTopbarUser();
-        updateCartBar();
-      })
-      .catch(e => {
-        console.error('❌ Menu error:', e);
-        document.getElementById('productGrid').innerHTML = '<div style="padding:40px;text-align:center;color:red">Menu load failed. Check console.</div>';
-      });
+    allScreens.forEach((s, idx) => {
+      const id = s.id;
+      const wasVisible = s.style.display !== 'none';
+      s.style.display = 'none';
+      s.classList.remove('active');
+      if (wasVisible) {
+        console.log('🚀 [INIT_APP] Hiding screen:', id);
+      }
+    });
     
-    // Load settings
-    fetch('/api/settings')
-      .then(r => r.json())
-      .then(s => { APP_SETTINGS = s; applyBranding(); })
-      .catch(e => console.log('Settings error:', e));
+    if (USER) {
+      console.log('✅ [INIT_APP] USER exists, showing HOME');
       
-  } else {
-    console.log('❌ NO USER - showing login');
-    document.getElementById('screen-login').style.display = '';
-    document.getElementById('screen-login').classList.add('active');
-    document.getElementById('bottomNav').style.display = 'none';
+      // Show home screen using explicit display:block instead of relying on CSS cascade
+      const homeScreen = document.getElementById('screen-home');
+      console.log('🚀 [INIT_APP] homeScreen element:', homeScreen ? 'FOUND' : 'NOT FOUND');
+      
+      if (homeScreen) {
+        // CRITICAL FIX: Set display to 'block' explicitly, not empty string
+        homeScreen.style.display = 'block';
+        homeScreen.classList.add('active');
+        console.log('✅ [INIT_APP] Home screen display set to BLOCK and active class added');
+      } else {
+        console.error('🔴 [INIT_APP] CRITICAL: screen-home element NOT FOUND!');
+      }
+      
+      const bottomNav = document.getElementById('bottomNav');
+      console.log('🚀 [INIT_APP] bottomNav element:', bottomNav ? 'FOUND' : 'NOT FOUND');
+      
+      if (bottomNav) {
+        bottomNav.style.display = 'flex';
+        console.log('✅ [INIT_APP] Bottom nav display set to flex');
+      }
+      
+      // Load menu NOW
+      console.log('📥 [INIT_APP] Starting menu fetch...');
+      fetch('/api/menu')
+        .then(r => {
+          console.log('📥 [INIT_APP] Menu response status:', r.status);
+          return r.json();
+        })
+        .then(data => {
+          MENU = data;
+          console.log('✅ [INIT_APP] MENU loaded successfully:', MENU.length, 'items');
+          console.log('📦 [INIT_APP] Calling renderProducts()...');
+          
+          renderProducts();
+          
+          console.log('👤 [INIT_APP] Calling updateTopbarUser()...');
+          updateTopbarUser();
+          
+          console.log('🛒 [INIT_APP] Calling updateCartBar()...');
+          updateCartBar();
+        })
+        .catch(e => {
+          console.error('🔴 [INIT_APP] Menu fetch FAILED:', e);
+          console.error('🔴 [INIT_APP] Error stack:', e.stack);
+          
+          const grid = document.getElementById('productGrid');
+          if (grid) {
+            grid.innerHTML = '<div style="padding:40px;text-align:center;color:red">Menu load failed. Check console.</div>';
+          } else {
+            console.error('🔴 [INIT_APP] productGrid element NOT FOUND!');
+          }
+        });
+      
+      // Load settings
+      console.log('⚙️ [INIT_APP] Starting settings fetch...');
+      fetch('/api/settings')
+        .then(r => r.json())
+        .then(s => { 
+          APP_SETTINGS = s;
+          console.log('✅ [INIT_APP] Settings loaded');
+          applyBranding();
+          console.log('✅ [INIT_APP] Branding applied');
+        })
+        .catch(e => {
+          console.error('🔴 [INIT_APP] Settings fetch failed:', e);
+        });
+        
+    } else {
+      console.log('❌ [INIT_APP] NO USER - showing login');
+      
+      const loginScreen = document.getElementById('screen-login');
+      console.log('🚀 [INIT_APP] loginScreen element:', loginScreen ? 'FOUND' : 'NOT FOUND');
+      
+      if (loginScreen) {
+        // CRITICAL FIX: Set display to 'block' explicitly
+        loginScreen.style.display = 'block';
+        loginScreen.classList.add('active');
+        console.log('✅ [INIT_APP] Login screen shown with display:block');
+      }
+      
+      const bottomNav = document.getElementById('bottomNav');
+      if (bottomNav) {
+        bottomNav.style.display = 'none';
+        console.log('✅ [INIT_APP] Bottom nav hidden');
+      }
+    }
+    
+    console.log('🚀 [INIT_APP] === initializeApp() END ===');
+    
+  } catch (error) {
+    console.error('🔴 [INIT_APP] EXCEPTION in initializeApp():', error);
+    console.error('🔴 [INIT_APP] Error stack:', error.stack);
   }
 }
 
