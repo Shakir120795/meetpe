@@ -1080,6 +1080,12 @@ input,textarea{font:inherit;color:inherit}
             <div class="pm-label">About <span data-brand-name>NOW</span></div>
             <div class="pm-arrow">›</div>
           </div>
+          <div style="padding:0 14px;margin:14px 0;font-size:11px;font-weight:700;color:var(--danger);text-transform:uppercase;letter-spacing:.5px">DANGER ZONE</div>
+          <div class="pm-item" onclick="showDeleteAccountModal()" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:12px">
+            <div class="pm-icon">🗑️</div>
+            <div class="pm-label" style="color:var(--danger)">Delete Account</div>
+            <div class="pm-arrow">›</div>
+          </div>
         </div>
 
         <button class="logout-btn" id="logoutBtn" onclick="logout()">Log Out</button>
@@ -1473,6 +1479,41 @@ input,textarea{font:inherit;color:inherit}
   </div>
 </div>
 
+<!-- Delete Account Modal -->
+<div class="modal-overlay" id="deleteAccountModal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-handle"></div>
+    <div class="modal-title" style="color:var(--danger)">⚠️ Delete Account</div>
+    
+    <div style="padding:0 14px;margin-bottom:16px">
+      <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:12px;padding:12px;margin-bottom:14px">
+        <div style="font-size:13px;color:var(--danger);font-weight:600;margin-bottom:6px">⚠️ Warning</div>
+        <div style="font-size:12px;color:var(--text);line-height:1.6">
+          Deleting your account will:
+          <ul style="margin:6px 0;padding-left:18px">
+            <li>Permanently delete all your personal data</li>
+            <li>Cancel any active memberships</li>
+            <li>Clear your order history</li>
+            <li>Remove wallet balance & rewards</li>
+          </ul>
+          <strong>This action cannot be undone.</strong>
+        </div>
+      </div>
+      
+      <div style="margin-bottom:14px">
+        <label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:13px">
+          <input type="checkbox" id="deleteConfirmCheck" style="width:18px;height:18px;cursor:pointer"/>
+          <span>I understand this will permanently delete my account</span>
+        </label>
+      </div>
+    </div>
+    
+    <div style="display:flex;gap:8px">
+      <button style="flex:1;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:10px;font-weight:600;cursor:pointer;padding:12px" onclick="closeDeleteAccountModal()">Cancel</button>
+      <button style="flex:1;background:var(--danger);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;padding:12px" onclick="confirmDeleteAccount()" id="deleteConfirmBtn" disabled>Delete Account</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ═══════════════════════════════════════════
@@ -1932,6 +1973,71 @@ function logout() {
   loginScreen.classList.add('active');
   SCREEN_HISTORY = ['screen-login'];
   updateCartBar();
+}
+
+function showDeleteAccountModal() {
+  const modal = document.getElementById('deleteAccountModal');
+  modal.classList.add('show');
+  document.getElementById('deleteConfirmCheck').checked = false;
+  document.getElementById('deleteConfirmBtn').disabled = true;
+}
+
+function closeDeleteAccountModal() {
+  document.getElementById('deleteAccountModal').classList.remove('show');
+  document.getElementById('deleteConfirmCheck').checked = false;
+  document.getElementById('deleteConfirmBtn').disabled = true;
+}
+
+// Toggle delete button based on checkbox
+document.addEventListener('DOMContentLoaded', () => {
+  const checkbox = document.getElementById('deleteConfirmCheck');
+  const btn = document.getElementById('deleteConfirmBtn');
+  if (checkbox) {
+    checkbox.addEventListener('change', () => {
+      btn.disabled = !checkbox.checked;
+      btn.style.opacity = checkbox.checked ? '1' : '0.5';
+      btn.style.cursor = checkbox.checked ? 'pointer' : 'not-allowed';
+    });
+  }
+});
+
+async function confirmDeleteAccount() {
+  if (!USER || !USER.phone) {
+    showToast('Please login first', 'error');
+    return;
+  }
+  
+  if (!document.getElementById('deleteConfirmCheck').checked) {
+    showToast('Please confirm to continue', 'error');
+    return;
+  }
+  
+  // Show confirmation dialog
+  if (!confirm('⚠️ Are you absolutely sure? Your account will be permanently deleted. This cannot be undone.')) {
+    return;
+  }
+  
+  try {
+    const res = await fetch('/api/customer/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: USER.phone })
+    });
+    
+    const data = await res.json();
+    if (data.ok) {
+      showToast('✓ Account deleted successfully', 'success');
+      closeDeleteAccountModal();
+      setTimeout(() => {
+        logout();
+      }, 1500);
+    } else {
+      showToast(data.error || 'Failed to delete account', 'error');
+    }
+  } catch(e) {
+    console.error('Delete account error:', e);
+    showToast('Failed to delete account', 'error');
+  }
 }
 
 function saveUser() {
@@ -3842,6 +3948,10 @@ document.getElementById('filtersModal').addEventListener('click', function(e) {
   if (e.target === this) document.getElementById('filtersModal').classList.remove('show');
 });
 
+document.getElementById('deleteAccountModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDeleteAccountModal();
+});
+
 // ═══════════════════════════════════════════
 //  Keyboard: close modals on Escape
 // ═══════════════════════════════════════════
@@ -3850,6 +3960,7 @@ document.addEventListener('keydown', e => {
     closeCheckoutModal();
     closeCouponsModal();
     document.getElementById('filtersModal').classList.remove('show');
+    closeDeleteAccountModal();
   }
 });
 

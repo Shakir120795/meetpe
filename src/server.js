@@ -842,6 +842,32 @@ app.get('/api/customer/:phone', (req, res) => {
   });
 });
 
+// ===== Delete customer account =====
+app.post('/api/customer/delete', (req, res) => {
+  try {
+    const { phone } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+    
+    const waPhone = `web:+91${cleanPhone}`;
+    const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
+    if (!customer) return res.status(404).json({ ok: false, error: 'customer not found' });
+    
+    // Delete customer data
+    db.prepare('DELETE FROM customers WHERE phone = ?').run(waPhone);
+    db.prepare('DELETE FROM orders WHERE phone = ?').run(waPhone);
+    db.prepare('DELETE FROM reviews WHERE phone = ?').run(waPhone);
+    db.prepare('DELETE FROM rewards WHERE phone = ?').run(waPhone);
+    db.prepare('DELETE FROM sessions WHERE phone = ?').run(waPhone);
+    
+    console.log(`🗑️ Account deleted: ${cleanPhone}`);
+    res.json({ ok: true, message: 'Account deleted successfully' });
+  } catch (e) {
+    console.error('Delete account error:', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to delete account' });
+  }
+});
+
 // ===== Get customer orders (last 20) =====
 app.get('/api/orders/:phone', (req, res) => {
   const cleanPhone = String(req.params.phone).replace(/\D/g, '');
