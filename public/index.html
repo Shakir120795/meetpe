@@ -488,8 +488,18 @@ input,textarea{font:inherit;color:inherit}
 <div id="app">
   <div class="screens">
 
+    <!-- ═══ SPLASH SCREEN ═══ -->
+    <div class="screen active" id="screen-splash" style="background:linear-gradient(160deg,#1a0500 0%,#0D0D0D 60%,#000 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:32px 24px;gap:24px">
+      <img src="/logo.png" alt="NOW" style="width:120px;height:120px;margin-bottom:20px" onerror="this.style.display='none'"/>
+      <div style="text-align:center">
+        <h2 style="font-size:28px;font-weight:900;color:#fff;margin:0;line-height:1.2" data-brand-name>NOW</h2>
+        <p style="font-size:14px;color:#f97316;margin-top:8px;font-weight:600" data-tagline>Fresh Meat Delivered Fast 🥩</p>
+      </div>
+      <div style="margin-top:40px;width:36px;height:36px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite"></div>
+    </div>
+
     <!-- ═══ LOGIN SCREEN ═══ -->
-    <div class="screen active" id="screen-login">
+    <div class="screen" id="screen-login">
       <div class="login-wrap">
         <img src="/logo.png" alt="NOW" class="login-logo" onerror="this.style.display='none'"/>
         <div class="login-tagline">Fresh. Fast. Trusted.</div>
@@ -642,7 +652,7 @@ input,textarea{font:inherit;color:inherit}
             <span id="locText" class="topbar-loc-text">Set Location</span>
           </div>
         </button>
-        <div style="display:flex;align-items:center;gap:4px;background:rgba(22,163,74,.15);border:1px solid rgba(22,163,74,.3);padding:4px 8px;border-radius:8px;font-size:11px;font-weight:700;color:#16a34a;white-space:nowrap">⚡ 30 min</div>
+        <div style="display:flex;align-items:center;gap:4px;background:rgba(22,163,74,.15);border:1px solid rgba(22,163,74,.3);padding:4px 8px;border-radius:8px;font-size:11px;font-weight:700;color:#16a34a;white-space:nowrap">⚡ <span id="deliveryTimeDisplay">30</span> min</div>
         <div style="display:flex;align-items:center;gap:6px">
           <!-- Wallet balance - wallet icon SVG -->
           <button onclick="showScreen('screen-wallet')" title="Wallet"
@@ -1493,22 +1503,39 @@ function escapeHtml(text) {
     try { CART = JSON.parse(savedCart); } catch(e) {}
   }
 
-  if (USER) {
-    showScreen('screen-home');
-    loadMenu();
-    updateTopbarUser();
-  } else {
-    // Show only login screen
+  // Show splash screen first
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+    s.style.display = 'none';
+  });
+  const splashScreen = document.getElementById('screen-splash');
+  if (splashScreen) {
+    splashScreen.style.display = 'flex';
+    splashScreen.classList.add('active');
+  }
+  document.getElementById('bottomNav').style.display = 'none';
+  document.getElementById('cartBar').style.display = 'none';
+
+  // After 2 seconds, show actual screen
+  setTimeout(() => {
     document.querySelectorAll('.screen').forEach(s => {
       s.classList.remove('active');
       s.style.display = 'none';
     });
-    const loginScreen = document.getElementById('screen-login');
-    loginScreen.style.display = '';
-    loginScreen.classList.add('active');
-    document.getElementById('bottomNav').style.display = 'none';
-    document.getElementById('cartBar').style.display = 'none';
-  }
+
+    if (USER) {
+      showScreen('screen-home');
+      loadMenu();
+      updateTopbarUser();
+    } else {
+      // Show login screen
+      const loginScreen = document.getElementById('screen-login');
+      loginScreen.style.display = '';
+      loginScreen.classList.add('active');
+      document.getElementById('bottomNav').style.display = 'none';
+      document.getElementById('cartBar').style.display = 'none';
+    }
+  }, 2000);
 })();
 
 // ═══════════════════════════════════════════
