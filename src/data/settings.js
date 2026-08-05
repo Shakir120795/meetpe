@@ -41,6 +41,14 @@ const defaults = {
     privacy: 'We collect only what is needed to deliver your order: name, phone, address, and order history. We do not sell your data. You can request deletion anytime by messaging us on WhatsApp.',
     terms: 'Orders can be cancelled before processing begins (within 5 minutes). Once meat is cleaned/cut, cancellation is not possible. Quality issues reported within 2 hours with a photo will be replaced or refunded.',
   },
+  // NEW: Trending Searches (admin-editable)
+  trendingSearches: [
+    'chicken breast',
+    'boneless mutton',
+    'fresh fish',
+    'marinated chicken',
+    'tandoori',
+  ],
 };
 
 function ensureDir() {
@@ -62,6 +70,7 @@ function read() {
       contact: { ...defaults.contact, ...data.contact },
       socials: Array.isArray(data.socials) ? data.socials : defaults.socials,
       pages: { ...defaults.pages, ...data.pages },
+      trendingSearches: Array.isArray(data.trendingSearches) ? data.trendingSearches : defaults.trendingSearches,
     };
   } catch (e) {
     console.warn('settings.json read failed:', e.message);
@@ -86,6 +95,7 @@ function update(patch) {
   if (patch.contact) current.contact = { ...current.contact, ...patch.contact };
   if (Array.isArray(patch.socials)) current.socials = patch.socials;
   if (patch.pages) current.pages = { ...current.pages, ...patch.pages };
+  if (Array.isArray(patch.trendingSearches)) current.trendingSearches = patch.trendingSearches;
   write(current);
   return { ok: true, settings: current };
 }

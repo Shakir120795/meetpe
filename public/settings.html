@@ -190,6 +190,17 @@
       <div class="field"><label>Membership Rules</label><textarea id="pageMembership" rows="5"></textarea></div>
       <div class="field"><label>FAQ</label><textarea id="pageFaq" rows="5"></textarea></div>
     </div>
+    
+    <!-- TRENDING SEARCHES -->
+    <div class="section">
+      <h2>🔥 Trending Searches</h2>
+      <p class="desc">Add popular search terms that users can click on. Shown when search box is focused (empty). One per line, max 10 terms.</p>
+      <div class="field">
+        <label>Trending Search Terms <small style="font-weight:400;color:var(--gray)">(one per line)</small></label>
+        <textarea id="trendingSearches" rows="6" placeholder="chicken breast&#10;boneless mutton&#10;fresh fish&#10;marinated chicken&#10;tandoori"></textarea>
+        <div style="font-size:11px;color:var(--gray);margin-top:6px">💡 Tip: Use common customer queries like "boneless chicken", "mutton curry cut", "fish fillet", etc.</div>
+      </div>
+    </div>
 
   </div>
 
@@ -277,6 +288,10 @@ function render() {
   $('pageDelivery').value = SETTINGS.pages.delivery || '';
   $('pageMembership').value = SETTINGS.pages.membership || '';
   $('pageFaq').value = SETTINGS.pages.faq || '';
+  
+  // Trending Searches
+  const trending = SETTINGS.trendingSearches || [];
+  $('trendingSearches').value = trending.join('\n');
 
   // Mark dirty on any input change
   content.querySelectorAll('input, textarea, select').forEach(el => {
@@ -365,8 +380,14 @@ function collectData() {
     membership: $('pageMembership').value.trim(),
     faq: $('pageFaq').value.trim(),
   };
+  
+  // Trending Searches
+  const trendingSearchesText = $('trendingSearches').value.trim();
+  const trendingSearches = trendingSearchesText 
+    ? trendingSearchesText.split('\n').map(t => t.trim()).filter(t => t).slice(0, 10)
+    : [];
 
-  return { branding, contact, categories, socials, pages };
+  return { branding, contact, categories, socials, pages, trendingSearches };
 }
 
 async function saveSettings() {

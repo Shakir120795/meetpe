@@ -498,6 +498,47 @@ input,textarea{font:inherit;color:inherit}
 .loc-search-results{background:var(--card);border-radius:14px;margin-bottom:12px;overflow:hidden;border:1px solid var(--border)}
 .loc-result-item{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;align-items:flex-start;gap:10px}
 .loc-result-item:last-child{border-bottom:none}
+
+/* ═══ SEARCH SUGGESTIONS ═══ */
+.search-suggestions-box{position:absolute;top:calc(var(--topbar-h) + 62px);left:14px;right:14px;
+  background:var(--card);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.25);
+  z-index:100;max-height:320px;overflow-y:auto}
+.search-section-title{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 8px;
+  font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+.search-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .15s}
+.search-item:last-child{border-bottom:none}
+.search-item:active{background:var(--border)}
+.search-item-icon{font-size:16px;opacity:.7}
+.search-item-text{flex:1;font-size:14px;font-weight:500}
+.search-item-arrow{font-size:14px;color:var(--muted)}
+
+/* ═══ FILTER MODAL ═══ */
+.filter-modal{position:fixed;inset:0;z-index:250;background:rgba(0,0,0,.7);display:none;
+  align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .3s}
+.filter-modal.show{display:flex;opacity:1;pointer-events:all}
+.filter-content{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-height:85vh;
+  overflow-y:auto;transform:translateY(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);padding:24px 20px 36px}
+.filter-modal.show .filter-content{transform:translateY(0)}
+.filter-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.filter-title{font-size:18px;font-weight:800}
+.filter-close-btn{width:32px;height:32px;border-radius:50%;background:var(--border);border:none;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px}
+.filter-section{margin-bottom:24px}
+.filter-section-title{font-size:14px;font-weight:700;margin-bottom:10px}
+.filter-chips{display:flex;flex-wrap:wrap;gap:8px}
+.filter-chip{padding:8px 14px;background:var(--card);border:1.5px solid var(--border);border-radius:20px;
+  font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.filter-chip:active{transform:scale(.95)}
+.filter-chip.active{background:rgba(232,69,10,.12);border-color:var(--accent);color:var(--accent)}
+.filter-range{display:flex;align-items:center;gap:10px;margin-top:10px}
+.filter-range input{flex:1;padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:10px;font-size:14px;outline:none;transition:border-color .2s}
+.filter-range input:focus{border-color:var(--accent)}
+.filter-actions{display:flex;gap:10px;margin-top:24px;padding-top:16px;border-top:1px solid var(--border)}
+.filter-actions button{flex:1;padding:14px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer}
+.filter-clear-btn{background:var(--bg);border:1.5px solid var(--border);color:var(--text)}
+.filter-apply-btn{background:var(--accent);border:none;color:#fff}
 .loc-result-item:active{background:var(--border)}
 .loc-result-name{font-size:13px;font-weight:600;color:var(--text)}
 .loc-result-sub{font-size:11px;color:var(--muted);margin-top:2px}
@@ -804,9 +845,33 @@ input,textarea{font:inherit;color:inherit}
 
       <div class="search-bar">
         <span style="font-size:16px">🔍</span>
-        <input id="searchInput" placeholder="Search for fresh meat..." oninput="searchProducts(this.value)"/>
+        <input id="searchInput" placeholder="Search for fresh meat..." 
+          oninput="searchProducts(this.value)" 
+          onfocus="showSearchSuggestions()" 
+          onblur="hideSearchSuggestionsDelayed()"
+          autocomplete="off"/>
         <button class="voice-search-btn" id="voiceSearchBtn" onclick="startVoiceSearch()" title="Voice search" style="border:none;background:none;font-size:16px;cursor:pointer;padding:4px;color:var(--muted)">🎤</button>
         <span style="font-size:16px;cursor:pointer" onclick="clearSearch()">✕</span>
+      </div>
+      
+      <!-- Search Suggestions Dropdown -->
+      <div id="searchSuggestionsBox" class="search-suggestions-box" style="display:none">
+        <!-- Recent Searches -->
+        <div id="recentSearchesSection" style="display:none">
+          <div class="search-section-title">
+            <span>🕒 Recent Searches</span>
+            <button onclick="clearRecentSearches()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-weight:600;padding:4px">Clear</button>
+          </div>
+          <div id="recentSearchesList"></div>
+        </div>
+        
+        <!-- Trending Searches -->
+        <div id="trendingSearchesSection" style="display:none">
+          <div class="search-section-title">
+            <span>🔥 Trending Searches</span>
+          </div>
+          <div id="trendingSearchesList"></div>
+        </div>
       </div>
 
       <div class="hero-banner">
@@ -2106,6 +2171,10 @@ function initMainApp() {
       }
     });
     
+    // Initialize voice search
+    initVoiceSearch();
+    console.log('🎤 [INIT_MAIN] Voice search initialized');
+    
     if (USER) {
       console.log('✅ [INIT_MAIN] USER exists, showing HOME');
       
@@ -3176,6 +3245,12 @@ function filterCat(cat, el) {
 
 function searchProducts(q) {
   SEARCH_Q = q.trim();
+  
+  // Save to recent searches if not empty
+  if (SEARCH_Q) {
+    saveRecentSearch(SEARCH_Q);
+  }
+  
   renderProducts();
 }
 
@@ -3183,6 +3258,212 @@ function clearSearch() {
   document.getElementById('searchInput').value = '';
   SEARCH_Q = '';
   renderProducts();
+}
+
+// ═══════════════════════════════════════════
+//  Search Suggestions (Recent & Trending)
+// ═══════════════════════════════════════════
+let hideSearchTimeout = null;
+
+async function showSearchSuggestions() {
+  const box = document.getElementById('searchSuggestionsBox');
+  const searchValue = document.getElementById('searchInput').value.trim();
+  
+  // Don't show if already typing
+  if (searchValue.length > 0) {
+    box.style.display = 'none';
+    return;
+  }
+  
+  // Load recent searches
+  const recentSearches = getRecentSearches();
+  const recentSection = document.getElementById('recentSearchesSection');
+  const recentList = document.getElementById('recentSearchesList');
+  
+  if (recentSearches.length > 0) {
+    recentList.innerHTML = recentSearches.map(term => `
+      <div class="search-item" onclick="selectSearchTerm('${term.replace(/'/g, "\\'")}')">
+        <span class="search-item-icon">🕒</span>
+        <span class="search-item-text">${escapeHtml(term)}</span>
+        <span class="search-item-arrow">↗</span>
+      </div>
+    `).join('');
+    recentSection.style.display = 'block';
+  } else {
+    recentSection.style.display = 'none';
+  }
+  
+  // Load trending searches from server/settings
+  try {
+    const res = await fetch('/api/settings');
+    const settings = await res.json();
+    const trending = settings.trendingSearches || [];
+    const trendingSection = document.getElementById('trendingSearchesSection');
+    const trendingList = document.getElementById('trendingSearchesList');
+    
+    if (trending.length > 0) {
+      trendingList.innerHTML = trending.map(term => `
+        <div class="search-item" onclick="selectSearchTerm('${term.replace(/'/g, "\\'")}')">
+          <span class="search-item-icon">🔥</span>
+          <span class="search-item-text">${escapeHtml(term)}</span>
+          <span class="search-item-arrow">↗</span>
+        </div>
+      `).join('');
+      trendingSection.style.display = 'block';
+    } else {
+      trendingSection.style.display = 'none';
+    }
+  } catch(e) {
+    console.warn('Failed to load trending searches:', e);
+  }
+  
+  box.style.display = 'block';
+}
+
+function hideSearchSuggestionsDelayed() {
+  hideSearchTimeout = setTimeout(() => {
+    document.getElementById('searchSuggestionsBox').style.display = 'none';
+  }, 200);
+}
+
+function selectSearchTerm(term) {
+  clearTimeout(hideSearchTimeout);
+  document.getElementById('searchInput').value = term;
+  document.getElementById('searchSuggestionsBox').style.display = 'none';
+  searchProducts(term);
+  document.getElementById('searchInput').blur();
+}
+
+function getRecentSearches() {
+  try {
+    const recent = JSON.parse(localStorage.getItem('now_recent_searches') || '[]');
+    return recent.slice(0, 5); // Last 5 searches
+  } catch(e) {
+    return [];
+  }
+}
+
+function saveRecentSearch(term) {
+  try {
+    let recent = JSON.parse(localStorage.getItem('now_recent_searches') || '[]');
+    // Remove duplicate if exists
+    recent = recent.filter(t => t.toLowerCase() !== term.toLowerCase());
+    // Add to beginning
+    recent.unshift(term);
+    // Keep only last 10
+    recent = recent.slice(0, 10);
+    localStorage.setItem('now_recent_searches', JSON.stringify(recent));
+  } catch(e) {
+    console.warn('Failed to save recent search:', e);
+  }
+}
+
+function clearRecentSearches() {
+  localStorage.removeItem('now_recent_searches');
+  document.getElementById('recentSearchesSection').style.display = 'none';
+  showToast('✓ Recent searches cleared', 'success');
+}
+
+// ═══════════════════════════════════════════
+//  Filters
+// ═══════════════════════════════════════════
+let ACTIVE_FILTERS = {
+  priceMin: null,
+  priceMax: null,
+  weights: [],
+  types: [],
+  attrs: []
+};
+
+function showFiltersModal() {
+  const modal = document.getElementById('filterModal');
+  modal.classList.add('show');
+  
+  // Load current filter values
+  document.getElementById('priceMinInput').value = ACTIVE_FILTERS.priceMin || '';
+  document.getElementById('priceMaxInput').value = ACTIVE_FILTERS.priceMax || '';
+  
+  // Update chips
+  document.querySelectorAll('.filter-chip').forEach(chip => {
+    const weight = chip.dataset.weight;
+    const type = chip.dataset.type;
+    const attr = chip.dataset.attr;
+    
+    if (weight && ACTIVE_FILTERS.weights.includes(weight)) chip.classList.add('active');
+    if (type && ACTIVE_FILTERS.types.includes(type)) chip.classList.add('active');
+    if (attr && ACTIVE_FILTERS.attrs.includes(attr)) chip.classList.add('active');
+  });
+}
+
+function closeFiltersModal() {
+  document.getElementById('filterModal').classList.remove('show');
+}
+
+function toggleFilterChip(chip, category, value) {
+  chip.classList.toggle('active');
+  
+  if (category === 'weight') {
+    const index = ACTIVE_FILTERS.weights.indexOf(value);
+    if (index > -1) {
+      ACTIVE_FILTERS.weights.splice(index, 1);
+    } else {
+      ACTIVE_FILTERS.weights.push(value);
+    }
+  } else if (category === 'type') {
+    const index = ACTIVE_FILTERS.types.indexOf(value);
+    if (index > -1) {
+      ACTIVE_FILTERS.types.splice(index, 1);
+    } else {
+      ACTIVE_FILTERS.types.push(value);
+    }
+  } else if (category === 'attr') {
+    const index = ACTIVE_FILTERS.attrs.indexOf(value);
+    if (index > -1) {
+      ACTIVE_FILTERS.attrs.splice(index, 1);
+    } else {
+      ACTIVE_FILTERS.attrs.push(value);
+    }
+  }
+}
+
+function applyFilters() {
+  const priceMin = parseInt(document.getElementById('priceMinInput').value) || null;
+  const priceMax = parseInt(document.getElementById('priceMaxInput').value) || null;
+  
+  ACTIVE_FILTERS.priceMin = priceMin;
+  ACTIVE_FILTERS.priceMax = priceMax;
+  
+  closeFiltersModal();
+  renderProducts();
+  
+  // Count active filters
+  const count = [
+    ACTIVE_FILTERS.priceMin !== null || ACTIVE_FILTERS.priceMax !== null,
+    ACTIVE_FILTERS.weights.length > 0,
+    ACTIVE_FILTERS.types.length > 0,
+    ACTIVE_FILTERS.attrs.length > 0
+  ].filter(Boolean).length;
+  
+  if (count > 0) {
+    showToast(`✓ ${count} filter(s) applied`, 'success');
+  }
+}
+
+function clearAllFilters() {
+  ACTIVE_FILTERS = {
+    priceMin: null,
+    priceMax: null,
+    weights: [],
+    types: [],
+    attrs: []
+  };
+  
+  document.getElementById('priceMinInput').value = '';
+  document.getElementById('priceMaxInput').value = '';
+  document.querySelectorAll('.filter-chip').forEach(chip => chip.classList.remove('active'));
+  
+  renderProducts();
+  showToast('✓ Filters cleared', 'success');
 }
 
 // ═══════════════════════════════════════════
@@ -6959,5 +7240,61 @@ body {
 }
 </style>
 
+<!-- Filter Modal -->
+<div id="filterModal" class="filter-modal">
+  <div class="filter-content">
+    <div class="filter-header">
+      <div class="filter-title">⚙️ Filters</div>
+      <button class="filter-close-btn" onclick="closeFiltersModal()">✕</button>
+    </div>
+    
+    <!-- Price Range -->
+    <div class="filter-section">
+      <div class="filter-section-title">💰 Price Range</div>
+      <div class="filter-range">
+        <input type="number" id="priceMinInput" placeholder="Min ₹" min="0"/>
+        <span style="color:var(--muted)">–</span>
+        <input type="number" id="priceMaxInput" placeholder="Max ₹" min="0"/>
+      </div>
+    </div>
+    
+    <!-- Weight -->
+    <div class="filter-section">
+      <div class="filter-section-title">⚖️ Weight</div>
+      <div class="filter-chips" id="weightFilters">
+        <div class="filter-chip" data-weight="500g" onclick="toggleFilterChip(this,'weight','500g')">500g or less</div>
+        <div class="filter-chip" data-weight="1kg" onclick="toggleFilterChip(this,'weight','1kg')">1kg</div>
+        <div class="filter-chip" data-weight="2kg" onclick="toggleFilterChip(this,'weight','2kg')">2kg+</div>
+      </div>
+    </div>
+    
+    <!-- Type -->
+    <div class="filter-section">
+      <div class="filter-section-title">🔪 Type</div>
+      <div class="filter-chips" id="typeFilters">
+        <div class="filter-chip" data-type="boneless" onclick="toggleFilterChip(this,'type','boneless')">🦴 Boneless</div>
+        <div class="filter-chip" data-type="skinless" onclick="toggleFilterChip(this,'type','skinless')">Skinless</div>
+      </div>
+    </div>
+    
+    <!-- Attributes -->
+    <div class="filter-section">
+      <div class="filter-section-title">✨ Attributes</div>
+      <div class="filter-chips" id="attrFilters">
+        <div class="filter-chip" data-attr="fresh" onclick="toggleFilterChip(this,'attr','fresh')">🌿 Fresh</div>
+        <div class="filter-chip" data-attr="marinated" onclick="toggleFilterChip(this,'attr','marinated')">🔥 Marinated</div>
+        <div class="filter-chip" data-attr="offer" onclick="toggleFilterChip(this,'attr','offer')">🏷️ On Offer</div>
+      </div>
+    </div>
+    
+    <!-- Actions -->
+    <div class="filter-actions">
+      <button class="filter-clear-btn" onclick="clearAllFilters()">Clear All</button>
+      <button class="filter-apply-btn" onclick="applyFilters()">Apply Filters</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
+
