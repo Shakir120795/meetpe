@@ -5617,88 +5617,10 @@ async function purchaseMembership(zoneId, price) {
     showToast('Network error. Please try again.', 'error');
   }
 }
-            </div>
-          </div>
-          <div style="font-size:22px;font-weight:800;color:#fff">₹999</div>
-        </div>
-      </div>
-    </div>
 
-    ${membershipActive && membershipExpiry ? `
-      <!-- Renewal Button -->
-      <button onclick="renewMembership()" 
-        style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px">
-        🔄 Renew Membership
-      </button>
-    ` : `
-      <!-- Join Button -->
-      <button id="joinMembershipBtn" onclick="joinMembership()" 
-        style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px">
-        👑 Join NOW Plus - ₹99/mo
-      </button>
-    `}
-    
-    <button onclick="goBack()" 
-      style="width:100%;padding:12px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer">
-      ← Go Back
-    </button>
-  `;
-  
-  // Default select monthly plan
-  selectMembershipPlan('monthly', 99);
-}
-
-let SELECTED_MEMBERSHIP_PLAN = { type: 'monthly', amount: 99 };
-
-function selectMembershipPlan(type, amount) {
-  SELECTED_MEMBERSHIP_PLAN = { type, amount };
-  
-  // Update radio buttons
-  document.querySelectorAll('.plan-radio').forEach(radio => {
-    radio.innerHTML = '';
-    radio.style.borderColor = 'var(--border)';
-  });
-  
-  const selectedRadio = document.getElementById(`radio-${type}`);
-  if (selectedRadio) {
-    selectedRadio.innerHTML = '<div style="width:12px;height:12px;background:var(--accent);border-radius:50%"></div>';
-    selectedRadio.style.borderColor = 'var(--accent)';
-  }
-  
-  // Update plan cards
-  const monthlyCard = document.getElementById('plan-monthly');
-  const annualCard = document.getElementById('plan-annual');
-  
-  if (monthlyCard) {
-    monthlyCard.style.borderColor = type === 'monthly' ? 'var(--accent)' : 'var(--border)';
-    monthlyCard.style.background = type === 'monthly' ? 'rgba(232,69,10,.05)' : 'var(--bg)';
-  }
-  
-  if (annualCard) {
-    annualCard.style.borderColor = type === 'annual' ? '#f59e0b' : '#3d3500';
-  }
-  
-  // Update button text
-  const joinBtn = document.getElementById('joinMembershipBtn');
-  if (joinBtn) {
-    const label = type === 'monthly' ? '₹99/mo' : '₹999/yr';
-    joinBtn.textContent = `👑 Join NOW Plus - ${label}`;
-  }
-}
-
-function joinMembership() {
-  const { type, amount } = SELECTED_MEMBERSHIP_PLAN;
-  showToast(`Initiating ${type} membership payment of ₹${amount}...`, 'info');
-  // In production, integrate with Razorpay here
-  console.log('Join membership:', type, amount);
-  showScreen('screen-wallet');
-}
-
-function renewMembership() {
-  showToast('Redirecting to renewal...', 'info');
-  showScreen('screen-wallet');
-  // In a real app, this would initiate renewal payment via Razorpay
-}
+// ═══════════════════════════════════════════
+//  Referral Screen
+// ═══════════════════════════════════════════
 
 // ═══════════════════════════════════════════
 //  Referral System
