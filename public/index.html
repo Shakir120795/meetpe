@@ -1678,64 +1678,47 @@ function escapeHtml(text) {
     try { CART = JSON.parse(savedCart); } catch(e) {}
   }
 
-  // Show splash screen
+  // Load app settings immediately
+  fetch('/api/settings').then(r => r.json()).catch(e => console.log('Settings load error:', e));
+  
+  // Determine what to show based on USER
+  const hasUser = !!USER;
+  
+  // Hide all screens first
   document.querySelectorAll('.screen').forEach(s => {
-    s.classList.remove('active');
     s.style.display = 'none';
+    s.classList.remove('active');
   });
-  const splashScreen = document.getElementById('screen-splash');
-  if (splashScreen) {
-    splashScreen.style.display = 'flex';
-    splashScreen.classList.add('active');
-  }
-  document.getElementById('bottomNav').style.display = 'none';
-  document.getElementById('cartBar').style.display = 'none';
-
-  // Initialize app after splash
-  setTimeout(async () => {
-    try {
-      // Load settings
-      const settingsRes = await fetch('/api/settings');
-      await settingsRes.json();
-      
-      // Load menu
-      console.log('📥 Loading menu...');
-      const menuRes = await fetch('/api/menu');
-      MENU = await menuRes.json();
-      console.log('✅ Menu loaded:', MENU.length, 'items');
-      
-      // Hide splash
-      document.querySelectorAll('.screen').forEach(s => {
-        s.classList.remove('active');
-        s.style.display = 'none';
-      });
-      
-      // Show correct screen
-      if (USER) {
-        console.log('👤 User found, showing home');
-        const homeScreen = document.getElementById('screen-home');
-        homeScreen.style.display = '';
-        homeScreen.classList.add('active');
-        document.getElementById('bottomNav').style.display = 'flex';
-        updateCartBar();
-        updateTopbarUser();
+  
+  // Show appropriate screen
+  if (hasUser) {
+    // User logged in - show home screen
+    const homeScreen = document.getElementById('screen-home');
+    homeScreen.style.display = '';
+    homeScreen.classList.add('active');
+    document.getElementById('bottomNav').style.display = 'flex';
+    updateTopbarUser();
+    
+    // Load and display menu
+    fetch('/api/menu')
+      .then(r => r.json())
+      .then(data => {
+        MENU = data;
         renderProducts();
-      } else {
-        console.log('🔓 No user, showing login');
-        const loginScreen = document.getElementById('screen-login');
-        loginScreen.style.display = '';
-        loginScreen.classList.add('active');
-        document.getElementById('bottomNav').style.display = 'none';
-      }
-    } catch(e) {
-      console.error('App init error:', e);
-      // Show home anyway
-      const homeScreen = document.getElementById('screen-home');
-      homeScreen.style.display = '';
-      homeScreen.classList.add('active');
-      document.getElementById('bottomNav').style.display = 'flex';
-    }
-  }, 1000); // Minimum splash time
+        console.log('✅ Menu loaded:', MENU.length, 'items');
+      })
+      .catch(e => {
+        console.error('Menu load error:', e);
+        document.getElementById('productGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">⚠️ Unable to load menu</div>';
+      });
+  } else {
+    // No user - show login screen
+    const loginScreen = document.getElementById('screen-login');
+    loginScreen.style.display = '';
+    loginScreen.classList.add('active');
+    document.getElementById('bottomNav').style.display = 'none';
+    document.getElementById('cartBar').style.display = 'none';
+  }
 })();
 
 // Track when page started loading
