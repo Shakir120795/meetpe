@@ -322,6 +322,14 @@ input,textarea{font:inherit;color:inherit}
 .checkout-btn:active{opacity:.9;transform:scale(.98)}
 .checkout-btn:disabled{opacity:.5}
 
+/* ── Tip Chips ── */
+.tip-chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 14px}
+.tip-chip{padding:10px 16px;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;
+  transition:all .2s;text-align:center;min-width:70px}
+.tip-chip:active{transform:scale(.95)}
+.tip-chip.active{background:rgba(232,69,10,.12);border-color:var(--accent);color:var(--accent)}
+
 /* ── Orders screen ── */
 .order-card{background:var(--card);border-radius:14px;border:1px solid var(--border);
   padding:14px;margin:0 14px 10px;cursor:pointer;transition:transform .2s}
@@ -1182,10 +1190,78 @@ input,textarea{font:inherit;color:inherit}
         <div class="section-box">
           <div class="section-box-title">🧾 Price Breakdown</div>
           <div class="price-row"><span>Items Subtotal</span><span id="priceSubtotal">₹0</span></div>
-          <div class="price-row" id="priceDeliveryRow"><span>Delivery Charge</span><span id="priceDelivery">₹0</span></div>
-          <div class="price-row" id="priceDiscountRow" style="display:none"><span>Coupon Discount</span><span class="green" id="priceDiscount">-₹0</span></div>
-          <div class="price-row" id="priceWalletRow" style="display:none"><span>Wallet Applied</span><span class="green" id="priceWallet">-₹0</span></div>
-          <div class="price-row total"><span>Total</span><span id="priceTotal">₹0</span></div>
+          
+          <!-- Delivery Charge Breakdown -->
+          <div class="price-row" id="priceDeliveryRow">
+            <span style="display:flex;align-items:center;gap:6px">
+              Delivery Charge
+              <span id="deliveryInfo" onclick="showDeliveryBreakdown()" style="cursor:pointer;font-size:16px;color:var(--muted)" title="Click for details">ℹ️</span>
+            </span>
+            <span id="priceDelivery">₹0</span>
+          </div>
+          
+          <!-- Platform Fee (if any) -->
+          <div class="price-row" id="pricePlatformRow" style="display:none">
+            <span>Platform Fee</span>
+            <span id="pricePlatform">₹0</span>
+          </div>
+          
+          <!-- Taxes Breakdown -->
+          <div class="price-row" id="priceTaxRow" style="display:none">
+            <span style="display:flex;align-items:center;gap:6px">
+              Taxes (GST)
+              <span onclick="showTaxBreakdown()" style="cursor:pointer;font-size:16px;color:var(--muted)" title="Click for details">ℹ️</span>
+            </span>
+            <span id="priceTax">₹0</span>
+          </div>
+          
+          <!-- Membership Discount -->
+          <div class="price-row" id="priceMemberRow" style="display:none">
+            <span style="display:flex;align-items:center;gap:6px">
+              <span style="background:linear-gradient(135deg,#fbbf24,#f59e0b);padding:2px 8px;border-radius:6px;font-size:10px;font-weight:700;color:#000">PLUS</span>
+              Member Discount
+            </span>
+            <span class="green" id="priceMember">-₹0</span>
+          </div>
+          
+          <!-- Coupon Discount -->
+          <div class="price-row" id="priceDiscountRow" style="display:none">
+            <span>Coupon Discount</span>
+            <span class="green" id="priceDiscount">-₹0</span>
+          </div>
+          
+          <!-- Wallet Applied -->
+          <div class="price-row" id="priceWalletRow" style="display:none">
+            <span>Wallet Applied</span>
+            <span class="green" id="priceWallet">-₹0</span>
+          </div>
+          
+          <!-- Tip for Delivery Partner -->
+          <div class="price-row" id="priceTipRow" style="display:none">
+            <span>Tip for Delivery Partner</span>
+            <span id="priceTip">₹0</span>
+          </div>
+          
+          <div class="price-row total"><span>To Pay</span><span id="priceTotal">₹0</span></div>
+        </div>
+        
+        <!-- Tip Delivery Partner Section -->
+        <div class="section-box">
+          <div class="section-box-title">💝 Tip your Delivery Partner</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">100% of your tip goes to the delivery partner</div>
+          <div class="tip-chips" id="tipChips">
+            <div class="tip-chip" data-tip="0" onclick="selectTip(0)">No Tip</div>
+            <div class="tip-chip" data-tip="10" onclick="selectTip(10)">₹10</div>
+            <div class="tip-chip" data-tip="20" onclick="selectTip(20)">₹20</div>
+            <div class="tip-chip" data-tip="30" onclick="selectTip(30)">₹30</div>
+            <div class="tip-chip" data-tip="50" onclick="selectTip(50)">₹50</div>
+          </div>
+          <div style="margin-top:10px;display:flex;align-items:center;gap:8px">
+            <input type="number" id="customTipInput" placeholder="Custom amount" 
+              style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;background:var(--bg);outline:none"
+              oninput="selectTip(parseInt(this.value)||0)" min="0" max="500"/>
+            <span style="font-size:12px;color:var(--muted)">Max ₹500</span>
+          </div>
         </div>
 
         <div style="margin:10px 14px;padding:10px 14px;background:rgba(34,197,94,.1);border-radius:10px;
@@ -1946,6 +2022,7 @@ let SELECTED_PRICE = 0;
 let MENU_CUSTOM = {}; // stores custom weight variants added from product detail
 let PAYMENT = 'cod';
 let COUPON = null;       // { code, discount }
+let DELIVERY_TIP = 0;    // Tip for delivery partner
 let WALLET_APPLIED = false;
 let ADDONS = { 1: true, 2: false }; // addon states on product screen
 let APP_SETTINGS = null; // Store branding/settings from backend
@@ -4049,20 +4126,100 @@ function renderBasket() {
     walletSec.style.display = 'none';
     WALLET_APPLIED = false;
   }
+  
+  // Render dynamic tip chips from settings
+  renderTipChips();
 
   renderPrices(sub);
 }
 
+// Render tip chips dynamically from settings
+function renderTipChips() {
+  const cartSettings = (APP_SETTINGS && APP_SETTINGS.cartSettings) || {};
+  const tipOptions = cartSettings.tipOptions || [10, 20, 30, 50];
+  const maxTip = cartSettings.maxTip || 500;
+  
+  const chipsContainer = document.getElementById('tipChips');
+  if (!chipsContainer) return;
+  
+  let html = '<div class="tip-chip" data-tip="0" onclick="selectTip(0)">No Tip</div>';
+  tipOptions.forEach(amount => {
+    html += `<div class="tip-chip ${DELIVERY_TIP === amount ? 'active' : ''}" data-tip="${amount}" onclick="selectTip(${amount})">₹${amount}</div>`;
+  });
+  
+  chipsContainer.innerHTML = html;
+  
+  // Update max tip in custom input
+  const customInput = document.getElementById('customTipInput');
+  if (customInput) {
+    customInput.max = maxTip;
+    customInput.nextElementSibling.textContent = `Max ₹${maxTip}`;
+  }
+}
+
 function renderPrices(sub) {
   if (sub === undefined) sub = cartSubtotal();
-  const couponDisc = COUPON ? COUPON.discount : 0;
-  const walletAmt = (WALLET_APPLIED && USER) ? Math.min(USER.wallet, sub - couponDisc) : 0;
+  
+  // Get cart settings from APP_SETTINGS
+  const cartSettings = (APP_SETTINGS && APP_SETTINGS.cartSettings) || {};
+  const taxRate = (cartSettings.taxRate || 5) / 100; // Convert to decimal
+  const platformFee = cartSettings.platformFee || 0;
+  const memberDiscountPercent = (cartSettings.memberDiscountPercent || 5) / 100;
+  const showTaxBreakdown = cartSettings.showTaxBreakdown !== false;
+  const showMemberDiscount = cartSettings.showMemberDiscount !== false;
+  
+  // Calculate membership discount (if user has Plus membership)
+  let memberDisc = 0;
+  if (USER && USER.is_plus && showMemberDiscount) {
+    memberDisc = Math.round(sub * memberDiscountPercent);
+  }
+  
+  // Calculate delivery fee
   const fee = deliveryFee(sub);
-  const total = Math.max(0, sub - couponDisc - walletAmt + fee);
+  
+  // Calculate taxes (GST)
+  const taxableAmount = sub - memberDisc;
+  const taxAmount = Math.round(taxableAmount * taxRate);
+  
+  // Calculate discounts
+  const couponDisc = COUPON ? COUPON.discount : 0;
+  const walletAmt = (WALLET_APPLIED && USER) ? Math.min(USER.wallet, sub - memberDisc - couponDisc) : 0;
+  
+  // Calculate total
+  const total = Math.max(0, sub - memberDisc - couponDisc - walletAmt + fee + platformFee + taxAmount + DELIVERY_TIP);
 
+  // Update UI
   document.getElementById('priceSubtotal').textContent = '₹' + sub;
   document.getElementById('priceDelivery').textContent = fee === 0 ? 'FREE' : '₹' + fee;
 
+  // Membership discount
+  const memberRow = document.getElementById('priceMemberRow');
+  if (memberDisc > 0 && showMemberDiscount) {
+    memberRow.style.display = 'flex';
+    document.getElementById('priceMember').textContent = '-₹' + memberDisc;
+  } else {
+    memberRow.style.display = 'none';
+  }
+  
+  // Platform fee
+  const platformRow = document.getElementById('pricePlatformRow');
+  if (platformFee > 0) {
+    platformRow.style.display = 'flex';
+    document.getElementById('pricePlatform').textContent = '₹' + platformFee;
+  } else {
+    platformRow.style.display = 'none';
+  }
+  
+  // Taxes
+  const taxRow = document.getElementById('priceTaxRow');
+  if (taxAmount > 0) {
+    taxRow.style.display = 'flex';
+    document.getElementById('priceTax').textContent = '₹' + taxAmount;
+  } else {
+    taxRow.style.display = 'none';
+  }
+
+  // Coupon discount
   const discRow = document.getElementById('priceDiscountRow');
   if (couponDisc > 0) {
     discRow.style.display = 'flex';
@@ -4071,6 +4228,7 @@ function renderPrices(sub) {
     discRow.style.display = 'none';
   }
 
+  // Wallet applied
   const walletRow = document.getElementById('priceWalletRow');
   if (walletAmt > 0) {
     walletRow.style.display = 'flex';
@@ -4078,8 +4236,94 @@ function renderPrices(sub) {
   } else {
     walletRow.style.display = 'none';
   }
+  
+  // Tip for delivery partner
+  const tipRow = document.getElementById('priceTipRow');
+  if (DELIVERY_TIP > 0) {
+    tipRow.style.display = 'flex';
+    document.getElementById('priceTip').textContent = '₹' + DELIVERY_TIP;
+  } else {
+    tipRow.style.display = 'none';
+  }
 
   document.getElementById('priceTotal').textContent = '₹' + total;
+}
+
+// Tip selection
+function selectTip(amount) {
+  const cartSettings = (APP_SETTINGS && APP_SETTINGS.cartSettings) || {};
+  const maxTip = cartSettings.maxTip || 500;
+  
+  DELIVERY_TIP = Math.min(amount, maxTip); // Max from settings
+  
+  // Update chips
+  document.querySelectorAll('.tip-chip').forEach(chip => {
+    const tipVal = parseInt(chip.dataset.tip);
+    if (tipVal === DELIVERY_TIP) {
+      chip.classList.add('active');
+    } else {
+      chip.classList.remove('active');
+    }
+  });
+  
+  // Update custom input
+  const customInput = document.getElementById('customTipInput');
+  const tipOptions = cartSettings.tipOptions || [10, 20, 30, 50];
+  if (customInput && DELIVERY_TIP > 0 && !tipOptions.includes(DELIVERY_TIP) && DELIVERY_TIP !== 0) {
+    customInput.value = DELIVERY_TIP;
+  } else if (customInput && (DELIVERY_TIP === 0 || tipOptions.includes(DELIVERY_TIP))) {
+    customInput.value = '';
+  }
+  
+  // Recalculate prices
+  renderPrices();
+}
+
+// Show delivery charge breakdown
+function showDeliveryBreakdown() {
+  const sub = cartSubtotal();
+  const fee = deliveryFee(sub);
+  
+  let msg = '🚚 Delivery Charge Breakdown:\n\n';
+  if (fee === 0) {
+    msg += '✅ FREE Delivery!\n';
+    msg += `Order above ₹${FREE_ABOVE} qualifies for free delivery.`;
+  } else if (sub < FEE_LOW_BELOW) {
+    msg += `📦 Order Total: ₹${sub}\n`;
+    msg += `⚠️ Below ₹${FEE_LOW_BELOW}: ₹${FEE_LOW} delivery fee\n\n`;
+    msg += `💡 Tip: Add ₹${FEE_LOW_BELOW - sub} more to reduce delivery fee to ₹${FEE_MID}`;
+  } else if (sub < FREE_ABOVE) {
+    msg += `📦 Order Total: ₹${sub}\n`;
+    msg += `Standard Delivery: ₹${FEE_MID}\n\n`;
+    msg += `💡 Tip: Add ₹${FREE_ABOVE - sub} more for FREE delivery!`;
+  }
+  
+  alert(msg);
+}
+
+// Show tax breakdown
+function showTaxBreakdown() {
+  const sub = cartSubtotal();
+  const cartSettings = (APP_SETTINGS && APP_SETTINGS.cartSettings) || {};
+  const taxRate = (cartSettings.taxRate || 5) / 100;
+  const memberDiscountPercent = (cartSettings.memberDiscountPercent || 5) / 100;
+  const showMemberDiscount = cartSettings.showMemberDiscount !== false;
+  
+  const memberDisc = (USER && USER.is_plus && showMemberDiscount) ? Math.round(sub * memberDiscountPercent) : 0;
+  const taxableAmount = sub - memberDisc;
+  const cgst = Math.round(taxableAmount * (taxRate / 2)); // Half for CGST
+  const sgst = Math.round(taxableAmount * (taxRate / 2)); // Half for SGST
+  const total = cgst + sgst;
+  
+  let msg = `📊 Tax Breakdown (GST @ ${(taxRate * 100).toFixed(1)}%):\n\n`;
+  msg += `Taxable Amount: ₹${taxableAmount}\n\n`;
+  msg += `CGST (${(taxRate * 50).toFixed(2)}%): ₹${cgst}\n`;
+  msg += `SGST (${(taxRate * 50).toFixed(2)}%): ₹${sgst}\n`;
+  msg += `───────────────\n`;
+  msg += `Total Tax: ₹${total}\n\n`;
+  msg += '💡 GST is included in final price';
+  
+  alert(msg);
 }
 
 function selectPayment(method) {

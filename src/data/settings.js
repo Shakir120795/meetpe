@@ -49,6 +49,16 @@ const defaults = {
     'marinated chicken',
     'tandoori',
   ],
+  // NEW: Cart & Pricing Settings (admin-editable)
+  cartSettings: {
+    taxRate: 5,               // GST percentage (5%)
+    platformFee: 0,            // Platform fee (₹0)
+    memberDiscountPercent: 5,  // Plus member discount (5%)
+    tipOptions: [10, 20, 30, 50], // Tip options in rupees
+    maxTip: 500,               // Maximum tip allowed (₹500)
+    showTaxBreakdown: true,    // Show tax breakdown (CGST/SGST)
+    showMemberDiscount: true,  // Show member discount in cart
+  },
 };
 
 function ensureDir() {
@@ -71,6 +81,7 @@ function read() {
       socials: Array.isArray(data.socials) ? data.socials : defaults.socials,
       pages: { ...defaults.pages, ...data.pages },
       trendingSearches: Array.isArray(data.trendingSearches) ? data.trendingSearches : defaults.trendingSearches,
+      cartSettings: { ...defaults.cartSettings, ...data.cartSettings },
     };
   } catch (e) {
     console.warn('settings.json read failed:', e.message);
@@ -96,6 +107,7 @@ function update(patch) {
   if (Array.isArray(patch.socials)) current.socials = patch.socials;
   if (patch.pages) current.pages = { ...current.pages, ...patch.pages };
   if (Array.isArray(patch.trendingSearches)) current.trendingSearches = patch.trendingSearches;
+  if (patch.cartSettings) current.cartSettings = { ...current.cartSettings, ...patch.cartSettings };
   write(current);
   return { ok: true, settings: current };
 }
