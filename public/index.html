@@ -5564,8 +5564,9 @@ let _map = null;
 let _geocodeTimer = null;
 let _mapLat = 27.1767, _mapLon = 78.0081;
 let _mapLabel = '', _mapFull = '';
-let _mapMode = 'select'; // 'select' | 'new_addr'
+let _mapMode = 'select'; // 'select' | 'new_addr' | 'edit_addr'
 let _newAddrType = 'Home';
+let _editingAddrId = null; // For edit mode
 
 function _initMap(lat, lon) {
   if (_map) {
@@ -5715,6 +5716,15 @@ function mapConfirmStep1() {
 }
 
 function backToMapStep1() {
+  // In edit mode, if going back, close the edit flow
+  if (_mapMode === 'edit_addr') {
+    closeMapPicker();
+    _mapMode = 'select';
+    _editingAddrId = null;
+    showToast('Edit cancelled', '', 1500);
+    return;
+  }
+  
   document.getElementById('mapStep2').style.display = 'none';
   document.getElementById('mapStep1').style.display = 'block';
   setTimeout(() => { if (_map) _map.invalidateSize(); }, 100);
@@ -5789,6 +5799,59 @@ function saveNewAddress() {
   if (!flat) { showToast('Please enter house/flat number', 'error'); return; }
 
   const full = [flat, street, landmark].filter(Boolean).join(', ');
+  
+  // EDIT MODE: Update existing address
+  if (_mapMode === 'edit_addr' && _editingAddrId) {
+    const addresses = getSavedAddresses();
+    const addrIndex = addresses.findIndex(a => a.id == _editingAddrId);
+    
+    if (addrIndex !== -1) {
+      // Update existing address
+      addresses[addrIndex] = {
+        ...addresses[addrIndex],
+        type: _newAddrType,
+        label: _newAddrType,
+        flat, 
+        street, 
+        landmark,
+        full,
+        lat: _mapLat || addresses[addrIndex].lat || null,
+        lon: _mapLon || addresses[addrIndex].lon || null
+      };
+      
+      saveAddresses(addresses);
+      
+      // Update selection if edited address was selected
+      const selected = getSelectedAddr();
+      if (selected && selected.full === addresses[addrIndex].full) {
+        setSelectedAddr({ 
+          label: _newAddrType, 
+          full, 
+          lat: addresses[addrIndex].lat, 
+          lon: addresses[addrIndex].lon 
+        });
+        updateLocTopbar(_newAddrType + ' - ' + flat);
+      }
+      
+      // Clear form
+      document.getElementById('newAddrFlat').value = '';
+      document.getElementById('newAddrStreet').value = '';
+      document.getElementById('newAddrLandmark').value = '';
+      
+      // Reset edit mode
+      _mapMode = 'select';
+      _editingAddrId = null;
+      
+      closeMapPicker();
+      closeLocMap();
+      renderSavedAddresses();
+      
+      showToast('✅ Address updated!', 'success');
+      return;
+    }
+  }
+  
+  // NEW ADDRESS MODE: Create new address
   const addr = {
     id: Date.now(),
     type: _newAddrType,
@@ -5851,7 +5914,10 @@ function renderSavedAddresses() {
         </div>
         <div class="addr-full" title="${addr.full}">${displayFull}</div>
       </div>
-      <button class="addr-menu-btn" onclick="event.stopPropagation();deleteAddress(${addr.id})" title="Delete address">🗑️</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="addr-menu-btn" onclick="event.stopPropagation();editAddress(${addr.id})" title="Edit address" style="background:rgba(59,130,246,.1);color:#3b82f6">✏️</button>
+        <button class="addr-menu-btn" onclick="event.stopPropagation();deleteAddress(${addr.id})" title="Delete address">🗑️</button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -5894,6 +5960,51 @@ function deleteAddress(id) {
   
   renderSavedAddresses();
   showToast('🗑️ Address removed', '', 1500);
+}
+
+function editAddress(id) {
+  const addresses = getSavedAddresses();
+  const addr = addresses.find(a => a.id == id);
+  if (!addr) return;
+  
+  // Set mode to edit
+  _mapMode = 'edit_addr';
+  _editingAddrId = id;
+  
+  // Pre-fill form with existing data
+  document.getElementById('newAddrFlat').value = addr.flat || '';
+  document.getElementById('newAddrStreet').value = addr.street || '';
+  document.getElementById('newAddrLandmark').value = addr.landmark || '';
+  
+  // Set address type
+  _newAddrType = addr.type || 'Home';
+  document.querySelectorAll('#addrTypeRow .addr-type-btn').forEach(b => {
+    if (b.textContent.includes(addr.type)) {
+      b.classList.add('active');
+    } else {
+      b.classList.remove('active');
+    }
+  });
+  
+  // Set map location if available
+  if (addr.lat && addr.lon) {
+    _mapLat = addr.lat;
+    _mapLon = addr.lon;
+    _mapLabel = addr.label;
+    _mapFull = addr.full;
+  }
+  
+  // Open map picker in edit mode
+  document.getElementById('mapPickerTitle').textContent = 'Edit Address';
+  document.getElementById('mapStep1').style.display = 'none';
+  document.getElementById('mapStep2').style.display = 'block';
+  document.getElementById('mapPickerScreen').classList.add('open');
+  
+  // Show location text in step 2
+  const locText = addr.label.length > 45 ? addr.label.slice(0, 43) + '…' : addr.label;
+  document.getElementById('mapStep2Loc').textContent = '📍 ' + locText;
+  
+  showToast('✏️ Editing address', 'info', 1500);
 }
 
 function showSavedAddresses() {
