@@ -97,6 +97,30 @@ input,textarea{font:inherit;color:inherit}
 .login-guest{color:var(--muted);font-size:13px;text-align:center;margin-top:14px}
 .login-guest a{color:var(--accent);font-weight:600}
 
+/* ── Splash screen ── */
+#screen-splash{background:linear-gradient(160deg,#1a0500 0%,#0D0D0D 60%,#000 100%);
+  display:flex;align-items:center;justify-content:center;padding-bottom:0}
+.splash-content{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;text-align:center}
+.splash-logo{width:160px;height:160px;border-radius:30px;object-fit:contain;
+  background:transparent;animation:zoomIn 0.6s ease-out}
+.splash-brand{font-size:42px;font-weight:900;letter-spacing:-1.5px;
+  background:linear-gradient(135deg,#E8450A,#ff9a3c);-webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;animation:fadeInUp 0.8s ease-out 0.2s both}
+.splash-tagline{color:rgba(255,255,255,.7);font-size:16px;font-weight:600;
+  letter-spacing:.5px;animation:fadeInUp 0.8s ease-out 0.4s both}
+.splash-loader{width:40px;height:40px;border:3px solid rgba(232,69,10,.2);
+  border-top-color:#E8450A;border-radius:50%;animation:spin 0.8s linear infinite;
+  margin-top:20px}
+
+@keyframes zoomIn {
+  from { transform:scale(0.5);opacity:0; }
+  to { transform:scale(1);opacity:1; }
+}
+@keyframes fadeInUp {
+  from { transform:translateY(20px);opacity:0; }
+  to { transform:translateY(0);opacity:1; }
+}
+
 /* ── Home screen ── */
 .home-topbar{position:sticky;top:0;z-index:50;background:var(--card);
   border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px}
@@ -505,6 +529,16 @@ input,textarea{font:inherit;color:inherit}
 <body>
 <div id="app">
   <div class="screens">
+
+    <!-- ═══ SPLASH SCREEN ═══ -->
+    <div class="screen active" id="screen-splash">
+      <div class="splash-content">
+        <img src="/logo.png" alt="NOW" class="splash-logo" onerror="this.style.display='none'"/>
+        <div class="splash-brand">NOW</div>
+        <div class="splash-tagline">Nonveg On Wheel</div>
+        <div class="splash-loader"></div>
+      </div>
+    </div>
 
     <!-- ═══ LOGIN SCREEN ═══ -->
     <div class="screen" id="screen-login">
@@ -1867,95 +1901,119 @@ function initializeApp() {
   console.log('🚀 [INIT_APP] MENU length:', MENU.length);
   
   try {
-    // Force hide ALL screens
+    // Show splash screen for 2.5 seconds
+    console.log('🎨 [SPLASH] Showing splash screen...');
+    setTimeout(() => {
+      console.log('🎨 [SPLASH] Hiding splash screen after delay');
+      const splashScreen = document.getElementById('screen-splash');
+      if (splashScreen) {
+        splashScreen.style.display = 'none';
+        splashScreen.classList.remove('active');
+      }
+      
+      // Now show appropriate screen
+      initMainApp();
+    }, 2500);
+    
+  } catch(e) {
+    console.error('🔴 [INIT_APP] Error:', e);
+    console.error('🔴 [INIT_APP] Stack:', e.stack);
+  }
+}
+
+function initMainApp() {
+  try {
+    // Force hide ALL screens except splash
     const allScreens = document.querySelectorAll('.screen');
-    console.log('🚀 [INIT_APP] Found', allScreens.length, 'screens');
+    console.log('🚀 [INIT_MAIN] Found', allScreens.length, 'screens');
     
     allScreens.forEach((s, idx) => {
       const id = s.id;
-      const wasVisible = s.style.display !== 'none';
-      s.style.display = 'none';
-      s.classList.remove('active');
-      if (wasVisible) {
-        console.log('🚀 [INIT_APP] Hiding screen:', id);
+      if (id !== 'screen-splash') {
+        const wasVisible = s.style.display !== 'none';
+        s.style.display = 'none';
+        s.classList.remove('active');
+        if (wasVisible) {
+          console.log('🚀 [INIT_MAIN] Hiding screen:', id);
+        }
       }
     });
     
     if (USER) {
-      console.log('✅ [INIT_APP] USER exists, showing HOME');
+      console.log('✅ [INIT_MAIN] USER exists, showing HOME');
       
       // Show home screen using explicit display:block instead of relying on CSS cascade
       const homeScreen = document.getElementById('screen-home');
-      console.log('🚀 [INIT_APP] homeScreen element:', homeScreen ? 'FOUND' : 'NOT FOUND');
+      console.log('🚀 [INIT_MAIN] homeScreen element:', homeScreen ? 'FOUND' : 'NOT FOUND');
       
       if (homeScreen) {
         // CRITICAL FIX: Set display to 'block' explicitly, not empty string
         homeScreen.style.display = 'block';
         homeScreen.classList.add('active');
-        console.log('✅ [INIT_APP] Home screen display set to BLOCK and active class added');
+        console.log('✅ [INIT_MAIN] Home screen display set to BLOCK and active class added');
       } else {
-        console.error('🔴 [INIT_APP] CRITICAL: screen-home element NOT FOUND!');
+        console.error('🔴 [INIT_MAIN] CRITICAL: screen-home element NOT FOUND!');
       }
       
       const bottomNav = document.getElementById('bottomNav');
-      console.log('🚀 [INIT_APP] bottomNav element:', bottomNav ? 'FOUND' : 'NOT FOUND');
+      console.log('🚀 [INIT_MAIN] bottomNav element:', bottomNav ? 'FOUND' : 'NOT FOUND');
       
       if (bottomNav) {
         bottomNav.style.display = 'flex';
-        console.log('✅ [INIT_APP] Bottom nav display set to flex');
+        console.log('✅ [INIT_MAIN] Bottom nav display set to flex');
       }
       
       // Load menu NOW
-      console.log('📥 [INIT_APP] Starting menu fetch...');
+      console.log('📥 [INIT_MAIN] Starting menu fetch...');
       fetch('/api/menu')
         .then(r => {
-          console.log('📥 [INIT_APP] Menu response status:', r.status);
+          console.log('📥 [INIT_MAIN] Menu response status:', r.status);
           return r.json();
         })
         .then(data => {
           MENU = data;
-          console.log('✅ [INIT_APP] MENU loaded successfully:', MENU.length, 'items');
-          console.log('📦 [INIT_APP] Calling renderProducts()...');
+          console.log('✅ [INIT_MAIN] MENU loaded successfully:', MENU.length, 'items');
+          console.log('📦 [INIT_MAIN] Calling renderProducts()...');
           
           renderProducts();
           
-          console.log('👤 [INIT_APP] Calling updateTopbarUser()...');
+          console.log('👤 [INIT_MAIN] Calling updateTopbarUser()...');
           updateTopbarUser();
           
-          console.log('🛒 [INIT_APP] Calling updateCartBar()...');
+          console.log('🛒 [INIT_MAIN] Calling updateCartBar()...');
           updateCartBar();
         })
         .catch(e => {
-          console.error('🔴 [INIT_APP] Menu fetch FAILED:', e);
-          console.error('🔴 [INIT_APP] Error stack:', e.stack);
+          console.error('🔴 [INIT_MAIN] Menu fetch FAILED:', e);
+          console.error('🔴 [INIT_MAIN] Error stack:', e.stack);
           
           const grid = document.getElementById('productGrid');
           if (grid) {
             grid.innerHTML = '<div style="padding:40px;text-align:center;color:red">Menu load failed. Check console.</div>';
           } else {
-            console.error('🔴 [INIT_APP] productGrid element NOT FOUND!');
+            console.error('🔴 [INIT_MAIN] productGrid element NOT FOUND!');
           }
         });
       
       // Load settings
-      console.log('⚙️ [INIT_APP] Starting settings fetch...');
+      console.log('⚙️ [INIT_MAIN] Starting settings fetch...');
       fetch('/api/settings')
         .then(r => r.json())
         .then(s => { 
           APP_SETTINGS = s;
-          console.log('✅ [INIT_APP] Settings loaded');
+          console.log('✅ [INIT_MAIN] Settings loaded');
           applyBranding();
-          console.log('✅ [INIT_APP] Branding applied');
+          console.log('✅ [INIT_MAIN] Branding applied');
         })
         .catch(e => {
-          console.error('🔴 [INIT_APP] Settings fetch failed:', e);
+          console.error('🔴 [INIT_MAIN] Settings fetch failed:', e);
         });
         
     } else {
-      console.log('❌ [INIT_APP] NO USER - showing login');
+      console.log('❌ [INIT_MAIN] NO USER - showing login');
       
       const loginScreen = document.getElementById('screen-login');
-      console.log('🚀 [INIT_APP] loginScreen element:', loginScreen ? 'FOUND' : 'NOT FOUND');
+      console.log('🚀 [INIT_MAIN] loginScreen element:', loginScreen ? 'FOUND' : 'NOT FOUND');
       
       if (loginScreen) {
         // CRITICAL FIX: Set display to 'block' explicitly
