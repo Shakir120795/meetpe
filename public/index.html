@@ -970,6 +970,19 @@ input,textarea{font:inherit;color:inherit}
           <div class="pd-section-title">Select Weight</div>
           <div class="weight-chips" id="weightChips"></div>
         </div>
+        
+        <!-- Cut Type Options -->
+        <div class="pd-section" id="cutTypeSection" style="display:none">
+          <div class="pd-section-title">Select Cut Type</div>
+          <div class="weight-chips" id="cutTypeChips"></div>
+        </div>
+        
+        <!-- Bone/Boneless Options -->
+        <div class="pd-section" id="boneOptionSection" style="display:none">
+          <div class="pd-section-title">Bone Option</div>
+          <div class="weight-chips" id="boneOptionChips"></div>
+        </div>
+        
         <div class="pd-section">
           <div class="pd-section-title">Add-ons</div>
           <div id="addonsList">
@@ -985,6 +998,7 @@ input,textarea{font:inherit;color:inherit}
             </div>
           </div>
         </div>
+        
         <div class="pd-section">
           <div class="pd-section-title">Description</div>
           <div id="pdDesc" style="font-size:13px;color:var(--muted);line-height:1.6">
@@ -992,9 +1006,44 @@ input,textarea{font:inherit;color:inherit}
           </div>
         </div>
         
-        <!-- Similar Products -->
+        <!-- Nutritional Info (Updated) -->
+        <div class="pd-section" id="nutritionSection">
+          <div class="pd-section-title">📊 Nutritional Info (per 100g)</div>
+          <div id="nutritionGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px">
+            <div><span style="color:var(--muted)">Protein:</span> <strong>21g</strong></div>
+            <div><span style="color:var(--muted)">Fat:</span> <strong>4g</strong></div>
+            <div><span style="color:var(--muted)">Calories:</span> <strong>165 kcal</strong></div>
+            <div><span style="color:var(--muted)">Carbs:</span> <strong>0g</strong></div>
+          </div>
+        </div>
+        
+        <!-- Storage Tips -->
+        <div class="pd-section" id="storageTipsSection" style="display:none">
+          <div class="pd-section-title">❄️ Storage Tips</div>
+          <div id="storageTips" style="font-size:13px;color:var(--muted);line-height:1.6;background:var(--card);padding:12px;border-radius:8px;border:1px solid var(--border)"></div>
+        </div>
+        
+        <!-- Freshness Guarantee -->
+        <div class="pd-section" id="freshnessSection" style="display:none">
+          <div class="pd-section-title">✅ Freshness Guarantee</div>
+          <div id="freshnessGuarantee" style="font-size:13px;color:var(--muted);line-height:1.6;background:rgba(22,163,74,.08);padding:12px;border-radius:8px;border:1px solid rgba(22,163,74,.2)"></div>
+        </div>
+        
+        <!-- Return Policy -->
+        <div class="pd-section" id="returnPolicySection" style="display:none">
+          <div class="pd-section-title">↩️ Return Policy</div>
+          <div id="returnPolicy" style="font-size:13px;color:var(--muted);line-height:1.6;background:var(--card);padding:12px;border-radius:8px;border:1px solid var(--border)"></div>
+        </div>
+        
+        <!-- Customer Reviews -->
+        <div class="pd-section" id="reviewsSection">
+          <div class="pd-section-title">⭐ Customer Reviews</div>
+          <div id="productReviews"></div>
+        </div>
+        
+        <!-- Similar Products (Renamed from "You may also like") -->
         <div class="pd-section">
-          <div style="font-size:16px;font-weight:800;margin-bottom:12px">You may also like</div>
+          <div style="font-size:16px;font-weight:800;margin-bottom:12px">Related Products</div>
           <div id="similarProducts" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px"></div>
         </div>
       </div>
@@ -3328,25 +3377,29 @@ function openProduct(code) {
       <div class="pd-temp">❄️ Temp Locked at -4°C</div>`;
   }
 
-  // Weight chips — based on base unit of item
-  const baseGrams = parseUnitGrams(item.unit);
-  let weights;
-  if (item.cat === 'family_pack' || item.cat === 'ready_to_cook') {
-    weights = [item.unit]; // fixed weight, no selector
-  } else if (baseGrams <= 250) {
-    weights = ['250g','500g','1 kg','2 kg'];
-  } else if (baseGrams <= 500) {
-    weights = ['500g','1 kg','1.5 kg','2 kg'];
-  } else {
-    weights = ['1 kg','1.5 kg','2 kg','3 kg'];
-  }
-
-  const wc = document.getElementById('weightChips');
-  // First chip = base unit = item.unit, mark active
-  wc.innerHTML = weights.map((w, i) => {
-    const isBase = parseUnitGrams(w) === baseGrams || (i === 0 && !weights.some(x => parseUnitGrams(x) === baseGrams));
-    return `<div class="wchip${isBase && i===0 ? ' active':''}" onclick="selectWeight(this,'${w}')">${w}</div>`;
-  }).join('');
+  // Weight chips
+  renderWeightOptions(item);
+  
+  // Cut Type options
+  renderCutTypeOptions(item);
+  
+  // Bone options
+  renderBoneOptions(item);
+  
+  // Nutrition info
+  renderNutritionInfo(item);
+  
+  // Storage tips
+  renderStorageTips(item);
+  
+  // Freshness guarantee
+  renderFreshnessGuarantee(item);
+  
+  // Return policy
+  renderReturnPolicy(item);
+  
+  // Customer reviews
+  loadProductReviews(item.code);
 
   // Reset addons
   document.getElementById('addon1').className = 'addon-check checked';
@@ -3359,6 +3412,178 @@ function openProduct(code) {
   
   // Load similar products from same category
   loadSimilarProducts(item.cat, item.code);
+}
+
+// Helper functions for product detail sections
+function renderWeightOptions(item) {
+  const wc = document.getElementById('weightChips');
+  
+  // Use custom weight options if available
+  if (item.weightOptions && item.weightOptions.length > 0) {
+    wc.innerHTML = item.weightOptions.map((opt, i) => {
+      const [weight, priceStr] = opt.split(' - ');
+      const isFirst = i === 0;
+      return `<div class="wchip${isFirst ? ' active':''}" onclick="selectWeight(this,'${weight.trim()}')">${weight.trim()}</div>`;
+    }).join('');
+    return;
+  }
+  
+  // Default weight generation
+  const baseGrams = parseUnitGrams(item.unit);
+  let weights;
+  if (item.cat === 'family_pack' || item.cat === 'ready_to_cook') {
+    weights = [item.unit];
+  } else if (baseGrams <= 250) {
+    weights = ['250g','500g','1 kg','2 kg'];
+  } else if (baseGrams <= 500) {
+    weights = ['500g','1 kg','1.5 kg','2 kg'];
+  } else {
+    weights = ['1 kg','1.5 kg','2 kg','3 kg'];
+  }
+  
+  wc.innerHTML = weights.map((w, i) => {
+    const isBase = parseUnitGrams(w) === baseGrams || (i === 0 && !weights.some(x => parseUnitGrams(x) === baseGrams));
+    return `<div class="wchip${isBase && i===0 ? ' active':''}" onclick="selectWeight(this,'${w}')">${w}</div>`;
+  }).join('');
+}
+
+function renderCutTypeOptions(item) {
+  const section = document.getElementById('cutTypeSection');
+  const chips = document.getElementById('cutTypeChips');
+  
+  if (item.cutTypes && item.cutTypes.length > 0) {
+    chips.innerHTML = item.cutTypes.map((cut, i) => 
+      `<div class="wchip${i === 0 ? ' active':''}" onclick="selectCutType(this, '${cut}')">${cut}</div>`
+    ).join('');
+    section.style.display = 'block';
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+function renderBoneOptions(item) {
+  const section = document.getElementById('boneOptionSection');
+  const chips = document.getElementById('boneOptionChips');
+  
+  if (item.boneOptions && item.boneOptions.length > 0) {
+    chips.innerHTML = item.boneOptions.map((opt, i) => 
+      `<div class="wchip${i === 0 ? ' active':''}" onclick="selectBoneOption(this, '${opt}')">${opt}</div>`
+    ).join('');
+    section.style.display = 'block';
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+function renderNutritionInfo(item) {
+  const section = document.getElementById('nutritionSection');
+  const grid = document.getElementById('nutritionGrid');
+  
+  if (item.nutritionInfo && Object.keys(item.nutritionInfo).length > 0) {
+    const n = item.nutritionInfo;
+    grid.innerHTML = `
+      ${n.protein ? `<div><span style="color:var(--muted)">Protein:</span> <strong>${n.protein}</strong></div>` : ''}
+      ${n.fat ? `<div><span style="color:var(--muted)">Fat:</span> <strong>${n.fat}</strong></div>` : ''}
+      ${n.calories ? `<div><span style="color:var(--muted)">Calories:</span> <strong>${n.calories}</strong></div>` : ''}
+      ${n.carbs ? `<div><span style="color:var(--muted)">Carbs:</span> <strong>${n.carbs}</strong></div>` : ''}
+    `;
+    section.style.display = 'block';
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+function renderStorageTips(item) {
+  const section = document.getElementById('storageTipsSection');
+  const tips = document.getElementById('storageTips');
+  
+  if (item.storageTips) {
+    tips.textContent = item.storageTips;
+    section.style.display = 'block';
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+function renderFreshnessGuarantee(item) {
+  const section = document.getElementById('freshnessSection');
+  const guarantee = document.getElementById('freshnessGuarantee');
+  
+  if (item.freshnessGuarantee) {
+    guarantee.textContent = item.freshnessGuarantee;
+    section.style.display = 'block';
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+function renderReturnPolicy(item) {
+  const section = document.getElementById('returnPolicySection');
+  const policy = document.getElementById('returnPolicy');
+  
+  if (item.returnPolicy) {
+    policy.textContent = item.returnPolicy;
+    section.style.display = 'block';
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+async function loadProductReviews(itemCode) {
+  const section = document.getElementById('reviewsSection');
+  const container = document.getElementById('productReviews');
+  
+  try {
+    const res = await fetch(`/api/reviews/${itemCode}`);
+    const reviews = await res.json();
+    
+    if (!reviews || reviews.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No reviews yet. Be the first to review!</div>';
+      section.style.display = 'block';
+      return;
+    }
+    
+    // Show approved reviews only
+    const approved = reviews.filter(r => r.status === 'approved').slice(0, 5);
+    
+    if (approved.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No reviews yet. Be the first to review!</div>';
+    } else {
+      container.innerHTML = approved.map(r => {
+        const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+        const date = new Date(r.created_at).toLocaleDateString();
+        return `
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <div style="color:#f59e0b;font-size:14px">${stars}</div>
+              <div style="color:var(--muted);font-size:11px">${date}</div>
+            </div>
+            ${r.comment ? `<div style="font-size:13px;line-height:1.5;color:var(--text)">${escapeHtml(r.comment)}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+    
+    section.style.display = 'block';
+  } catch(e) {
+    console.warn('Failed to load reviews:', e);
+    section.style.display = 'none';
+  }
+}
+
+// Selection handlers for cut type and bone options
+function selectCutType(el, cutType) {
+  document.querySelectorAll('#cutTypeChips .wchip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  // Store selection (can be used in addToCart)
+  CURRENT_PRODUCT.selectedCutType = cutType;
+}
+
+function selectBoneOption(el, option) {
+  document.querySelectorAll('#boneOptionChips .wchip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  // Store selection
+  CURRENT_PRODUCT.selectedBoneOption = option;
 }
 
 function loadSimilarProducts(category, currentCode) {

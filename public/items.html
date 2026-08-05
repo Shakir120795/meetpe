@@ -305,6 +305,27 @@
         </label>
       </div>
 
+      <label style="margin-top:16px">Weight Options <small style="color:var(--gray);font-weight:400">(one per line: "500g - ₹135")</small></label>
+      <textarea id="weightOptionsInput" rows="3" placeholder="500g - ₹135&#10;1kg - ₹260&#10;2kg - ₹510" style="resize:vertical;font-family:monospace;font-size:13px"></textarea>
+
+      <label>Cut Type Options <small style="color:var(--gray);font-weight:400">(comma-separated)</small></label>
+      <input id="cutTypesInput" placeholder="Whole, Curry Cut, Boneless, Drumsticks, Wings" />
+
+      <label>Bone Options <small style="color:var(--gray);font-weight:400">(comma-separated)</small></label>
+      <input id="boneOptionsInput" placeholder="With Bone, Boneless" />
+
+      <label>Nutrition Info <small style="color:var(--gray);font-weight:400">(JSON format)</small></label>
+      <textarea id="nutritionInfoInput" rows="2" placeholder='{"protein":"21g","fat":"4g","calories":"165 kcal","carbs":"0g"}' style="resize:vertical;font-family:monospace;font-size:12px"></textarea>
+
+      <label>Storage Tips <small style="color:var(--gray);font-weight:400">(max 300 chars)</small></label>
+      <textarea id="storageTipsInput" rows="2" placeholder="Store in refrigerator at 0-4°C. Use within 24 hours..." maxlength="300" style="resize:vertical"></textarea>
+
+      <label>Freshness Guarantee <small style="color:var(--gray);font-weight:400">(max 200 chars)</small></label>
+      <textarea id="freshnessGuaranteeInput" rows="2" placeholder="Farm-fresh, delivered within 2 hours of processing..." maxlength="200" style="resize:vertical"></textarea>
+
+      <label>Return Policy <small style="color:var(--gray);font-weight:400">(max 200 chars)</small></label>
+      <textarea id="returnPolicyInput" rows="2" placeholder="Return within 30 minutes for full refund..." maxlength="200" style="resize:vertical"></textarea>
+
       <label>Images <small style="color:var(--gray);font-weight:400">(up to 10 photos — slideshow on website)</small></label>
       <div id="imagesContainer" class="images-container"></div>
       <div class="img-actions">
@@ -468,6 +489,13 @@ async function openModal(item) {
     $('isFreshCheck').checked = item.isFresh || false;
     $('isHalalCheck').checked = item.isHalal || false;
     $('isBestsellerCheck').checked = item.isBestseller || false;
+    $('weightOptionsInput').value = (item.weightOptions || []).join('\n');
+    $('cutTypesInput').value = (item.cutTypes || []).join(', ');
+    $('boneOptionsInput').value = (item.boneOptions || []).join(', ');
+    $('nutritionInfoInput').value = item.nutritionInfo ? JSON.stringify(item.nutritionInfo) : '';
+    $('storageTipsInput').value = item.storageTips || '';
+    $('freshnessGuaranteeInput').value = item.freshnessGuarantee || '';
+    $('returnPolicyInput').value = item.returnPolicy || '';
     const imgs = Array.isArray(item.images) && item.images.length ? item.images : (item.img ? [item.img] : []);
     imgContainer.innerHTML = '';
     if (imgs.length) imgs.forEach(url => addImageRow(url));
@@ -489,6 +517,13 @@ async function openModal(item) {
     $('isFreshCheck').checked = false;
     $('isHalalCheck').checked = false;
     $('isBestsellerCheck').checked = false;
+    $('weightOptionsInput').value = '';
+    $('cutTypesInput').value = '';
+    $('boneOptionsInput').value = '';
+    $('nutritionInfoInput').value = '';
+    $('storageTipsInput').value = '';
+    $('freshnessGuaranteeInput').value = '';
+    $('returnPolicyInput').value = '';
     imgContainer.innerHTML = '';
     addImageRow('');
   }
@@ -555,6 +590,29 @@ async function submitItem() {
   const imageInputs = $('imagesContainer').querySelectorAll('.img-url-input');
   const images = Array.from(imageInputs).map(inp => inp.value.trim()).filter(u => u.length > 0);
 
+  // Parse weight options
+  const weightOptionsText = $('weightOptionsInput').value.trim();
+  const weightOptions = weightOptionsText ? weightOptionsText.split('\n').map(l => l.trim()).filter(l => l) : [];
+
+  // Parse cut types and bone options
+  const cutTypesText = $('cutTypesInput').value.trim();
+  const cutTypes = cutTypesText ? cutTypesText.split(',').map(t => t.trim()).filter(t => t) : [];
+  
+  const boneOptionsText = $('boneOptionsInput').value.trim();
+  const boneOptions = boneOptionsText ? boneOptionsText.split(',').map(t => t.trim()).filter(t => t) : [];
+
+  // Parse nutrition info JSON
+  let nutritionInfo = {};
+  const nutritionText = $('nutritionInfoInput').value.trim();
+  if (nutritionText) {
+    try {
+      nutritionInfo = JSON.parse(nutritionText);
+    } catch(e) {
+      $('formErr').innerHTML = `<div class="err">Invalid JSON in Nutrition Info</div>`;
+      return;
+    }
+  }
+
   const payload = {
     cat: $('catSelect').value,
     code: $('codeInput').value.trim().toUpperCase(),
@@ -566,6 +624,13 @@ async function submitItem() {
     isFresh: $('isFreshCheck').checked,
     isHalal: $('isHalalCheck').checked,
     isBestseller: $('isBestsellerCheck').checked,
+    weightOptions: weightOptions,
+    cutTypes: cutTypes,
+    boneOptions: boneOptions,
+    nutritionInfo: nutritionInfo,
+    storageTips: $('storageTipsInput').value.trim(),
+    freshnessGuarantee: $('freshnessGuaranteeInput').value.trim(),
+    returnPolicy: $('returnPolicyInput').value.trim(),
   };
   $('submitBtn').disabled = true;
   try {

@@ -15,7 +15,17 @@ const STOCK_FILE   = path.join(DATA_DIR, 'stock.json');
 // ---- Defaults (used only on first run) ----
 const defaultCatalog = [
   // ===== CHICKEN =====
-  { code: 'C1', cat: 'chicken', name: 'Premium Fresh Chicken (1kg)', price: 260, unit: '1kg', img: '', isFresh: true, isHalal: true, isBestseller: true },
+  { 
+    code: 'C1', cat: 'chicken', name: 'Premium Fresh Chicken (1kg)', price: 260, unit: '1kg', img: '', 
+    isFresh: true, isHalal: true, isBestseller: true,
+    weightOptions: ['500g - ₹135', '1kg - ₹260', '2kg - ₹510'],
+    nutritionInfo: { protein: '21g', fat: '4g', calories: '165 kcal', carbs: '0g' },
+    storageTips: 'Store in refrigerator at 0-4°C. Use within 24 hours of delivery. For longer storage, freeze immediately.',
+    cutTypes: ['Whole', 'Curry Cut', 'Boneless', 'Drumsticks', 'Wings'],
+    boneOptions: ['With Bone', 'Boneless'],
+    freshnessGuarantee: 'Farm-fresh, delivered within 2 hours of processing. 100% freshness guaranteed or full refund.',
+    returnPolicy: 'Not satisfied? Return within 30 minutes of delivery for full refund. No questions asked.'
+  },
   { code: 'C2', cat: 'chicken', name: 'Half Chicken (500g)',          price: 135, unit: '500g', img: '', isFresh: true, isHalal: true },
   { code: 'C3', cat: 'chicken', name: 'Boneless Chicken (1kg)',       price: 335, unit: '1kg', img: '', isFresh: true, isHalal: true, isBestseller: true },
   { code: 'C4', cat: 'chicken', name: 'Chicken Curry Cut (1kg)',      price: 270, unit: '1kg', img: '', isFresh: true, isHalal: true },
@@ -200,8 +210,25 @@ function validateItem(input, { existingCode } = {}) {
   const isHalal = input.isHalal === true || input.isHalal === 'true';
   const isBestseller = input.isBestseller === true || input.isBestseller === 'true';
 
+  // NEW: Product detail fields
+  const weightOptions = Array.isArray(input.weightOptions) ? input.weightOptions : [];
+  const nutritionInfo = input.nutritionInfo || {};
+  const storageTips = String(input.storageTips || '').trim().slice(0, 300);
+  const cutTypes = Array.isArray(input.cutTypes) ? input.cutTypes : [];
+  const boneOptions = Array.isArray(input.boneOptions) ? input.boneOptions : [];
+  const freshnessGuarantee = String(input.freshnessGuarantee || '').trim().slice(0, 200);
+  const returnPolicy = String(input.returnPolicy || '').trim().slice(0, 200);
+
   if (errors.length) return { ok: false, errors };
-  return { ok: true, item: { code, cat, name, price, unit, description, images, isFresh, isHalal, isBestseller } };
+  return { 
+    ok: true, 
+    item: { 
+      code, cat, name, price, unit, description, images, 
+      isFresh, isHalal, isBestseller,
+      weightOptions, nutritionInfo, storageTips, cutTypes, boneOptions,
+      freshnessGuarantee, returnPolicy
+    } 
+  };
 }
 
 function addItem(input) {
