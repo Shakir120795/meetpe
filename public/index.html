@@ -395,6 +395,16 @@ input,textarea{font:inherit;color:inherit}
 .modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
 .modal-title{font-size:18px;font-weight:800;margin-bottom:6px}
 .modal-sub{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+
+/* ═══ TOGGLE SWITCH ═══ */
+.toggle-switch{position:relative;display:inline-block;width:50px;height:28px}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:#ccc;transition:.3s;border-radius:28px}
+.toggle-slider:before{position:absolute;content:"";height:22px;width:22px;left:3px;bottom:3px;
+  background:white;transition:.3s;border-radius:50%}
+.toggle-switch input:checked + .toggle-slider{background:var(--accent)}
+.toggle-switch input:checked + .toggle-slider:before{transform:translateX(22px)}
+
 /* ═══ SIDE DRAWER ═══ */
 .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;opacity:0;pointer-events:none;transition:opacity .3s}
 .drawer-overlay.open{opacity:1;pointer-events:all}
@@ -946,12 +956,30 @@ input,textarea{font:inherit;color:inherit}
       <div class="screen-header">
         <button class="back-btn" onclick="goBack()">←</button>
         <div class="screen-title">My Profile</div>
-        <!-- Help & Support button in top-right -->
-        <button onclick="toggleChat()" title="Help & Support" 
-          style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:var(--accent);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer">
-          <span>💬</span>
-          <span>Help</span>
-        </button>
+        <!-- Help & 3-dot menu in top-right -->
+        <div style="position:absolute;right:14px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:8px">
+          <button onclick="toggleChat()" title="Help & Support" 
+            style="background:transparent;color:var(--accent);border:none;padding:6px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px">
+            Help
+          </button>
+          <button onclick="toggleProfileMenu()" title="Menu" id="profileMenuBtn"
+            style="background:transparent;border:none;color:var(--text);font-size:20px;cursor:pointer;padding:6px;position:relative">
+            ⋮
+          </button>
+        </div>
+        
+        <!-- Profile dropdown menu -->
+        <div id="profileDropdown" style="display:none;position:absolute;right:14px;top:48px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:999;min-width:160px;overflow:hidden">
+          <div onclick="showEditProfile()" style="padding:12px 16px;cursor:pointer;font-size:14px;font-weight:500;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+            <span>✏️</span> Edit Profile
+          </div>
+          <div onclick="showScreen('screen-settings')" style="padding:12px 16px;cursor:pointer;font-size:14px;font-weight:500;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+            <span>⚙️</span> Settings
+          </div>
+          <div onclick="logout()" style="padding:12px 16px;cursor:pointer;font-size:14px;font-weight:500;color:var(--danger);display:flex;align-items:center;gap:10px">
+            <span>🚪</span> Log out
+          </div>
+        </div>
       </div>
 
       <div id="profileContent">
@@ -1293,6 +1321,97 @@ input,textarea{font:inherit;color:inherit}
           <span style="font-size:11px">v1.0.0</span>
         </div>
 
+      </div>
+    </div>
+
+    <!-- ═══ SETTINGS SCREEN ═══ -->
+    <div class="screen" id="screen-settings">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">Settings</div>
+      </div>
+
+      <div style="padding:14px">
+        <!-- Notifications Section -->
+        <div style="background:var(--bg);padding:8px 0;margin-bottom:24px">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;padding:0 4px 12px;text-transform:uppercase">Recommendations & Reminders</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.6;padding:0 4px 16px">Keep this on to receive offer recommendations & timely reminders based on your interests</div>
+          
+          <!-- SMS Toggle -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 4px;border-bottom:1px solid var(--border)">
+            <div style="font-size:15px;font-weight:600">SMS</div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="smsToggle" checked onchange="toggleNotification('sms', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <!-- WhatsApp Toggle -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 4px">
+            <div style="font-size:15px;font-weight:600">WhatsApp</div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="whatsappToggle" checked onchange="toggleNotification('whatsapp', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div style="font-size:12px;color:var(--muted);line-height:1.5;padding:12px 4px 0">Order related SMS cannot be disabled as they are critical to provide service</div>
+        </div>
+
+        <!-- Account Deletion Section -->
+        <div style="background:var(--bg);padding:8px 0">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;padding:0 4px 12px;text-transform:uppercase">Account Deletion</div>
+          
+          <div onclick="showDeleteAccountScreen()" style="padding:14px 4px;cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:15px;font-weight:600;color:var(--danger)">Delete NOW account</div>
+            <span style="font-size:16px;color:var(--muted)">›</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DELETE ACCOUNT SCREEN ═══ -->
+    <div class="screen" id="screen-delete-account">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">Delete Account</div>
+      </div>
+
+      <div style="padding:20px 14px">
+        <div style="text-align:center;margin-bottom:24px">
+          <div style="font-size:48px;margin-bottom:12px">⚠️</div>
+          <div style="font-size:20px;font-weight:700;margin-bottom:8px">Are you sure?</div>
+          <div style="font-size:14px;color:var(--muted);line-height:1.6">This action cannot be undone. All your data will be permanently deleted.</div>
+        </div>
+
+        <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:12px;padding:16px;margin-bottom:24px">
+          <div style="font-size:13px;font-weight:600;color:var(--danger);margin-bottom:10px">What will be deleted:</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.8">
+            • Personal information & profile<br/>
+            • Order history & preferences<br/>
+            • Wallet balance & rewards<br/>
+            • Saved addresses & payment methods<br/>
+            • Active memberships & subscriptions<br/>
+            • Wishlist & reviews
+          </div>
+        </div>
+
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:24px">
+          <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer">
+            <input type="checkbox" id="deleteConfirmCheckScreen" onchange="toggleDeleteButton()" style="width:20px;height:20px;margin-top:2px;cursor:pointer;accent-color:var(--accent)"/>
+            <span style="font-size:13px;line-height:1.5">I understand that this will permanently delete my account and all associated data. This action cannot be reversed.</span>
+          </label>
+        </div>
+
+        <button id="deleteAccountBtnScreen" onclick="confirmDeleteAccount()" disabled
+          style="width:100%;padding:14px;background:var(--danger);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;opacity:0.5;transition:opacity .2s;margin-bottom:12px">
+          Delete My Account
+        </button>
+        
+        <button onclick="goBack()" 
+          style="width:100%;padding:14px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">
+          Cancel
+        </button>
       </div>
     </div>
 
@@ -1883,7 +2002,8 @@ function showScreen(id) {
     'screen-product':'nav-home','screen-orders':'nav-orders','screen-profile':'nav-home',
     'screen-subscriptions':'nav-home','screen-returns':'nav-home',
     'screen-wallet':'nav-home','screen-reviews':'nav-home','screen-wishlist':'nav-home',
-    'screen-membership':'nav-home','screen-referral':'nav-home','screen-about':'nav-home'
+    'screen-membership':'nav-home','screen-referral':'nav-home','screen-about':'nav-home',
+    'screen-settings':'nav-home','screen-delete-account':'nav-home'
   };
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   const nb = document.getElementById(navMap[id]);
@@ -2080,7 +2200,71 @@ function loginSuccess() {
   showToast('Welcome! 🥩','success');
 }
 
+// ═══════════════════════════════════════════
+//  Profile Menu & Settings
+// ═══════════════════════════════════════════
+function toggleProfileMenu() {
+  const dropdown = document.getElementById('profileDropdown');
+  const isVisible = dropdown.style.display === 'block';
+  
+  if (isVisible) {
+    dropdown.style.display = 'none';
+  } else {
+    dropdown.style.display = 'block';
+    // Close on outside click
+    setTimeout(() => {
+      document.addEventListener('click', closeProfileMenuOnOutsideClick);
+    }, 10);
+  }
+}
+
+function closeProfileMenuOnOutsideClick(e) {
+  const dropdown = document.getElementById('profileDropdown');
+  const menuBtn = document.getElementById('profileMenuBtn');
+  
+  if (!dropdown.contains(e.target) && !menuBtn.contains(e.target)) {
+    dropdown.style.display = 'none';
+    document.removeEventListener('click', closeProfileMenuOnOutsideClick);
+  }
+}
+
+function showEditProfile() {
+  document.getElementById('profileDropdown').style.display = 'none';
+  showToast('Edit Profile feature coming soon!', 'info');
+}
+
+function showDeleteAccountScreen() {
+  showScreen('screen-delete-account');
+}
+
+function toggleDeleteButton() {
+  const checkbox = document.getElementById('deleteConfirmCheckScreen');
+  const btn = document.getElementById('deleteAccountBtnScreen');
+  
+  if (checkbox.checked) {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  } else {
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+  }
+}
+
+function toggleNotification(type, enabled) {
+  console.log(`${type} notifications:`, enabled ? 'enabled' : 'disabled');
+  showToast(`${type.toUpperCase()} notifications ${enabled ? 'enabled' : 'disabled'}`, 'info');
+  
+  // Save to localStorage
+  const settings = JSON.parse(localStorage.getItem('now_notification_settings') || '{}');
+  settings[type] = enabled;
+  localStorage.setItem('now_notification_settings', JSON.stringify(settings));
+}
+
 function logout() {
+  // Close dropdown if open
+  const dropdown = document.getElementById('profileDropdown');
+  if (dropdown) dropdown.style.display = 'none';
+  
   USER = null;
   CART = {};
   localStorage.removeItem('now_user');
@@ -2093,7 +2277,7 @@ function logout() {
     s.style.display = 'none';
   });
   const loginScreen = document.getElementById('screen-login');
-  loginScreen.style.display = '';
+  loginScreen.style.display = 'block';
   loginScreen.classList.add('active');
   SCREEN_HISTORY = ['screen-login'];
   updateCartBar();
