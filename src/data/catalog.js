@@ -15,51 +15,51 @@ const STOCK_FILE   = path.join(DATA_DIR, 'stock.json');
 // ---- Defaults (used only on first run) ----
 const defaultCatalog = [
   // ===== CHICKEN =====
-  { code: 'C1', cat: 'chicken', name: 'Premium Fresh Chicken (1kg)', price: 260, unit: '1kg', img: '' },
-  { code: 'C2', cat: 'chicken', name: 'Half Chicken (500g)',          price: 135, unit: '500g', img: '' },
-  { code: 'C3', cat: 'chicken', name: 'Boneless Chicken (1kg)',       price: 335, unit: '1kg', img: '' },
-  { code: 'C4', cat: 'chicken', name: 'Chicken Curry Cut (1kg)',      price: 270, unit: '1kg', img: '' },
-  { code: 'C5', cat: 'chicken', name: 'Chicken Liver (500g)',         price: 140, unit: '500g', img: '' },
-  { code: 'C6', cat: 'chicken', name: 'Chicken Wings (500g)',         price: 160, unit: '500g', img: '' },
-  { code: 'C7', cat: 'chicken', name: 'Chicken Drumsticks (500g)',    price: 175, unit: '500g', img: '' },
-  { code: 'C8', cat: 'chicken', name: 'Chicken Keema (500g)',         price: 180, unit: '500g', img: '' },
+  { code: 'C1', cat: 'chicken', name: 'Premium Fresh Chicken (1kg)', price: 260, unit: '1kg', img: '', isFresh: true, isHalal: true, isBestseller: true },
+  { code: 'C2', cat: 'chicken', name: 'Half Chicken (500g)',          price: 135, unit: '500g', img: '', isFresh: true, isHalal: true },
+  { code: 'C3', cat: 'chicken', name: 'Boneless Chicken (1kg)',       price: 335, unit: '1kg', img: '', isFresh: true, isHalal: true, isBestseller: true },
+  { code: 'C4', cat: 'chicken', name: 'Chicken Curry Cut (1kg)',      price: 270, unit: '1kg', img: '', isFresh: true, isHalal: true },
+  { code: 'C5', cat: 'chicken', name: 'Chicken Liver (500g)',         price: 140, unit: '500g', img: '', isFresh: true, isHalal: true },
+  { code: 'C6', cat: 'chicken', name: 'Chicken Wings (500g)',         price: 160, unit: '500g', img: '', isFresh: true, isHalal: true },
+  { code: 'C7', cat: 'chicken', name: 'Chicken Drumsticks (500g)',    price: 175, unit: '500g', img: '', isFresh: true, isHalal: true },
+  { code: 'C8', cat: 'chicken', name: 'Chicken Keema (500g)',         price: 180, unit: '500g', img: '', isFresh: true, isHalal: true },
   // ===== MUTTON =====
-  { code: 'M1', cat: 'mutton', name: 'Premium Fresh Mutton (1kg)',    price: 800, unit: '1kg', img: '' },
-  { code: 'M2', cat: 'mutton', name: 'Half Mutton (500g)',            price: 420, unit: '500g', img: '' },
-  { code: 'M3', cat: 'mutton', name: 'Curry Cut Mutton (1kg)',        price: 820, unit: '1kg', img: '' },
-  { code: 'M4', cat: 'mutton', name: 'Boneless Mutton (1kg)',         price: 925, unit: '1kg', img: '' },
-  { code: 'M5', cat: 'mutton', name: 'Mutton Keema (500g)',           price: 470, unit: '500g', img: '' },
-  { code: 'M6', cat: 'mutton', name: 'Mutton Liver (500g)',           price: 380, unit: '500g', img: '' },
-  { code: 'M7', cat: 'mutton', name: 'Mutton Chops (1kg)',            price: 950, unit: '1kg', img: '' },
+  { code: 'M1', cat: 'mutton', name: 'Premium Fresh Mutton (1kg)',    price: 800, unit: '1kg', img: '', isFresh: true, isHalal: true, isBestseller: true },
+  { code: 'M2', cat: 'mutton', name: 'Half Mutton (500g)',            price: 420, unit: '500g', img: '', isFresh: true, isHalal: true },
+  { code: 'M3', cat: 'mutton', name: 'Curry Cut Mutton (1kg)',        price: 820, unit: '1kg', img: '', isFresh: true, isHalal: true },
+  { code: 'M4', cat: 'mutton', name: 'Boneless Mutton (1kg)',         price: 925, unit: '1kg', img: '', isFresh: true, isHalal: true, isBestseller: true },
+  { code: 'M5', cat: 'mutton', name: 'Mutton Keema (500g)',           price: 470, unit: '500g', img: '', isFresh: true, isHalal: true },
+  { code: 'M6', cat: 'mutton', name: 'Mutton Liver (500g)',           price: 380, unit: '500g', img: '', isFresh: true, isHalal: true },
+  { code: 'M7', cat: 'mutton', name: 'Mutton Chops (1kg)',            price: 950, unit: '1kg', img: '', isFresh: true, isHalal: true },
   // ===== FISH =====
-  { code: 'F1', cat: 'fish', name: 'Rohu Fish - Cleaned (1kg)',       price: 280, unit: '1kg', img: '' },
-  { code: 'F2', cat: 'fish', name: 'Katla Fish - Cleaned (1kg)',      price: 290, unit: '1kg', img: '' },
-  { code: 'F3', cat: 'fish', name: 'Singhara Fish (1kg)',             price: 350, unit: '1kg', img: '' },
-  { code: 'F4', cat: 'fish', name: 'Pomfret - Medium (1kg)',          price: 650, unit: '1kg', img: '' },
-  { code: 'F5', cat: 'fish', name: 'Basa Fillet - Boneless (1kg)',    price: 480, unit: '1kg', img: '' },
-  { code: 'F6', cat: 'fish', name: 'Tilapia (1kg)',                   price: 320, unit: '1kg', img: '' },
-  { code: 'F7', cat: 'fish', name: 'Prawns - Medium (500g)',          price: 380, unit: '500g', img: '' },
+  { code: 'F1', cat: 'fish', name: 'Rohu Fish - Cleaned (1kg)',       price: 280, unit: '1kg', img: '', isFresh: true },
+  { code: 'F2', cat: 'fish', name: 'Katla Fish - Cleaned (1kg)',      price: 290, unit: '1kg', img: '', isFresh: true },
+  { code: 'F3', cat: 'fish', name: 'Singhara Fish (1kg)',             price: 350, unit: '1kg', img: '', isFresh: true },
+  { code: 'F4', cat: 'fish', name: 'Pomfret - Medium (1kg)',          price: 650, unit: '1kg', img: '', isFresh: true },
+  { code: 'F5', cat: 'fish', name: 'Basa Fillet - Boneless (1kg)',    price: 480, unit: '1kg', img: '', isFresh: true },
+  { code: 'F6', cat: 'fish', name: 'Tilapia (1kg)',                   price: 320, unit: '1kg', img: '', isFresh: true },
+  { code: 'F7', cat: 'fish', name: 'Prawns - Medium (500g)',          price: 380, unit: '500g', img: '', isFresh: true },
   // ===== READY TO COOK =====
-  { code: 'R1',  cat: 'ready_to_cook', name: 'Tandoori Chicken Marinated (500g)',   price: 220, unit: '500g', img: '' },
-  { code: 'R2',  cat: 'ready_to_cook', name: 'Chicken Tikka Marinated (500g)',      price: 230, unit: '500g', img: '' },
-  { code: 'R3',  cat: 'ready_to_cook', name: 'Chicken Seekh Kebab (500g)',          price: 240, unit: '500g', img: '' },
-  { code: 'R4',  cat: 'ready_to_cook', name: 'Chicken Malai Tikka (500g)',          price: 250, unit: '500g', img: '' },
-  { code: 'R5',  cat: 'ready_to_cook', name: 'Chicken Hariyali Kebab (500g)',       price: 245, unit: '500g', img: '' },
-  { code: 'R6',  cat: 'ready_to_cook', name: 'Mutton Seekh Kebab (500g)',           price: 460, unit: '500g', img: '' },
-  { code: 'R7',  cat: 'ready_to_cook', name: 'Mutton Galouti Kebab (500g)',         price: 520, unit: '500g', img: '' },
+  { code: 'R1',  cat: 'ready_to_cook', name: 'Tandoori Chicken Marinated (500g)',   price: 220, unit: '500g', img: '', isHalal: true },
+  { code: 'R2',  cat: 'ready_to_cook', name: 'Chicken Tikka Marinated (500g)',      price: 230, unit: '500g', img: '', isHalal: true },
+  { code: 'R3',  cat: 'ready_to_cook', name: 'Chicken Seekh Kebab (500g)',          price: 240, unit: '500g', img: '', isHalal: true },
+  { code: 'R4',  cat: 'ready_to_cook', name: 'Chicken Malai Tikka (500g)',          price: 250, unit: '500g', img: '', isHalal: true },
+  { code: 'R5',  cat: 'ready_to_cook', name: 'Chicken Hariyali Kebab (500g)',       price: 245, unit: '500g', img: '', isHalal: true },
+  { code: 'R6',  cat: 'ready_to_cook', name: 'Mutton Seekh Kebab (500g)',           price: 460, unit: '500g', img: '', isHalal: true },
+  { code: 'R7',  cat: 'ready_to_cook', name: 'Mutton Galouti Kebab (500g)',         price: 520, unit: '500g', img: '', isHalal: true },
   { code: 'R8',  cat: 'ready_to_cook', name: 'Fish Tikka Marinated (500g)',         price: 280, unit: '500g', img: '' },
   { code: 'R9',  cat: 'ready_to_cook', name: 'Fish Fingers - Crumb Coated (500g)',  price: 260, unit: '500g', img: '' },
-  { code: 'R10', cat: 'ready_to_cook', name: 'Chicken Nuggets (500g)',              price: 230, unit: '500g', img: '' },
-  { code: 'R11', cat: 'ready_to_cook', name: 'Chicken Sausages (450g)',             price: 210, unit: '450g', img: '' },
-  { code: 'R12', cat: 'ready_to_cook', name: 'Chicken Salami (200g)',               price: 180, unit: '200g', img: '' },
-  { code: 'R13', cat: 'ready_to_cook', name: 'Chicken Lollipop Marinated (500g)',   price: 250, unit: '500g', img: '' },
-  { code: 'R14', cat: 'ready_to_cook', name: 'Mutton Shami Kebab (400g)',           price: 380, unit: '400g', img: '' },
+  { code: 'R10', cat: 'ready_to_cook', name: 'Chicken Nuggets (500g)',              price: 230, unit: '500g', img: '', isHalal: true },
+  { code: 'R11', cat: 'ready_to_cook', name: 'Chicken Sausages (450g)',             price: 210, unit: '450g', img: '', isHalal: true },
+  { code: 'R12', cat: 'ready_to_cook', name: 'Chicken Salami (200g)',               price: 180, unit: '200g', img: '', isHalal: true },
+  { code: 'R13', cat: 'ready_to_cook', name: 'Chicken Lollipop Marinated (500g)',   price: 250, unit: '500g', img: '', isHalal: true },
+  { code: 'R14', cat: 'ready_to_cook', name: 'Mutton Shami Kebab (400g)',           price: 380, unit: '400g', img: '', isHalal: true },
   // ===== FAMILY / COMBO PACKS =====
-  { code: 'P1', cat: 'family_pack', name: 'Chicken Family Pack (2kg, cleaned + cut)', price: 519,  unit: '2kg', img: '' },
-  { code: 'P2', cat: 'family_pack', name: 'Mutton Family Pack (2kg, cleaned + cut)',  price: 1599, unit: '2kg', img: '' },
-  { code: 'P3', cat: 'family_pack', name: 'Weekend Party Pack (3kg mixed combo)',     price: 2199, unit: '3kg', img: '' },
-  { code: 'P4', cat: 'family_pack', name: 'BBQ Combo (Tikka + Kebab + Wings 1.2kg)',  price: 599,  unit: '1.2kg', img: '' },
-  { code: 'P5', cat: 'family_pack', name: 'Fish Lovers Combo (Rohu + Basa + Prawns)', price: 899,  unit: '2kg', img: '' },
+  { code: 'P1', cat: 'family_pack', name: 'Chicken Family Pack (2kg, cleaned + cut)', price: 519,  unit: '2kg', img: '', isFresh: true, isHalal: true },
+  { code: 'P2', cat: 'family_pack', name: 'Mutton Family Pack (2kg, cleaned + cut)',  price: 1599, unit: '2kg', img: '', isFresh: true, isHalal: true },
+  { code: 'P3', cat: 'family_pack', name: 'Weekend Party Pack (3kg mixed combo)',     price: 2199, unit: '3kg', img: '', isFresh: true, isHalal: true },
+  { code: 'P4', cat: 'family_pack', name: 'BBQ Combo (Tikka + Kebab + Wings 1.2kg)',  price: 599,  unit: '1.2kg', img: '', isHalal: true },
+  { code: 'P5', cat: 'family_pack', name: 'Fish Lovers Combo (Rohu + Basa + Prawns)', price: 899,  unit: '2kg', img: '', isFresh: true },
 ];
 
 const categoryLabels = {
@@ -195,8 +195,13 @@ function validateItem(input, { existingCode } = {}) {
     images = [String(input.img).trim()];
   }
 
+  // Badges: freshness, halal, bestseller
+  const isFresh = input.isFresh === true || input.isFresh === 'true';
+  const isHalal = input.isHalal === true || input.isHalal === 'true';
+  const isBestseller = input.isBestseller === true || input.isBestseller === 'true';
+
   if (errors.length) return { ok: false, errors };
-  return { ok: true, item: { code, cat, name, price, unit, description, images } };
+  return { ok: true, item: { code, cat, name, price, unit, description, images, isFresh, isHalal, isBestseller } };
 }
 
 function addItem(input) {

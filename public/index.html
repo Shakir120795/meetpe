@@ -2949,8 +2949,9 @@ function renderProductCardHTML(item, isBestSeller = false) {
   return `<div class="prod-card" onclick="openProduct('${item.code}')">
     <div class="prod-img">
       ${img}
-      <div class="badge-temp">❄️ Fresh</div>
-      ${isBestSeller ? '<div class="badge-best">BESTSELLER</div>' : ''}
+      ${item.isFresh ? '<div class="badge-temp">🌿 Fresh</div>' : ''}
+      ${item.isHalal ? '<div class="badge-halal" style="position:absolute;top:42px;left:6px;background:rgba(34,197,94,.9);color:#fff;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;z-index:2">حلال Halal</div>' : ''}
+      ${item.isBestseller || isBestSeller ? '<div class="badge-best">BESTSELLER</div>' : ''}
       ${oos ? '<div class="badge-oos">Out of Stock</div>' : ''}
       <button class="wishlist-btn ${inWishlist ? 'active' : ''}" onclick="event.stopPropagation();toggleWishlist('${item.code}','${item.name.replace(/'/g,"\\'")}','${item.unit || ''}',${item.price},'${(item.images && item.images[0]) ? item.images[0].replace(/'/g,"\\'") : '/logo.png'}');" title="Add to wishlist">
         ${inWishlist ? '❤️' : '🤍'}
@@ -3077,8 +3078,9 @@ function renderProducts() {
     return `<div class="prod-card" onclick="openProduct('${item.code}')">
       <div class="prod-img">
         ${img}
-        <div class="badge-temp">❄️ Fresh</div>
-        ${isBest ? '<div class="badge-best">BESTSELLER</div>' : ''}
+        ${item.isFresh ? '<div class="badge-temp">🌿 Fresh</div>' : ''}
+        ${item.isHalal ? '<div class="badge-halal" style="position:absolute;top:42px;left:6px;background:rgba(34,197,94,.9);color:#fff;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;z-index:2">حلال Halal</div>' : ''}
+        ${item.isBestseller || isBest ? '<div class="badge-best">BESTSELLER</div>' : ''}
         ${oos ? '<div class="badge-oos">Out of Stock</div>' : ''}
         <button class="wishlist-btn ${inWishlist ? 'active' : ''}" onclick="event.stopPropagation();toggleWishlist('${item.code}','${item.name.replace(/'/g,"\\'")}','${item.unit || ''}',${item.price},'${(item.images && item.images[0]) ? item.images[0].replace(/'/g,"\\'") : '/logo.png'}');" title="Add to wishlist">
           ${inWishlist ? '❤️' : '🤍'}
