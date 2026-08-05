@@ -946,6 +946,12 @@ input,textarea{font:inherit;color:inherit}
       <div class="screen-header">
         <button class="back-btn" onclick="goBack()">←</button>
         <div class="screen-title">My Profile</div>
+        <!-- Help & Support button in top-right -->
+        <button onclick="toggleChat()" title="Help & Support" 
+          style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:var(--accent);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer">
+          <span>💬</span>
+          <span>Help</span>
+        </button>
       </div>
 
       <div id="profileContent">
@@ -1060,7 +1066,7 @@ input,textarea{font:inherit;color:inherit}
             <div class="pm-label">Refer &amp; Earn</div>
             <div class="pm-arrow">›</div>
           </div>
-          <div class="pm-item" onclick="void(0)">
+          <div class="pm-item" onclick="toggleChat()">
             <div class="pm-icon">❓</div>
             <div class="pm-label">Help &amp; Support</div>
             <div class="pm-arrow">›</div>
@@ -4782,17 +4788,16 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
-<!-- Live Chat Widget -->
+<!-- Live Chat Widget (Full Screen Modal) -->
 <div id="chatWidget" class="chat-widget">
-  <div class="chat-header" onclick="toggleChat()">
-    <div style="display:flex;align-items:center;gap:8px;cursor:pointer">
-      <span style="font-size:20px">💬</span>
+  <div class="chat-header">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="chat-close-btn" onclick="toggleChat()" style="background:rgba(255,255,255,.2);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px">←</button>
       <div>
-        <div style="font-size:13px;font-weight:700">Support</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.7)">Online</div>
+        <div style="font-size:15px;font-weight:700">Help & Support</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.8)">We're here to help 24/7</div>
       </div>
     </div>
-    <button class="chat-close-btn" onclick="toggleChat()">−</button>
   </div>
   
   <div class="chat-messages" id="chatMessages">
@@ -4833,18 +4838,16 @@ const AUTO_RESPONSES = {
 function toggleChat() {
   CHAT_OPEN = !CHAT_OPEN;
   const widget = document.getElementById('chatWidget');
-  const messages = document.getElementById('chatMessages');
-  const input = document.querySelector('.chat-input-area');
   
   if (CHAT_OPEN) {
     widget.classList.add('open');
-    messages.style.display = 'flex';
-    input.style.display = 'flex';
-    messages.scrollTop = messages.scrollHeight;
+    // Scroll to bottom
+    setTimeout(() => {
+      const messages = document.getElementById('chatMessages');
+      if (messages) messages.scrollTop = messages.scrollHeight;
+    }, 100);
   } else {
     widget.classList.remove('open');
-    messages.style.display = 'none';
-    input.style.display = 'none';
   }
 }
 
@@ -4913,21 +4916,51 @@ window.addEventListener('load', () => {
 
 <style>
 .chat-widget {
-  position:fixed;bottom:80px;right:14px;width:320px;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.2);display:flex;flex-direction:column;z-index:999;animation:slideUp .3s ease;max-height:70vh}
+  position:fixed;
+  inset:0;
+  background:var(--bg);
+  z-index:9999;
+  display:none;
+  flex-direction:column;
+  animation:fadeIn .3s ease;
+}
 
-.chat-widget.open .chat-messages { display:flex !important; }
-.chat-widget.open .chat-input-area { display:flex !important; }
+.chat-widget.open { display:flex; }
 
 .chat-header {
-  background:linear-gradient(135deg,var(--accent),#e8450a);color:#fff;padding:12px 14px;border-radius:16px 16px 0 0;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+  background:linear-gradient(135deg,var(--accent),#e8450a);
+  color:#fff;
+  padding:16px 14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
 
 .chat-close-btn {
-  background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  background:rgba(255,255,255,.2);
+  border:none;
+  color:#fff;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  font-size:20px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 
 .chat-close-btn:hover { background:rgba(255,255,255,.3); }
 
 .chat-messages {
-  flex:1;overflow-y:auto;padding:14px;display:none;flex-direction:column;gap:8px;max-height:400px}
+  flex:1;
+  overflow-y:auto;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
 
 .chat-message { display:flex;flex-direction:column;animation:fadeIn .3s ease; }
 
@@ -4936,12 +4969,19 @@ window.addEventListener('load', () => {
 .chat-bubble {
   padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.4;max-width:80%;word-wrap:break-word}
 
-.chat-message.bot .chat-bubble { background:var(--bg);color:var(--text);border-radius:12px 12px 12px 4px; }
+.chat-message.bot .chat-bubble { background:var(--card);color:var(--text);border-radius:12px 12px 12px 4px; }
 
 .chat-message.user .chat-bubble { background:var(--accent);color:#fff;border-radius:12px 12px 4px 12px; }
 
 .chat-input-area {
-  display:none;flex-direction:column;padding:12px 14px;border-top:1px solid var(--border);gap:6px;background:var(--bg)}
+  display:flex;
+  flex-direction:column;
+  padding:12px 14px;
+  border-top:1px solid var(--border);
+  gap:6px;
+  background:var(--bg);
+  padding-bottom:calc(12px + env(safe-area-inset-bottom));
+}
 
 .quick-reply {
   padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;color:var(--text)}
@@ -5106,9 +5146,6 @@ html { scroll-behavior:smooth; }
 
 /* Responsive polish for small screens */
 @media(max-width:640px) {
-  .chat-widget { width:calc(100% - 28px);bottom:100px;right:14px;left:14px; }
-  .chat-messages { max-height:300px; }
-  
   /* Larger touch targets on mobile */
   button { min-height:44px;min-width:44px; }
   
@@ -5183,8 +5220,7 @@ body {
 }
 
 @media(max-width:480px) {
-  .chat-widget { width:calc(100% - 28px);bottom:100px;right:14px;left:14px; }
-  .chat-messages { max-height:300px; }
+  /* Mobile optimizations */
 }
 </style>
 
