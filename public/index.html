@@ -540,7 +540,7 @@ input,textarea{font:inherit;color:inherit}
       </div>
     </div>
 
-    <!-- ═══ LOGIN SCREEN ═══ -->
+    <!-- ═══ LOGIN SCREEN - STEP 1: Phone Number ═══ -->
     <div class="screen" id="screen-login">
       <div class="login-wrap">
         <img src="/logo.png" alt="NOW" class="login-logo" onerror="this.style.display='none'"/>
@@ -553,6 +553,24 @@ input,textarea{font:inherit;color:inherit}
             <input class="phone-input" id="phoneInput" type="tel" maxlength="10"
               inputmode="numeric" pattern="[0-9]*" placeholder="Enter 10-digit number"/>
           </div>
+          
+          <button class="btn-accent" id="sendOtpBtn" onclick="sendOTP()">Send OTP →</button>
+          
+          <div class="login-guest">
+            <a href="#" onclick="guestLogin()">Continue as guest</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ OTP VERIFICATION SCREEN - STEP 2 ═══ -->
+    <div class="screen" id="screen-otp">
+      <div class="login-wrap">
+        <img src="/logo.png" alt="NOW" class="login-logo" onerror="this.style.display='none'"/>
+        <div class="login-tagline">Fresh. Fast. Trusted.</div>
+        <div class="login-card">
+          <h2>Verify OTP 🔐</h2>
+          <p>Enter the OTP sent to <strong id="otpPhoneDisplay">+91 XXXXXXXXXX</strong></p>
           
           <!-- OTP Method Selection -->
           <div style="margin-top:12px">
@@ -580,6 +598,21 @@ input,textarea{font:inherit;color:inherit}
             </div>
           </div>
           
+          <!-- OTP Input -->
+          <div style="margin-top:16px">
+            <input 
+              id="otpInput" 
+              type="text" 
+              placeholder="Enter 6-digit OTP" 
+              maxlength="6"
+              inputmode="numeric"
+              pattern="[0-9]*"
+              style="width:100%;padding:14px 12px;font-size:18px;font-weight:700;text-align:center;letter-spacing:8px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;outline:none;color:var(--text);transition:border-color 0.2s"
+              onfocus="this.style.borderColor='var(--accent)'"
+              onblur="this.style.borderColor='var(--border)'"
+            />
+          </div>
+          
           <!-- Referral Code Input (Optional) -->
           <div style="margin-top:12px">
             <input 
@@ -596,10 +629,18 @@ input,textarea{font:inherit;color:inherit}
             </div>
           </div>
           
-          <button class="btn-accent" id="loginBtn" onclick="handleLogin()">Continue →</button>
+          <button class="btn-accent" id="verifyOtpBtn" onclick="verifyOTP()">Verify OTP</button>
+          
+          <!-- Resend OTP -->
+          <div style="text-align:center;margin-top:14px">
+            <button onclick="resendOTP()" id="resendOtpBtn" style="background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer">
+              Resend OTP
+            </button>
+            <span id="resendTimer" style="color:var(--muted);font-size:13px;margin-left:6px"></span>
+          </div>
           
           <div class="login-guest">
-            <a href="#" onclick="guestLogin()">Continue as guest</a>
+            <a href="#" onclick="backToPhoneInput()">← Change phone number</a>
           </div>
         </div>
       </div>
@@ -2292,6 +2333,9 @@ function showToast(msg, type='', duration=3000) {
 //  Auth / Login
 // ═══════════════════════════════════════════
 
+let TEMP_PHONE = ''; // Store phone temporarily
+let RESEND_TIMER = null;
+
 // Select OTP delivery method
 function selectOTPMethod(method) {
   OTP_METHOD = method;
@@ -2324,28 +2368,93 @@ function selectOTPMethod(method) {
     smsBtn.style.borderColor = 'var(--border)';
     smsBtn.style.color = 'var(--text)';
   }
+  
+  // Resend OTP with new method
+  resendOTP();
 }
 
-async function handleLogin() {
+// Step 1: Send OTP
+async function sendOTP() {
   const phone = document.getElementById('phoneInput').value.replace(/\D/g,'');
-  if (phone.length !== 10) { showToast('Please enter a valid 10-digit number','error'); return; }
+  if (phone.length !== 10) { 
+    showToast('Please enter a valid 10-digit number','error'); 
+    return; 
+  }
 
-  const referralCode = document.getElementById('referralInput').value.trim();
-
-  const btn = document.getElementById('loginBtn');
+  TEMP_PHONE = phone;
+  const btn = document.getElementById('sendOtpBtn');
   btn.disabled = true; 
-  btn.textContent = OTP_METHOD === 'whatsapp' ? 'Sending WhatsApp OTP...' : 'Sending SMS...';
+  btn.textContent = 'Sending OTP...';
 
   try {
-    const res = await fetch('/api/auth/login', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+    const res = await fetch('/api/auth/send-otp', {
+      method:'POST', 
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ phone, otpMethod: OTP_METHOD })
+    });
+    
+    const data = await res.json();
+    
+    if (data.ok) {
+      // Show OTP screen
+      showScreen('screen-otp');
+      
+      // Update phone display
+      const maskedPhone = phone.slice(0,2) + 'XXXXXX' + phone.slice(-2);
+      document.getElementById('otpPhoneDisplay').textContent = '+91 ' + maskedPhone;
+      
+      // Show success message
+      if (OTP_METHOD === 'whatsapp') {
+        showToast('✅ OTP sent on WhatsApp', 'success');
+      } else {
+        showToast('✅ OTP sent via SMS', 'success');
+      }
+      
+      // Start resend timer
+      startResendTimer();
+    } else {
+      showToast(data.error || 'Failed to send OTP','error');
+      btn.disabled = false; 
+      btn.textContent = 'Send OTP →';
+    }
+  } catch(e) {
+    console.error('Send OTP error:', e);
+    // For demo/offline - still show OTP screen
+    showScreen('screen-otp');
+    const maskedPhone = phone.slice(0,2) + 'XXXXXX' + phone.slice(-2);
+    document.getElementById('otpPhoneDisplay').textContent = '+91 ' + maskedPhone;
+    showToast('⚠️ Demo mode: OTP is 123456', 'info');
+    btn.disabled = false; 
+    btn.textContent = 'Send OTP →';
+  }
+}
+
+// Step 2: Verify OTP
+async function verifyOTP() {
+  const otp = document.getElementById('otpInput').value.replace(/\D/g,'');
+  if (otp.length !== 6) { 
+    showToast('Please enter 6-digit OTP','error'); 
+    return; 
+  }
+
+  const referralCode = document.getElementById('referralInput').value.trim();
+  const btn = document.getElementById('verifyOtpBtn');
+  btn.disabled = true; 
+  btn.textContent = 'Verifying...';
+
+  try {
+    const res = await fetch('/api/auth/verify-otp', {
+      method:'POST', 
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ 
-        phone, 
-        referralCode: referralCode || null,
-        otpMethod: OTP_METHOD 
+        phone: TEMP_PHONE, 
+        otp,
+        referralCode: referralCode || null 
       })
     });
+    
     const data = await res.json();
+    
     if (data.ok) {
       USER = data.customer;
       saveUser();
@@ -2355,23 +2464,85 @@ async function handleLogin() {
         showToast(`🎉 ${data.referralBonus} referral bonus added!`, 'success');
       }
       
-      // Show OTP sent message
+      loginSuccess();
+    } else {
+      showToast(data.error || 'Invalid OTP','error');
+      btn.disabled = false; 
+      btn.textContent = 'Verify OTP';
+    }
+  } catch(e) {
+    console.error('Verify OTP error:', e);
+    // Offline fallback — login with phone
+    USER = { phone: TEMP_PHONE, name: '', wallet: 0 };
+    saveUser();
+    loginSuccess();
+  }
+}
+
+// Resend OTP
+async function resendOTP() {
+  const btn = document.getElementById('resendOtpBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+
+  try {
+    const res = await fetch('/api/auth/send-otp', {
+      method:'POST', 
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ phone: TEMP_PHONE, otpMethod: OTP_METHOD })
+    });
+    
+    const data = await res.json();
+    
+    if (data.ok) {
       if (OTP_METHOD === 'whatsapp') {
         showToast('✅ OTP sent on WhatsApp', 'success');
       } else {
         showToast('✅ OTP sent via SMS', 'success');
       }
-      
-      loginSuccess();
+      startResendTimer();
     } else {
-      showToast(data.error || 'Login failed','error');
-      btn.disabled = false; btn.textContent = 'Continue →';
+      showToast(data.error || 'Failed to resend OTP','error');
+      btn.disabled = false;
+      btn.textContent = 'Resend OTP';
     }
   } catch(e) {
-    // Offline fallback — guest mode with phone
-    USER = { phone, name: '', wallet: 0 };
-    saveUser();
-    loginSuccess();
+    showToast('⚠️ Demo mode: OTP is 123456', 'info');
+    startResendTimer();
+  }
+}
+
+// Resend timer (30 seconds)
+function startResendTimer() {
+  let seconds = 30;
+  const btn = document.getElementById('resendOtpBtn');
+  const timer = document.getElementById('resendTimer');
+  
+  btn.disabled = true;
+  btn.textContent = 'Resend OTP';
+  
+  if (RESEND_TIMER) clearInterval(RESEND_TIMER);
+  
+  RESEND_TIMER = setInterval(() => {
+    seconds--;
+    timer.textContent = `(${seconds}s)`;
+    
+    if (seconds <= 0) {
+      clearInterval(RESEND_TIMER);
+      btn.disabled = false;
+      timer.textContent = '';
+    }
+  }, 1000);
+}
+
+// Back to phone input
+function backToPhoneInput() {
+  showScreen('screen-login');
+  document.getElementById('otpInput').value = '';
+  document.getElementById('referralInput').value = '';
+  if (RESEND_TIMER) {
+    clearInterval(RESEND_TIMER);
+    RESEND_TIMER = null;
   }
 }
 
