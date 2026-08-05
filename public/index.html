@@ -2335,6 +2335,7 @@ function showToast(msg, type='', duration=3000) {
 
 let TEMP_PHONE = ''; // Store phone temporarily
 let RESEND_TIMER = null;
+let SESSION_INFO = null; // Store session info from provider
 
 // Select OTP delivery method
 function selectOTPMethod(method) {
@@ -2396,6 +2397,9 @@ async function sendOTP() {
     const data = await res.json();
     
     if (data.ok) {
+      // Store session info from provider
+      SESSION_INFO = data.sessionInfo || null;
+      
       // Show OTP screen
       showScreen('screen-otp');
       
@@ -2412,6 +2416,12 @@ async function sendOTP() {
       
       // Start resend timer
       startResendTimer();
+      
+      // Demo mode - show OTP in console
+      if (data.dev_otp) {
+        console.log('🔐 DEV MODE - OTP:', data.dev_otp);
+        showToast(`⚠️ Demo: OTP is ${data.dev_otp}`, 'info');
+      }
     } else {
       showToast(data.error || 'Failed to send OTP','error');
       btn.disabled = false; 
@@ -2419,11 +2429,7 @@ async function sendOTP() {
     }
   } catch(e) {
     console.error('Send OTP error:', e);
-    // For demo/offline - still show OTP screen
-    showScreen('screen-otp');
-    const maskedPhone = phone.slice(0,2) + 'XXXXXX' + phone.slice(-2);
-    document.getElementById('otpPhoneDisplay').textContent = '+91 ' + maskedPhone;
-    showToast('⚠️ Demo mode: OTP is 123456', 'info');
+    showToast('Network error. Please try again.', 'error');
     btn.disabled = false; 
     btn.textContent = 'Send OTP →';
   }
@@ -2449,7 +2455,8 @@ async function verifyOTP() {
       body: JSON.stringify({ 
         phone: TEMP_PHONE, 
         otp,
-        referralCode: referralCode || null 
+        referralCode: referralCode || null,
+        sessionInfo: SESSION_INFO // Pass session info from provider
       })
     });
     
@@ -2472,10 +2479,9 @@ async function verifyOTP() {
     }
   } catch(e) {
     console.error('Verify OTP error:', e);
-    // Offline fallback — login with phone
-    USER = { phone: TEMP_PHONE, name: '', wallet: 0 };
-    saveUser();
-    loginSuccess();
+    showToast('Network error. Please try again.', 'error');
+    btn.disabled = false; 
+    btn.textContent = 'Verify OTP';
   }
 }
 
@@ -2495,20 +2501,31 @@ async function resendOTP() {
     const data = await res.json();
     
     if (data.ok) {
+      // Update session info
+      SESSION_INFO = data.sessionInfo || null;
+      
       if (OTP_METHOD === 'whatsapp') {
         showToast('✅ OTP sent on WhatsApp', 'success');
       } else {
         showToast('✅ OTP sent via SMS', 'success');
       }
       startResendTimer();
+      
+      // Demo mode - show OTP in console
+      if (data.dev_otp) {
+        console.log('🔐 DEV MODE - OTP:', data.dev_otp);
+        showToast(`⚠️ Demo: OTP is ${data.dev_otp}`, 'info');
+      }
     } else {
       showToast(data.error || 'Failed to resend OTP','error');
       btn.disabled = false;
       btn.textContent = 'Resend OTP';
     }
   } catch(e) {
-    showToast('⚠️ Demo mode: OTP is 123456', 'info');
-    startResendTimer();
+    console.error('Resend OTP error:', e);
+    showToast('Network error. Please try again.', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Resend OTP';
   }
 }
 
@@ -2540,6 +2557,7 @@ function backToPhoneInput() {
   showScreen('screen-login');
   document.getElementById('otpInput').value = '';
   document.getElementById('referralInput').value = '';
+  SESSION_INFO = null; // Clear session
   if (RESEND_TIMER) {
     clearInterval(RESEND_TIMER);
     RESEND_TIMER = null;

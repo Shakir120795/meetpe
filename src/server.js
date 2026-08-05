@@ -796,13 +796,8 @@ app.post('/admin/returns/:id/status', (req, res) => {
   }
 });
 
-// ===== OTP Storage (In-memory for demo, use Redis in production) =====
-const OTP_STORE = new Map(); // { phone: { otp, expiry, method } }
-
-// Generate 6-digit OTP
-function generateOTP() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
+// ===== Auth Service (Provider-based architecture) =====
+const authService = require('./auth/auth.service');
 
 // ===== Send OTP endpoint =====
 app.post('/api/auth/send-otp', async (req, res) => {
@@ -814,39 +809,18 @@ app.post('/api/auth/send-otp', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Invalid phone number' });
     }
     
-    // Generate OTP
-    const otp = generateOTP();
-    const expiry = Date.now() + 10 * 60 * 1000; // 10 minutes
+    // Use auth service (provider-agnostic)
+    const result = await authService.sendOTP(cleanPhone, otpMethod || 'sms');
     
-    // Store OTP
-    OTP_STORE.set(cleanPhone, { otp, expiry, method: otpMethod || 'sms' });
-    
-    console.log(`🔐 OTP for ${cleanPhone}: ${otp} (${otpMethod})`);
-    
-    // Send OTP via Twilio
-    try {
-      const to = `+91${cleanPhone}`;
-      const message = `Your NOW verification code is: ${otp}\n\nValid for 10 minutes.\n\n- Nonveg On Wheel`;
-      
-      if (otpMethod === 'whatsapp') {
-        // Send via WhatsApp
-        await sendMessage(`whatsapp:${to}`, message);
-        console.log(`✅ WhatsApp OTP sent to ${to}`);
-      } else {
-        // Send via SMS
-        await sendMessage(to, message);
-        console.log(`✅ SMS OTP sent to ${to}`);
-      }
-      
-      return res.json({ ok: true, message: 'OTP sent successfully' });
-    } catch (twilioError) {
-      console.error('❌ Twilio error:', twilioError);
-      // Still return success for demo/development
+    if (result.ok) {
       return res.json({ 
         ok: true, 
-        message: 'OTP sent (demo mode)', 
-        dev_otp: process.env.NODE_ENV === 'development' ? otp : undefined 
+        message: 'OTP sent successfully',
+        sessionInfo: result.sessionInfo,
+        dev_otp: result.dev_otp // Only in development
       });
+    } else {
+      return res.status(400).json({ ok: false, error: result.error });
     }
   } catch (error) {
     console.error('❌ Send OTP error:', error);
@@ -855,9 +829,9 @@ app.post('/api/auth/send-otp', async (req, res) => {
 });
 
 // ===== Verify OTP endpoint =====
-app.post('/api/auth/verify-otp', (req, res) => {
+app.post('/api/auth/verify-otp', async (req, res) => {
   try {
-    const { phone, otp, referralCode } = req.body || {};
+    const { phone, otp, referralCode, sessionInfo } = req.body || {};
     const cleanPhone = String(phone || '').replace(/\D/g, '');
     
     if (cleanPhone.length !== 10) {
@@ -868,25 +842,14 @@ app.post('/api/auth/verify-otp', (req, res) => {
       return res.status(400).json({ ok: false, error: 'Invalid OTP' });
     }
     
-    // Check OTP
-    const stored = OTP_STORE.get(cleanPhone);
+    // Use auth service (provider-agnostic)
+    const result = await authService.verifyOTP(cleanPhone, otp, sessionInfo);
     
-    if (!stored) {
-      return res.status(400).json({ ok: false, error: 'OTP not found. Please request a new one.' });
+    if (!result.ok) {
+      return res.status(400).json({ ok: false, error: result.error });
     }
     
-    if (Date.now() > stored.expiry) {
-      OTP_STORE.delete(cleanPhone);
-      return res.status(400).json({ ok: false, error: 'OTP expired. Please request a new one.' });
-    }
-    
-    if (stored.otp !== otp) {
-      return res.status(400).json({ ok: false, error: 'Invalid OTP. Please try again.' });
-    }
-    
-    // OTP verified! Clear it
-    OTP_STORE.delete(cleanPhone);
-    
+    // OTP verified! Now handle customer creation/update
     const waPhone = `web:+91${cleanPhone}`;
     
     // Check if new user
