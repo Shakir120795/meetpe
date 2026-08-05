@@ -52,9 +52,10 @@ try {
   // Add referral_code column if missing
   if (!hasReferralCode) {
     console.log('➕ Adding referral_code column...');
+    // SQLite doesn't allow UNIQUE constraint in ALTER TABLE
     db.exec(`
       ALTER TABLE customers 
-      ADD COLUMN referral_code TEXT UNIQUE;
+      ADD COLUMN referral_code TEXT;
     `);
     
     // Generate referral codes for existing customers

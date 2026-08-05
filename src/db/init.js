@@ -21,7 +21,7 @@ db.exec(`
     is_plus      INTEGER DEFAULT 0,
     plus_until   TEXT,
     referred_by  TEXT,
-    referral_code TEXT UNIQUE,
+    referral_code TEXT,
     created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at   TEXT DEFAULT CURRENT_TIMESTAMP
   );
