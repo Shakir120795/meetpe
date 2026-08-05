@@ -1661,9 +1661,13 @@ function escapeHtml(text) {
   loadAppSettings();
   console.log('🔵 [INIT] loadAppSettings() called');
   
-  // Initialize voice search
-  initVoiceSearch();
-  console.log('🔵 [INIT] initVoiceSearch() called');
+  // Initialize voice search - wrap in try-catch to prevent crash
+  try {
+    initVoiceSearch();
+    console.log('🔵 [INIT] initVoiceSearch() called');
+  } catch(e) {
+    console.warn('🟡 [INIT] Voice search init failed (non-critical):', e.message);
+  }
 
   const saved = localStorage.getItem('now_user');
   if (saved) {
