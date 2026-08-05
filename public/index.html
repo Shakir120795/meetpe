@@ -1668,74 +1668,52 @@ function escapeHtml(text) {
     try { CART = JSON.parse(savedCart); } catch(e) {}
   }
 
-  // Initialize app properly
-  const initApp = async () => {
-    // Load settings
-    try {
-      const settingsRes = await fetch('/api/settings');
-      const settings = await settingsRes.json();
-      if (settings && settings.branding) {
-        APP_SETTINGS = settings;
-        applyBranding();
-      }
-    } catch(e) {
-      console.log('Settings load error:', e);
-    }
-    
-    // Hide all screens first
+  // SUPER SIMPLE INIT - NO BULLSHIT
+  console.log('🚀 App starting...');
+  console.log('👤 USER:', USER);
+  
+  // Force hide ALL screens
+  setTimeout(() => {
     document.querySelectorAll('.screen').forEach(s => {
       s.style.display = 'none';
       s.classList.remove('active');
     });
     
-    // Determine what to show based on USER
-    const hasUser = !!USER;
-    
-    if (hasUser) {
-      // User logged in - show home screen
-      const homeScreen = document.getElementById('screen-home');
-      if (homeScreen) {
-        homeScreen.style.display = '';
-        homeScreen.classList.add('active');
-      }
+    if (USER) {
+      console.log('✅ Showing HOME');
+      // Show home
+      document.getElementById('screen-home').style.display = '';
+      document.getElementById('screen-home').classList.add('active');
+      document.getElementById('bottomNav').style.display = 'flex';
       
-      // Show bottom nav
-      const bottomNav = document.getElementById('bottomNav');
-      if (bottomNav) bottomNav.style.display = 'flex';
+      // Load menu NOW
+      fetch('/api/menu')
+        .then(r => r.json())
+        .then(data => {
+          MENU = data;
+          console.log('📦 MENU loaded:', MENU.length);
+          renderProducts();
+          updateTopbarUser();
+          updateCartBar();
+        })
+        .catch(e => {
+          console.error('❌ Menu error:', e);
+          document.getElementById('productGrid').innerHTML = '<div style="padding:40px;text-align:center;color:red">Menu load failed. Check console.</div>';
+        });
       
-      // Update UI
-      updateTopbarUser();
-      updateCartBar();
-      
-      // Load and display menu
-      try {
-        const menuRes = await fetch('/api/menu');
-        MENU = await menuRes.json();
-        console.log('✅ Menu loaded:', MENU.length, 'items');
-        renderProducts();
-      } catch(e) {
-        console.error('Menu load error:', e);
-        const grid = document.getElementById('productGrid');
-        if (grid) {
-          grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">⚠️ Unable to load menu. Please refresh.</div>';
-        }
-      }
+      // Load settings
+      fetch('/api/settings')
+        .then(r => r.json())
+        .then(s => { APP_SETTINGS = s; applyBranding(); })
+        .catch(e => console.log('Settings error:', e));
+        
     } else {
-      // No user - show login screen
-      const loginScreen = document.getElementById('screen-login');
-      if (loginScreen) {
-        loginScreen.style.display = '';
-        loginScreen.classList.add('active');
-      }
-      const bottomNav = document.getElementById('bottomNav');
-      if (bottomNav) bottomNav.style.display = 'none';
-      const cartBar = document.getElementById('cartBar');
-      if (cartBar) cartBar.style.display = 'none';
+      console.log('❌ NO USER - showing login');
+      document.getElementById('screen-login').style.display = '';
+      document.getElementById('screen-login').classList.add('active');
+      document.getElementById('bottomNav').style.display = 'none';
     }
-  };
-  
-  // Start initialization
-  initApp();
+  }, 100); // Small delay to let DOM settle
 })();
 
 // Track when page started loading
