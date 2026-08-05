@@ -812,10 +812,25 @@ app.get('/api/customer/:phone', (req, res) => {
   const cleanPhone = String(req.params.phone).replace(/\D/g, '');
   const waPhone = `web:+91${cleanPhone}`;
   const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
-  if (!customer) return res.json({ ok: true, customer: { phone: cleanPhone, name: '', wallet: 0, orders: 0 } });
+  if (!customer) return res.json({ ok: true, customer: { phone: cleanPhone, name: '', wallet: 0, orders: 0, membership_active: false } });
   const rewards = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rewards WHERE phone = ? AND used = 0 AND expires_at > datetime('now')`).get(waPhone);
   const orderCount = db.prepare('SELECT COUNT(*) as cnt FROM orders WHERE phone = ?').get(waPhone);
-  res.json({ ok: true, customer: { phone: cleanPhone, name: customer.name || '', wallet: customer.wallet_balance || 0, rewards: rewards.total, orders: orderCount.cnt } });
+  
+  // Check if membership is still active
+  const isMembershipActive = customer.is_plus && customer.plus_until && new Date(customer.plus_until) > new Date();
+  
+  res.json({ 
+    ok: true, 
+    customer: { 
+      phone: cleanPhone, 
+      name: customer.name || '', 
+      wallet: customer.wallet_balance || 0, 
+      rewards: rewards.total, 
+      orders: orderCount.cnt,
+      membership_active: isMembershipActive,
+      membership_expiry: customer.plus_until
+    } 
+  });
 });
 
 // ===== Get customer orders (last 20) =====

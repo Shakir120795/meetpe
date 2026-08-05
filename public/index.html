@@ -984,7 +984,7 @@ input,textarea{font:inherit;color:inherit}
               <div style="font-size:11px;color:var(--muted)">Free delivery • Priority slots • Member offers</div>
             </div>
             <button style="background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700"
-              onclick="showScreen('screen-wallet')">Join ₹99/mo</button>
+              onclick="showScreen('screen-membership')">View</button>
           </div>
         </div>
 
@@ -1139,6 +1139,19 @@ input,textarea{font:inherit;color:inherit}
       </div>
       <div id="wishlistContent" style="padding:14px">
         <div class="empty"><div class="empty-icon">❤️</div><p>No saved items yet</p></div>
+      </div>
+    </div>
+
+    <!-- ═══ MEMBERSHIP SCREEN ═══ -->
+    <div class="screen" id="screen-membership">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">👑 NOW Plus Membership</div>
+      </div>
+      <div style="padding:14px;padding-bottom:80px">
+        <div id="membershipContent">
+          <!-- Will be populated by loadMembershipDetails() -->
+        </div>
       </div>
     </div>
 
@@ -1683,6 +1696,7 @@ function showScreen(id) {
   if (id === 'screen-wallet') loadWallet();
   if (id === 'screen-reviews') loadMyReviews();
   if (id === 'screen-wishlist') loadWishlist();
+  if (id === 'screen-membership') loadMembershipDetails();
 
   // Update nav highlight
   const navMap = {
@@ -1690,7 +1704,7 @@ function showScreen(id) {
     'screen-product':'nav-home','screen-orders':'nav-orders','screen-profile':'nav-home',
     'screen-subscriptions':'nav-home','screen-returns':'nav-home',
     'screen-wallet':'nav-home','screen-reviews':'nav-home','screen-wishlist':'nav-home',
-    'screen-about':'nav-home'
+    'screen-membership':'nav-home','screen-about':'nav-home'
   };
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   const nb = document.getElementById(navMap[id]);
@@ -1819,6 +1833,8 @@ function updateTopbarUser() {
         if (d.ok && d.customer && walletEl) {
           walletEl.textContent = '₹' + (d.customer.wallet || 0);
           USER.wallet = d.customer.wallet || 0;
+          USER.membership_active = d.customer.membership_active || false;
+          USER.membership_expiry = d.customer.membership_expiry || null;
           saveUser();
         }
       }).catch(() => {});
@@ -3099,6 +3115,12 @@ async function loadWallet() {
     const res = await fetch('/api/customer/' + USER.phone);
     const data = await res.json();
     const c = data.customer || {};
+    
+    // Update USER with membership data
+    USER.membership_active = c.membership_active || false;
+    USER.membership_expiry = c.membership_expiry || null;
+    saveUser();
+    
     el.innerHTML = `
       <!-- Wallet Balance Card -->
       <div style="background:linear-gradient(135deg,#1a0800,#3d1a00);border-radius:20px;padding:24px;margin-bottom:16px;border:1px solid #5a2d00">
@@ -3262,6 +3284,147 @@ async function startWalletTopup() {
   } catch(e) {
     showToast('Could not open payment. Check connection.', 'error');
   }
+}
+
+// ═══════════════════════════════════════════
+//  Membership Details Screen
+// ═══════════════════════════════════════════
+function loadMembershipDetails() {
+  const el = document.getElementById('membershipContent');
+  if (!USER || !USER.phone) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🔒</div><h3>Login Required</h3><p>Sign in to view membership details</p></div>`;
+    return;
+  }
+  
+  // Check if user has active membership
+  const membershipActive = USER.membership_active || false;
+  const membershipExpiry = USER.membership_expiry || null;
+  const now = new Date();
+  
+  let statusBadge = '';
+  let expiryText = '';
+  let expiryDate = null;
+  
+  if (membershipActive && membershipExpiry) {
+    expiryDate = new Date(membershipExpiry);
+    const daysLeft = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+    if (daysLeft > 0) {
+      statusBadge = `<div style="display:inline-block;background:#22c55e;color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700">✓ ACTIVE</div>`;
+      expiryText = `<div style="font-size:13px;color:var(--muted);margin-top:8px">Expires in <span style="color:#f59e0b;font-weight:700">${daysLeft} days</span></div>`;
+    } else {
+      statusBadge = `<div style="display:inline-block;background:#ef4444;color:#fff;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700">⏰ EXPIRED</div>`;
+      expiryText = `<div style="font-size:13px;color:var(--danger);margin-top:8px">Membership expired on ${expiryDate.toLocaleDateString()}</div>`;
+    }
+  } else {
+    statusBadge = `<div style="display:inline-block;background:var(--muted);color:var(--text);padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700">NOT ACTIVE</div>`;
+    expiryText = `<div style="font-size:13px;color:var(--muted);margin-top:8px">Upgrade to NOW Plus for exclusive benefits</div>`;
+  }
+  
+  el.innerHTML = `
+    <!-- Status Card -->
+    <div style="background:linear-gradient(135deg,#1a0800,#3d1a00);border-radius:20px;padding:24px;margin-bottom:16px;border:1px solid #5a2d00;text-align:center">
+      <div style="font-size:48px;margin-bottom:12px">👑</div>
+      <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px">NOW Plus</div>
+      ${statusBadge}
+      ${expiryText}
+    </div>
+
+    <!-- Benefits Section -->
+    <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border)">
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px">✨ Member Benefits</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <span style="font-size:20px;flex-shrink:0">🚚</span>
+          <div>
+            <div style="font-size:13px;font-weight:600">Free Delivery</div>
+            <div style="font-size:12px;color:var(--muted)">On all orders</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <span style="font-size:20px;flex-shrink:0">⏱️</span>
+          <div>
+            <div style="font-size:13px;font-weight:600">Priority Slots</div>
+            <div style="font-size:12px;color:var(--muted)">Book slots up to 7 days in advance</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <span style="font-size:20px;flex-shrink:0">💰</span>
+          <div>
+            <div style="font-size:13px;font-weight:600">Member Offers</div>
+            <div style="font-size:12px;color:var(--muted)">Extra 5% discount on all products</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <span style="font-size:20px;flex-shrink:0">📦</span>
+          <div>
+            <div style="font-size:13px;font-weight:600">Free Gifts</div>
+            <div style="font-size:12px;color:var(--muted)">Exclusive gifts & rewards</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <span style="font-size:20px;flex-shrink:0">☎️</span>
+          <div>
+            <div style="font-size:13px;font-weight:600">Priority Support</div>
+            <div style="font-size:12px;color:var(--muted)">24/7 dedicated customer support</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pricing -->
+    <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border)">
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px">💳 Membership Plans</div>
+      <div style="background:var(--bg);border-radius:12px;padding:12px;border:1px solid var(--border);margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:14px;font-weight:700">Monthly</div>
+            <div style="font-size:12px;color:var(--muted)">Cancel anytime</div>
+          </div>
+          <div style="font-size:22px;font-weight:800;color:var(--accent)">₹99</div>
+        </div>
+      </div>
+      <div style="background:linear-gradient(135deg,#1a1a00,#2d2500);border-radius:12px;padding:12px;border:1px solid #3d3500">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#fff">Annual (Best Value)</div>
+            <div style="font-size:11px;color:#f59e0b">Save ₹189 vs monthly</div>
+          </div>
+          <div style="font-size:22px;font-weight:800;color:#fff">₹999</div>
+        </div>
+      </div>
+    </div>
+
+    ${membershipActive && membershipExpiry ? `
+      <!-- Renewal Button -->
+      <button onclick="renewMembership()" 
+        style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px">
+        🔄 Renew Membership
+      </button>
+    ` : `
+      <!-- Join Button -->
+      <button onclick="joinMembership()" 
+        style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px">
+        👑 Join NOW Plus - ₹99/mo
+      </button>
+    `}
+    
+    <button onclick="goBack()" 
+      style="width:100%;padding:12px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer">
+      ← Go Back
+    </button>
+  `;
+}
+
+function joinMembership() {
+  showToast('Redirecting to payment...', 'info');
+  showScreen('screen-wallet');
+  // In a real app, this would initiate membership payment via Razorpay
+}
+
+function renewMembership() {
+  showToast('Redirecting to renewal...', 'info');
+  showScreen('screen-wallet');
+  // In a real app, this would initiate renewal payment via Razorpay
 }
 
 // ═══════════════════════════════════════════
