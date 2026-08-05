@@ -342,6 +342,10 @@ input,textarea{font:inherit;color:inherit}
 .pm-item:last-child{border-bottom:none}
 .pm-icon{width:36px;height:36px;background:var(--card);border-radius:10px;
   display:flex;align-items:center;justify-content:center;font-size:18px}
+.pm-label{flex:1;font-size:14px;font-weight:600}
+.pm-arrow{color:var(--muted);font-size:14px}
+.grid-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;min-height:90px}
+.grid-item:active{background:var(--bg);transform:scale(.98)}
 .pm-label{flex:1;font-size:14px;font-weight:500}
 .pm-arrow{color:var(--muted);font-size:18px}
 .logout-btn{margin:14px;width:calc(100% - 28px);padding:14px;background:rgba(239,68,68,.1);
@@ -653,9 +657,6 @@ input,textarea{font:inherit;color:inherit}
         <div class="drawer-section-title">MY ACCOUNT</div>
         <button class="drawer-item" onclick="showScreen('screen-orders');closeDrawer()">
           <span class="di-icon">📦</span><span class="di-label">My Orders</span><span class="di-arrow">›</span>
-        </button>
-        <button class="drawer-item" onclick="showScreen('screen-profile');closeDrawer()">
-          <span class="di-icon">👤</span><span class="di-label">Profile</span><span class="di-arrow">›</span>
         </button>
         <button class="drawer-item" onclick="showSavedAddresses();closeDrawer()">
           <span class="di-icon">📍</span><span class="di-label">Saved Addresses</span><span class="di-arrow">›</span>
@@ -1002,7 +1003,7 @@ input,textarea{font:inherit;color:inherit}
               <div class="wallet-balance">₹<span id="profileWallet">0</span></div>
               <div class="wallet-sub">Use at checkout for instant discount</div>
             </div>
-            <button class="wallet-add-btn" onclick="showToast('Coming soon! 🚀')">+ Add Money</button>
+            <button class="wallet-add-btn" onclick="showScreen('screen-wallet')">+ Add Money</button>
           </div>
         </div>
 
@@ -1014,11 +1015,32 @@ input,textarea{font:inherit;color:inherit}
               <div style="font-size:11px;color:var(--muted)">Free delivery • Priority slots • Member offers</div>
             </div>
             <button style="background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700"
-              onclick="showToast('NOW Plus coming soon! 🎖️')">Join ₹99/mo</button>
+              onclick="showScreen('screen-wallet')">Join ₹99/mo</button>
           </div>
         </div>
 
-        <div class="profile-menu">
+        <!-- 2x2 Grid Menu -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 14px;margin-bottom:16px">
+          <div class="grid-item" onclick="showScreen('screen-orders')">
+            <div style="font-size:28px">📦</div>
+            <div style="font-size:12px;font-weight:600;margin-top:4px">Orders</div>
+          </div>
+          <div class="grid-item" onclick="showScreen('screen-returns')">
+            <div style="font-size:28px">🔄</div>
+            <div style="font-size:12px;font-weight:600;margin-top:4px">Returns</div>
+          </div>
+          <div class="grid-item" onclick="showScreen('screen-reviews')">
+            <div style="font-size:28px">⭐</div>
+            <div style="font-size:12px;font-weight:600;margin-top:4px">Reviews</div>
+          </div>
+          <div class="grid-item" onclick="showScreen('screen-subscriptions')">
+            <div style="font-size:28px">🔁</div>
+            <div style="font-size:12px;font-weight:600;margin-top:4px">Subscriptions</div>
+          </div>
+        </div>
+
+        <!-- Profile Menu (below grid) -->
+        <div class="profile-menu" style="display:none">
           <div class="pm-item" onclick="showScreen('screen-orders')">
             <div class="pm-icon">📦</div>
             <div class="pm-label">Order History</div>
