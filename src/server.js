@@ -966,12 +966,14 @@ app.get('/api/location/reverse', async (req, res) => {
   const lat = parseFloat(req.query.lat);
   const lon = parseFloat(req.query.lon);
   if (isNaN(lat) || isNaN(lon)) return res.json({ ok: false });
-  const gKey = process.env.GOOGLE_MAPS_KEY;
-  const lKey = process.env.LOCATIONIQ_KEY;
-  if (!gKey && !lKey) return res.json({ ok: false, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, full: '' });
+  
   try {
     let area = '', city = '', state = '', displayName = '';
+    const gKey = process.env.GOOGLE_MAPS_KEY;
+    const lKey = process.env.LOCATIONIQ_KEY;
+    
     if (lKey) {
+      // LocationIQ API
       const url = `https://us1.locationiq.com/v1/reverse?key=${lKey}&lat=${lat}&lon=${lon}&format=json&normalizecity=1`;
       const r = await axios.get(url, { timeout: 8000 });
       const addr = r.data.address || {};
@@ -979,7 +981,8 @@ app.get('/api/location/reverse', async (req, res) => {
       city = addr.city || addr.town || addr.county || '';
       state = addr.state || '';
       displayName = r.data.display_name || '';
-    } else {
+    } else if (gKey) {
+      // Google Maps API
       const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&language=en&key=${gKey}`;
       const r = await axios.get(url, { timeout: 8000 });
       const result = (r.data.results||[])[0];
@@ -991,14 +994,24 @@ app.get('/api/location/reverse', async (req, res) => {
         state = get('administrative_area_level_1') || '';
         displayName = result.formatted_address || '';
       }
+    } else {
+      // FREE: Use OpenStreetMap Nominatim (no API key needed)
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&zoom=16&accept-language=en`;
+      const r = await axios.get(url, { timeout: 8000, headers: { 'User-Agent': 'NOW-MeatPe' } });
+      const addr = r.data.address || {};
+      area = addr.neighbourhood || addr.suburb || addr.quarter || addr.village || addr.road || addr.hamlet || '';
+      city = addr.city || addr.town || addr.county || '';
+      state = addr.state || '';
+      displayName = r.data.display_name || '';
     }
+    
     const stateAbbr = state.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,3);
-    const shortLabel = area && city && area !== city ? `${area}, ${city}` : (city || 'My Location');
+    const shortLabel = area && city && area !== city ? `${area}, ${city}` : (city || area || 'My Location');
     const label = stateAbbr ? `${shortLabel}, ${stateAbbr}` : shortLabel;
     res.json({ ok: true, label, full: displayName, area, city, state });
   } catch (e) {
     console.warn('reverse geocode error:', e.message);
-    res.json({ ok: false, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, full: '' });
+    res.json({ ok: false, label: `${lat.toFixed(4)}, ${lon.toFixed(4)}`, full: 'Location detected' });
   }
 });
 
