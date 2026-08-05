@@ -1678,7 +1678,7 @@ function escapeHtml(text) {
     try { CART = JSON.parse(savedCart); } catch(e) {}
   }
 
-  // Show splash screen first (quick)
+  // Show splash screen
   document.querySelectorAll('.screen').forEach(s => {
     s.classList.remove('active');
     s.style.display = 'none';
@@ -1691,56 +1691,51 @@ function escapeHtml(text) {
   document.getElementById('bottomNav').style.display = 'none';
   document.getElementById('cartBar').style.display = 'none';
 
-  // Start loading data immediately (don't wait)
-  let dataReady = false;
-  let minSplashTime = 1200; // Minimum splash time
-  let splashTimeout;
-  
-  const showMainScreen = async () => {
-    if (splashTimeout) clearTimeout(splashTimeout);
-    document.querySelectorAll('.screen').forEach(s => {
-      s.classList.remove('active');
-      s.style.display = 'none';
-    });
-
-    if (USER) {
-      showScreen('screen-home');
-      // Load menu if not already loaded
-      if (!MENU || MENU.length === 0) {
-        await loadMenu();
-      }
-      updateTopbarUser();
-    } else {
-      const loginScreen = document.getElementById('screen-login');
-      loginScreen.style.display = '';
-      loginScreen.classList.add('active');
-      document.getElementById('bottomNav').style.display = 'none';
-      document.getElementById('cartBar').style.display = 'none';
-    }
-  };
-  
-  // Preload data in background
-  const preloadData = async () => {
+  // Initialize app after splash
+  setTimeout(async () => {
     try {
+      // Load settings
       const settingsRes = await fetch('/api/settings');
       await settingsRes.json();
       
       // Load menu
+      console.log('📥 Loading menu...');
+      const menuRes = await fetch('/api/menu');
+      MENU = await menuRes.json();
+      console.log('✅ Menu loaded:', MENU.length, 'items');
+      
+      // Hide splash
+      document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.style.display = 'none';
+      });
+      
+      // Show correct screen
       if (USER) {
-        await loadMenu();
+        console.log('👤 User found, showing home');
+        const homeScreen = document.getElementById('screen-home');
+        homeScreen.style.display = '';
+        homeScreen.classList.add('active');
+        document.getElementById('bottomNav').style.display = 'flex';
+        updateCartBar();
+        updateTopbarUser();
+        renderProducts();
+      } else {
+        console.log('🔓 No user, showing login');
+        const loginScreen = document.getElementById('screen-login');
+        loginScreen.style.display = '';
+        loginScreen.classList.add('active');
+        document.getElementById('bottomNav').style.display = 'none';
       }
-      dataReady = true;
-      console.log('✅ Data preloaded');
     } catch(e) {
-      console.warn('Data preload error:', e);
+      console.error('App init error:', e);
+      // Show home anyway
+      const homeScreen = document.getElementById('screen-home');
+      homeScreen.style.display = '';
+      homeScreen.classList.add('active');
+      document.getElementById('bottomNav').style.display = 'flex';
     }
-  };
-  
-  // Start preloading immediately
-  preloadData();
-  
-  // Show main screen after minimum splash time
-  splashTimeout = setTimeout(showMainScreen, minSplashTime);
+  }, 1000); // Minimum splash time
 })();
 
 // Track when page started loading
