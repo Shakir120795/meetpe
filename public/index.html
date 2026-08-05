@@ -959,6 +959,35 @@ input,textarea{font:inherit;color:inherit}
           </div>
         </div>
 
+        <!-- Appearance Section - accordion (moved before menu) -->
+        <div style="margin:12px 14px">
+          <div onclick="toggleAppearance(this)"
+            style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--card);border-radius:14px;border:1px solid var(--border);cursor:pointer">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:36px;height:36px;background:rgba(232,69,10,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">🎨</div>
+              <div style="font-size:14px;font-weight:600">Appearance</div>
+            </div>
+            <span id="appearanceArrow" style="font-size:12px;color:var(--muted);transition:transform .25s">▼</span>
+          </div>
+          <div id="appearancePanel" style="display:none;background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;overflow:hidden">
+            <div onclick="setTheme('light')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
+              <span style="font-size:20px">☀️</span>
+              <div style="flex:1;font-size:14px;font-weight:500">Light Theme</div>
+              <div id="themeRadioLight" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
+            </div>
+            <div onclick="setTheme('dark')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
+              <span style="font-size:20px">🌙</span>
+              <div style="flex:1;font-size:14px;font-weight:500">Dark Theme</div>
+              <div id="themeRadioDark" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
+            </div>
+            <div onclick="setTheme('system')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer">
+              <span style="font-size:20px">⚙️</span>
+              <div style="flex:1;font-size:14px;font-weight:500">System Default</div>
+              <div id="themeRadioSystem" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- Profile Menu (all items from drawer merged here) -->
         <div class="profile-menu">
           <div class="pm-item" onclick="showScreen('screen-orders')">
@@ -1016,35 +1045,6 @@ input,textarea{font:inherit;color:inherit}
             <div class="pm-icon">ℹ️</div>
             <div class="pm-label">About <span data-brand-name>NOW</span></div>
             <div class="pm-arrow">›</div>
-          </div>
-        </div>
-
-        <!-- Appearance Section - accordion -->
-        <div style="margin:16px 14px 0">
-          <div onclick="toggleAppearance(this)"
-            style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--card);border-radius:14px;border:1px solid var(--border);cursor:pointer">
-            <div style="display:flex;align-items:center;gap:12px">
-              <div style="width:36px;height:36px;background:rgba(232,69,10,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">🎨</div>
-              <div style="font-size:14px;font-weight:600">Appearance</div>
-            </div>
-            <span id="appearanceArrow" style="font-size:12px;color:var(--muted);transition:transform .25s">▼</span>
-          </div>
-          <div id="appearancePanel" style="display:none;background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;overflow:hidden">
-            <div onclick="setTheme('light')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
-              <span style="font-size:20px">☀️</span>
-              <div style="flex:1;font-size:14px;font-weight:500">Light Theme</div>
-              <div id="themeRadioLight" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
-            </div>
-            <div onclick="setTheme('dark')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
-              <span style="font-size:20px">🌙</span>
-              <div style="flex:1;font-size:14px;font-weight:500">Dark Theme</div>
-              <div id="themeRadioDark" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
-            </div>
-            <div onclick="setTheme('system')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer">
-              <span style="font-size:20px">⚙️</span>
-              <div style="flex:1;font-size:14px;font-weight:500">System Default</div>
-              <div id="themeRadioSystem" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
-            </div>
           </div>
         </div>
 
