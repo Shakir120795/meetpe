@@ -1065,7 +1065,7 @@ input,textarea{font:inherit;color:inherit}
             <div class="pm-label">Rate the App</div>
             <div class="pm-arrow">›</div>
           </div>
-          <div class="pm-item" onclick="void(0)">
+          <div class="pm-item" onclick="showScreen('screen-referral')">
             <div class="pm-icon">🤝</div>
             <div class="pm-label">Refer &amp; Earn</div>
             <div class="pm-arrow">›</div>
@@ -1151,6 +1151,19 @@ input,textarea{font:inherit;color:inherit}
       <div style="padding:14px;padding-bottom:80px">
         <div id="membershipContent">
           <!-- Will be populated by loadMembershipDetails() -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ REFERRAL SCREEN ═══ -->
+    <div class="screen" id="screen-referral">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">🤝 Refer &amp; Earn</div>
+      </div>
+      <div style="padding:14px;padding-bottom:80px">
+        <div id="referralContent">
+          <!-- Will be populated by loadReferralScreen() -->
         </div>
       </div>
     </div>
@@ -1697,6 +1710,7 @@ function showScreen(id) {
   if (id === 'screen-reviews') loadMyReviews();
   if (id === 'screen-wishlist') loadWishlist();
   if (id === 'screen-membership') loadMembershipDetails();
+  if (id === 'screen-referral') loadReferralScreen();
 
   // Update nav highlight
   const navMap = {
@@ -1704,7 +1718,7 @@ function showScreen(id) {
     'screen-product':'nav-home','screen-orders':'nav-orders','screen-profile':'nav-home',
     'screen-subscriptions':'nav-home','screen-returns':'nav-home',
     'screen-wallet':'nav-home','screen-reviews':'nav-home','screen-wishlist':'nav-home',
-    'screen-membership':'nav-home','screen-about':'nav-home'
+    'screen-membership':'nav-home','screen-referral':'nav-home','screen-about':'nav-home'
   };
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   const nb = document.getElementById(navMap[id]);
@@ -3116,9 +3130,11 @@ async function loadWallet() {
     const data = await res.json();
     const c = data.customer || {};
     
-    // Update USER with membership data
+    // Update USER with membership and referral data
     USER.membership_active = c.membership_active || false;
     USER.membership_expiry = c.membership_expiry || null;
+    USER.referral_earnings = c.referral_earnings || 0;
+    USER.referred_count = c.referred_count || 0;
     saveUser();
     
     el.innerHTML = `
@@ -3425,6 +3441,139 @@ function renewMembership() {
   showToast('Redirecting to renewal...', 'info');
   showScreen('screen-wallet');
   // In a real app, this would initiate renewal payment via Razorpay
+}
+
+// ═══════════════════════════════════════════
+//  Referral System
+// ═══════════════════════════════════════════
+function generateReferralCode() {
+  if (!USER || !USER.phone) return '';
+  const cleanPhone = String(USER.phone).replace(/\D/g, '');
+  const code = 'NOW' + cleanPhone.slice(-4).toUpperCase();
+  return code;
+}
+
+function loadReferralScreen() {
+  const el = document.getElementById('referralContent');
+  if (!USER || !USER.phone) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🔒</div><h3>Login Required</h3><p>Sign in to access referral program</p></div>`;
+    return;
+  }
+  
+  const referralCode = generateReferralCode();
+  const referralLink = `https://nowapp.com/ref/${referralCode}`;
+  const earnedCash = USER.referral_earnings || 0;
+  const referredCount = USER.referred_count || 0;
+  
+  el.innerHTML = `
+    <!-- Header Card -->
+    <div style="background:linear-gradient(135deg,#1a0800,#3d1a00);border-radius:20px;padding:24px;margin-bottom:16px;border:1px solid #5a2d00;text-align:center">
+      <div style="font-size:48px;margin-bottom:12px">🤝</div>
+      <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:4px">Refer Your Friends</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.7)">Earn ₹100 on every successful referral</div>
+    </div>
+
+    <!-- Earnings Summary -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div style="background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border);text-align:center">
+        <div style="font-size:28px;font-weight:800;color:var(--accent)">₹${earnedCash}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Total Earned</div>
+      </div>
+      <div style="background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border);text-align:center">
+        <div style="font-size:28px;font-weight:800;color:#f59e0b">${referredCount}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Friends Referred</div>
+      </div>
+    </div>
+
+    <!-- Referral Code -->
+    <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:8px">YOUR REFERRAL CODE</div>
+      <div style="background:var(--bg);border:2px solid var(--accent);border-radius:12px;padding:14px;text-align:center;margin-bottom:10px">
+        <div style="font-size:28px;font-weight:900;color:var(--accent);letter-spacing:2px;font-family:monospace">${referralCode}</div>
+      </div>
+      <button onclick="copyToClipboard('${referralCode}')" style="width:100%;padding:11px;background:rgba(232,69,10,.1);color:var(--accent);border:1.5px solid var(--accent);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">
+        📋 Copy Code
+      </button>
+    </div>
+
+    <!-- Referral Link -->
+    <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:8px">REFERRAL LINK</div>
+      <div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:10px;word-break:break-all;font-size:12px;color:var(--text);font-family:monospace">${referralLink}</div>
+      <button onclick="shareReferral('${referralCode}','${referralLink}')" style="width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">
+        📤 Share Link
+      </button>
+    </div>
+
+    <!-- How It Works -->
+    <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px">📖 How It Works</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;gap:10px">
+          <div style="font-size:22px;flex-shrink:0">1️⃣</div>
+          <div>
+            <div style="font-size:13px;font-weight:600">Share Your Code</div>
+            <div style="font-size:12px;color:var(--muted)">Send your referral code to friends</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div style="font-size:22px;flex-shrink:0">2️⃣</div>
+          <div>
+            <div style="font-size:13px;font-weight:600">They Sign Up</div>
+            <div style="font-size:12px;color:var(--muted)">Friend uses your code during signup</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div style="font-size:22px;flex-shrink:0">3️⃣</div>
+          <div>
+            <div style="font-size:13px;font-weight:600">They Place Order</div>
+            <div style="font-size:12px;color:var(--muted)">Friend places their first order</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div style="font-size:22px;flex-shrink:0">💰</div>
+          <div>
+            <div style="font-size:13px;font-weight:600">You Earn ₹100</div>
+            <div style="font-size:12px;color:var(--muted)">Instant cashback to your wallet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- T&C -->
+    <div style="padding:12px;background:rgba(232,69,10,.08);border-radius:12px;border:1px solid rgba(232,69,10,.2);font-size:11px;color:var(--muted);line-height:1.6">
+      <strong style="color:var(--text)">Terms:</strong> Referral bonus valid only for first order. Each code valid for 1 signup. Earnings credited within 24 hours.
+    </div>
+  `;
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('✓ Copied to clipboard', 'success');
+  }).catch(() => {
+    // Fallback for older browsers
+    const inp = document.createElement('input');
+    inp.value = text;
+    document.body.appendChild(inp);
+    inp.select();
+    document.execCommand('copy');
+    document.body.removeChild(inp);
+    showToast('✓ Copied to clipboard', 'success');
+  });
+}
+
+function shareReferral(code, link) {
+  const text = `Join NOW - Get fresh meat delivered in 30 mins! Use my referral code: ${code} and get ₹100 cashback on your first order. Download the app: ${link}`;
+  
+  if (navigator.share) {
+    navigator.share({
+      title: 'NOW - Fresh Meat Delivery',
+      text: text
+    }).catch(err => console.log('Share error:', err));
+  } else {
+    // Fallback: copy to clipboard
+    copyToClipboard(link);
+  }
 }
 
 // ═══════════════════════════════════════════

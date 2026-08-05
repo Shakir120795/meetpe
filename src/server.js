@@ -812,12 +812,19 @@ app.get('/api/customer/:phone', (req, res) => {
   const cleanPhone = String(req.params.phone).replace(/\D/g, '');
   const waPhone = `web:+91${cleanPhone}`;
   const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
-  if (!customer) return res.json({ ok: true, customer: { phone: cleanPhone, name: '', wallet: 0, orders: 0, membership_active: false } });
+  if (!customer) return res.json({ ok: true, customer: { phone: cleanPhone, name: '', wallet: 0, orders: 0, membership_active: false, referral_earnings: 0, referred_count: 0 } });
   const rewards = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rewards WHERE phone = ? AND used = 0 AND expires_at > datetime('now')`).get(waPhone);
   const orderCount = db.prepare('SELECT COUNT(*) as cnt FROM orders WHERE phone = ?').get(waPhone);
   
   // Check if membership is still active
   const isMembershipActive = customer.is_plus && customer.plus_until && new Date(customer.plus_until) > new Date();
+  
+  // Count successful referrals
+  const referredList = db.prepare(`
+    SELECT COALESCE(COUNT(*), 0) as cnt FROM customers 
+    WHERE referred_by = ? AND phone IN (SELECT DISTINCT phone FROM orders)
+  `).get(customer.phone);
+  const referralEarnings = (referredList?.cnt || 0) * 100;
   
   res.json({ 
     ok: true, 
@@ -828,7 +835,9 @@ app.get('/api/customer/:phone', (req, res) => {
       rewards: rewards.total, 
       orders: orderCount.cnt,
       membership_active: isMembershipActive,
-      membership_expiry: customer.plus_until
+      membership_expiry: customer.plus_until,
+      referral_earnings: referralEarnings,
+      referred_count: referredList?.cnt || 0
     } 
   });
 });
@@ -2634,6 +2643,56 @@ app.post('/api/wallet/topup/verify', (req, res) => {
   } catch (e) {
     console.error('Razorpay verify error:', e.message);
     res.status(500).json({ ok: false, error: 'Verification failed' });
+  }
+});
+
+// ===== Referral System =====
+// POST /api/referral/apply - apply referral code during signup
+app.post('/api/referral/apply', (req, res) => {
+  try {
+    const { phone, referral_code } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+
+    // Don't apply referral to the referrer
+    const referrerPhone = `web:+91${referral_code.slice(-4)}`;
+    if (referrerPhone === `web:+91${cleanPhone}`) {
+      return res.json({ ok: true, message: 'Valid code' }); // Silent ignore self-referral
+    }
+
+    // Store referral info
+    const waPhone = `web:+91${cleanPhone}`;
+    db.prepare('UPDATE customers SET referred_by = ? WHERE phone = ?').run(referral_code, waPhone);
+    
+    console.log(`📤 Referral applied: ${referral_code} → ${cleanPhone}`);
+    res.json({ ok: true, message: 'Referral applied' });
+  } catch (e) {
+    console.error('Referral apply error:', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to apply referral' });
+  }
+});
+
+// GET /api/referral/earnings/:phone - get referral earnings
+app.get('/api/referral/earnings/:phone', (req, res) => {
+  try {
+    const cleanPhone = String(req.params.phone).replace(/\D/g, '');
+    const waPhone = `web:+91${cleanPhone}`;
+    
+    const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
+    if (!customer) return res.json({ ok: true, earnings: 0, referred_count: 0 });
+    
+    // Count successful referrals (those who have placed at least 1 order)
+    const referredList = db.prepare(`
+      SELECT COALESCE(COUNT(*), 0) as cnt FROM customers 
+      WHERE referred_by = ? AND phone IN (SELECT DISTINCT phone FROM orders)
+    `).get(customer.phone);
+    
+    const referralEarnings = (referredList?.cnt || 0) * 100; // ₹100 per successful referral
+    
+    res.json({ ok: true, earnings: referralEarnings, referred_count: referredList?.cnt || 0 });
+  } catch (e) {
+    console.error('Referral earnings error:', e.message);
+    res.status(500).json({ ok: false, error: 'Failed to get earnings' });
   }
 });
 

@@ -20,6 +20,7 @@ db.exec(`
     wallet_balance INTEGER DEFAULT 0,
     is_plus      INTEGER DEFAULT 0,
     plus_until   TEXT,
+    referred_by  TEXT,
     created_at   TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
