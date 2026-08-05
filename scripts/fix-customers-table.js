@@ -31,15 +31,16 @@ try {
   // Add updated_at column if missing
   if (!hasUpdatedAt) {
     console.log('➕ Adding updated_at column...');
+    // SQLite doesn't allow non-constant defaults in ALTER TABLE, so add without default
     db.exec(`
       ALTER TABLE customers 
-      ADD COLUMN updated_at TEXT DEFAULT CURRENT_TIMESTAMP;
+      ADD COLUMN updated_at TEXT;
     `);
     
     // Set updated_at = created_at for existing rows
     db.exec(`
       UPDATE customers 
-      SET updated_at = created_at 
+      SET updated_at = COALESCE(created_at, datetime('now'))
       WHERE updated_at IS NULL;
     `);
     
