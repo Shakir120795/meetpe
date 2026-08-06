@@ -455,6 +455,9 @@ function update(patch) {
   if (patch.invoice) current.invoice = { ...current.invoice, ...patch.invoice };
   if (Array.isArray(patch.deliveryZones)) current.deliveryZones = patch.deliveryZones;
   if (Array.isArray(patch.membershipPlans)) current.membershipPlans = patch.membershipPlans;
+  if (Array.isArray(patch.supplierHubs)) current.supplierHubs = patch.supplierHubs;
+  if (Array.isArray(patch.deliveryRules)) current.deliveryRules = patch.deliveryRules;
+  if (Array.isArray(patch.membershipRules)) current.membershipRules = patch.membershipRules;
   write(current);
   return { ok: true, settings: current };
 }
