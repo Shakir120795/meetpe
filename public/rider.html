@@ -1429,8 +1429,26 @@ async function loadEarnings() {
 }
 
 // ============ PROFILE ============
-function loadProfile() {
+async function loadProfile() {
     if (!rider) return;
+    
+    // Fetch fresh data from server (admin may have updated bank details)
+    try {
+        const phone = rider.phone?.replace(/\D/g, '').slice(-10);
+        if (phone) {
+            const res = await fetch('/api/rider/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone })
+            });
+            const data = await res.json();
+            if (data.ok && data.rider) {
+                rider = { ...rider, ...data.rider };
+                localStorage.setItem('rider_session', JSON.stringify(rider));
+            }
+        }
+    } catch(e) {}
+    
     document.getElementById('profileAvatar').textContent = (rider.name || 'R').charAt(0).toUpperCase();
     document.getElementById('profileName').textContent = rider.name || 'Rider';
     document.getElementById('profilePhone').textContent = rider.phone || '--';
