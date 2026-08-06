@@ -6997,31 +6997,7 @@ async function loadMembershipDetails() {
       `;
     }
     
-    // How it works
-    const howHTML = `
-      <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border)">
-        <div style="font-size:14px;font-weight:700;margin-bottom:12px">ℹ️ How It Works</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.8">
-          <div style="margin-bottom:6px">1️⃣ Purchase membership (₹99/month or ₹999/year)</div>
-          <div style="margin-bottom:6px">2️⃣ Get 10 delivery credits instantly</div>
-          <div style="margin-bottom:6px">3️⃣ Each order automatically uses 1 credit</div>
-          <div style="margin-bottom:6px">4️⃣ Delivery fee waived when credit is used</div>
-          <div>5️⃣ Available only within 7km of supplier hub</div>
-        </div>
-      </div>
-      
-      <div style="background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border)">
-        <div style="font-size:14px;font-weight:700;margin-bottom:12px">✨ Member Benefits</div>
-        <div style="font-size:13px;line-height:1.8">
-          <div style="margin-bottom:6px">✓ 10 free delivery credits</div>
-          <div style="margin-bottom:6px">✓ Priority order processing</div>
-          <div style="margin-bottom:6px">✓ Exclusive member-only offers</div>
-          <div>✓ Save up to ₹290/month on delivery</div>
-        </div>
-      </div>
-    `;
-    
-    el.innerHTML = statusHTML + eligibilityHTML + planHTML + howHTML;
+    el.innerHTML = statusHTML + eligibilityHTML + planHTML;
     
   } catch (e) {
     console.error('Load membership error:', e);
@@ -7072,6 +7048,16 @@ async function initMembershipPayment() {
     const data = await res.json();
     
     if (!data.ok) { showToast(data.error || 'Failed', 'error'); btn.disabled = false; btn.textContent = 'Pay & Activate'; return; }
+    
+    // If directly activated (no payment gateway configured)
+    if (data.activated) {
+      showToast('🎉 Membership activated! 10 delivery credits added.', 'success', 4000);
+      USER.is_plus = true;
+      USER.membership_active = true;
+      saveUser();
+      setTimeout(() => loadMembershipDetails(), 1000);
+      return;
+    }
     
     // Load Razorpay
     if (!window.Razorpay) {
@@ -7129,7 +7115,8 @@ async function initMembershipPayment() {
     rzp.open();
     
   } catch (e) {
-    showToast('Network error. Try again.', 'error');
+    console.error('Membership payment error:', e);
+    showToast('Error: ' + (e.message || 'Network error. Try again.'), 'error');
   } finally {
     btn.disabled = false;
     const price = SELECTED_MEMBERSHIP_PLAN === 'yearly' ? '999' : '99';
