@@ -114,15 +114,19 @@ async function loadDashboard() {
   if (!key) return;
   
   try {
-    const res = await fetch('/admin/dashboard?key=' + encodeURIComponent(key));
-    const data = await res.json();
+    const [dashRes, stockRes] = await Promise.all([
+      fetch('/admin/dashboard?key=' + encodeURIComponent(key)),
+      fetch('/admin/inventory/alerts?key=' + encodeURIComponent(key))
+    ]);
+    const data = await dashRes.json();
+    const stockData = await stockRes.json();
     if (!data.ok) { alert(data.error || 'Failed'); return; }
     
     $('content').style.display = 'block';
     renderStats(data);
     renderRecentOrders(data.recent);
     renderTopProducts(data.topProducts);
-    renderAlerts(data);
+    renderAlerts(data, stockData);
   } catch(e) { alert('Network error'); }
 }
 
@@ -180,15 +184,19 @@ function renderTopProducts(products) {
   `).join('');
 }
 
-function renderAlerts(data) {
+function renderAlerts(data, stockData) {
   const alerts = [];
   if (data.pendingTickets > 0) alerts.push(`🎫 ${data.pendingTickets} open support ticket${data.pendingTickets>1?'s':''}`);
   if (data.unreadChats > 0) alerts.push(`💬 ${data.unreadChats} unread chat${data.unreadChats>1?'s':''}`);
   if ((data.counts?.placed||0) > 0) alerts.push(`📋 ${data.counts.placed} new order${data.counts.placed>1?'s':''} waiting`);
+  if (stockData?.ok && stockData.outOfStockCount > 0) alerts.push(`🚫 ${stockData.outOfStockCount} product${stockData.outOfStockCount>1?'s':''} out of stock`);
+  if (stockData?.ok && stockData.lowStockCount > 0) alerts.push(`⚠️ ${stockData.lowStockCount} product${stockData.lowStockCount>1?'s':''} low stock`);
   
   if (alerts.length) {
     $('alertsSection').style.display = 'block';
     $('alerts').innerHTML = alerts.map(a => `<div style="padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:14px">${a}</div>`).join('');
+  } else {
+    $('alertsSection').style.display = 'none';
   }
 }
 
