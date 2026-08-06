@@ -1858,12 +1858,13 @@ app.get('/admin/inventory/alerts', (req, res) => {
 
 // POST /api/reviews — submit review (customer)
 app.post('/api/reviews', (req, res) => {
-  const { phone, order_id, item_code, rating, comment } = req.body || {};
+  const { phone, order_id, item_code, rating, comment, delivery_rating } = req.body || {};
   const cleanPhone = String(phone || '').replace(/\D/g, '');
   if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
   const r = parseInt(rating, 10);
   if (!r || r < 1 || r > 5) return res.status(400).json({ ok: false, error: 'rating must be 1-5' });
   if (!item_code) return res.status(400).json({ ok: false, error: 'item_code required' });
+  const delRating = delivery_rating ? Math.min(5, Math.max(1, parseInt(delivery_rating, 10))) : null;
 
   // Support both phone prefixes
   const webPhone = `web:+91${cleanPhone}`;
@@ -1873,16 +1874,34 @@ app.post('/api/reviews', (req, res) => {
   if (order_id) {
     const order = db.prepare('SELECT * FROM orders WHERE id = ? AND (phone = ? OR phone = ?)').get(order_id, webPhone, waPhone);
     if (!order) return res.status(404).json({ ok: false, error: 'Order not found' });
-    // Allow review for any non-cancelled order (not just delivered)
     if (order.status === 'cancelled') return res.status(400).json({ ok: false, error: 'Cannot review a cancelled order' });
-    // Check if already reviewed
     const existing = db.prepare('SELECT id FROM reviews WHERE order_id = ? AND item_code = ? AND (phone = ? OR phone = ?)').get(order_id, item_code, webPhone, waPhone);
     if (existing) return res.status(400).json({ ok: false, error: 'Already reviewed' });
   }
 
-  const info = db.prepare(`INSERT INTO reviews (order_id, phone, item_code, rating, comment, status) VALUES (?, ?, ?, ?, ?, 'approved')`)
-    .run(order_id || null, webPhone, item_code, r, (comment || '').trim().slice(0, 500));
+  // Add delivery_rating column if not exists
+  try { db.prepare('ALTER TABLE reviews ADD COLUMN delivery_rating INTEGER').run(); } catch(e) {}
+
+  const info = db.prepare(`INSERT INTO reviews (order_id, phone, item_code, rating, comment, delivery_rating, status) VALUES (?, ?, ?, ?, ?, ?, 'approved')`)
+    .run(order_id || null, webPhone, item_code, r, (comment || '').trim().slice(0, 500), delRating);
   res.json({ ok: true, id: info.lastInsertRowid });
+});
+
+// GET /api/reviews/user/:phone — get user's submitted reviews
+app.get('/api/reviews/user/:phone', (req, res) => {
+  const cleanPhone = String(req.params.phone).replace(/\D/g, '');
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+  const webPhone = `web:+91${cleanPhone}`;
+  const waPhone = `whatsapp:+91${cleanPhone}`;
+  
+  const reviews = db.prepare(`
+    SELECT r.id, r.order_id, r.item_code, r.rating, r.comment, r.delivery_rating, r.created_at, r.status
+    FROM reviews r
+    WHERE r.phone IN (?, ?)
+    ORDER BY r.created_at DESC LIMIT 50
+  `).all(webPhone, waPhone);
+  
+  res.json({ ok: true, reviews });
 });
 
 // GET /api/reviews/:item_code — public reviews for a product

@@ -6693,66 +6693,177 @@ function shareReferral(code, link) {
 // ═══════════════════════════════════════════
 //  My Reviews Screen
 // ═══════════════════════════════════════════
+let REVIEWS_TAB = 'toRate';
+
 async function loadMyReviews() {
   const el = document.getElementById('reviewsContent');
   if (!USER || !USER.phone) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">🔒</div><h3>Login Required</h3></div>`;
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🔒</div><h3>Login Required</h3><p>Login to see your reviews</p></div>`;
     return;
   }
-  el.innerHTML = `<div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div>`;
+  el.innerHTML = `<div class="empty"><div class="empty-icon" style="animation:spin 1s linear infinite">⏳</div></div>`;
+  
   try {
-    // Get delivered orders to review
     const res = await fetch('/api/orders/' + USER.phone);
     const data = await res.json();
-    const delivered = (data.orders||[]).filter(o => o.status === 'delivered').slice(0,10);
-    if (!delivered.length) {
-      el.innerHTML = `<div class="empty"><div class="empty-icon">📦</div><h3>No Delivered Orders</h3><p>Reviews available after delivery</p></div>`;
-      return;
-    }
-    el.innerHTML = `
-      <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Rate your delivered orders to help others</div>
-      ${delivered.map(o => `
-        <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid var(--border)">
-          <div style="font-size:13px;font-weight:700;margin-bottom:10px">Order #${o.id} — ${new Date(o.created_at).toLocaleDateString('en-IN')}</div>
-          ${(o.items||[]).map(item => `
-            <div style="padding:10px 0;border-bottom:1px solid var(--border)">
-              <div style="font-size:13px;font-weight:600;margin-bottom:6px">${item.name}</div>
-              <div style="display:flex;gap:4px;margin-bottom:6px" id="stars-${o.id}-${item.code}">
-                ${[1,2,3,4,5].map(s=>`<span onclick="setReviewRating('${o.id}','${item.code}',${s})" style="font-size:24px;cursor:pointer;color:#333" data-val="${s}">★</span>`).join('')}
-              </div>
-              <textarea id="rev-${o.id}-${item.code}" placeholder="Your feedback (optional)..." style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;resize:none;height:50px"></textarea>
-              <button onclick="submitQuickReview(${o.id},'${item.code}')" style="margin-top:6px;width:100%;padding:9px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Submit Review</button>
-            </div>`).join('')}
-        </div>`).join('')}`;
+    const orders = data.orders || [];
+    const delivered = orders.filter(o => o.status === 'delivered');
+    
+    // Fetch user's submitted reviews
+    let myReviews = [];
+    try {
+      const rRes = await fetch('/api/reviews/user/' + USER.phone);
+      const rData = await rRes.json();
+      if (rData.ok) myReviews = rData.reviews || [];
+    } catch(e) {}
+    
+    // Build tabs + content
+    const reviewedCodes = myReviews.map(r => r.order_id + '-' + r.item_code);
+    
+    // Filter unrated items
+    const toRate = [];
+    delivered.forEach(o => {
+      (o.items||[]).forEach(item => {
+        if (!reviewedCodes.includes(o.id + '-' + item.code)) {
+          toRate.push({ order: o, item });
+        }
+      });
+    });
+    
+    let html = `
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button onclick="switchReviewTab('toRate')" id="rev-tab-toRate" class="notif-tab ${REVIEWS_TAB==='toRate'?'active':''}">To Rate (${toRate.length})</button>
+        <button onclick="switchReviewTab('myReviews')" id="rev-tab-myReviews" class="notif-tab ${REVIEWS_TAB==='myReviews'?'active':''}">My Reviews (${myReviews.length})</button>
+      </div>
+      <div id="reviewsTabContent"></div>
+    `;
+    el.innerHTML = html;
+    
+    // Store data for tab switching
+    window._reviewsData = { toRate, myReviews, delivered };
+    renderReviewTab();
+    
   } catch(e) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">❌</div><p>Failed to load</p></div>`;
+    el.innerHTML = `<div class="empty"><div class="empty-icon">❌</div><p>Failed to load reviews</p></div>`;
   }
 }
 
-function setReviewRating(orderId, code, val) {
-  const container = document.getElementById(`stars-${orderId}-${code}`);
+function switchReviewTab(tab) {
+  REVIEWS_TAB = tab;
+  document.querySelectorAll('#reviewsContent .notif-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('rev-tab-' + tab)?.classList.add('active');
+  renderReviewTab();
+}
+
+function renderReviewTab() {
+  const container = document.getElementById('reviewsTabContent');
+  if (!container || !window._reviewsData) return;
+  const { toRate, myReviews, delivered } = window._reviewsData;
+  
+  if (REVIEWS_TAB === 'toRate') {
+    if (!toRate.length) {
+      container.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><h3>All Rated!</h3><p>You've reviewed all delivered items</p></div>`;
+      return;
+    }
+    
+    container.innerHTML = `
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Rate your items & delivery experience</div>
+      ${toRate.map(({ order, item }) => `
+        <div style="background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;border:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div style="font-size:12px;color:var(--muted)">Order #${order.id}</div>
+          </div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:8px">${item.name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Rate this item:</div>
+          <div style="display:flex;gap:4px;margin-bottom:8px" id="stars-${order.id}-${item.code}">
+            ${[1,2,3,4,5].map(s=>`<span onclick="setReviewRating('${order.id}','${item.code}',${s})" style="font-size:28px;cursor:pointer;color:var(--border);transition:color .15s" data-val="${s}">★</span>`).join('')}
+          </div>
+          <textarea id="rev-${order.id}-${item.code}" placeholder="Your feedback (optional)..." style="width:100%;padding:10px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;resize:none;height:60px;outline:none"></textarea>
+          
+          <!-- Delivery Rating -->
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Rate delivery experience:</div>
+            <div style="display:flex;gap:4px" id="delstars-${order.id}-${item.code}">
+              ${[1,2,3,4,5].map(s=>`<span onclick="setDeliveryRating('${order.id}','${item.code}',${s})" style="font-size:22px;cursor:pointer;color:var(--border);transition:color .15s" data-val="${s}">★</span>`).join('')}
+            </div>
+          </div>
+          
+          <button onclick="submitFullReview(${order.id},'${item.code}')" style="margin-top:12px;width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
+            Submit Review ⭐
+          </button>
+        </div>`).join('')}
+    `;
+  } else {
+    // My Reviews tab
+    if (!myReviews.length) {
+      container.innerHTML = `<div class="empty"><div class="empty-icon">⭐</div><h3>No Reviews Yet</h3><p>Your submitted reviews will appear here</p></div>`;
+      return;
+    }
+    
+    container.innerHTML = myReviews.map(r => {
+      const stars = '⭐'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+      const d = new Date(r.created_at);
+      const dateStr = d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric' });
+      
+      return `<div style="background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px;border:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-size:14px;font-weight:700">${r.item_code}</div>
+          <div style="font-size:11px;color:var(--muted)">${dateStr}</div>
+        </div>
+        <div style="font-size:16px;margin-bottom:6px;letter-spacing:2px">${stars}</div>
+        ${r.comment ? `<div style="font-size:13px;color:var(--muted);line-height:1.5;padding:8px;background:var(--bg);border-radius:8px">"${r.comment}"</div>` : ''}
+        ${r.delivery_rating ? `<div style="margin-top:8px;font-size:12px;color:var(--muted)">🛵 Delivery: ${'⭐'.repeat(r.delivery_rating)}${'☆'.repeat(5-r.delivery_rating)}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+}
+
+function setDeliveryRating(orderId, code, val) {
+  const container = document.getElementById(`delstars-${orderId}-${code}`);
   if (!container) return;
   container.querySelectorAll('span').forEach(s => {
-    s.style.color = parseInt(s.dataset.val) <= val ? '#f59e0b' : '#333';
+    s.style.color = parseInt(s.dataset.val) <= val ? '#22c55e' : 'var(--border)';
   });
   container.dataset.rating = val;
 }
 
-async function submitQuickReview(orderId, code) {
+async function submitFullReview(orderId, code) {
   if (!USER) return;
-  const container = document.getElementById(`stars-${orderId}-${code}`);
-  const rating = parseInt(container?.dataset.rating || 0);
-  const comment = document.getElementById(`rev-${orderId}-${code}`)?.value || '';
-  if (!rating) { showToast('Please select a rating ⭐', 'error'); return; }
+  const starsContainer = document.getElementById(`stars-${orderId}-${code}`);
+  const delContainer = document.getElementById(`delstars-${orderId}-${code}`);
+  const rating = parseInt(starsContainer?.dataset.rating || 0);
+  const deliveryRating = parseInt(delContainer?.dataset.rating || 0);
+  const comment = document.getElementById(`rev-${orderId}-${code}`)?.value?.trim() || '';
+  
+  if (!rating) { showToast('Please rate the item ⭐', 'error'); return; }
+  
   try {
     const res = await fetch('/api/reviews', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ phone: USER.phone, order_id: orderId, item_code: code, rating, comment })
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        phone: USER.phone, 
+        order_id: orderId, 
+        item_code: code, 
+        rating, 
+        comment,
+        delivery_rating: deliveryRating || null
+      })
     });
     const data = await res.json();
-    if (data.ok) { showToast('Review submitted! ⭐ Thank you', 'success'); }
-    else showToast(data.error || 'Already reviewed', 'error');
-  } catch(e) { showToast('Failed to submit', 'error'); }
+    if (data.ok) {
+      showToast('Review submitted! ⭐ Thank you', 'success');
+      loadMyReviews(); // Refresh
+    } else {
+      showToast(data.error || 'Failed to submit', 'error');
+    }
+  } catch(e) {
+    showToast('Network error', 'error');
+  }
+}
+
+function submitQuickReview(orderId, code) {
+  submitFullReview(orderId, code);
 }
 
 // ═══════════════════════════════════════════
