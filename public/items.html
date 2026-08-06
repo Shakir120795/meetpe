@@ -453,15 +453,17 @@ function render() {
         <span class="meta">${list.length} item${list.length > 1 ? 's' : ''}</span>
       </div>`;
     for (const i of list) {
-      html += `<div class="item-row ${i.inStock === false ? 'oos' : ''}">
+      const isListed = i.listed !== false;
+      html += `<div class="item-row ${i.inStock === false ? 'oos' : ''}" style="${!isListed ? 'opacity:0.4' : ''}">
         <span class="code">${escapeHtml(i.code)}</span>
-        <span class="name">${escapeHtml(i.name)}</span>
+        <span class="name">${escapeHtml(i.name)}${!isListed ? ' <span style="font-size:10px;color:#ef4444;font-weight:700">[HIDDEN]</span>' : ''}</span>
         <span class="unit">${escapeHtml(i.unit)}</span>
         <span class="price">₹${i.price}</span>
         <span class="stock ${i.inStock === false ? 'out' : 'in'}">
           ${i.inStock === false ? '⛔ Out' : '✅ In Stock'}
         </span>
         <span class="actions">
+          <button onclick="toggleListing('${i.code}')" style="padding:4px 8px;border-radius:6px;border:1px solid ${isListed ? '#16a34a' : '#ef4444'};background:${isListed ? '#dcfce7' : '#fee2e2'};color:${isListed ? '#14532d' : '#991b1b'};font-size:11px;font-weight:600;cursor:pointer" title="${isListed ? 'Click to hide from app' : 'Click to show on app'}">${isListed ? '👁️ Listed' : '🚫 Hidden'}</button>
           <button class="btn-edit" data-act="edit" data-code="${i.code}">✏️ Edit</button>
           <button class="btn-delete" data-act="del" data-code="${i.code}">🗑️</button>
         </span>
@@ -688,6 +690,25 @@ function toast(text, type='') {
 
 function escapeHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function toggleListing(code) {
+  const key = keyInput.value.trim();
+  const item = ITEMS.find(i => i.code === code);
+  if (!item) return;
+  
+  const newListed = item.listed === false ? true : false;
+  
+  try {
+    const res = await fetch(`/admin/items/${code}/listing?key=${encodeURIComponent(key)}&listed=${newListed}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      item.listed = newListed;
+      render();
+    } else {
+      alert(data.error || 'Failed');
+    }
+  } catch(e) { alert('Network error'); }
 }
 </script>
 </body>

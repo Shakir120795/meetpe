@@ -55,7 +55,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // ===== Public menu API for the website =====
 app.get('/api/menu', (req, res) => {
-  const items = catalogWithStock();
+  const items = catalogWithStock().filter(i => i.listed !== false); // Only show listed items
   
   // Add rating data for each item
   const itemsWithRatings = items.map(item => {
@@ -747,6 +747,21 @@ app.get('/admin/stock', (req, res) => {
 });
 
 // ===== Admin: catalog CRUD =====
+
+// Toggle item listing (show/hide from app)
+app.post('/admin/items/:code/listing', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const code = req.params.code;
+  const listed = String(req.query.listed || 'true').toLowerCase() !== 'false';
+  
+  const catalog = getCatalog();
+  const item = catalog.find(i => i.code === code);
+  if (!item) return res.status(404).json({ ok: false, error: 'item not found' });
+  
+  item.listed = listed;
+  const result = updateItem(code, { listed });
+  res.json({ ok: true, code, listed });
+});
 
 // List all items (with stock state) — admin only
 app.get('/admin/items', (req, res) => {
