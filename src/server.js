@@ -1403,8 +1403,22 @@ app.post('/api/auth/verify-otp', async (req, res) => {
         phone: cleanPhone, 
         name: customer.name || '', 
         wallet: customer.wallet_balance || 0,
-        membership_active: customer.is_plus && customer.plus_until && new Date(customer.plus_until) > new Date(),
-        membership_expiry: customer.plus_until
+        membership_active: (() => {
+          if (customer.membership_start && customer.delivery_credits > 0) {
+            const start = new Date(customer.membership_start);
+            const dur = customer.membership_zone === 'yearly' ? 365 : 30;
+            return new Date(start.getTime() + dur*24*60*60*1000) > new Date();
+          }
+          return customer.is_plus && customer.plus_until && new Date(customer.plus_until) > new Date();
+        })(),
+        membership_expiry: (() => {
+          if (customer.membership_start) {
+            const start = new Date(customer.membership_start);
+            const dur = customer.membership_zone === 'yearly' ? 365 : 30;
+            return new Date(start.getTime() + dur*24*60*60*1000).toISOString();
+          }
+          return customer.plus_until;
+        })()
       },
       referralBonus,
       isNewUser

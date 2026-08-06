@@ -6060,7 +6060,7 @@ async function loadProfile() {
         saveUser();
         
         avatarEl.textContent = (USER.name || 'G').charAt(0).toUpperCase();
-        nameEl.textContent = USER.name || 'Guest';
+        nameEl.innerHTML = (USER.name || 'Guest') + (USER.membership_active ? '<sup style="font-size:9px;color:#22c55e;font-weight:800;margin-left:3px;vertical-align:super">PLUS</sup>' : '');
         if (walletBoxEl) walletBoxEl.textContent = USER.wallet;
         if (c.orders !== undefined) {
           phoneEl.textContent = `+91 ${USER.phone}  •  ${c.orders} orders`;
