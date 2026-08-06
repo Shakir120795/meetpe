@@ -1649,6 +1649,62 @@ app.put('/admin/customers/:phone/wallet', (req, res) => {
 // GET /admin/analytics?key=X - comprehensive analytics
 app.get('/admin/analytics', (req, res) => {
   if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+
+// GET /admin/dashboard?key=X - live dashboard data
+app.get('/admin/dashboard', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  
+  // Order counts by status
+  const statusCounts = db.prepare(`
+    SELECT status, COUNT(*) as count FROM orders GROUP BY status
+  `).all();
+  const counts = { placed: 0, preparing: 0, out_for_delivery: 0, delivered: 0, cancelled: 0 };
+  statusCounts.forEach(r => { counts[r.status] = r.count; });
+  
+  // Today's stats
+  const today = db.prepare(`
+    SELECT COUNT(*) as orders, COALESCE(SUM(total),0) as revenue
+    FROM orders WHERE date(created_at, 'localtime') = date('now', 'localtime') AND status != 'cancelled'
+  `).get();
+  
+  // Total stats
+  const total = db.prepare(`
+    SELECT COUNT(*) as orders, COALESCE(SUM(CASE WHEN status!='cancelled' THEN total ELSE 0 END),0) as revenue,
+    COUNT(DISTINCT phone) as customers
+    FROM orders
+  `).get();
+  
+  // Recent orders (last 10)
+  const recent = db.prepare(`
+    SELECT id, phone, total, status, payment_method, created_at, address
+    FROM orders ORDER BY id DESC LIMIT 10
+  `).all().map(o => {
+    const customer = db.prepare('SELECT name FROM customers WHERE phone = ?').get(o.phone);
+    return { ...o, name: customer?.name || 'Guest' };
+  });
+  
+  // Top 5 products (last 7 days)
+  const recentOrders = db.prepare(`SELECT items_json FROM orders WHERE status!='cancelled' AND created_at >= datetime('now', '-7 days')`).all();
+  const itemSales = {};
+  recentOrders.forEach(o => {
+    try {
+      JSON.parse(o.items_json || '[]').forEach(i => {
+        if (!itemSales[i.name]) itemSales[i.name] = { qty: 0, revenue: 0 };
+        itemSales[i.name].qty += i.qty;
+        itemSales[i.name].revenue += i.price * i.qty;
+      });
+    } catch {}
+  });
+  const topProducts = Object.entries(itemSales).map(([name, d]) => ({ name, ...d })).sort((a, b) => b.qty - a.qty).slice(0, 5);
+  
+  // Pending tickets
+  const pendingTickets = db.prepare(`SELECT COUNT(*) as count FROM support_tickets WHERE status = 'open'`).get();
+  
+  // Unread chats
+  const unreadChats = db.prepare(`SELECT COUNT(DISTINCT phone) as count FROM chat_messages WHERE sender = 'user' AND created_at >= datetime('now', '-1 day')`).get();
+
+  res.json({ ok: true, counts, today, total, recent, topProducts, pendingTickets: pendingTickets?.count || 0, unreadChats: unreadChats?.count || 0 });
+});
   
   // Revenue by day (last 30 days)
   const daily = db.prepare(`
