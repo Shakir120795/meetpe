@@ -7619,11 +7619,11 @@ function addTicketReply(ticketId) {
   const msg = textarea?.value?.trim();
   if (!msg) { showToast('Please type something', 'error'); return; }
   
-  // Send as a new chat message linked to ticket
-  fetch('/api/chat/send', {
+  // Send reply to ticket API - appends to ticket message
+  fetch('/api/ticket/reply', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone: USER.phone, message: '[Ticket #' + ticketId + '] ' + msg })
+    body: JSON.stringify({ phone: USER.phone, ticketId: ticketId, message: msg })
   })
   .then(r => r.json())
   .then(data => {
@@ -7631,6 +7631,8 @@ function addTicketReply(ticketId) {
       showToast('Update sent! ✅', 'success');
       textarea.value = '';
       loadUserTickets();
+    } else {
+      showToast(data.error || 'Failed to send', 'error');
     }
   })
   .catch(() => showToast('Failed to send', 'error'));

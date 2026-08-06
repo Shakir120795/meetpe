@@ -3364,6 +3364,25 @@ app.post('/admin/ticket/reply', (req, res) => {
   res.json({ ok: true });
 });
 
+// POST /api/ticket/reply — user adds more info to ticket
+app.post('/api/ticket/reply', (req, res) => {
+  const { phone, ticketId, message } = req.body || {};
+  const cleanPhone = String(phone || '').replace(/\D/g, '');
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+  if (!ticketId || !message || !message.trim()) return res.status(400).json({ ok: false, error: 'ticketId and message required' });
+  
+  const webPhone = `web:+91${cleanPhone}`;
+  
+  // Verify ticket belongs to user
+  const ticket = db.prepare('SELECT * FROM support_tickets WHERE id = ? AND phone = ?').get(ticketId, webPhone);
+  if (!ticket) return res.status(404).json({ ok: false, error: 'ticket not found' });
+  
+  // Append user reply to the message
+  const updatedMessage = ticket.message + '\n\n--- User Update (' + new Date().toLocaleDateString('en-IN') + ') ---\n' + message.trim();
+  db.prepare('UPDATE support_tickets SET message = ? WHERE id = ?').run(updatedMessage, ticketId);
+  res.json({ ok: true });
+});
+
 // POST /api/chat/send — user sends message
 app.post('/api/chat/send', (req, res) => {
   const { phone, message } = req.body || {};
