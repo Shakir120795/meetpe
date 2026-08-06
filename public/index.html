@@ -1810,6 +1810,38 @@ input,textarea{font:inherit;color:inherit}
           <div style="font-size:12px;color:var(--muted);line-height:1.5;padding:12px 4px 0">Order related SMS cannot be disabled as they are critical to provide service</div>
         </div>
 
+        <!-- Language Section -->
+        <div style="background:var(--bg);padding:8px 0;margin-bottom:24px">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;padding:0 4px 12px;text-transform:uppercase">Language</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.6;padding:0 4px 16px">Select your preferred app language</div>
+          
+          <div id="languageOptions" style="padding:0 4px">
+            <div onclick="selectLanguage('en')" id="lang-en" style="display:flex;align-items:center;justify-content:space-between;padding:14px 12px;border:1.5px solid var(--accent);border-radius:10px;margin-bottom:8px;cursor:pointer;background:rgba(232,69,10,.05)">
+              <div style="display:flex;align-items:center;gap:12px">
+                <span style="font-size:20px">🇬🇧</span>
+                <div>
+                  <div style="font-size:14px;font-weight:600">English</div>
+                  <div style="font-size:11px;color:var(--muted)">Default language</div>
+                </div>
+              </div>
+              <div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center"><div style="width:12px;height:12px;background:var(--accent);border-radius:50%"></div></div>
+            </div>
+            
+            <div onclick="selectLanguage('hi')" id="lang-hi" style="display:flex;align-items:center;justify-content:space-between;padding:14px 12px;border:1.5px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer">
+              <div style="display:flex;align-items:center;gap:12px">
+                <span style="font-size:20px">🇮🇳</span>
+                <div>
+                  <div style="font-size:14px;font-weight:600">हिन्दी</div>
+                  <div style="font-size:11px;color:var(--muted)">Hindi</div>
+                </div>
+              </div>
+              <div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center"></div>
+            </div>
+          </div>
+          
+          <div style="font-size:12px;color:var(--muted);line-height:1.5;padding:12px 4px 0">More languages coming soon! App content will change based on selected language.</div>
+        </div>
+
         <!-- Account Deletion Section -->
         <div style="background:var(--bg);padding:8px 0">
           <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;padding:0 4px 12px;text-transform:uppercase">Account Deletion</div>
@@ -3118,6 +3150,38 @@ function toggleNotification(type, enabled) {
   const settings = JSON.parse(localStorage.getItem('now_notification_settings') || '{}');
   settings[type] = enabled;
   localStorage.setItem('now_notification_settings', JSON.stringify(settings));
+}
+
+function selectLanguage(lang) {
+  localStorage.setItem('now_language', lang);
+  
+  // Update UI
+  document.querySelectorAll('[id^="lang-"]').forEach(el => {
+    el.style.borderColor = 'var(--border)';
+    el.style.background = 'transparent';
+    const radio = el.querySelector('div:last-child');
+    if (radio) radio.innerHTML = '';
+    radio.style.borderColor = 'var(--border)';
+  });
+  
+  const selected = document.getElementById('lang-' + lang);
+  if (selected) {
+    selected.style.borderColor = 'var(--accent)';
+    selected.style.background = 'rgba(232,69,10,.05)';
+    const radio = selected.querySelector('div:last-child');
+    if (radio) {
+      radio.innerHTML = '<div style="width:12px;height:12px;background:var(--accent);border-radius:50%"></div>';
+      radio.style.borderColor = 'var(--accent)';
+    }
+  }
+  
+  showToast(lang === 'hi' ? 'भाषा हिन्दी में बदली गई' : 'Language changed to English', 'success');
+}
+
+// Load saved language on settings screen
+function initLanguageSelection() {
+  const saved = localStorage.getItem('now_language') || 'en';
+  selectLanguage(saved);
 }
 
 function logout() {
