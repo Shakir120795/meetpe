@@ -406,6 +406,13 @@ function renderOrder(o) {
         </div>
       </div>
       ${statusActions ? `<div class="actions">${statusActions}</div>` : ''}
+      <div style="display:flex;gap:8px;padding:10px 16px;border-top:1px solid var(--border);flex-wrap:wrap;align-items:center">
+        <select onchange="assignDeliveryBoy(${o.id}, this.value)" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;flex:1;min-width:140px">
+          <option value="">👤 Assign Delivery Boy</option>
+          ${getDeliveryBoyOptions(o.delivery_boy)}
+        </select>
+        <button onclick="downloadOrderInvoice(${o.id})" style="padding:6px 12px;background:#2563eb;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">📄 Invoice</button>
+      </div>
     </div>`;
 }
 
@@ -451,6 +458,55 @@ function formatTime(s) {
 function escapeHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
+let DELIVERY_BOYS = [];
+
+// Load delivery boys from settings
+async function loadDeliveryBoys() {
+  try {
+    const key = keyInput.value.trim();
+    const res = await fetch('/admin/settings?key=' + encodeURIComponent(key));
+    const data = await res.json();
+    if (data.ok && data.settings?.orderTracking?.deliveryBoys) {
+      DELIVERY_BOYS = data.settings.orderTracking.deliveryBoys;
+    }
+  } catch(e) {}
+}
+
+function getDeliveryBoyOptions(assigned) {
+  return DELIVERY_BOYS.map(b => 
+    `<option value="${b.id}" ${assigned === b.id ? 'selected' : ''}>${b.name} (${b.vehicleNumber || b.phone})</option>`
+  ).join('');
+}
+
+async function assignDeliveryBoy(orderId, boyId) {
+  if (!boyId) return;
+  const key = keyInput.value.trim();
+  try {
+    await fetch(`/admin/orders/${orderId}/assign?key=${encodeURIComponent(key)}&delivery_boy=${boyId}`, { method: 'POST' });
+    msg.innerHTML = '<div style="background:#d1fae5;color:#065f46;padding:10px;border-radius:8px;margin-bottom:12px;font-size:13px">✅ Delivery boy assigned!</div>';
+    setTimeout(() => msg.innerHTML = '', 2000);
+  } catch(e) {}
+}
+
+function downloadOrderInvoice(orderId) {
+  const order = ALL_ORDERS.find(o => o.id === orderId);
+  if (!order) return;
+  
+  const d = new Date(order.created_at);
+  const dateStr = d.toLocaleDateString('en-IN', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const items = (order.items||[]).map((item, idx) => 
+    '<tr><td>'+(idx+1)+'</td><td>'+item.name+'</td><td>'+item.qty+'</td><td>₹'+item.price+'</td><td>₹'+(item.price*item.qty)+'</td></tr>'
+  ).join('');
+  
+  const html = '<!DOCTYPE html><html><head><title>Invoice #'+orderId+'</title><style>body{font-family:Arial;margin:30px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f5}.hdr{text-align:center;margin-bottom:20px;border-bottom:2px solid #d62828;padding-bottom:15px}h1{color:#d62828;margin:0}@media print{.np{display:none}}</style></head><body><div class="hdr"><h1>NOW - Nonveg On Wheel</h1><p>Tax Invoice</p></div><p><strong>Invoice:</strong> NOW'+String(orderId).padStart(6,'0')+' | <strong>Date:</strong> '+dateStr+'</p><p><strong>Customer:</strong> '+(order.name||'Guest')+' | <strong>Phone:</strong> '+(order.phone||'')+'</p><p><strong>Address:</strong> '+(order.address||'N/A')+'</p><br/><table><thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>'+items+'</tbody></table><br/><p><strong>Subtotal:</strong> ₹'+order.subtotal+' | <strong>Delivery:</strong> '+(order.delivery_fee===0?'FREE':'₹'+order.delivery_fee)+' | <strong>Total: ₹'+order.total+'</strong></p><br/><p style="font-size:11px;color:#666">Computer-generated invoice. Payment: '+(order.payment_method||'COD').toUpperCase()+'</p><div class="np" style="margin-top:20px;text-align:center"><button onclick="window.print()" style="padding:10px 20px;background:#d62828;color:white;border:none;border-radius:6px;cursor:pointer;font-size:14px">Print / Save PDF</button></div></body></html>';
+  
+  const w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); }
+}
+
+// Load delivery boys on page load
+if (saved) loadDeliveryBoys();
 </script>
 </body>
 </html>

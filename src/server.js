@@ -896,6 +896,19 @@ app.post('/admin/orders/:id/status', (req, res) => {
   }
 });
 
+// ===== Admin: assign delivery boy to order =====
+app.post('/admin/orders/:id/assign', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const id = parseInt(req.params.id, 10);
+  const deliveryBoy = req.query.delivery_boy || '';
+  
+  // Add delivery_boy column if not exists
+  try { db.prepare('ALTER TABLE orders ADD COLUMN delivery_boy TEXT').run(); } catch(e) {}
+  
+  db.prepare('UPDATE orders SET delivery_boy = ? WHERE id = ?').run(deliveryBoy, id);
+  res.json({ ok: true, id, delivery_boy: deliveryBoy });
+});
+
 // ===== Admin: list all users =====
 app.get('/admin/users', (req, res) => {
   if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
