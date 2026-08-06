@@ -4910,7 +4910,10 @@ function updateActiveOrderStrip(orders) {
   const recentDelivered = (orders || []).filter(o => {
     if (o.status !== 'delivered') return false;
     if (dismissed.includes(o.id)) return false;
-    return true; // Show ALL unrated delivered orders
+    // Only show delivered orders from last 24 hours (not all old ones)
+    const deliveredTime = new Date(o.updated_at || o.created_at);
+    const now = new Date();
+    return (now - deliveredTime) < 24 * 60 * 60 * 1000;
   });
   
   // Filter out dismissed orders
