@@ -3685,10 +3685,10 @@ app.get('/api/rider/orders/:riderId', (req, res) => {
   let orders;
   if (status === 'new') {
     // Orders assigned to this rider OR broadcast to all riders, not yet picked up
-    orders = db.prepare(`SELECT * FROM orders WHERE (rider_id = ? OR delivery_boy = ? OR rider_id = 'all') AND status IN ('placed','preparing') ORDER BY id DESC`).all(riderId, riderId);
+    orders = db.prepare(`SELECT * FROM orders WHERE (rider_id = ? OR delivery_boy = ? OR rider_id = 'all') AND status = 'placed' ORDER BY id DESC`).all(riderId, riderId);
   } else if (status === 'active') {
-    // Only orders this rider accepted (rider_id = their ID)
-    orders = db.prepare(`SELECT * FROM orders WHERE (rider_id = ? OR delivery_boy = ?) AND rider_id != 'all' AND status = 'out_for_delivery' ORDER BY id DESC`).all(riderId, riderId);
+    // Orders this rider accepted and working on
+    orders = db.prepare(`SELECT * FROM orders WHERE (rider_id = ? OR delivery_boy = ?) AND rider_id != 'all' AND status IN ('preparing', 'out_for_delivery') ORDER BY id DESC`).all(riderId, riderId);
   } else if (status === 'history') {
     orders = db.prepare(`SELECT * FROM orders WHERE (rider_id = ? OR delivery_boy = ?) AND status IN ('delivered', 'cancelled') ORDER BY id DESC LIMIT 30`).all(riderId, riderId);
   } else {

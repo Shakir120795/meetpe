@@ -5317,9 +5317,9 @@ async function openOrderTracking(orderId) {
     } catch(e) {}
   }
   
-  // Navigate to orders screen and show detail
+  // Navigate to orders screen and show detail after orders load
   showScreen('screen-orders');
-  setTimeout(() => showOrderDetail(orderId), 100);
+  setTimeout(() => showOrderDetail(orderId), 500);
 }
 
 // Dismiss order from tracking strip

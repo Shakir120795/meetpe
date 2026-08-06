@@ -1319,7 +1319,8 @@ async function acceptOrder(orderId) {
         const data = await response.json();
         if (data.ok) {
             showToast('Order accepted! 🎉', 'success');
-            loadOrders('new');
+            // Switch to Active tab
+            switchOrderTab('active');
         } else {
             showToast(data.error || 'Failed', 'error');
         }
