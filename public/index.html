@@ -6033,7 +6033,7 @@ async function loadProfile() {
 
   const displayName = USER.name || 'Guest';
   avatarEl.textContent = displayName.charAt(0).toUpperCase() || '?';
-  nameEl.textContent = displayName;
+  nameEl.innerHTML = displayName + (USER.membership_active ? '<sup style="font-size:9px;color:#22c55e;font-weight:800;margin-left:3px;vertical-align:super">PLUS</sup>' : '');
   phoneEl.textContent = USER.phone ? '+91 ' + USER.phone : 'No phone on file';
   if (walletBoxEl) walletBoxEl.textContent = USER.wallet || 0;
 
@@ -6082,7 +6082,7 @@ function updateMembershipCard() {
   if (!membershipBtn || !membershipSubtext) return;
   
   // Check if user has active membership
-  const membershipActive = USER.membership_active || false;
+  const membershipActive = USER.membership_active || USER.is_plus || false;
   const membershipExpiry = USER.membership_expiry || null;
   
   let isActive = false;
@@ -6093,23 +6093,26 @@ function updateMembershipCard() {
     isActive = daysLeft > 0;
     
     if (isActive) {
-      // Show active status
       membershipBtn.style.background = '#22c55e';
       membershipBtn.textContent = '✓ ACTIVE';
-      membershipSubtext.textContent = `Expires in ${daysLeft} days`;
+      membershipSubtext.textContent = `${daysLeft} days remaining • Member`;
       membershipSubtext.style.color = '#22c55e';
     } else {
-      // Expired
       membershipBtn.style.background = 'var(--accent)';
       membershipBtn.textContent = 'Renew';
       membershipSubtext.textContent = 'Membership expired';
       membershipSubtext.style.color = 'var(--danger)';
     }
+  } else if (membershipActive) {
+    // Active but no expiry info yet (just purchased)
+    membershipBtn.style.background = '#22c55e';
+    membershipBtn.textContent = '✓ ACTIVE';
+    membershipSubtext.textContent = 'NOW Plus Member';
+    membershipSubtext.style.color = '#22c55e';
   } else {
-    // Not a member
     membershipBtn.style.background = 'var(--accent)';
     membershipBtn.textContent = 'View';
-    membershipSubtext.textContent = 'Free delivery • Priority slots • Member offers';
+    membershipSubtext.textContent = '₹99/month • 10 free deliveries • Priority orders';
     membershipSubtext.style.color = 'var(--muted)';
   }
 }

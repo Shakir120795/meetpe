@@ -1437,8 +1437,24 @@ app.get('/api/customer/:phone', (req, res) => {
   const rewards = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rewards WHERE phone = ? AND used = 0 AND expires_at > datetime('now')`).get(waPhone);
   const orderCount = db.prepare('SELECT COUNT(*) as cnt FROM orders WHERE phone = ?').get(waPhone);
   
-  // Check if membership is still active
-  const isMembershipActive = customer.is_plus && customer.plus_until && new Date(customer.plus_until) > new Date();
+  // Check if membership is still active (new system: membership_start + duration)
+  let isMembershipActive = false;
+  let membershipExpiry = customer.plus_until || null;
+  
+  if (customer.membership_start && customer.delivery_credits > 0) {
+    const startDate = new Date(customer.membership_start);
+    const duration = customer.membership_zone === 'yearly' ? 365 : 30;
+    const expiryDate = new Date(startDate.getTime() + duration * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    if (expiryDate > now) {
+      isMembershipActive = true;
+      membershipExpiry = expiryDate.toISOString();
+    }
+  } else if (customer.is_plus && customer.plus_until && new Date(customer.plus_until) > new Date()) {
+    // Legacy check
+    isMembershipActive = true;
+    membershipExpiry = customer.plus_until;
+  }
   
   // Count successful referrals
   const referredList = db.prepare(`
@@ -1456,7 +1472,7 @@ app.get('/api/customer/:phone', (req, res) => {
       rewards: rewards.total, 
       orders: orderCount.cnt,
       membership_active: isMembershipActive,
-      membership_expiry: customer.plus_until,
+      membership_expiry: membershipExpiry,
       referral_earnings: referralEarnings,
       referred_count: referredList?.cnt || 0
     } 
