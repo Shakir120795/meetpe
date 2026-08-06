@@ -218,6 +218,9 @@ app.post('/api/order', (req, res) => {
     const feeMid = Number(process.env.DELIVERY_FEE_MID || 19);
     let delivery = subtotal >= free ? 0 : (subtotal < lowBelow ? feeLow : feeMid);
     
+    // Use web: prefix — consistent with auth/login
+    const webPhone = `web:+91${cleanPhone}`;
+    
     // Check for membership credits
     let usedCredit = false;
     const customer = db.prepare(`
@@ -229,7 +232,7 @@ app.post('/api/order', (req, res) => {
       // Check if membership is still valid (within 30 days)
       const startDate = new Date(customer.membership_start);
       const now = new Date();
-      const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 1000));
+      const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
       
       if (daysSinceStart < 30) {
         // Use credit - delivery becomes free
@@ -242,12 +245,9 @@ app.post('/api/order', (req, res) => {
     const walletAmt = parseInt(walletAmount || 0, 10);
     let actualWalletDeducted = 0;
 
-    // Use web: prefix — consistent with auth/login
-    const webPhone = `web:+91${cleanPhone}`;
-
     if (walletAmt > 0) {
-      const customer = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(webPhone);
-      if (customer && customer.wallet_balance >= walletAmt) {
+      const customerWallet = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(webPhone);
+      if (customerWallet && customerWallet.wallet_balance >= walletAmt) {
         actualWalletDeducted = walletAmt;
       }
     }
