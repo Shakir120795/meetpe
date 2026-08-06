@@ -3245,19 +3245,38 @@ app.post('/api/referral/apply', (req, res) => {
     const { phone, referral_code } = req.body || {};
     const cleanPhone = String(phone || '').replace(/\D/g, '');
     if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+    if (!referral_code) return res.status(400).json({ ok: false, error: 'referral code required' });
 
-    // Don't apply referral to the referrer
-    const referrerPhone = `web:+91${referral_code.slice(-4)}`;
-    if (referrerPhone === `web:+91${cleanPhone}`) {
-      return res.json({ ok: true, message: 'Valid code' }); // Silent ignore self-referral
+    const waPhone = `web:+91${cleanPhone}`;
+    
+    // Check if user already used a referral code (one-time only)
+    const customer = db.prepare('SELECT referred_by FROM customers WHERE phone = ?').get(waPhone);
+    if (customer && customer.referred_by) {
+      return res.status(400).json({ ok: false, error: 'Referral already used. Only 1 referral per account.' });
+    }
+    
+    // Don't apply referral to self
+    const codePhone = referral_code.replace(/[^0-9]/g, '');
+    if (codePhone && cleanPhone.endsWith(codePhone)) {
+      return res.status(400).json({ ok: false, error: 'Cannot use your own referral code' });
+    }
+    
+    // Verify referral code exists
+    const referrer = db.prepare('SELECT phone FROM customers WHERE referral_code = ?').get(referral_code);
+    if (!referrer) {
+      return res.status(400).json({ ok: false, error: 'Invalid referral code' });
+    }
+    
+    // Don't allow referring yourself
+    if (referrer.phone === waPhone) {
+      return res.status(400).json({ ok: false, error: 'Cannot use your own referral code' });
     }
 
-    // Store referral info
-    const waPhone = `web:+91${cleanPhone}`;
+    // Apply referral (one-time only)
     db.prepare('UPDATE customers SET referred_by = ? WHERE phone = ?').run(referral_code, waPhone);
     
-    console.log(`📤 Referral applied: ${referral_code} → ${cleanPhone}`);
-    res.json({ ok: true, message: 'Referral applied' });
+    console.log(`📤 Referral applied: ${referral_code} → ${cleanPhone} (one-time)`);
+    res.json({ ok: true, message: 'Referral applied! Bonus will be credited after first order.' });
   } catch (e) {
     console.error('Referral apply error:', e.message);
     res.status(500).json({ ok: false, error: 'Failed to apply referral' });
