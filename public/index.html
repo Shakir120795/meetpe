@@ -6992,8 +6992,13 @@ function loadReferralScreen() {
     return;
   }
   
+  // Get settings from admin
+  const wr = APP_SETTINGS?.walletRewards || {};
+  const referrerBonus = wr.referralBonus || 50;
+  const refereeBonus = wr.refereeBonus || 30;
+  
   const referralCode = generateReferralCode();
-  const referralLink = `https://nowapp.com/ref/${referralCode}`;
+  const referralLink = window.location.origin + '?ref=' + referralCode;
   const earnedCash = USER.referral_earnings || 0;
   const referredCount = USER.referred_count || 0;
   
@@ -7001,8 +7006,8 @@ function loadReferralScreen() {
     <!-- Header Card -->
     <div style="background:linear-gradient(135deg,#1a0800,#3d1a00);border-radius:20px;padding:24px;margin-bottom:16px;border:1px solid #5a2d00;text-align:center">
       <div style="font-size:48px;margin-bottom:12px">🤝</div>
-      <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:4px">Refer Your Friends</div>
-      <div style="font-size:13px;color:rgba(255,255,255,.7)">Earn ₹100 on every successful referral</div>
+      <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:4px">Refer & Earn ₹${referrerBonus}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.7)">Your friend gets ₹${refereeBonus} too!</div>
     </div>
 
     <!-- Earnings Summary -->
@@ -7020,61 +7025,41 @@ function loadReferralScreen() {
     <!-- Referral Code -->
     <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
       <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:8px">YOUR REFERRAL CODE</div>
-      <div style="background:var(--bg);border:2px solid var(--accent);border-radius:12px;padding:14px;text-align:center;margin-bottom:10px">
-        <div style="font-size:28px;font-weight:900;color:var(--accent);letter-spacing:2px;font-family:monospace">${referralCode}</div>
+      <div style="background:var(--bg);border:2px dashed var(--accent);border-radius:12px;padding:14px;text-align:center;margin-bottom:10px">
+        <div style="font-size:28px;font-weight:900;color:var(--accent);letter-spacing:3px;font-family:monospace">${referralCode}</div>
       </div>
-      <button onclick="copyToClipboard('${referralCode}')" style="width:100%;padding:11px;background:rgba(232,69,10,.1);color:var(--accent);border:1.5px solid var(--accent);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">
-        📋 Copy Code
-      </button>
-    </div>
-
-    <!-- Referral Link -->
-    <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
-      <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:8px">REFERRAL LINK</div>
-      <div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:10px;word-break:break-all;font-size:12px;color:var(--text);font-family:monospace">${referralLink}</div>
-      <button onclick="shareReferral('${referralCode}','${referralLink}')" style="width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">
-        📤 Share Link
-      </button>
+      <div style="display:flex;gap:8px">
+        <button onclick="copyToClipboard('${referralCode}')" style="flex:1;padding:11px;background:rgba(232,69,10,.1);color:var(--accent);border:1.5px solid var(--accent);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">
+          📋 Copy Code
+        </button>
+        <button onclick="shareReferral('${referralCode}','${referralLink}')" style="flex:1;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">
+          📤 Share
+        </button>
+      </div>
     </div>
 
     <!-- How It Works -->
     <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
       <div style="font-size:14px;font-weight:700;margin-bottom:12px">📖 How It Works</div>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <div style="display:flex;gap:10px">
-          <div style="font-size:22px;flex-shrink:0">1️⃣</div>
-          <div>
-            <div style="font-size:13px;font-weight:600">Share Your Code</div>
-            <div style="font-size:12px;color:var(--muted)">Send your referral code to friends</div>
-          </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="width:32px;height:32px;background:rgba(232,69,10,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--accent);flex-shrink:0">1</div>
+          <div><div style="font-size:13px;font-weight:600">Share your code with friends</div></div>
         </div>
-        <div style="display:flex;gap:10px">
-          <div style="font-size:22px;flex-shrink:0">2️⃣</div>
-          <div>
-            <div style="font-size:13px;font-weight:600">They Sign Up</div>
-            <div style="font-size:12px;color:var(--muted)">Friend uses your code during signup</div>
-          </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="width:32px;height:32px;background:rgba(232,69,10,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--accent);flex-shrink:0">2</div>
+          <div><div style="font-size:13px;font-weight:600">Friend signs up & places first order</div></div>
         </div>
-        <div style="display:flex;gap:10px">
-          <div style="font-size:22px;flex-shrink:0">3️⃣</div>
-          <div>
-            <div style="font-size:13px;font-weight:600">They Place Order</div>
-            <div style="font-size:12px;color:var(--muted)">Friend places their first order</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:10px">
-          <div style="font-size:22px;flex-shrink:0">💰</div>
-          <div>
-            <div style="font-size:13px;font-weight:600">You Earn ₹100</div>
-            <div style="font-size:12px;color:var(--muted)">Instant cashback to your wallet</div>
-          </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div style="width:32px;height:32px;background:rgba(232,69,10,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--accent);flex-shrink:0">3</div>
+          <div><div style="font-size:13px;font-weight:600">You get ₹${referrerBonus} + Friend gets ₹${refereeBonus}</div></div>
         </div>
       </div>
     </div>
 
     <!-- T&C -->
     <div style="padding:12px;background:rgba(232,69,10,.08);border-radius:12px;border:1px solid rgba(232,69,10,.2);font-size:11px;color:var(--muted);line-height:1.6">
-      <strong style="color:var(--text)">Terms:</strong> Referral bonus valid only for first order. Each code valid for 1 signup. Earnings credited within 24 hours.
+      <strong style="color:var(--text)">Terms:</strong> Referral bonus credited after friend's first order. Each code valid for unlimited referrals. Earnings credited to wallet within 24 hours. Admin reserves the right to modify bonus amounts.
     </div>
   `;
 }
