@@ -753,13 +753,29 @@
 <!-- Login Screen -->
 <div class="screen active" id="loginScreen">
     <div class="login-logo">🏍️</div>
-    <h1 class="login-title">MeetPe Rider</h1>
+    <h1 class="login-title">NOW Rider</h1>
     <p class="login-subtitle">Deliver fresh meat, earn daily</p>
-    <div class="input-group">
+    
+    <!-- Step 1: Phone -->
+    <div id="loginStep1">
+      <div class="input-group">
         <label>Phone Number</label>
-        <input type="tel" id="loginPhone" placeholder="Enter your phone number" maxlength="10" inputmode="numeric">
+        <input type="tel" id="loginPhone" placeholder="Enter your 10-digit number" maxlength="10" inputmode="numeric">
+      </div>
+      <button class="btn btn-primary" id="sendOtpBtn" onclick="handleSendOtp()">Send OTP</button>
     </div>
-    <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">Login as Rider</button>
+    
+    <!-- Step 2: OTP -->
+    <div id="loginStep2" style="display:none">
+      <div class="input-group">
+        <label>Enter OTP sent to <span id="otpPhoneDisplay"></span></label>
+        <input type="tel" id="loginOtp" placeholder="Enter 6-digit OTP" maxlength="6" inputmode="numeric">
+      </div>
+      <button class="btn btn-primary" id="verifyOtpBtn" onclick="handleVerifyOtp()">Verify & Login</button>
+      <p style="text-align:center;margin-top:12px;font-size:13px;color:var(--muted)">Demo OTP: <strong style="color:var(--accent)">123456</strong></p>
+      <button class="btn btn-outline" style="margin-top:10px" onclick="backToPhone()">← Change Number</button>
+    </div>
+    
     <p class="login-error" id="loginError"></p>
 </div>
 
@@ -918,6 +934,9 @@ function init() {
         try {
             rider = JSON.parse(stored);
             isOnline = rider.status === 'available';
+            // Hide login, show app
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('loginScreen').classList.remove('active');
             showApp();
         } catch (e) {
             localStorage.removeItem('rider_session');
@@ -951,6 +970,7 @@ function navigateTo(screen) {
 }
 
 function showApp() {
+    document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('loginScreen').classList.remove('active');
     document.getElementById('bottomNav').style.display = 'flex';
     updateTopbar();
@@ -974,21 +994,24 @@ function updateTopbar() {
     }
 }
 
-// ============ LOGIN ============
-async function handleLogin() {
+// ============ LOGIN (OTP Based) ============
+let loginPhoneNumber = '';
+
+async function handleSendOtp() {
     const phone = document.getElementById('loginPhone').value.trim();
     const errorEl = document.getElementById('loginError');
     errorEl.textContent = '';
 
-    if (!phone || phone.length < 10) {
+    if (!phone || phone.length !== 10) {
         errorEl.textContent = 'Please enter a valid 10-digit phone number';
         return;
     }
 
-    const btn = document.getElementById('loginBtn');
+    const btn = document.getElementById('sendOtpBtn');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>';
 
+    // First check if this phone is a registered rider
     try {
         const response = await fetch('/api/rider/login', {
             method: 'POST',
@@ -997,20 +1020,58 @@ async function handleLogin() {
         });
         const data = await response.json();
         
-        if (data.ok && data.rider) {
-            rider = data.rider;
-            isOnline = rider.status === 'available';
-            localStorage.setItem('rider_session', JSON.stringify(rider));
-            showApp();
-        } else {
-            errorEl.textContent = data.error || 'Login failed. Not a registered rider.';
+        if (!data.ok) {
+            errorEl.textContent = data.error || 'Not a registered rider.';
+            btn.disabled = false;
+            btn.textContent = 'Send OTP';
+            return;
         }
+        
+        // Phone is valid rider - show OTP step
+        loginPhoneNumber = phone;
+        window._tempRiderData = data.rider;
+        document.getElementById('otpPhoneDisplay').textContent = '+91 ' + phone;
+        document.getElementById('loginStep1').style.display = 'none';
+        document.getElementById('loginStep2').style.display = 'block';
+        showToast('OTP sent to +91 ' + phone, 'success');
+        
     } catch (err) {
         errorEl.textContent = 'Network error. Please try again.';
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Login as Rider';
+        btn.textContent = 'Send OTP';
     }
+}
+
+async function handleVerifyOtp() {
+    const otp = document.getElementById('loginOtp').value.trim();
+    const errorEl = document.getElementById('loginError');
+    errorEl.textContent = '';
+
+    if (!otp || otp.length !== 6) {
+        errorEl.textContent = 'Please enter 6-digit OTP';
+        return;
+    }
+
+    // Demo OTP: 123456
+    if (otp !== '123456') {
+        errorEl.textContent = 'Invalid OTP. Demo OTP is 123456';
+        return;
+    }
+
+    // OTP verified - login successful
+    rider = window._tempRiderData;
+    isOnline = rider.status === 'available';
+    localStorage.setItem('rider_session', JSON.stringify(rider));
+    showApp();
+    showToast('Welcome, ' + rider.name + '! 🛵', 'success');
+}
+
+function backToPhone() {
+    document.getElementById('loginStep1').style.display = 'block';
+    document.getElementById('loginStep2').style.display = 'none';
+    document.getElementById('loginOtp').value = '';
+    document.getElementById('loginError').textContent = '';
 }
 
 // ============ ONLINE/OFFLINE TOGGLE ============
@@ -1301,9 +1362,13 @@ function handleLogout() {
 
     // Reset UI
     document.getElementById('bottomNav').style.display = 'none';
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
+    document.getElementById('loginScreen').style.display = 'flex';
     document.getElementById('loginScreen').classList.add('active');
+    document.getElementById('loginStep1').style.display = 'block';
+    document.getElementById('loginStep2').style.display = 'none';
     document.getElementById('loginPhone').value = '';
+    document.getElementById('loginOtp').value = '';
     document.getElementById('loginError').textContent = '';
 }
 
@@ -1367,7 +1432,11 @@ document.getElementById('loginPhone').addEventListener('input', function(e) {
 });
 
 document.getElementById('loginPhone').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') handleLogin();
+    if (e.key === 'Enter') handleSendOtp();
+});
+
+document.getElementById('loginOtp').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') handleVerifyOtp();
 });
 
 // ============ START APP ============
