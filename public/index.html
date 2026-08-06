@@ -3005,7 +3005,87 @@ function closeProfileMenuOnOutsideClick(e) {
 
 function showEditProfile() {
   document.getElementById('profileDropdown').style.display = 'none';
-  showToast('Edit Profile feature coming soon!', 'info');
+  if (!USER || !USER.phone) { showToast('Please login first', 'error'); return; }
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'editProfileOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  
+  overlay.innerHTML = `
+    <div style="background:var(--card);border-radius:20px;padding:24px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div style="font-size:18px;font-weight:800">✏️ Edit Profile</div>
+        <button onclick="document.getElementById('editProfileOverlay').remove()" style="background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+      </div>
+      
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--muted)">Full Name</label>
+        <input type="text" id="editName" value="${USER.name || ''}" placeholder="Enter your name" style="width:100%;padding:12px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;font-size:14px;color:var(--text);outline:none"/>
+      </div>
+      
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--muted)">Phone Number</label>
+        <input type="tel" value="+91 ${USER.phone}" disabled style="width:100%;padding:12px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;font-size:14px;color:var(--muted);outline:none;opacity:.7"/>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Phone number cannot be changed</div>
+      </div>
+      
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:12px;font-weight:600;margin-bottom:6px;color:var(--muted)">Email Address</label>
+        <input type="email" id="editEmail" value="${USER.email || ''}" placeholder="your@email.com" style="width:100%;padding:12px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;font-size:14px;color:var(--text);outline:none"/>
+      </div>
+      
+      <div style="margin-bottom:20px;padding:14px;background:var(--bg);border-radius:12px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px">🔔 Notification Preferences</div>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:10px">
+          <input type="checkbox" id="editNotifOrders" ${(USER.notifications?.orders !== false) ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer"/>
+          <span style="font-size:13px">Order updates</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:10px">
+          <input type="checkbox" id="editNotifOffers" ${(USER.notifications?.offers !== false) ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer"/>
+          <span style="font-size:13px">Offers & promotions</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="checkbox" id="editNotifWhatsapp" ${(USER.notifications?.whatsapp !== false) ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer"/>
+          <span style="font-size:13px">WhatsApp messages</span>
+        </label>
+      </div>
+      
+      <button onclick="saveEditProfile()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">
+        Save Changes
+      </button>
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+}
+
+function saveEditProfile() {
+  const name = document.getElementById('editName').value.trim();
+  const email = document.getElementById('editEmail').value.trim();
+  const notifOrders = document.getElementById('editNotifOrders').checked;
+  const notifOffers = document.getElementById('editNotifOffers').checked;
+  const notifWhatsapp = document.getElementById('editNotifWhatsapp').checked;
+  
+  if (!name) { showToast('Name is required', 'error'); return; }
+  if (email && !email.includes('@')) { showToast('Invalid email', 'error'); return; }
+  
+  // Update local user
+  USER.name = name;
+  USER.email = email;
+  USER.notifications = { orders: notifOrders, offers: notifOffers, whatsapp: notifWhatsapp };
+  saveUser();
+  
+  // Update on server
+  fetch('/api/customer/update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone: USER.phone, name, email })
+  }).catch(() => {});
+  
+  // Update UI
+  document.getElementById('profileName').textContent = name;
+  document.getElementById('editProfileOverlay').remove();
+  showToast('Profile updated! ✅', 'success');
 }
 
 function showDeleteAccountScreen() {
@@ -8506,7 +8586,73 @@ function editAddress(id) {
 }
 
 function showSavedAddresses() {
-  openLocMap();
+  // Show saved addresses overlay with management options
+  const addresses = JSON.parse(localStorage.getItem('now_addresses') || '[]');
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'savedAddrOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:0';
+  
+  const selectedAddr = getSelectedAddr();
+  
+  let addrHtml = '';
+  if (addresses.length === 0) {
+    addrHtml = '<div style="text-align:center;padding:20px;color:var(--muted)">No saved addresses yet</div>';
+  } else {
+    addrHtml = addresses.map((addr, idx) => {
+      const isSelected = selectedAddr && selectedAddr.full === addr.full;
+      return `<div style="display:flex;align-items:flex-start;gap:10px;padding:14px;background:${isSelected ? 'rgba(232,69,10,.05)' : 'var(--bg)'};border:1.5px solid ${isSelected ? 'var(--accent)' : 'var(--border)'};border-radius:12px;margin-bottom:8px;cursor:pointer" onclick="selectSavedAddress(${idx})">
+        <div style="font-size:18px;margin-top:2px">${addr.type === 'home' ? '🏠' : addr.type === 'work' ? '🏢' : '📍'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;text-transform:capitalize;margin-bottom:2px">${addr.type || 'Other'}</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.4;overflow:hidden;text-overflow:ellipsis">${addr.full || addr.label || 'Address'}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          ${isSelected ? '<span style="font-size:11px;color:var(--accent);font-weight:700;padding:4px 8px;background:rgba(232,69,10,.1);border-radius:4px">Active</span>' : ''}
+          <button onclick="event.stopPropagation();deleteSavedAddr(${idx})" style="width:28px;height:28px;background:rgba(239,68,68,.1);border:none;border-radius:6px;color:#ef4444;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  
+  overlay.innerHTML = `
+    <div style="background:var(--card);border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;max-height:80vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-size:17px;font-weight:800">📍 Saved Addresses</div>
+        <button onclick="document.getElementById('savedAddrOverlay').remove()" style="background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+      </div>
+      
+      <div id="savedAddrList">${addrHtml}</div>
+      
+      <button onclick="document.getElementById('savedAddrOverlay').remove();openLocMap()" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-top:12px">
+        ➕ Add New Address
+      </button>
+    </div>
+  `;
+  
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function selectSavedAddress(idx) {
+  const addresses = JSON.parse(localStorage.getItem('now_addresses') || '[]');
+  const addr = addresses[idx];
+  if (!addr) return;
+  
+  setSelectedAddr(addr);
+  updateLocTopbar(addr.full || addr.label);
+  document.getElementById('savedAddrOverlay')?.remove();
+  showToast('Address selected ✅', 'success');
+}
+
+function deleteSavedAddr(idx) {
+  if (!confirm('Delete this address?')) return;
+  const addresses = JSON.parse(localStorage.getItem('now_addresses') || '[]');
+  addresses.splice(idx, 1);
+  localStorage.setItem('now_addresses', JSON.stringify(addresses));
+  document.getElementById('savedAddrOverlay')?.remove();
+  showSavedAddresses(); // Re-open with updated list
+  showToast('Address deleted', 'info');
 }
 
 // --- GPS Detection (Improved) ---

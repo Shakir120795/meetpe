@@ -3312,6 +3312,26 @@ try {
   )`);
 } catch(e) { console.warn('chat/ticket table:', e.message); }
 
+// POST /api/customer/update — user updates profile
+app.post('/api/customer/update', (req, res) => {
+  const { phone, name, email } = req.body || {};
+  const cleanPhone = String(phone || '').replace(/\D/g, '');
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+  
+  const webPhone = `web:+91${cleanPhone}`;
+  
+  // Add email column if not exists
+  try { db.prepare('ALTER TABLE customers ADD COLUMN email TEXT').run(); } catch(e) {}
+  
+  const updates = ['name = ?'];
+  const params = [name || ''];
+  if (email !== undefined) { updates.push('email = ?'); params.push(email || ''); }
+  params.push(webPhone);
+  
+  db.prepare(`UPDATE customers SET ${updates.join(', ')} WHERE phone = ?`).run(...params);
+  res.json({ ok: true });
+});
+
 // POST /api/ticket/submit — user submits ticket
 app.post('/api/ticket/submit', (req, res) => {
   const { phone, name, category, message } = req.body || {};
