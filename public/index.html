@@ -4905,16 +4905,15 @@ function updateActiveOrderStrip(orders) {
   // Filter active orders
   const activeOrders = (orders || []).filter(o => ['placed', 'preparing', 'out_for_delivery'].includes(o.status));
   
-  // Check for recently delivered (within last 5 minutes) to show rating prompt
+  // Show delivered orders until user rates them
+  const dismissed = JSON.parse(localStorage.getItem('now_dismissed_strip') || '[]');
   const recentDelivered = (orders || []).filter(o => {
     if (o.status !== 'delivered') return false;
-    const deliveredTime = new Date(o.updated_at || o.created_at);
-    const now = new Date();
-    return (now - deliveredTime) < 5 * 60 * 1000; // 5 minutes
+    if (dismissed.includes(o.id)) return false;
+    return true; // Show ALL unrated delivered orders
   });
   
   // Filter out dismissed orders
-  const dismissed = JSON.parse(localStorage.getItem('now_dismissed_strip') || '[]');
   const allStripOrders = [...activeOrders, ...recentDelivered].filter(o => !dismissed.includes(o.id));
   
   if (allStripOrders.length === 0) {
@@ -4942,13 +4941,13 @@ function updateActiveOrderStrip(orders) {
     
     // Delivered orders show rating buttons, others show tracking
     if (status === 'delivered') {
-      return `<div style="min-width:100%;display:flex;align-items:center;gap:10px;padding:2px 0">
-        <div style="font-size:20px">${icon}</div>
+      return `<div onclick="showRatingPopup(${order.id})" style="min-width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;padding:2px 0">
+        <div style="font-size:20px">✅</div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:700;color:${color}">Delivered! Rate your experience</div>
-          <div style="font-size:11px;color:var(--muted)">Order #${order.id} • ₹${order.total}</div>
+          <div style="font-size:13px;font-weight:700;color:#22c55e">Order #${order.id} Delivered! ✅</div>
+          <div style="font-size:11px;color:var(--muted)">₹${order.total} • Tap to rate your experience ⭐</div>
         </div>
-        <button onclick="event.stopPropagation();showRatingPopup(${order.id})" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Rate Now</button>
+        <button onclick="event.stopPropagation();showRatingPopup(${order.id})" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">⭐ Rate</button>
       </div>`;
     }
     
