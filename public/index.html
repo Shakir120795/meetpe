@@ -197,12 +197,12 @@ input,textarea{font:inherit;color:inherit}
   color:#fff;font-size:9px;font-weight:700;padding:3px 6px;border-radius:6px;backdrop-filter:blur(4px)}
 .badge-oos{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;
   align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
-.wishlist-btn{position:absolute;top:6px;right:6px;background:rgba(255,255,255,.9);
-  border:none;font-size:18px;width:32px;height:32px;border-radius:50%;cursor:pointer;
+.wishlist-btn{position:absolute;top:6px;right:6px;background:none;
+  border:none;font-size:22px;width:32px;height:32px;border-radius:50%;cursor:pointer;
   display:flex;align-items:center;justify-content:center;padding:0;transition:all .2s ease;
-  box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.wishlist-btn:hover{transform:scale(1.1);background:#fff}
-.wishlist-btn.active{background:rgba(255,107,107,.95)}
+  box-shadow:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
+.wishlist-btn:hover{transform:scale(1.15)}
+.wishlist-btn.active{transform:scale(1.1)}
 .prod-body{padding:10px}
 .prod-name{font-size:13px;font-weight:600;line-height:1.3;margin-bottom:2px;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -6717,7 +6717,16 @@ function toggleWishlist(code, name, unit, price, img) {
   }
   
   localStorage.setItem('now_wishlist', JSON.stringify(wishlist));
-  renderProducts(); // Re-render to update heart icon
+  
+  // Update all heart buttons for this product code without full re-render
+  document.querySelectorAll('.wishlist-btn').forEach(btn => {
+    const onclick = btn.getAttribute('onclick') || '';
+    if (onclick.includes("'" + code + "'")) {
+      const isNowInWishlist = wishlist.some(w => w.code === code);
+      btn.textContent = isNowInWishlist ? '❤️' : '🤍';
+      btn.className = 'wishlist-btn' + (isNowInWishlist ? ' active' : '');
+    }
+  });
 }
 
 function loadWishlist() {
