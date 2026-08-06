@@ -180,7 +180,7 @@ async function notifyCustomer(order, status) {
 
 app.post('/api/order', (req, res) => {
   try {
-    const { name, phone, address, payment, delivery_slot, notes, items, couponCode, walletAmount } = req.body || {};
+    const { name, phone, address, payment, delivery_slot, notes, items, couponCode, walletAmount, tip } = req.body || {};
     if (!name || !phone || !address || !Array.isArray(items) || !items.length) {
       return res.status(400).json({ ok: false, error: 'missing fields' });
     }
@@ -254,6 +254,10 @@ app.post('/api/order', (req, res) => {
 
     const total = Math.max(0, subtotal - couponDiscount - actualWalletDeducted + delivery);
 
+    // Tip for delivery partner (stored separately, added to total)
+    const tipAmount = Math.max(0, Math.min(500, parseInt(tip || 0, 10)));
+    const finalTotal = total + tipAmount;
+
     // Get wallet/rewards settings from admin panel
     const siteSettings = require('./data/settings').get();
     const wr = siteSettings.walletRewards || {};
@@ -273,13 +277,16 @@ app.post('/api/order', (req, res) => {
     `).run(webPhone, name, address);
 
     // Insert order
+    // Add tip column if not exists
+    try { db.prepare('ALTER TABLE orders ADD COLUMN tip INTEGER DEFAULT 0').run(); } catch(e) {}
+
     const cleanSlot = delivery_slot || 'asap';
     const cleanPayment = payment || 'cod';
     const cleanNotes = (notes || '').trim();
     const info = db.prepare(`
-      INSERT INTO orders (phone, items_json, subtotal, delivery_fee, total, address, source, payment_method, delivery_slot, notes)
-      VALUES (?, ?, ?, ?, ?, ?, 'web', ?, ?, ?)
-    `).run(webPhone, JSON.stringify(cleanItems), subtotal, delivery, total, address, cleanPayment, cleanSlot, cleanNotes);
+      INSERT INTO orders (phone, items_json, subtotal, delivery_fee, total, address, source, payment_method, delivery_slot, notes, tip)
+      VALUES (?, ?, ?, ?, ?, ?, 'web', ?, ?, ?, ?)
+    `).run(webPhone, JSON.stringify(cleanItems), subtotal, delivery, finalTotal, address, cleanPayment, cleanSlot, cleanNotes, tipAmount);
     const orderId = info.lastInsertRowid;
 
     // Deduct wallet server-side
@@ -343,7 +350,7 @@ Delivery: ₹${delivery}
       ok: true, orderId, subtotal,
       couponDiscount, couponCode: appliedCouponCode,
       walletDeducted: actualWalletDeducted,
-      delivery, total, reward: earnedReward,
+      delivery, total: finalTotal, tip: tipAmount, reward: earnedReward,
       cashback: cashbackEarned,
       creditUsed: usedCredit,
       creditsRemaining: usedCredit && customer ? customer.delivery_credits - 1 : null
@@ -351,7 +358,7 @@ Delivery: ₹${delivery}
 
     // Notify customer
     setImmediate(() => {
-      notifyCustomer({ id: orderId, phone: webPhone, address, total }, 'placed');
+      notifyCustomer({ id: orderId, phone: webPhone, address, total: finalTotal }, 'placed');
     });
   } catch (e) {
     console.error('order err:', e);
@@ -3768,6 +3775,11 @@ app.post('/api/rider/order/status', (req, res) => {
       const zones = settings.deliveryZones || [];
       const earning = zones[0]?.deliveryFee || 30;
       db.prepare('INSERT INTO rider_earnings (rider_id, order_id, amount, type) VALUES (?, ?, ?, ?)').run(riderId, orderId, earning, 'delivery');
+      // Credit tip if any
+      const orderTip = parseInt(order.tip || 0, 10);
+      if (orderTip > 0) {
+        db.prepare('INSERT INTO rider_earnings (rider_id, order_id, amount, type) VALUES (?, ?, ?, ?)').run(riderId, orderId, orderTip, 'tip');
+      }
       if (order.payment_method === 'cod') {
         db.prepare('INSERT INTO rider_cod (rider_id, order_id, amount) VALUES (?, ?, ?)').run(riderId, orderId, order.total);
       }
@@ -3801,6 +3813,12 @@ app.post('/api/rider/order/verify', (req, res) => {
     const zones = settings.deliveryZones || [];
     const earning = zones[0]?.deliveryFee || 30;
     db.prepare('INSERT INTO rider_earnings (rider_id, order_id, amount, type) VALUES (?, ?, ?, ?)').run(riderId, orderId, earning, 'delivery');
+    
+    // Credit tip if any
+    const orderTip = parseInt(order.tip || 0, 10);
+    if (orderTip > 0) {
+      db.prepare('INSERT INTO rider_earnings (rider_id, order_id, amount, type) VALUES (?, ?, ?, ?)').run(riderId, orderId, orderTip, 'tip');
+    }
     
     if (order.payment_method === 'cod') {
       db.prepare('INSERT INTO rider_cod (rider_id, order_id, amount) VALUES (?, ?, ?)').run(riderId, orderId, order.total);

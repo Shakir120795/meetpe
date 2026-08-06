@@ -4865,7 +4865,8 @@ async function submitOrder(e) {
       body: JSON.stringify({
         name, phone, address, payment: PAYMENT, notes,
         items, couponCode: COUPON ? COUPON.code : null,
-        walletAmount: walletAmt  // server handles wallet deduction
+        walletAmount: walletAmt,
+        tip: DELIVERY_TIP || 0
       })
     });
     const data = await res.json();
@@ -4884,6 +4885,7 @@ async function submitOrder(e) {
       CART = {};
       COUPON = null;
       WALLET_APPLIED = false;
+      DELIVERY_TIP = 0;
       saveCart();
       updateCartBar();
       closeCheckoutModal();

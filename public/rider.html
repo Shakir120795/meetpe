@@ -1415,8 +1415,8 @@ async function loadEarnings() {
                     const timeStr = d.toLocaleDateString('en-IN', { timeZone:'Asia/Kolkata', day:'numeric', month:'short' });
                     return `<div class="earnings-item">
                         <div class="earnings-item-left">
-                            <span class="earnings-item-id">${t.type === 'delivery' ? '🛵' : '🎁'} Order #${t.order_id || '--'}</span>
-                            <span class="earnings-item-date">${timeStr} • ${t.type}</span>
+                            <span class="earnings-item-id">${t.type === 'delivery' ? '🛵' : t.type === 'tip' ? '💝' : '🎁'} Order #${t.order_id || '--'}</span>
+                            <span class="earnings-item-date">${timeStr} • ${t.type === 'tip' ? 'Customer Tip' : t.type}</span>
                         </div>
                         <span class="earnings-item-amount">+₹${t.amount}</span>
                     </div>`;
