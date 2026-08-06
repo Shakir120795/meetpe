@@ -5026,10 +5026,64 @@ function showOrderDetail(id) {
   const statusLevel = {placed:1, preparing:4, out_for_delivery:5, delivered:6, cancelled:0}[order.status] || 0;
   const isCancelled = order.status === 'cancelled';
   const isDelivered = order.status === 'delivered';
+  const isActive = ['preparing', 'out_for_delivery'].includes(order.status);
 
   const content = document.getElementById('ordersContent');
   const title = document.getElementById('ordersTitle');
   title.innerHTML = `<button onclick="loadOrders()" style="background:none;color:var(--accent);font-size:13px;font-weight:600">← Back</button> Order #${id}`;
+
+  // Get delivery boy details
+  const deliveryBoy = getDeliveryBoy();
+  const settings = SITE_SETTINGS?.orderTracking || {};
+  
+  // Live Tracking Section (only for active orders)
+  const liveTrackingHtml = isActive && settings.enableLiveTracking ? `
+    <div class="tracking-map">
+      <div id="liveMap" style="height:220px;position:relative;background:linear-gradient(135deg,#e8f5e9,#fff);display:flex;align-items:center;justify-content:center;flex-direction:column">
+        <div style="font-size:48px;animation:bounce 2s infinite">🛵</div>
+        <div style="margin-top:12px;font-size:14px;font-weight:600;color:var(--text)">Delivery in progress</div>
+        <div style="position:absolute;bottom:10px;left:10px;background:white;padding:8px 12px;border-radius:8px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+          📍 ${order.address ? order.address.substring(0, 30) + '...' : 'Your location'}
+        </div>
+      </div>
+    </div>
+  ` : '';
+  
+  // ETA Section (only for active orders)
+  const etaHtml = isActive ? `
+    <div class="eta-section">
+      <div class="eta-time">Arriving in <span id="etaMinutes">${settings.defaultETA || 25}</span> min</div>
+      <div class="eta-bar">
+        <div class="eta-progress" id="etaProgress" style="width:${statusLevel === 5 ? '80%' : '40%'}"></div>
+      </div>
+    </div>
+  ` : '';
+  
+  // Delivery Boy Card (only if enabled and order is active)
+  const deliveryBoyHtml = isActive && settings.enableDeliveryBoyDetails && deliveryBoy ? `
+    <div class="delivery-boy-card">
+      ${deliveryBoy.photo ? 
+        `<img src="${deliveryBoy.photo}" alt="${deliveryBoy.name}" class="db-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+         <div class="db-photo" style="display:none">👤</div>` :
+        `<div class="db-photo">👤</div>`
+      }
+      <div class="db-info">
+        <div class="db-name">${deliveryBoy.name}</div>
+        <div class="db-rating">⭐ ${deliveryBoy.rating} • ${deliveryBoy.totalDeliveries} deliveries</div>
+        <div class="db-vehicle">🛵 ${deliveryBoy.vehicleType} • ${deliveryBoy.vehicleNumber}</div>
+      </div>
+    </div>
+  ` : '';
+  
+  // Action Buttons (only for active orders)
+  const actionButtonsHtml = isActive && deliveryBoy ? `
+    <div class="tracking-actions">
+      ${settings.enableCallButton ? 
+        `<button onclick="callDeliveryBoy('${deliveryBoy.phone}')">📞 Call</button>` : ''}
+      ${settings.enableChatButton ? 
+        `<button onclick="chatDeliveryBoy('${deliveryBoy.phone}')">💬 Chat</button>` : ''}
+    </div>
+  ` : '';
 
   const itemsHtml = (order.items||[]).map(i=>
     `<div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid var(--border)">
@@ -5062,12 +5116,10 @@ function showOrderDetail(id) {
     </div>` : '';
 
   // Review section — show for delivered orders
-  // IMPORTANT: Check for already reviewed items when page loads
   const reviewSection = isDelivered ? `
     <div style="margin-top:12px;background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border)">
       <div style="font-size:15px;font-weight:800;margin-bottom:14px">⭐ Rate Your Order</div>
       ${(order.items||[]).map(item => {
-        // Mark review section with unique ID so we can check review status after render
         return `<div id="review-${order.id}-${item.code}" style="padding:10px 0;border-bottom:1px solid var(--border)" data-order="${order.id}" data-item="${item.code}">
           <div style="font-size:13px;font-weight:600;margin-bottom:8px">${item.name}</div>
           <div style="display:flex;gap:6px;margin-bottom:8px" id="stars-${order.id}-${item.code}">
@@ -5091,6 +5143,11 @@ function showOrderDetail(id) {
   setTimeout(() => checkAlreadyReviewedItems(order.id, order.items || []), 100);
 
   content.innerHTML = `<div class="tracking-wrap">
+    ${liveTrackingHtml}
+    ${etaHtml}
+    ${deliveryBoyHtml}
+    ${actionButtonsHtml}
+    
     <!-- Order summary -->
     <div style="margin-bottom:12px;padding:14px;background:var(--card);border-radius:14px;border:1px solid var(--border)">
       <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Items</div>
@@ -5109,6 +5166,104 @@ function showOrderDetail(id) {
     ${reviewSection}
     <div style="height:16px"></div>
   </div>`;
+  
+  // Start ETA countdown if order is active
+  if (isActive) {
+    startETACountdown(settings.defaultETA || 25);
+  }
+}
+
+// ═══════════════════════════════════════════
+//  Order Tracking Helper Functions
+// ═══════════════════════════════════════════
+let _etaTimer = null;
+
+function startETACountdown(initialMinutes) {
+  // Clear existing timer
+  if (_etaTimer) {
+    clearInterval(_etaTimer);
+    _etaTimer = null;
+  }
+  
+  let minutes = initialMinutes;
+  const etaEl = document.getElementById('etaMinutes');
+  const progressEl = document.getElementById('etaProgress');
+  
+  if (!etaEl) return;
+  
+  _etaTimer = setInterval(() => {
+    if (minutes <= 0) {
+      clearInterval(_etaTimer);
+      _etaTimer = null;
+      if (etaEl) etaEl.textContent = '0';
+      if (progressEl) progressEl.style.width = '100%';
+      return;
+    }
+    minutes--;
+    if (etaEl) etaEl.textContent = minutes;
+    
+    // Update progress bar
+    if (progressEl) {
+      const progress = Math.max(10, 100 - (minutes / initialMinutes * 60));
+      progressEl.style.width = progress + '%';
+    }
+  }, 60000); // Update every minute
+}
+
+function callDeliveryBoy(phone) {
+  const settings = SITE_SETTINGS?.orderTracking || {};
+  if (!settings.enableCallButton) {
+    showToast('Call feature is disabled', 'info');
+    return;
+  }
+  
+  if (!phone) {
+    showToast('Delivery boy phone not available', 'error');
+    return;
+  }
+  
+  window.location.href = `tel:${phone}`;
+}
+
+function chatDeliveryBoy(phone) {
+  const settings = SITE_SETTINGS?.orderTracking || {};
+  if (!settings.enableChatButton) {
+    showToast('Chat feature is disabled', 'info');
+    return;
+  }
+  
+  if (!phone) {
+    showToast('Delivery boy contact not available', 'error');
+    return;
+  }
+  
+  const message = encodeURIComponent('Hi, I have a question about my order.');
+  window.open(`https://wa.me/${phone.replace(/\D/g,'')}?text=${message}`, '_blank');
+}
+
+function getDeliveryBoy() {
+  const settings = SITE_SETTINGS?.orderTracking || {};
+  const boys = settings.deliveryBoys || [];
+  
+  if (boys.length === 0) {
+    // Return default delivery boy if none configured
+    return {
+      id: 'DB001',
+      name: 'Delivery Partner',
+      phone: settings.supportPhone || '+917617555488',
+      photo: '',
+      rating: 5.0,
+      totalDeliveries: 100,
+      vehicleNumber: 'XX XX XXXX',
+      vehicleType: 'Bike',
+      status: 'available'
+    };
+  }
+  
+  const available = boys.filter(b => b.status === 'available');
+  
+  if (available.length === 0) return boys[0];
+  return available[Math.floor(Math.random() * available.length)];
 }
 
 // ═══════════════════════════════════════════
@@ -8111,6 +8266,129 @@ body {
 @media(max-width:480px) {
   /* Mobile optimizations */
 }
+
+/* Order Tracking Styles */
+.tracking-map {
+  margin-bottom: 16px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.eta-section {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+
+.eta-time {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--accent);
+}
+
+.eta-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.eta-progress {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #10b981);
+  border-radius: 3px;
+  transition: width 1s ease;
+}
+
+.delivery-boy-card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.db-photo {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.db-info {
+  flex: 1;
+}
+
+.db-name {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.db-rating {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.db-vehicle {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.tracking-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.tracking-actions button {
+  padding: 14px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.tracking-actions button:active {
+  transform: scale(0.98);
+}
+
+.tracking-actions button:first-child {
+  background: #22c55e;
+}
+
+.tracking-actions button:last-child {
+  background: #3b82f6;
+}
+
 </style>
 
 <!-- Filter Modal -->
