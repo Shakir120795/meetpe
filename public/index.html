@@ -7576,19 +7576,61 @@ function loadUserTickets() {
           const statusLabel = t.status === 'open' ? 'Open' : t.status === 'resolved' ? 'Resolved' : t.status;
           const d = new Date(t.created_at + 'Z');
           const dateStr = d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' });
-          return `<div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid var(--border)">
+          return `<div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid var(--border);cursor:pointer" onclick="toggleTicketDetail(this)">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
               <span style="font-size:12px;font-weight:700">#${t.id} • ${t.category}</span>
               <span style="font-size:10px;font-weight:700;color:${statusColor};background:${statusColor}20;padding:2px 8px;border-radius:4px">${statusLabel}</span>
             </div>
             <div style="font-size:12px;color:var(--muted);margin-bottom:4px">${t.message.slice(0,80)}${t.message.length>80?'...':''}</div>
-            ${t.admin_reply ? `<div style="font-size:12px;color:var(--accent);margin-top:6px;padding:8px;background:rgba(232,69,10,.05);border-radius:6px;border-left:3px solid var(--accent)">💬 ${t.admin_reply}</div>` : ''}
-            <div style="font-size:10px;color:var(--muted);margin-top:4px">${dateStr}</div>
+            <div style="font-size:10px;color:var(--muted)">${dateStr}</div>
+            
+            <!-- Expandable Detail -->
+            <div class="ticket-detail" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+              <div style="font-size:12px;color:var(--text);line-height:1.6;margin-bottom:10px">${t.message}</div>
+              ${t.admin_reply ? `<div style="font-size:12px;color:var(--accent);padding:10px;background:rgba(232,69,10,.05);border-radius:8px;border-left:3px solid var(--accent);margin-bottom:10px">
+                <div style="font-size:11px;font-weight:700;margin-bottom:4px">Admin Reply:</div>
+                ${t.admin_reply}
+              </div>` : '<div style="font-size:11px;color:var(--muted);margin-bottom:10px">⏳ Waiting for admin reply...</div>'}
+              ${t.status === 'open' ? `
+              <div style="margin-top:8px">
+                <textarea id="ticketReply-${t.id}" placeholder="Add more details or reply..." style="width:100%;padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text);resize:none;height:60px;outline:none"></textarea>
+                <button onclick="event.stopPropagation();addTicketReply(${t.id})" style="margin-top:6px;width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Send Update</button>
+              </div>` : ''}
+            </div>
           </div>`;
         }).join('')}
       `;
     })
     .catch(() => {});
+}
+
+function toggleTicketDetail(el) {
+  const detail = el.querySelector('.ticket-detail');
+  if (detail) {
+    detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+function addTicketReply(ticketId) {
+  const textarea = document.getElementById('ticketReply-' + ticketId);
+  const msg = textarea?.value?.trim();
+  if (!msg) { showToast('Please type something', 'error'); return; }
+  
+  // Send as a new chat message linked to ticket
+  fetch('/api/chat/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone: USER.phone, message: '[Ticket #' + ticketId + '] ' + msg })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      showToast('Update sent! ✅', 'success');
+      textarea.value = '';
+      loadUserTickets();
+    }
+  })
+  .catch(() => showToast('Failed to send', 'error'));
 }
 
 
