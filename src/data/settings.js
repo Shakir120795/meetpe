@@ -67,6 +67,62 @@ const defaults = {
     requirePhone: true,
     allowGuestCheckout: false
   },
+  // NEW: Payment Gateway Settings (admin-editable)
+  paymentGateway: {
+    provider: 'razorpay', // razorpay, stripe, paytm, mock
+    mode: 'test', // test or live
+    mockPaymentEnabled: true, // For testing - auto-approves payments
+    razorpay: {
+      keyId: '', // Razorpay Key ID (from dashboard)
+      keySecret: '', // Razorpay Key Secret (from dashboard)
+      webhookSecret: '' // For webhook verification
+    },
+    stripe: {
+      publishableKey: '',
+      secretKey: '',
+      webhookSecret: ''
+    },
+    paytm: {
+      merchantId: '',
+      merchantKey: '',
+      websiteName: 'WEBSTAGING',
+      industryType: 'Retail'
+    },
+    upiOptions: {
+      enabled: true,
+      merchantVpa: 'meatpe@paytm', // Your UPI ID
+      merchantName: 'MeatPe',
+      showQrCode: true
+    },
+    cardOptions: {
+      enabled: true,
+      acceptedCards: ['visa', 'mastercard', 'rupay', 'amex'],
+      saveCardOption: false
+    },
+    netBankingOptions: {
+      enabled: true,
+      banks: [
+        { id: 'sbi', name: 'State Bank of India', icon: '🏦' },
+        { id: 'hdfc', name: 'HDFC Bank', icon: '🏦' },
+        { id: 'icici', name: 'ICICI Bank', icon: '🏦' },
+        { id: 'axis', name: 'Axis Bank', icon: '🏦' },
+        { id: 'pnb', name: 'Punjab National Bank', icon: '🏦' },
+        { id: 'bob', name: 'Bank of Baroda', icon: '🏦' },
+        { id: 'kotak', name: 'Kotak Mahindra Bank', icon: '🏦' }
+      ]
+    },
+    walletOptions: {
+      enabled: true,
+      allowWalletPayment: true,
+      minWalletBalance: 10
+    },
+    codOptions: {
+      enabled: true,
+      maxOrderAmount: 5000, // Max COD order value
+      minOrderAmount: 100,
+      extraCharge: 0 // Extra charge for COD (₹)
+    }
+  },
   // NEW: Trending Searches (admin-editable)
   trendingSearches: [
     'chicken breast',
@@ -199,6 +255,22 @@ function read() {
         deliverySlots: Array.isArray(data.checkout?.deliverySlots) ? data.checkout.deliverySlots : defaults.checkout.deliverySlots,
         paymentMethods: Array.isArray(data.checkout?.paymentMethods) ? data.checkout.paymentMethods : defaults.checkout.paymentMethods
       },
+      paymentGateway: { 
+        ...defaults.paymentGateway, 
+        ...data.paymentGateway,
+        razorpay: { ...defaults.paymentGateway.razorpay, ...(data.paymentGateway?.razorpay || {}) },
+        stripe: { ...defaults.paymentGateway.stripe, ...(data.paymentGateway?.stripe || {}) },
+        paytm: { ...defaults.paymentGateway.paytm, ...(data.paymentGateway?.paytm || {}) },
+        upiOptions: { ...defaults.paymentGateway.upiOptions, ...(data.paymentGateway?.upiOptions || {}) },
+        cardOptions: { ...defaults.paymentGateway.cardOptions, ...(data.paymentGateway?.cardOptions || {}) },
+        netBankingOptions: { 
+          ...defaults.paymentGateway.netBankingOptions, 
+          ...(data.paymentGateway?.netBankingOptions || {}),
+          banks: Array.isArray(data.paymentGateway?.netBankingOptions?.banks) ? data.paymentGateway.netBankingOptions.banks : defaults.paymentGateway.netBankingOptions.banks
+        },
+        walletOptions: { ...defaults.paymentGateway.walletOptions, ...(data.paymentGateway?.walletOptions || {}) },
+        codOptions: { ...defaults.paymentGateway.codOptions, ...(data.paymentGateway?.codOptions || {}) }
+      },
       deliveryZones: Array.isArray(data.deliveryZones) ? data.deliveryZones : defaults.deliveryZones,
       membershipPlans: Array.isArray(data.membershipPlans) ? data.membershipPlans : defaults.membershipPlans,
     };
@@ -233,6 +305,22 @@ function update(patch) {
     ...patch.checkout,
     deliverySlots: Array.isArray(patch.checkout.deliverySlots) ? patch.checkout.deliverySlots : current.checkout.deliverySlots,
     paymentMethods: Array.isArray(patch.checkout.paymentMethods) ? patch.checkout.paymentMethods : current.checkout.paymentMethods
+  };
+  if (patch.paymentGateway) current.paymentGateway = {
+    ...current.paymentGateway,
+    ...patch.paymentGateway,
+    razorpay: { ...current.paymentGateway.razorpay, ...(patch.paymentGateway.razorpay || {}) },
+    stripe: { ...current.paymentGateway.stripe, ...(patch.paymentGateway.stripe || {}) },
+    paytm: { ...current.paymentGateway.paytm, ...(patch.paymentGateway.paytm || {}) },
+    upiOptions: { ...current.paymentGateway.upiOptions, ...(patch.paymentGateway.upiOptions || {}) },
+    cardOptions: { ...current.paymentGateway.cardOptions, ...(patch.paymentGateway.cardOptions || {}) },
+    netBankingOptions: { 
+      ...current.paymentGateway.netBankingOptions, 
+      ...(patch.paymentGateway.netBankingOptions || {}),
+      banks: Array.isArray(patch.paymentGateway?.netBankingOptions?.banks) ? patch.paymentGateway.netBankingOptions.banks : current.paymentGateway.netBankingOptions.banks
+    },
+    walletOptions: { ...current.paymentGateway.walletOptions, ...(patch.paymentGateway.walletOptions || {}) },
+    codOptions: { ...current.paymentGateway.codOptions, ...(patch.paymentGateway.codOptions || {}) }
   };
   if (Array.isArray(patch.deliveryZones)) current.deliveryZones = patch.deliveryZones;
   if (Array.isArray(patch.membershipPlans)) current.membershipPlans = patch.membershipPlans;

@@ -344,6 +344,155 @@
       </div>
     </div>
 
+    <!-- PAYMENT GATEWAY SETTINGS -->
+    <div class="section">
+      <h2>💳 Payment Gateway Settings</h2>
+      <p class="desc">Configure payment gateway credentials and payment method options. All changes require saving.</p>
+      
+      <!-- Provider Selection -->
+      <div class="field">
+        <label>Payment Provider</label>
+        <select id="paymentProvider" onchange="markDirty()">
+          <option value="razorpay">Razorpay</option>
+          <option value="stripe">Stripe</option>
+          <option value="paytm">Paytm</option>
+          <option value="mock">Mock (Testing Only)</option>
+        </select>
+      </div>
+      
+      <div class="field-row">
+        <div class="field">
+          <label>Mode</label>
+          <select id="paymentMode" onchange="markDirty()">
+            <option value="test">Test Mode</option>
+            <option value="live">Live Mode</option>
+          </select>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="mockPaymentEnabled" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Mock Payments (for testing)</span>
+          </label>
+        </div>
+      </div>
+      
+      <!-- Razorpay Settings -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">🔑 Razorpay Credentials</h3>
+        <div class="field">
+          <label>Key ID</label>
+          <input type="text" id="razorpayKeyId" placeholder="rzp_test_..." onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Key Secret</label>
+          <input type="password" id="razorpayKeySecret" placeholder="Enter key secret" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Webhook Secret</label>
+          <input type="password" id="razorpayWebhookSecret" placeholder="whsec_..." onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- UPI Options -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">📱 UPI Payment Options</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="upiEnabled" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable UPI Payments</span>
+          </label>
+        </div>
+        <div class="field">
+          <label>Merchant UPI ID</label>
+          <input type="text" id="upiMerchantVpa" placeholder="yourstore@paytm" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Merchant Name</label>
+          <input type="text" id="upiMerchantName" placeholder="MeatPe" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="upiShowQrCode" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Show QR Code for UPI</span>
+          </label>
+        </div>
+      </div>
+      
+      <!-- Card Options -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">💳 Card Payment Options</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="cardEnabled" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Card Payments</span>
+          </label>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="cardSaveOption" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Allow Save Card for Future</span>
+          </label>
+        </div>
+      </div>
+      
+      <!-- Net Banking Options -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">🏦 Net Banking Options</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="netBankingEnabled" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Net Banking</span>
+          </label>
+        </div>
+        
+        <p style="font-size:12px;color:var(--gray);margin:12px 0">Supported Banks</p>
+        <div id="banksContainer"></div>
+        
+        <button type="button" onclick="addBank()" style="margin-top:12px;padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">
+          ➕ Add Bank
+        </button>
+      </div>
+      
+      <!-- Wallet Options -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">💰 Wallet Payment Options</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="walletEnabled" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Wallet Payments</span>
+          </label>
+        </div>
+        <div class="field">
+          <label>Minimum Wallet Balance</label>
+          <input type="number" id="walletMinBalance" placeholder="10" min="1" onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- COD Options -->
+      <div style="background:var(--light);padding:16px;border-radius:10px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">💵 Cash on Delivery Options</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="codEnabled" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Cash on Delivery</span>
+          </label>
+        </div>
+        <div class="field">
+          <label>Min Order Amount for COD (₹)</label>
+          <input type="number" id="codMinAmount" placeholder="100" min="0" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Max Order Amount for COD (₹)</label>
+          <input type="number" id="codMaxAmount" placeholder="5000" min="0" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Extra COD Charge (₹)</label>
+          <input type="number" id="codExtraCharge" placeholder="0" min="0" onchange="markDirty()"/>
+          <div style="font-size:11px;color:var(--gray);margin-top:4px">Additional charge for COD orders (0 for no charge)</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Sticky save bar -->
@@ -458,6 +607,41 @@ function render() {
   $('checkoutMaxAddresses').value = checkout.maxSavedAddresses || 5;
   $('checkoutRequirePhone').checked = checkout.requirePhone !== false;
   $('checkoutAllowGuest').checked = checkout.allowGuestCheckout === true;
+
+  // Payment Gateway Settings
+  const pg = SETTINGS.paymentGateway || {};
+  $('paymentProvider').value = pg.provider || 'razorpay';
+  $('paymentMode').value = pg.mode || 'test';
+  $('mockPaymentEnabled').checked = pg.mockPaymentEnabled === true;
+  
+  // Razorpay
+  $('razorpayKeyId').value = pg.razorpay?.keyId || '';
+  $('razorpayKeySecret').value = pg.razorpay?.keySecret || '';
+  $('razorpayWebhookSecret').value = pg.razorpay?.webhookSecret || '';
+  
+  // UPI
+  $('upiEnabled').checked = pg.upiOptions?.enabled !== false;
+  $('upiMerchantVpa').value = pg.upiOptions?.merchantVpa || '';
+  $('upiMerchantName').value = pg.upiOptions?.merchantName || '';
+  $('upiShowQrCode').checked = pg.upiOptions?.showQrCode !== false;
+  
+  // Cards
+  $('cardEnabled').checked = pg.cardOptions?.enabled !== false;
+  $('cardSaveOption').checked = pg.cardOptions?.saveCardOption === true;
+  
+  // Net Banking
+  $('netBankingEnabled').checked = pg.netBankingOptions?.enabled !== false;
+  renderBanks(pg.netBankingOptions?.banks || []);
+  
+  // Wallet
+  $('walletEnabled').checked = pg.walletOptions?.enabled !== false;
+  $('walletMinBalance').value = pg.walletOptions?.minWalletBalance || 10;
+  
+  // COD
+  $('codEnabled').checked = pg.codOptions?.enabled !== false;
+  $('codMinAmount').value = pg.codOptions?.minOrderAmount || 100;
+  $('codMaxAmount').value = pg.codOptions?.maxOrderAmount || 5000;
+  $('codExtraCharge').value = pg.codOptions?.extraCharge || 0;
 
   // Mark dirty on any input change
   content.querySelectorAll('input, textarea, select').forEach(el => {
@@ -607,7 +791,53 @@ function collectData() {
     allowGuestCheckout: $('checkoutAllowGuest').checked
   };
 
-  return { branding, contact, categories, socials, pages, trendingSearches, cart, checkout };
+  // Payment Gateway Settings
+  const banks = [];
+  $('banksContainer').querySelectorAll('.field-row').forEach(row => {
+    const id = row.querySelector('.bank-id').value.trim();
+    const name = row.querySelector('.bank-name').value.trim();
+    const icon = row.querySelector('.bank-icon').value.trim() || '🏦';
+    if (id && name) {
+      banks.push({ id, name, icon });
+    }
+  });
+
+  const paymentGateway = {
+    provider: $('paymentProvider').value,
+    mode: $('paymentMode').value,
+    mockPaymentEnabled: $('mockPaymentEnabled').checked,
+    razorpay: {
+      keyId: $('razorpayKeyId').value.trim(),
+      keySecret: $('razorpayKeySecret').value.trim(),
+      webhookSecret: $('razorpayWebhookSecret').value.trim()
+    },
+    upiOptions: {
+      enabled: $('upiEnabled').checked,
+      merchantVpa: $('upiMerchantVpa').value.trim(),
+      merchantName: $('upiMerchantName').value.trim(),
+      showQrCode: $('upiShowQrCode').checked
+    },
+    cardOptions: {
+      enabled: $('cardEnabled').checked,
+      saveCardOption: $('cardSaveOption').checked
+    },
+    netBankingOptions: {
+      enabled: $('netBankingEnabled').checked,
+      banks: banks
+    },
+    walletOptions: {
+      enabled: $('walletEnabled').checked,
+      minWalletBalance: parseInt($('walletMinBalance').value) || 10
+    },
+    codOptions: {
+      enabled: $('codEnabled').checked,
+      minOrderAmount: parseInt($('codMinAmount').value) || 100,
+      maxOrderAmount: parseInt($('codMaxAmount').value) || 5000,
+      extraCharge: parseInt($('codExtraCharge').value) || 0
+    }
+  };
+
+  return { branding, contact, categories, socials, pages, trendingSearches, cart, checkout, paymentGateway };
 }
 
 // ═══════════════════════════════════════════
@@ -766,6 +996,74 @@ function addPaymentMethod() {
 }
 
 function removePaymentMethod(btn) {
+  btn.closest('.field-row').remove();
+  markDirty();
+}
+
+// ═══════════════════════════════════════════
+//  Banks Management
+// ═══════════════════════════════════════════
+function renderBanks(banks) {
+  const container = $('banksContainer');
+  container.innerHTML = '';
+  
+  banks.forEach((bank, index) => {
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.style.cssText = 'background:var(--bg);padding:12px;border-radius:8px;margin-bottom:10px;border:1px solid var(--border)';
+    row.innerHTML = `
+      <div class="field" style="flex:1">
+        <label style="font-size:11px">Bank ID</label>
+        <input class="bank-id" value="${escapeHtml(bank.id)}" placeholder="sbi"/>
+      </div>
+      <div class="field" style="flex:2">
+        <label style="font-size:11px">Bank Name</label>
+        <input class="bank-name" value="${escapeHtml(bank.name)}" placeholder="State Bank of India"/>
+      </div>
+      <div class="field" style="flex:1">
+        <label style="font-size:11px">Icon</label>
+        <input class="bank-icon" value="${escapeHtml(bank.icon || '🏦')}" placeholder="🏦" maxlength="4"/>
+      </div>
+      <button type="button" onclick="removeBank(this)" style="padding:8px 12px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;align-self:flex-end">
+        🗑️
+      </button>
+    `;
+    
+    row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+    container.appendChild(row);
+  });
+}
+
+function addBank() {
+  const container = $('banksContainer');
+  
+  const row = document.createElement('div');
+  row.className = 'field-row';
+  row.style.cssText = 'background:var(--bg);padding:12px;border-radius:8px;margin-bottom:10px;border:1px solid var(--border)';
+  row.innerHTML = `
+    <div class="field" style="flex:1">
+      <label style="font-size:11px">Bank ID</label>
+      <input class="bank-id" value="" placeholder="axis"/>
+    </div>
+    <div class="field" style="flex:2">
+      <label style="font-size:11px">Bank Name</label>
+      <input class="bank-name" value="" placeholder="Axis Bank"/>
+    </div>
+    <div class="field" style="flex:1">
+      <label style="font-size:11px">Icon</label>
+      <input class="bank-icon" value="🏦" placeholder="🏦" maxlength="4"/>
+    </div>
+    <button type="button" onclick="removeBank(this)" style="padding:8px 12px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;align-self:flex-end">
+      🗑️
+    </button>
+  `;
+  
+  row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+  container.appendChild(row);
+  markDirty();
+}
+
+function removeBank(btn) {
   btn.closest('.field-row').remove();
   markDirty();
 }
