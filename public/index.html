@@ -4732,8 +4732,24 @@ async function loadOrders() {
           const r2 = await fetch('/api/orders/' + USER.phone);
           const d2 = await r2.json();
           if (d2.ok) {
+            // Check if any order just got delivered (was active before, now delivered)
+            const prevOrders = window._ORDERS || [];
+            d2.orders.forEach(newO => {
+              if (newO.status === 'delivered') {
+                const prevO = prevOrders.find(p => p.id === newO.id);
+                if (prevO && prevO.status !== 'delivered') {
+                  // Just got delivered! Show rating popup
+                  const dismissed = JSON.parse(localStorage.getItem('now_dismissed_strip') || '[]');
+                  if (!dismissed.includes(newO.id)) {
+                    setTimeout(() => showRatingPopup(newO.id), 500);
+                  }
+                }
+              }
+            });
+            
             window._ORDERS = d2.orders;
             renderOrdersList(d2.orders);
+            updateActiveOrderStrip(d2.orders);
           }
         } catch(e) {}
       }, 20000); // refresh every 20s
@@ -4897,7 +4913,9 @@ function updateActiveOrderStrip(orders) {
     return (now - deliveredTime) < 5 * 60 * 1000; // 5 minutes
   });
   
-  const allStripOrders = [...activeOrders, ...recentDelivered];
+  // Filter out dismissed orders
+  const dismissed = JSON.parse(localStorage.getItem('now_dismissed_strip') || '[]');
+  const allStripOrders = [...activeOrders, ...recentDelivered].filter(o => !dismissed.includes(o.id));
   
   if (allStripOrders.length === 0) {
     strip.style.display = 'none';
@@ -4919,7 +4937,20 @@ function updateActiveOrderStrip(orders) {
     } else if (status === 'out_for_delivery') {
       icon = '🛵'; text = 'Out for delivery!'; color = '#22c55e';
     } else if (status === 'delivered') {
-      icon = '✅'; text = 'Delivered! Rate your order'; color = '#22c55e';
+      icon = '⭐'; text = 'Rate your order'; color = '#f59e0b';
+    }
+    
+    // Delivered orders show rating buttons, others show tracking
+    if (status === 'delivered') {
+      return `<div style="min-width:100%;display:flex;align-items:center;gap:10px;padding:2px 0">
+        <div style="font-size:20px">${icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:${color}">Delivered! Rate your experience</div>
+          <div style="font-size:11px;color:var(--muted)">Order #${order.id} • ₹${order.total}</div>
+        </div>
+        <button onclick="event.stopPropagation();showRatingPopup(${order.id})" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Rate Now</button>
+        <button onclick="event.stopPropagation();dismissStripOrder(${order.id})" style="width:24px;height:24px;background:var(--border);border:none;border-radius:50%;color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+      </div>`;
     }
     
     return `<div onclick="openOrderTracking(${order.id})" style="min-width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;padding:2px 0">
@@ -4928,6 +4959,7 @@ function updateActiveOrderStrip(orders) {
         <div style="font-size:13px;font-weight:700;color:${color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${text}</div>
         <div style="font-size:11px;color:var(--muted)">Order #${order.id} • ₹${order.total}</div>
       </div>
+      <button onclick="event.stopPropagation();dismissStripOrder(${order.id})" style="width:24px;height:24px;background:var(--border);border:none;border-radius:50%;color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
     </div>`;
   }).join('');
   
@@ -5026,6 +5058,105 @@ async function openOrderTracking(orderId) {
   // Navigate to orders screen and show detail
   showScreen('screen-orders');
   setTimeout(() => showOrderDetail(orderId), 100);
+}
+
+// Dismiss order from tracking strip
+function dismissStripOrder(orderId) {
+  const dismissed = JSON.parse(localStorage.getItem('now_dismissed_strip') || '[]');
+  if (!dismissed.includes(orderId)) dismissed.push(orderId);
+  localStorage.setItem('now_dismissed_strip', JSON.stringify(dismissed));
+  refreshActiveStrip();
+}
+
+// Rating Popup (appears when order delivered)
+function showRatingPopup(orderId) {
+  // Get order details
+  const orders = window._ORDERS || window._ALL_ORDERS || [];
+  let order = orders.find(o => o.id === orderId);
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'ratingPopupOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .2s';
+  
+  overlay.innerHTML = `
+    <div style="background:var(--card);border-radius:20px;padding:24px;max-width:340px;width:100%;text-align:center;animation:slideUp .3s">
+      <div style="font-size:48px;margin-bottom:12px">⭐</div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:6px">Rate Your Order</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Order #${orderId} delivered! How was your experience?</div>
+      
+      <!-- Quick star rating -->
+      <div style="display:flex;justify-content:center;gap:8px;margin-bottom:20px" id="popupStars-${orderId}">
+        ${[1,2,3,4,5].map(s => `<span onclick="setPopupRating(${orderId},${s})" style="font-size:36px;cursor:pointer;color:var(--border);transition:all .2s" data-val="${s}">★</span>`).join('')}
+      </div>
+      
+      <div style="display:flex;gap:10px">
+        <button onclick="submitPopupRating(${orderId})" style="flex:1;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer">
+          ⭐ Rate Now
+        </button>
+        <button onclick="closeRatingPopup(${orderId})" style="flex:1;padding:14px;background:var(--bg);border:1px solid var(--border);color:var(--muted);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer">
+          Later
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+}
+
+function setPopupRating(orderId, val) {
+  const container = document.getElementById('popupStars-' + orderId);
+  if (!container) return;
+  container.querySelectorAll('span').forEach(s => {
+    const v = parseInt(s.dataset.val);
+    s.style.color = v <= val ? '#f59e0b' : 'var(--border)';
+    s.style.transform = v <= val ? 'scale(1.2)' : 'scale(1)';
+  });
+  container.dataset.rating = val;
+}
+
+async function submitPopupRating(orderId) {
+  const container = document.getElementById('popupStars-' + orderId);
+  const rating = parseInt(container?.dataset.rating || 0);
+  if (!rating) { showToast('Please tap a star ⭐', 'error'); return; }
+  
+  // Get order items and submit rating for first item + delivery
+  const orders = window._ORDERS || window._ALL_ORDERS || [];
+  const order = orders.find(o => o.id === orderId);
+  if (!order || !order.items || !order.items.length) {
+    closeRatingPopup(orderId);
+    return;
+  }
+  
+  try {
+    // Submit review for first item with delivery rating
+    const firstItem = order.items[0];
+    const res = await fetch('/api/reviews', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: USER.phone,
+        order_id: orderId,
+        item_code: firstItem.code,
+        rating: rating,
+        delivery_rating: rating,
+        comment: ''
+      })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast('Thanks for rating! ⭐', 'success');
+    }
+  } catch(e) {}
+  
+  closeRatingPopup(orderId);
+  dismissStripOrder(orderId);
+}
+
+function closeRatingPopup(orderId) {
+  const overlay = document.getElementById('ratingPopupOverlay');
+  if (overlay) overlay.remove();
+  // Dismiss from strip
+  dismissStripOrder(orderId);
 }
 
 function showOrderMenu(orderId) {
