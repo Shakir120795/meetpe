@@ -92,9 +92,10 @@ async function loadTickets() {
   const key = getKey();
   if (!key) return;
   
-  const statusParam = FILTER !== 'all' ? '&status=' + FILTER : '';
+  // Only pass open/resolved as status to API, user/rider is client-side filter
+  const apiStatus = (FILTER === 'open' || FILTER === 'resolved') ? '&status=' + FILTER : '';
   try {
-    const res = await fetch('/admin/tickets?key=' + encodeURIComponent(key) + statusParam);
+    const res = await fetch('/admin/tickets?key=' + encodeURIComponent(key) + apiStatus);
     const data = await res.json();
     if (!data.ok) { $('ticketsList').innerHTML = '<div style="color:red">' + (data.error || 'Failed') + '</div>'; return; }
     TICKETS = data.tickets;
@@ -109,7 +110,13 @@ function filterTickets(status) {
   document.querySelectorAll('[id^="ft-"]').forEach(b => { b.style.background = 'white'; b.style.color = '#6b7280'; b.style.border = '1px solid #e5e7eb'; });
   const btn = $('ft-' + status);
   btn.style.background = '#d62828'; btn.style.color = 'white'; btn.style.border = 'none';
-  loadTickets();
+  
+  // user/rider filters are client-side only
+  if (status === 'user' || status === 'rider') {
+    renderTickets();
+  } else {
+    loadTickets();
+  }
 }
 
 function renderTickets() {
