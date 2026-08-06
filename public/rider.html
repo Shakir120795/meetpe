@@ -1078,29 +1078,27 @@ function backToPhone() {
 // ============ ONLINE/OFFLINE TOGGLE ============
 async function toggleOnlineStatus() {
     if (!rider) return;
-
     const newStatus = isOnline ? 'offline' : 'available';
 
     try {
-        showLoading();
-        const res = await apiCall('/api/rider/status', 'POST', {
-            riderId: rider.id,
-            status: newStatus
+        const response = await fetch('/api/rider/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ riderId: rider.id, status: newStatus })
         });
+        const data = await response.json();
 
-        if (res.success) {
+        if (data.ok) {
             isOnline = !isOnline;
             rider.status = newStatus;
             localStorage.setItem('rider_session', JSON.stringify(rider));
             updateTopbar();
-            showToast(isOnline ? 'You are now online' : 'You are now offline', 'success');
+            showToast(isOnline ? 'You are now online ✅' : 'You are now offline', 'success');
         } else {
-            showToast(res.error || 'Failed to update status', 'error');
+            showToast(data.error || 'Failed', 'error');
         }
     } catch (err) {
         showToast('Network error', 'error');
-    } finally {
-        hideLoading();
     }
 }
 
@@ -1109,21 +1107,15 @@ async function loadDashboard() {
     if (!rider) return;
 
     try {
-        const res = await apiCall(`/api/rider/dashboard/${rider.id}`, 'GET');
-        if (res.success) {
-            const data = res.data || res;
+        const response = await fetch(`/api/rider/dashboard/${rider.id}`);
+        const data = await response.json();
+        if (data.ok) {
             document.getElementById('statEarnings').textContent = `₹${data.todayEarnings || 0}`;
             document.getElementById('statDeliveries').textContent = data.todayDeliveries || 0;
             document.getElementById('statPending').textContent = data.pendingOrders || 0;
-            document.getElementById('statRating').textContent = data.rating ? data.rating.toFixed(1) + ' ⭐' : '--';
-
-            if (data.recentOrders && data.recentOrders.length > 0) {
-                renderOrderCards(data.recentOrders, 'dashRecentOrders', 'active');
-            }
+            document.getElementById('statRating').textContent = (data.rating || 5.0) + ' ⭐';
         }
-    } catch (err) {
-        // Silently fail, show cached data
-    }
+    } catch (err) {}
 }
 
 // ============ ORDERS ============
@@ -1140,24 +1132,15 @@ async function loadOrders(status) {
     const container = document.getElementById('ordersContent');
 
     try {
-        const res = await apiCall(`/api/rider/orders/${rider.id}?status=${status}`, 'GET');
-        if (res.success && res.orders && res.orders.length > 0) {
-            renderOrderCards(res.orders, 'ordersContent', status);
+        const response = await fetch(`/api/rider/orders/${rider.id}?status=${status}`);
+        const data = await response.json();
+        if (data.ok && data.orders && data.orders.length > 0) {
+            renderOrderCards(data.orders, 'ordersContent', status);
         } else {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                    <p>No ${status} orders</p>
-                </div>
-            `;
+            container.innerHTML = `<div class="empty-state"><p>No ${status} orders</p></div>`;
         }
     } catch (err) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg>
-                <p>Failed to load orders</p>
-            </div>
-        `;
+        container.innerHTML = `<div class="empty-state"><p>Failed to load orders</p></div>`;
     }
 }
 
@@ -1288,70 +1271,47 @@ async function acceptOrder(orderId) {
     if (!rider) return;
     try {
         showLoading();
-        const res = await apiCall('/api/rider/order/accept', 'POST', {
-            riderId: rider.id,
-            orderId: orderId
+        const response = await fetch('/api/rider/order/accept', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ riderId: rider.id, orderId })
         });
-        if (res.success) {
-            showToast('Order accepted!', 'success');
+        const data = await response.json();
+        if (data.ok) {
+            showToast('Order accepted! 🎉', 'success');
             loadOrders('new');
         } else {
-            showToast(res.message || 'Failed to accept order', 'error');
+            showToast(data.error || 'Failed', 'error');
         }
-    } catch (err) {
-        showToast('Network error', 'error');
-    } finally {
-        hideLoading();
-    }
+    } catch (err) { showToast('Network error', 'error'); }
+    finally { hideLoading(); }
 }
 
 async function rejectOrder(orderId) {
-    if (!rider) return;
-    try {
-        showLoading();
-        const res = await apiCall('/api/rider/order/status', 'POST', {
-            riderId: rider.id,
-            orderId: orderId,
-            status: 'rejected'
-        });
-        if (res.success) {
-            showToast('Order rejected', 'success');
-            loadOrders('new');
-        } else {
-            showToast(res.message || 'Failed to reject order', 'error');
-        }
-    } catch (err) {
-        showToast('Network error', 'error');
-    } finally {
-        hideLoading();
-    }
+    if (!confirm('Reject this order?')) return;
+    showToast('Order rejected', '');
+    loadOrders('new');
 }
 
 async function updateOrderStatus(orderId, status) {
     if (!rider) return;
     try {
         showLoading();
-        const res = await apiCall('/api/rider/order/status', 'POST', {
-            riderId: rider.id,
-            orderId: orderId,
-            status: status
+        const response = await fetch('/api/rider/order/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ riderId: rider.id, orderId, status })
         });
-        if (res.success) {
-            const labels = {
-                'picked_up': 'Order picked up!',
-                'on_the_way': 'On the way to customer!',
-                'delivered': 'Order delivered!'
-            };
-            showToast(labels[status] || 'Status updated', 'success');
+        const data = await response.json();
+        if (data.ok) {
+            showToast('Status updated! ✅', 'success');
             loadOrders('active');
+            loadDashboard();
         } else {
-            showToast(res.message || 'Failed to update status', 'error');
+            showToast(data.error || 'Failed', 'error');
         }
-    } catch (err) {
-        showToast('Network error', 'error');
-    } finally {
-        hideLoading();
-    }
+    } catch (err) { showToast('Network error', 'error'); }
+    finally { hideLoading(); }
 }
 
 // ============ EARNINGS ============
@@ -1369,34 +1329,43 @@ async function loadEarnings() {
     if (!rider) return;
 
     try {
-        const res = await apiCall(`/api/rider/earnings/${rider.id}?period=${currentEarningsPeriod}`, 'GET');
-        if (res.success) {
-            const data = res.data || res;
-            document.getElementById('earningsTotal').textContent = `₹${data.total || 0}`;
+        const response = await fetch(`/api/rider/earnings/${rider.id}`);
+        const data = await response.json();
+        
+        if (data.ok) {
+            // Set total based on selected period
+            const totals = { today: data.today || 0, week: data.week || 0, month: data.month || 0 };
+            document.getElementById('earningsTotal').textContent = `₹${totals[currentEarningsPeriod] || 0}`;
 
             const list = document.getElementById('earningsList');
-            if (data.transactions && data.transactions.length > 0) {
-                list.innerHTML = data.transactions.map(t => `
-                    <div class="earnings-item">
+            
+            // COD Section
+            let codHtml = '';
+            if (data.codPending > 0) {
+                codHtml = `<div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+                    <div><div style="font-size:13px;font-weight:700;color:#f59e0b">💵 COD Pending Deposit</div><div style="font-size:11px;color:var(--muted)">Collect from HUB</div></div>
+                    <div style="font-size:18px;font-weight:800;color:#f59e0b">₹${data.codPending}</div>
+                </div>`;
+            }
+            
+            // Recent transactions
+            if (data.recent && data.recent.length > 0) {
+                list.innerHTML = codHtml + data.recent.map(t => {
+                    const d = new Date(t.created_at + 'Z');
+                    const timeStr = d.toLocaleDateString('en-IN', { timeZone:'Asia/Kolkata', day:'numeric', month:'short' });
+                    return `<div class="earnings-item">
                         <div class="earnings-item-left">
-                            <span class="earnings-item-id">Order #${t.orderId || t.id || '--'}</span>
-                            <span class="earnings-item-date">${formatDate(t.date || t.createdAt)}</span>
+                            <span class="earnings-item-id">${t.type === 'delivery' ? '🛵' : '🎁'} Order #${t.order_id || '--'}</span>
+                            <span class="earnings-item-date">${timeStr} • ${t.type}</span>
                         </div>
-                        <span class="earnings-item-amount">+₹${t.amount || 0}</span>
-                    </div>
-                `).join('');
+                        <span class="earnings-item-amount">+₹${t.amount}</span>
+                    </div>`;
+                }).join('');
             } else {
-                list.innerHTML = `
-                    <div class="empty-state">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <p>No earnings for this period</p>
-                    </div>
-                `;
+                list.innerHTML = codHtml + `<div class="empty-state"><p>No earnings for this period</p></div>`;
             }
         }
-    } catch (err) {
-        // Keep existing data on error
-    }
+    } catch (err) {}
 }
 
 // ============ PROFILE ============
@@ -1405,10 +1374,10 @@ function loadProfile() {
     document.getElementById('profileAvatar').textContent = (rider.name || 'R').charAt(0).toUpperCase();
     document.getElementById('profileName').textContent = rider.name || 'Rider';
     document.getElementById('profilePhone').textContent = rider.phone || '--';
-    document.getElementById('profileVehicle').textContent = rider.vehicle || 'Bike';
-    document.getElementById('profileRating').textContent = rider.rating ? rider.rating.toFixed(1) + ' ⭐' : '--';
+    document.getElementById('profileVehicle').textContent = (rider.vehicleType || 'Bike') + ' • ' + (rider.vehicleNumber || '--');
+    document.getElementById('profileRating').textContent = rider.rating ? rider.rating + ' ⭐' : '5.0 ⭐';
     document.getElementById('profileDeliveries').textContent = rider.totalDeliveries || '0';
-    document.getElementById('profileJoined').textContent = rider.joinedAt ? formatDate(rider.joinedAt) : '--';
+    document.getElementById('profileJoined').textContent = 'Active';
 }
 
 // ============ LOGOUT ============
