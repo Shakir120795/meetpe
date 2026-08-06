@@ -614,7 +614,7 @@ app.post('/api/membership/purchase', async (req, res) => {
     
     const orderRes = await axios.post(
       'https://api.razorpay.com/v1/orders',
-      { amount: plan.price * 100, currency: 'INR', receipt: `membership_${planId}_${cleanPhone}_${Date.now()}` },
+      { amount: plan.price * 100, currency: 'INR', receipt: `mem_${planId.slice(0,1)}_${cleanPhone}_${String(Date.now()).slice(-8)}` },
       { auth: { username: keyId, password: keySecret }, timeout: 10000 }
     );
     
