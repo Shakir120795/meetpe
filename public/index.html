@@ -892,7 +892,7 @@ input,textarea{font:inherit;color:inherit}
         </div>
       </div>
 
-      <div class="hero-banner">
+      <div class="hero-banner" id="heroBannerEl">
         <div class="hero-txt">
           <div class="chip-badge">⚡ NOW OPEN</div>
           <h3>Premium Fresh Meat</h3>
@@ -902,23 +902,7 @@ input,textarea{font:inherit;color:inherit}
         <div class="hero-emoji-big">🥩</div>
       </div>
 
-      <div style="overflow-x:auto;display:flex;gap:10px;padding:0 14px 12px;scrollbar-width:none">
-        <div style="min-width:200px;background:linear-gradient(135deg,#8B1A1A,#E8450A);border-radius:14px;padding:14px;flex-shrink:0">
-          <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:1px">LIMITED TIME</div>
-          <div style="font-size:16px;font-weight:800;color:#fff;margin-top:2px">Free Delivery</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.8);margin-top:2px">On orders above ₹499</div>
-        </div>
-        <div style="min-width:200px;background:linear-gradient(135deg,#1a1a00,#2d2500);border-radius:14px;padding:14px;flex-shrink:0;border:1px solid #3d3500">
-          <div style="font-size:10px;font-weight:700;color:#f59e0b;letter-spacing:1px">FRESH DAILY</div>
-          <div style="font-size:16px;font-weight:800;color:#fff;margin-top:2px">Farm to Table</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">Sourced fresh every morning</div>
-        </div>
-        <div style="min-width:200px;background:linear-gradient(135deg,#001a0d,#002d15);border-radius:14px;padding:14px;flex-shrink:0;border:1px solid #003520">
-          <div style="font-size:10px;font-weight:700;color:#22c55e;letter-spacing:1px">REWARD</div>
-          <div style="font-size:16px;font-weight:800;color:#fff;margin-top:2px">Earn ₹30 Cash</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.7);margin-top:2px">On every ₹500+ order</div>
-        </div>
-      </div>
+      <div style="overflow-x:auto;display:flex;gap:10px;padding:0 14px 12px;scrollbar-width:none" id="offerBannersEl"></div>
 
       <div class="cat-strip" id="catStrip">
         <div class="cat-chip active" data-cat="all" onclick="filterCat('all',this)">
@@ -2193,6 +2177,9 @@ function applyBranding() {
   // Render social links from settings
   renderSocialLinks();
   
+  // Render banners from settings
+  renderBanners();
+  
   // Update page content dynamically
   if (APP_SETTINGS.pages) {
     updatePageContent();
@@ -2249,6 +2236,46 @@ function renderSocialLinks() {
       ${iconHtml}
     </a>`;
   }).join('');
+}
+
+function renderBanners() {
+  const banners = APP_SETTINGS?.banners || {};
+  
+  // Hero Banner
+  const hero = banners.heroBanner;
+  const heroEl = document.getElementById('heroBannerEl');
+  if (heroEl && hero && hero.enabled !== false) {
+    if (hero.bgGradient) heroEl.style.background = hero.bgGradient;
+    heroEl.innerHTML = `
+      <div class="hero-txt">
+        ${hero.badge ? `<div class="chip-badge">${hero.badge}</div>` : ''}
+        <h3>${hero.title || 'Premium Fresh Meat'}</h3>
+        <p>${hero.subtitle || ''}</p>
+        ${hero.pill ? `<div class="hero-pill">${hero.pill}</div>` : ''}
+      </div>
+      <div class="hero-emoji-big">${hero.emoji || '🥩'}</div>
+    `;
+  } else if (heroEl && hero?.enabled === false) {
+    heroEl.style.display = 'none';
+  }
+  
+  // Offer Banners
+  const offerEl = document.getElementById('offerBannersEl');
+  const offers = (banners.offerBanners || []).filter(b => b.enabled !== false);
+  
+  if (offerEl) {
+    if (!offers.length) {
+      offerEl.style.display = 'none';
+    } else {
+      offerEl.innerHTML = offers.map(b => `
+        <div style="min-width:200px;background:${b.gradient || 'linear-gradient(135deg,#1a1a1a,#333)'};border-radius:14px;padding:14px;flex-shrink:0">
+          <div style="font-size:10px;font-weight:700;color:${b.labelColor || 'rgba(255,255,255,.7)'};letter-spacing:1px">${b.label || ''}</div>
+          <div style="font-size:16px;font-weight:800;color:#fff;margin-top:2px">${b.title || ''}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.8);margin-top:2px">${b.subtitle || ''}</div>
+        </div>
+      `).join('');
+    }
+  }
 }
 
 function updatePageContent() {

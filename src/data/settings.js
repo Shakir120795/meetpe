@@ -160,6 +160,23 @@ const defaults = {
       }
     ]
   },
+  // NEW: Banners (admin-editable)
+  banners: {
+    heroBanner: {
+      enabled: true,
+      badge: '⚡ NOW OPEN',
+      title: 'Premium Fresh Meat',
+      subtitle: 'Delivered in 25-35 min · Free cleaning',
+      pill: 'Free cleaning + cutting',
+      emoji: '🥩',
+      bgGradient: 'linear-gradient(120deg,#1a0500,#2d0a00)'
+    },
+    offerBanners: [
+      { id: 'b1', label: 'LIMITED TIME', title: 'Free Delivery', subtitle: 'On orders above ₹499', gradient: 'linear-gradient(135deg,#8B1A1A,#E8450A)', labelColor: 'rgba(255,255,255,.7)', enabled: true },
+      { id: 'b2', label: 'FRESH DAILY', title: 'Farm to Table', subtitle: 'Sourced fresh every morning', gradient: 'linear-gradient(135deg,#1a1a00,#2d2500)', labelColor: '#f59e0b', enabled: true },
+      { id: 'b3', label: 'REWARD', title: 'Earn ₹30 Cash', subtitle: 'On every ₹500+ order', gradient: 'linear-gradient(135deg,#001a0d,#002d15)', labelColor: '#22c55e', enabled: true }
+    ]
+  },
   // NEW: Help & Support Settings (admin-editable)
   helpSupport: {
     whatsappNumber: '+917617555488',
@@ -388,6 +405,12 @@ function read() {
         ...data.helpSupport,
         faqs: Array.isArray(data.helpSupport?.faqs) ? data.helpSupport.faqs : defaults.helpSupport.faqs
       },
+      banners: {
+        ...defaults.banners,
+        ...data.banners,
+        heroBanner: { ...defaults.banners.heroBanner, ...(data.banners?.heroBanner || {}) },
+        offerBanners: Array.isArray(data.banners?.offerBanners) ? data.banners.offerBanners : defaults.banners.offerBanners
+      },
       walletRewards: { ...defaults.walletRewards, ...data.walletRewards },
       invoice: { ...defaults.invoice, ...data.invoice },
       deliveryZones: Array.isArray(data.deliveryZones) ? data.deliveryZones : defaults.deliveryZones,
@@ -450,6 +473,12 @@ function update(patch) {
     ...current.helpSupport,
     ...patch.helpSupport,
     faqs: Array.isArray(patch.helpSupport.faqs) ? patch.helpSupport.faqs : current.helpSupport.faqs
+  };
+  if (patch.banners) current.banners = {
+    ...current.banners,
+    ...patch.banners,
+    heroBanner: { ...current.banners.heroBanner, ...(patch.banners.heroBanner || {}) },
+    offerBanners: Array.isArray(patch.banners?.offerBanners) ? patch.banners.offerBanners : current.banners.offerBanners
   };
   if (patch.walletRewards) current.walletRewards = { ...current.walletRewards, ...patch.walletRewards };
   if (patch.invoice) current.invoice = { ...current.invoice, ...patch.invoice };
