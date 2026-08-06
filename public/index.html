@@ -4748,12 +4748,11 @@ function renderOrdersList(orders) {
     const color = statusColor[status] || '#888';
     const bg = statusBg[status] || 'rgba(136,136,136,.15)';
     
-    // IST time format
-    const d = new Date(order.created_at);
-    const istOptions = { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' };
-    const istTimeOptions = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true };
-    const dateStr = d.toLocaleDateString('en-IN', istOptions) + ', ' + 
-                    d.toLocaleTimeString('en-IN', istTimeOptions);
+    // IST time format - server returns UTC, append Z for proper conversion
+    const rawDate = order.created_at || '';
+    const d = new Date(rawDate.includes('Z') || rawDate.includes('+') ? rawDate : rawDate + 'Z');
+    const dateStr = d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' }) + ', ' + 
+                    d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
     
     const isDelivered = status === 'delivered';
     const isActive = ['placed', 'preparing', 'out_for_delivery'].includes(status);
@@ -4793,14 +4792,14 @@ function renderOrdersList(orders) {
       </div>
       
       <!-- Order header -->
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <div style="flex:1">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-right:44px">
+        <div style="flex:1;min-width:0">
           <div style="font-size:15px;font-weight:700;margin-bottom:4px">
             ${headerIcon} ${headerText}
           </div>
           <div style="font-size:12px;color:var(--muted)">₹${order.total} • ${dateStr}</div>
         </div>
-        <div style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;color:${color};background:${bg}">
+        <div style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;color:${color};background:${bg};white-space:nowrap">
           ${label}
         </div>
       </div>
@@ -5021,13 +5020,11 @@ function showOrderMenu(orderId) {
       <span>Help with Order</span>
     </button>
     
-    ${isDelivered ? `
     <button onclick="closeOrderMenu();downloadInvoice(${orderId})" 
       style="width:100%;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;text-align:left;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:12px">
       <span style="font-size:20px">📄</span>
       <span>Download Invoice</span>
     </button>
-    ` : ''}
     
     <button onclick="closeOrderMenu()" 
       style="width:100%;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:12px;text-align:center;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer">
