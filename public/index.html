@@ -6997,7 +6997,18 @@ async function loadMembershipDetails() {
       `;
     }
     
-    el.innerHTML = statusHTML + eligibilityHTML + planHTML;
+    el.innerHTML = statusHTML + eligibilityHTML + planHTML + `
+      <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border)">
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px">ℹ️ How It Works</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.8">
+          <div style="margin-bottom:6px">1️⃣ Purchase membership (₹99/month or ₹999/year)</div>
+          <div style="margin-bottom:6px">2️⃣ Get 10 delivery credits instantly</div>
+          <div style="margin-bottom:6px">3️⃣ Each order automatically uses 1 credit</div>
+          <div style="margin-bottom:6px">4️⃣ Delivery fee waived when credit is used</div>
+          <div>5️⃣ Available only within 7km of supplier hub</div>
+        </div>
+      </div>
+    `;
     
   } catch (e) {
     console.error('Load membership error:', e);
