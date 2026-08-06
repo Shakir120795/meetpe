@@ -286,6 +286,64 @@
       </div>
     </div>
 
+    <!-- CHECKOUT PAGE SETTINGS -->
+    <div class="section">
+      <h2>📦 Checkout Page Settings</h2>
+      <p class="desc">Configure delivery slots, payment methods, and checkout options.</p>
+      
+      <!-- Delivery Slots -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">⏰ Delivery Slots</h3>
+        <p style="font-size:12px;color:var(--gray);margin-bottom:12px">Add or edit time slots for delivery. Users can select preferred slot during checkout.</p>
+        
+        <div id="deliverySlotsContainer"></div>
+        
+        <button type="button" onclick="addDeliverySlot()" style="margin-top:12px;padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">
+          ➕ Add Delivery Slot
+        </button>
+      </div>
+      
+      <!-- Payment Methods -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">💳 Payment Methods</h3>
+        <p style="font-size:12px;color:var(--gray);margin-bottom:12px">Enable/disable payment options. Users will see enabled methods during checkout.</p>
+        
+        <div id="paymentMethodsContainer"></div>
+        
+        <button type="button" onclick="addPaymentMethod()" style="margin-top:12px;padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">
+          ➕ Add Payment Method
+        </button>
+      </div>
+      
+      <!-- Other Checkout Settings -->
+      <div style="background:var(--light);padding:16px;border-radius:10px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">⚙️ Other Settings</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="checkoutEnableSavedAddr" style="width:18px;height:18px;cursor:pointer"/>
+            <span>Enable Saved Addresses</span>
+          </label>
+          <div style="font-size:11px;color:var(--gray);margin-top:4px">Allow users to save and reuse delivery addresses</div>
+        </div>
+        <div class="field">
+          <label>Max Saved Addresses</label>
+          <input type="number" id="checkoutMaxAddresses" placeholder="5" min="1" max="10"/>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="checkoutRequirePhone" style="width:18px;height:18px;cursor:pointer"/>
+            <span>Require Phone Number</span>
+          </label>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="checkoutAllowGuest" style="width:18px;height:18px;cursor:pointer"/>
+            <span>Allow Guest Checkout (without login)</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Sticky save bar -->
@@ -391,6 +449,15 @@ function render() {
   $('cartMembershipPercent').value = cart.membershipDiscountPercent || 5;
   $('cartEnableTip').checked = cart.enableTipDeliveryPartner !== false;
   $('cartTipOptions').value = (cart.tipOptions || [10, 20, 30, 50]).join(', ');
+
+  // Checkout Settings
+  const checkout = SETTINGS.checkout || {};
+  renderDeliverySlots(checkout.deliverySlots || []);
+  renderPaymentMethods(checkout.paymentMethods || []);
+  $('checkoutEnableSavedAddr').checked = checkout.enableSavedAddresses !== false;
+  $('checkoutMaxAddresses').value = checkout.maxSavedAddresses || 5;
+  $('checkoutRequirePhone').checked = checkout.requirePhone !== false;
+  $('checkoutAllowGuest').checked = checkout.allowGuestCheckout === true;
 
   // Mark dirty on any input change
   content.querySelectorAll('input, textarea, select').forEach(el => {
@@ -508,7 +575,199 @@ function collectData() {
     }
   };
 
-  return { branding, contact, categories, socials, pages, trendingSearches, cart };
+  // Checkout Settings
+  const deliverySlots = [];
+  $('deliverySlotsContainer').querySelectorAll('.field-row').forEach(row => {
+    const id = row.querySelector('.slot-id').value.trim();
+    const label = row.querySelector('.slot-label').value.trim();
+    const enabled = row.querySelector('.slot-enabled').checked;
+    if (id && label) {
+      deliverySlots.push({ id, label, enabled });
+    }
+  });
+
+  const paymentMethods = [];
+  $('paymentMethodsContainer').querySelectorAll('.field-row').forEach(row => {
+    const id = row.querySelector('.method-id').value.trim();
+    const label = row.querySelector('.method-label').value.trim();
+    const icon = row.querySelector('.method-icon').value.trim() || '💳';
+    const description = row.querySelector('.method-desc').value.trim();
+    const enabled = row.querySelector('.method-enabled').checked;
+    if (id && label) {
+      paymentMethods.push({ id, label, icon, description, enabled });
+    }
+  });
+
+  const checkout = {
+    deliverySlots,
+    paymentMethods,
+    enableSavedAddresses: $('checkoutEnableSavedAddr').checked,
+    maxSavedAddresses: parseInt($('checkoutMaxAddresses').value) || 5,
+    requirePhone: $('checkoutRequirePhone').checked,
+    allowGuestCheckout: $('checkoutAllowGuest').checked
+  };
+
+  return { branding, contact, categories, socials, pages, trendingSearches, cart, checkout };
+}
+
+// ═══════════════════════════════════════════
+//  Delivery Slots Management
+// ═══════════════════════════════════════════
+function renderDeliverySlots(slots) {
+  const container = $('deliverySlotsContainer');
+  container.innerHTML = '';
+  
+  slots.forEach((slot, index) => {
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.style.cssText = 'background:var(--bg);padding:12px;border-radius:8px;margin-bottom:10px;border:1px solid var(--border)';
+    row.innerHTML = `
+      <div class="field" style="flex:2">
+        <label style="font-size:11px">Slot ID</label>
+        <input class="slot-id" value="${escapeHtml(slot.id)}" placeholder="asap"/>
+      </div>
+      <div class="field" style="flex:3">
+        <label style="font-size:11px">Label</label>
+        <input class="slot-label" value="${escapeHtml(slot.label)}" placeholder="ASAP (30-45 min)"/>
+      </div>
+      <div class="field" style="flex:1">
+        <label style="font-size:11px;display:flex;align-items:center;gap:6px">
+          <input type="checkbox" class="slot-enabled" ${slot.enabled ? 'checked' : ''} style="width:16px;height:16px"/>
+          <span>Enabled</span>
+        </label>
+      </div>
+      <button type="button" onclick="removeDeliverySlot(this)" style="padding:8px 12px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;align-self:flex-end">
+        🗑️
+      </button>
+    `;
+    
+    row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+    container.appendChild(row);
+  });
+}
+
+function addDeliverySlot() {
+  const container = $('deliverySlotsContainer');
+  
+  const row = document.createElement('div');
+  row.className = 'field-row';
+  row.style.cssText = 'background:var(--bg);padding:12px;border-radius:8px;margin-bottom:10px;border:1px solid var(--border)';
+  row.innerHTML = `
+    <div class="field" style="flex:2">
+      <label style="font-size:11px">Slot ID</label>
+      <input class="slot-id" value="" placeholder="evening"/>
+    </div>
+    <div class="field" style="flex:3">
+      <label style="font-size:11px">Label</label>
+      <input class="slot-label" value="" placeholder="Evening (4-8 PM)"/>
+    </div>
+    <div class="field" style="flex:1">
+      <label style="font-size:11px;display:flex;align-items:center;gap:6px">
+        <input type="checkbox" class="slot-enabled" checked style="width:16px;height:16px"/>
+        <span>Enabled</span>
+      </label>
+    </div>
+    <button type="button" onclick="removeDeliverySlot(this)" style="padding:8px 12px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;align-self:flex-end">
+      🗑️
+    </button>
+  `;
+  
+  row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+  container.appendChild(row);
+  markDirty();
+}
+
+function removeDeliverySlot(btn) {
+  btn.closest('.field-row').remove();
+  markDirty();
+}
+
+// ═══════════════════════════════════════════
+//  Payment Methods Management
+// ═══════════════════════════════════════════
+function renderPaymentMethods(methods) {
+  const container = $('paymentMethodsContainer');
+  container.innerHTML = '';
+  
+  methods.forEach((method, index) => {
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.style.cssText = 'background:var(--bg);padding:12px;border-radius:8px;margin-bottom:10px;border:1px solid var(--border)';
+    row.innerHTML = `
+      <div class="field" style="flex:1">
+        <label style="font-size:11px">ID</label>
+        <input class="method-id" value="${escapeHtml(method.id)}" placeholder="cod"/>
+      </div>
+      <div class="field" style="flex:2">
+        <label style="font-size:11px">Label</label>
+        <input class="method-label" value="${escapeHtml(method.label)}" placeholder="Cash on Delivery"/>
+      </div>
+      <div class="field" style="flex:1">
+        <label style="font-size:11px">Icon</label>
+        <input class="method-icon" value="${escapeHtml(method.icon)}" placeholder="💵" maxlength="4" style="text-align:center;font-size:20px"/>
+      </div>
+      <div class="field" style="flex:2">
+        <label style="font-size:11px">Description</label>
+        <input class="method-desc" value="${escapeHtml(method.description)}" placeholder="Pay when order arrives"/>
+      </div>
+      <div class="field" style="flex:1">
+        <label style="font-size:11px;display:flex;align-items:center;gap:6px">
+          <input type="checkbox" class="method-enabled" ${method.enabled ? 'checked' : ''} style="width:16px;height:16px"/>
+          <span>Enabled</span>
+        </label>
+      </div>
+      <button type="button" onclick="removePaymentMethod(this)" style="padding:8px 12px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;align-self:flex-end">
+        🗑️
+      </button>
+    `;
+    
+    row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+    container.appendChild(row);
+  });
+}
+
+function addPaymentMethod() {
+  const container = $('paymentMethodsContainer');
+  
+  const row = document.createElement('div');
+  row.className = 'field-row';
+  row.style.cssText = 'background:var(--bg);padding:12px;border-radius:8px;margin-bottom:10px;border:1px solid var(--border)';
+  row.innerHTML = `
+    <div class="field" style="flex:1">
+      <label style="font-size:11px">ID</label>
+      <input class="method-id" value="" placeholder="wallet"/>
+    </div>
+    <div class="field" style="flex:2">
+      <label style="font-size:11px">Label</label>
+      <input class="method-label" value="" placeholder="Wallet Payment"/>
+    </div>
+    <div class="field" style="flex:1">
+      <label style="font-size:11px">Icon</label>
+      <input class="method-icon" value="💰" placeholder="💰" maxlength="4" style="text-align:center;font-size:20px"/>
+    </div>
+    <div class="field" style="flex:2">
+      <label style="font-size:11px">Description</label>
+      <input class="method-desc" value="" placeholder="Pay via wallet"/>
+    </div>
+    <div class="field" style="flex:1">
+      <label style="font-size:11px;display:flex;align-items:center;gap:6px">
+        <input type="checkbox" class="method-enabled" checked style="width:16px;height:16px"/>
+        <span>Enabled</span>
+      </label>
+    </div>
+    <button type="button" onclick="removePaymentMethod(this)" style="padding:8px 12px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;align-self:flex-end">
+      🗑️
+    </button>
+  `;
+  
+  row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+  container.appendChild(row);
+  markDirty();
+}
+
+function removePaymentMethod(btn) {
+  btn.closest('.field-row').remove();
+  markDirty();
 }
 
 async function saveSettings() {

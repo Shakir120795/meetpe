@@ -40,16 +40,28 @@ db.exec(`
   );
 
   CREATE TABLE IF NOT EXISTS orders (
-    id           INTEGER PRIMARY KEY AUTOINCREMENT,
-    phone        TEXT,
-    items_json   TEXT,
-    subtotal     INTEGER,
-    delivery_fee INTEGER,
-    total        INTEGER,
-    address      TEXT,
-    status       TEXT DEFAULT 'placed',
-    source       TEXT DEFAULT 'web',
-    created_at   TEXT DEFAULT CURRENT_TIMESTAMP
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone          TEXT,
+    items_json     TEXT,
+    subtotal       INTEGER,
+    delivery_fee   INTEGER,
+    total          INTEGER,
+    address        TEXT,
+    status         TEXT DEFAULT 'placed',
+    source         TEXT DEFAULT 'web',
+    payment_method TEXT DEFAULT 'cod',
+    delivery_slot  TEXT DEFAULT 'asap',
+    notes          TEXT DEFAULT '',
+    created_at     TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS saved_addresses (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone      TEXT NOT NULL,
+    tag        TEXT DEFAULT 'Home',
+    address    TEXT NOT NULL,
+    is_default INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS rewards (
@@ -72,6 +84,17 @@ db.exec(`
     created_at   TEXT DEFAULT CURRENT_TIMESTAMP
   );
 `);
+
+// Safe column migrations for existing databases
+try {
+  db.exec(`ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT 'cod'`);
+} catch(e) {}
+try {
+  db.exec(`ALTER TABLE orders ADD COLUMN delivery_slot TEXT DEFAULT 'asap'`);
+} catch(e) {}
+try {
+  db.exec(`ALTER TABLE orders ADD COLUMN notes TEXT DEFAULT ''`);
+} catch(e) {}
 
 console.log(`✅ DB ready at ${dbPath}`);
 module.exports = db;

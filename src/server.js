@@ -180,7 +180,7 @@ async function notifyCustomer(order, status) {
 
 app.post('/api/order', (req, res) => {
   try {
-    const { name, phone, address, payment, notes, items, couponCode, walletAmount } = req.body || {};
+    const { name, phone, address, payment, delivery_slot, notes, items, couponCode, walletAmount } = req.body || {};
     if (!name || !phone || !address || !Array.isArray(items) || !items.length) {
       return res.status(400).json({ ok: false, error: 'missing fields' });
     }
@@ -264,10 +264,13 @@ app.post('/api/order', (req, res) => {
     `).run(webPhone, name, address);
 
     // Insert order
+    const cleanSlot = delivery_slot || 'asap';
+    const cleanPayment = payment || 'cod';
+    const cleanNotes = (notes || '').trim();
     const info = db.prepare(`
-      INSERT INTO orders (phone, items_json, subtotal, delivery_fee, total, address, source)
-      VALUES (?, ?, ?, ?, ?, ?, 'web')
-    `).run(webPhone, JSON.stringify(cleanItems), subtotal, delivery, total, address);
+      INSERT INTO orders (phone, items_json, subtotal, delivery_fee, total, address, source, payment_method, delivery_slot, notes)
+      VALUES (?, ?, ?, ?, ?, ?, 'web', ?, ?, ?)
+    `).run(webPhone, JSON.stringify(cleanItems), subtotal, delivery, total, address, cleanPayment, cleanSlot, cleanNotes);
     const orderId = info.lastInsertRowid;
 
     // Deduct wallet server-side
@@ -332,6 +335,83 @@ Delivery: ₹${delivery}
   } catch (e) {
     console.error('order err:', e);
     res.status(500).json({ ok: false, error: 'server error' });
+  }
+});
+
+// ===== Saved Addresses API =====
+
+// GET /api/addresses?phone=XXXXXXXXXX — list saved addresses for a user
+app.get('/api/addresses', (req, res) => {
+  try {
+    const { phone } = req.query;
+    if (!phone) return res.status(400).json({ ok: false, error: 'phone required' });
+    const cleanPhone = String(phone).replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+    const waPhone = `web:+91${cleanPhone}`;
+    const addresses = db.prepare('SELECT * FROM saved_addresses WHERE phone = ? ORDER BY is_default DESC, id DESC').all(waPhone);
+    res.json({ ok: true, addresses });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// POST /api/addresses — save a new address
+app.post('/api/addresses', (req, res) => {
+  try {
+    const { phone, tag, address, is_default } = req.body || {};
+    if (!phone || !address) return res.status(400).json({ ok: false, error: 'phone and address required' });
+    const cleanPhone = String(phone).replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+    const waPhone = `web:+91${cleanPhone}`;
+    
+    // Count existing addresses
+    const count = db.prepare('SELECT COUNT(*) as cnt FROM saved_addresses WHERE phone = ?').get(waPhone);
+    if (count.cnt >= 5) return res.status(400).json({ ok: false, error: 'Max 5 addresses allowed' });
+    
+    // If setting as default, unset others
+    if (is_default) {
+      db.prepare('UPDATE saved_addresses SET is_default = 0 WHERE phone = ?').run(waPhone);
+    }
+    
+    const result = db.prepare(
+      'INSERT INTO saved_addresses (phone, tag, address, is_default) VALUES (?, ?, ?, ?)'
+    ).run(waPhone, tag || 'Home', address.trim(), is_default ? 1 : 0);
+    
+    res.json({ ok: true, id: result.lastInsertRowid });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// DELETE /api/addresses/:id — delete a saved address
+app.delete('/api/addresses/:id', (req, res) => {
+  try {
+    const { phone } = req.query;
+    if (!phone) return res.status(400).json({ ok: false, error: 'phone required' });
+    const cleanPhone = String(phone).replace(/\D/g, '');
+    const waPhone = `web:+91${cleanPhone}`;
+    const id = parseInt(req.params.id, 10);
+    const result = db.prepare('DELETE FROM saved_addresses WHERE id = ? AND phone = ?').run(id, waPhone);
+    if (result.changes === 0) return res.status(404).json({ ok: false, error: 'not found' });
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// PUT /api/addresses/:id/default — set as default
+app.put('/api/addresses/:id/default', (req, res) => {
+  try {
+    const { phone } = req.body || {};
+    if (!phone) return res.status(400).json({ ok: false, error: 'phone required' });
+    const cleanPhone = String(phone).replace(/\D/g, '');
+    const waPhone = `web:+91${cleanPhone}`;
+    const id = parseInt(req.params.id, 10);
+    db.prepare('UPDATE saved_addresses SET is_default = 0 WHERE phone = ?').run(waPhone);
+    db.prepare('UPDATE saved_addresses SET is_default = 1 WHERE id = ? AND phone = ?').run(id, waPhone);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
   }
 });
 
@@ -767,6 +847,9 @@ app.get('/admin/orders', (req, res) => {
     total: r.total,
     status: r.status,
     source: r.source || 'web',
+    payment_method: r.payment_method || 'cod',
+    delivery_slot: r.delivery_slot || 'asap',
+    notes: r.notes || '',
     created_at: r.created_at,
   }));
   res.json({ ok: true, orders, stats, today });
