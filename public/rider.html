@@ -19,6 +19,14 @@
             --warning: #F59E0B;
         }
 
+        .light {
+            --bg: #F5F5F5;
+            --card: #FFFFFF;
+            --text: #1a1a1a;
+            --muted: #666666;
+            --border: #e0e0e0;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -931,9 +939,9 @@
     <div style="padding:20px 20px 0">
         <div style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--muted)">⚙️ SETTINGS</div>
         <div class="profile-info" style="padding:0">
-            <div class="profile-item">
-                <span class="profile-item-label">🌙 Dark Mode</span>
-                <span class="profile-item-value" style="color:var(--success)">Always On</span>
+            <div class="profile-item" onclick="toggleRiderTheme()" style="cursor:pointer">
+                <span class="profile-item-label" id="themeLabel">🌙 Dark Mode</span>
+                <span class="profile-item-value" id="themeValue" style="color:var(--accent)">On</span>
             </div>
             <div class="profile-item">
                 <span class="profile-item-label">🔔 Notifications</span>
@@ -976,6 +984,9 @@ let currentEarningsPeriod = 'today';
 
 // ============ INIT ============
 function init() {
+    // Apply theme
+    initRiderTheme();
+    
     const stored = localStorage.getItem('rider_session');
     if (stored) {
         try {
@@ -1614,6 +1625,30 @@ document.getElementById('loginPhone').addEventListener('keydown', function(e) {
 document.getElementById('loginOtp').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') handleVerifyOtp();
 });
+
+// ============ THEME ============
+let riderTheme = 'dark';
+
+function initRiderTheme() {
+    riderTheme = localStorage.getItem('rider_theme') || 'dark';
+    applyRiderTheme();
+}
+
+function applyRiderTheme() {
+    document.documentElement.className = riderTheme === 'light' ? 'light' : '';
+    // Update theme label in profile
+    const label = document.getElementById('themeLabel');
+    const value = document.getElementById('themeValue');
+    if (label) label.textContent = riderTheme === 'dark' ? '🌙 Dark Mode' : '☀️ Light Mode';
+    if (value) value.textContent = riderTheme === 'dark' ? 'On' : 'Off';
+}
+
+function toggleRiderTheme() {
+    riderTheme = riderTheme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('rider_theme', riderTheme);
+    applyRiderTheme();
+    showToast(riderTheme === 'dark' ? '🌙 Dark mode' : '☀️ Light mode', 'success');
+}
 
 // ============ START APP ============
 init();

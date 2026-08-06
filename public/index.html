@@ -2112,7 +2112,7 @@ let CART = {};           // { code: qty }
 let USER = null;         // { phone, name, wallet }
 let USER_ZONE = null;    // { id, name, distance, deliveryFee, freeDeliveryAbove, deliveryTime }
 let OTP_METHOD = 'sms';  // 'sms' or 'whatsapp'
-let THEME = 'dark';
+let THEME = 'light';
 let CURRENT_CAT = 'all';
 let SEARCH_Q = '';
 let SCREEN_HISTORY = ['screen-login'];
@@ -2351,7 +2351,7 @@ function escapeHtml(text) {
   console.log('🔵 [INIT] Starting initialization');
   console.log('🔵 [INIT] document.readyState:', document.readyState);
   
-  THEME = localStorage.getItem('now_theme') || 'dark';
+  THEME = localStorage.getItem('now_theme') || 'light';
   applyTheme();
   console.log('🔵 [INIT] Theme applied:', THEME);
   
