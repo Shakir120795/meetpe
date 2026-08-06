@@ -754,13 +754,22 @@ app.post('/admin/items/:code/listing', (req, res) => {
   const code = req.params.code;
   const listed = String(req.query.listed || 'true').toLowerCase() !== 'false';
   
-  const catalog = getCatalog();
-  const item = catalog.find(i => i.code === code);
-  if (!item) return res.status(404).json({ ok: false, error: 'item not found' });
+  // Directly read/write catalog to preserve listed field (bypass validateItem)
+  const fs = require('fs');
+  const path = require('path');
+  const catalogFile = path.join(__dirname, '..', 'data', 'catalog.json');
   
-  item.listed = listed;
-  const result = updateItem(code, { listed });
-  res.json({ ok: true, code, listed });
+  try {
+    const catalog = JSON.parse(fs.readFileSync(catalogFile, 'utf8'));
+    const idx = catalog.findIndex(i => i.code && i.code.toUpperCase() === code.toUpperCase());
+    if (idx === -1) return res.status(404).json({ ok: false, error: 'item not found' });
+    
+    catalog[idx].listed = listed;
+    fs.writeFileSync(catalogFile, JSON.stringify(catalog, null, 2));
+    res.json({ ok: true, code, listed });
+  } catch(e) {
+    res.status(500).json({ ok: false, error: 'Failed to update: ' + e.message });
+  }
 });
 
 // List all items (with stock state) — admin only
