@@ -827,13 +827,13 @@ input,textarea{font:inherit;color:inherit}
           <div class="topbar-loc-top">
             <span style="font-size:11px;color:var(--muted);font-weight:500">Deliver to</span>
             <span style="font-size:10px;color:var(--accent)">▼</span>
+            <span style="margin-left:4px;display:inline-flex;align-items:center;gap:2px;background:rgba(22,163,74,.15);border:1px solid rgba(22,163,74,.3);padding:2px 5px;border-radius:4px;font-size:9px;font-weight:700;color:#16a34a">⚡<span id="deliveryTimeDisplay">30</span>m</span>
           </div>
           <div class="topbar-loc-addr">
             <span style="font-size:14px">📍</span>
             <span id="locText" class="topbar-loc-text">Set Location</span>
           </div>
         </button>
-        <div style="display:flex;align-items:center;gap:3px;background:rgba(22,163,74,.15);border:1px solid rgba(22,163,74,.3);padding:3px 6px;border-radius:6px;font-size:10px;font-weight:700;color:#16a34a;white-space:nowrap">⚡<span id="deliveryTimeDisplay">30</span>m</div>
         <div style="display:flex;align-items:center;gap:6px">
           <!-- Wallet balance - wallet icon SVG -->
           <button onclick="showScreen('screen-wallet')" title="Wallet"
@@ -8600,18 +8600,20 @@ function initLocation() {
   if (saved) {
     updateLocTopbar(saved.full || saved.label || 'Set Location');
   } else {
-    // Try last delivery address
+    // Try last delivery address from checkout
     const lastAddr = localStorage.getItem('now_last_delivery_address');
     if (lastAddr) {
+      // Save it as selected address so it persists properly
+      setSelectedAddr({ full: lastAddr, label: lastAddr, lat: null, lon: null });
       updateLocTopbar(lastAddr);
     } else {
       updateLocTopbar('Set Location');
+      // Auto-open location selector on first load (after a delay for better UX)
+      setTimeout(() => {
+        openLocMap();
+        showToast('📍 Please set your delivery location', 'info', 3000);
+      }, 1200);
     }
-    // Auto-open location selector on first load (after a delay for better UX)
-    setTimeout(() => {
-      openLocMap();
-      showToast('📍 Please set your delivery location', 'info', 3000);
-    }, 1200);
   }
 }
 
