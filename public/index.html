@@ -845,6 +845,11 @@ input,textarea{font:inherit;color:inherit}
             </svg>
             <span id="topWalletBal" style="font-size:12px;font-weight:700">₹0</span>
           </button>
+          <!-- Notification Bell -->
+          <button onclick="showScreen('screen-notifications')" title="Notifications" style="width:36px;height:36px;background:var(--border);border:none;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative">
+            <span style="font-size:18px">🔔</span>
+            <span id="notifBadge" style="display:none;position:absolute;top:2px;right:2px;width:8px;height:8px;background:#ef4444;border-radius:50%"></span>
+          </button>
           <!-- Profile - user icon SVG -->
           <button onclick="navTo('screen-profile','nav-profile')" title="Profile"
             style="width:36px;height:36px;background:var(--accent);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;cursor:pointer" id="topProfileBtn">
@@ -1533,6 +1538,26 @@ input,textarea{font:inherit;color:inherit}
       </div>
       <div id="wishlistContent" style="padding:14px">
         <div class="empty"><div class="empty-icon">❤️</div><p>No saved items yet</p></div>
+      </div>
+    </div>
+
+    <!-- ═══ NOTIFICATIONS SCREEN ═══ -->
+    <div class="screen" id="screen-notifications">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">🔔 Notifications</div>
+        <button onclick="clearAllNotifications()" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer">Clear All</button>
+      </div>
+      <!-- Filter tabs -->
+      <div style="display:flex;gap:8px;padding:10px 14px;overflow-x:auto">
+        <button onclick="filterNotifications('all')" id="notif-tab-all" class="notif-tab active">All</button>
+        <button onclick="filterNotifications('orders')" id="notif-tab-orders" class="notif-tab">Orders</button>
+        <button onclick="filterNotifications('offers')" id="notif-tab-offers" class="notif-tab">Offers</button>
+        <button onclick="filterNotifications('wallet')" id="notif-tab-wallet" class="notif-tab">Wallet</button>
+        <button onclick="filterNotifications('membership')" id="notif-tab-membership" class="notif-tab">Membership</button>
+      </div>
+      <div id="notificationsContent" style="padding:14px">
+        <div class="empty"><div class="empty-icon">🔔</div><p>No notifications yet</p></div>
       </div>
     </div>
 
@@ -2374,6 +2399,9 @@ function initMainApp() {
           
           // Refresh active order strip
           refreshActiveStrip();
+          
+          // Update notification badge
+          updateNotifBadge();
         })
         .catch(e => {
           console.error('🔴 [INIT_MAIN] Settings fetch failed:', e);
@@ -2454,6 +2482,7 @@ function showScreen(id) {
   if (id === 'screen-wallet') loadWallet();
   if (id === 'screen-reviews') loadMyReviews();
   if (id === 'screen-wishlist') loadWishlist();
+  if (id === 'screen-notifications') loadNotifications();
   if (id === 'screen-membership') loadMembershipDetails();
   if (id === 'screen-referral') loadReferralScreen();
 
@@ -4598,6 +4627,12 @@ async function submitOrder(e) {
       saveCart();
       updateCartBar();
       closeCheckoutModal();
+      
+      // Trigger notifications
+      notifyOrderPlaced(data.orderId, data.total);
+      if (data.cashback > 0) notifyCashback(data.cashback);
+      if (data.reward > 0) notifyReward(data.reward);
+      
       showOrderSuccess(data.orderId, data.total, name, data.creditUsed, data.creditsRemaining);
     } else {
       showToast(data.error || 'Order failed. Please try again.','error');
@@ -5877,6 +5912,7 @@ async function startWalletTopup() {
             const topWal = document.getElementById('topWalletBal');
             if (topWal) topWal.textContent = '₹' + vData.wallet;
             showToast('✅ ₹' + amt + ' added to wallet!', 'success', 3000);
+            notifyWalletTopup(amt);
             loadWallet(); // refresh screen
           } else {
             showToast('Payment verified but credit failed. Contact support.', 'error', 4000);
@@ -6881,6 +6917,139 @@ function openProduct(code) {
   if (item) {
     showProductDetail(item);
   }
+}
+
+// ═══════════════════════════════════════════
+//  Notifications Screen
+// ═══════════════════════════════════════════
+let NOTIF_FILTER = 'all';
+
+function getNotifications() {
+  return JSON.parse(localStorage.getItem('now_notifications') || '[]');
+}
+
+function saveNotifications(notifs) {
+  localStorage.setItem('now_notifications', JSON.stringify(notifs));
+  updateNotifBadge();
+}
+
+function addNotification(type, title, message, icon) {
+  const notifs = getNotifications();
+  notifs.unshift({
+    id: Date.now(),
+    type: type, // orders, offers, wallet, membership
+    title: title,
+    message: message,
+    icon: icon || '🔔',
+    time: new Date().toISOString(),
+    read: false
+  });
+  // Keep max 50 notifications
+  if (notifs.length > 50) notifs.length = 50;
+  saveNotifications(notifs);
+}
+
+function updateNotifBadge() {
+  const badge = document.getElementById('notifBadge');
+  if (!badge) return;
+  const notifs = getNotifications();
+  const unread = notifs.filter(n => !n.read).length;
+  badge.style.display = unread > 0 ? 'block' : 'none';
+}
+
+function loadNotifications() {
+  const notifs = getNotifications();
+  // Mark all as read when screen opens
+  notifs.forEach(n => n.read = true);
+  saveNotifications(notifs);
+  renderNotifications(notifs);
+}
+
+function filterNotifications(type) {
+  NOTIF_FILTER = type;
+  // Update tabs
+  document.querySelectorAll('.notif-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('notif-tab-' + type).classList.add('active');
+  
+  const notifs = getNotifications();
+  const filtered = type === 'all' ? notifs : notifs.filter(n => n.type === type);
+  renderNotifications(filtered);
+}
+
+function renderNotifications(notifs) {
+  const el = document.getElementById('notificationsContent');
+  
+  if (!notifs.length) {
+    const msg = NOTIF_FILTER === 'all' ? 'No notifications yet' : 'No ' + NOTIF_FILTER + ' notifications';
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🔔</div><h3>${msg}</h3><p>You'll see updates here when something happens</p></div>`;
+    return;
+  }
+  
+  // Group by date
+  const today = new Date().toDateString();
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  
+  let html = '';
+  let lastGroup = '';
+  
+  notifs.forEach(n => {
+    const d = new Date(n.time);
+    const dayStr = d.toDateString();
+    let group = '';
+    if (dayStr === today) group = 'Today';
+    else if (dayStr === yesterday) group = 'Yesterday';
+    else group = d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' });
+    
+    if (group !== lastGroup) {
+      html += `<div style="font-size:12px;font-weight:700;color:var(--muted);padding:12px 0 8px;text-transform:uppercase;letter-spacing:.5px">${group}</div>`;
+      lastGroup = group;
+    }
+    
+    const timeStr = d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+    
+    html += `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start">
+      <div style="font-size:24px;flex-shrink:0">${n.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;margin-bottom:2px">${n.title}</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">${n.message}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;opacity:.7">${timeStr}</div>
+      </div>
+    </div>`;
+  });
+  
+  el.innerHTML = html;
+}
+
+function clearAllNotifications() {
+  if (!confirm('Clear all notifications?')) return;
+  saveNotifications([]);
+  renderNotifications([]);
+  showToast('All notifications cleared', 'info');
+}
+
+// Auto-generate notifications on key events
+function notifyOrderPlaced(orderId, total) {
+  addNotification('orders', 'Order Placed! 🎉', `Your order #${orderId} (₹${total}) has been placed successfully.`, '📦');
+}
+
+function notifyCashback(amount) {
+  addNotification('wallet', 'Cashback Received! 💸', `₹${amount} cashback credited to your wallet.`, '💰');
+}
+
+function notifyReward(amount) {
+  addNotification('wallet', 'Reward Earned! 🎁', `₹${amount} reward added. Valid for ${APP_SETTINGS?.walletRewards?.rewardExpiry || 15} days.`, '🎁');
+}
+
+function notifyWalletTopup(amount) {
+  addNotification('wallet', 'Wallet Topped Up! 💳', `₹${amount} added to your NOW Wallet.`, '💳');
+}
+
+function notifyOffer(title, message) {
+  addNotification('offers', title, message, '🏷️');
+}
+
+function notifyMembership(message) {
+  addNotification('membership', 'Membership Update 👑', message, '👑');
 }
 
 
@@ -8542,6 +8711,10 @@ body {
 @media(max-width:480px) {
   /* Mobile optimizations */
 }
+
+/* Notification Tabs */
+.notif-tab{padding:8px 16px;background:var(--card);border:1.5px solid var(--border);border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--muted);transition:all .2s}
+.notif-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
 /* Order Tracking Styles */
 .tracking-map {
