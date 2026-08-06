@@ -7576,7 +7576,7 @@ function loadUserTickets() {
           const statusLabel = t.status === 'open' ? 'Open' : t.status === 'resolved' ? 'Resolved' : t.status;
           const d = new Date(t.created_at + 'Z');
           const dateStr = d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' });
-          return `<div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid var(--border);cursor:pointer" onclick="toggleTicketDetail(this)">
+          return `<div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid var(--border);cursor:pointer" onclick="toggleTicketDetail(this, event)">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
               <span style="font-size:12px;font-weight:700">#${t.id} • ${t.category}</span>
               <span style="font-size:10px;font-weight:700;color:${statusColor};background:${statusColor}20;padding:2px 8px;border-radius:4px">${statusLabel}</span>
@@ -7604,7 +7604,10 @@ function loadUserTickets() {
     .catch(() => {});
 }
 
-function toggleTicketDetail(el) {
+function toggleTicketDetail(el, event) {
+  // Don't collapse when clicking inside textarea or buttons
+  if (event && (event.target.tagName === 'TEXTAREA' || event.target.tagName === 'BUTTON' || event.target.closest('textarea') || event.target.closest('button'))) return;
+  
   const detail = el.querySelector('.ticket-detail');
   if (detail) {
     detail.style.display = detail.style.display === 'none' ? 'block' : 'none';
