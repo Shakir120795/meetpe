@@ -1377,6 +1377,11 @@ input,textarea{font:inherit;color:inherit}
             <div class="pm-label">Coupons &amp; Offers</div>
             <div class="pm-arrow">›</div>
           </div>
+          <div class="pm-item" onclick="showSavedPayments()">
+            <div class="pm-icon">💳</div>
+            <div class="pm-label">Payment Methods</div>
+            <div class="pm-arrow">›</div>
+          </div>
           <div style="padding:0 14px;margin:14px 0;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">MORE</div>
           <div class="pm-item" onclick="void(0)">
             <div class="pm-icon">⭐</div>
@@ -8653,6 +8658,138 @@ function deleteSavedAddr(idx) {
   document.getElementById('savedAddrOverlay')?.remove();
   showSavedAddresses(); // Re-open with updated list
   showToast('Address deleted', 'info');
+}
+
+// ═══════════════════════════════════════════
+//  Saved Payment Methods
+// ═══════════════════════════════════════════
+function showSavedPayments() {
+  const payments = JSON.parse(localStorage.getItem('now_saved_payments') || '[]');
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'savedPayOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:0';
+  
+  let cardsHtml = '';
+  let upiHtml = '';
+  
+  const cards = payments.filter(p => p.type === 'card');
+  const upis = payments.filter(p => p.type === 'upi');
+  
+  if (cards.length) {
+    cardsHtml = cards.map((card, idx) => `
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:12px;margin-bottom:8px">
+        <div style="font-size:24px">${card.brand === 'visa' ? '💳' : card.brand === 'mastercard' ? '💳' : '💳'}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700">${card.brand ? card.brand.toUpperCase() : 'Card'} •••• ${card.last4}</div>
+          <div style="font-size:11px;color:var(--muted)">Expires ${card.expiry}</div>
+        </div>
+        <button onclick="event.stopPropagation();deleteSavedPayment(${payments.indexOf(card)})" style="width:28px;height:28px;background:rgba(239,68,68,.1);border:none;border-radius:6px;color:#ef4444;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">🗑️</button>
+      </div>
+    `).join('');
+  }
+  
+  if (upis.length) {
+    upiHtml = upis.map((upi, idx) => `
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:12px;margin-bottom:8px">
+        <div style="font-size:24px">📱</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700">${upi.upiId}</div>
+          <div style="font-size:11px;color:var(--muted)">UPI ID</div>
+        </div>
+        <button onclick="event.stopPropagation();deleteSavedPayment(${payments.indexOf(upi)})" style="width:28px;height:28px;background:rgba(239,68,68,.1);border:none;border-radius:6px;color:#ef4444;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">🗑️</button>
+      </div>
+    `).join('');
+  }
+  
+  overlay.innerHTML = `
+    <div style="background:var(--card);border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;max-height:80vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-size:17px;font-weight:800">💳 Payment Methods</div>
+        <button onclick="document.getElementById('savedPayOverlay').remove()" style="background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+      </div>
+      
+      <!-- Saved Cards -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)">SAVED CARDS</div>
+        ${cardsHtml || '<div style="padding:14px;background:var(--bg);border-radius:10px;text-align:center;font-size:12px;color:var(--muted)">No saved cards</div>'}
+      </div>
+      
+      <!-- Saved UPI -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)">SAVED UPI</div>
+        ${upiHtml || '<div style="padding:14px;background:var(--bg);border-radius:10px;text-align:center;font-size:12px;color:var(--muted)">No saved UPI IDs</div>'}
+      </div>
+      
+      <!-- Wallet -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)">WALLET</div>
+        <div onclick="document.getElementById('savedPayOverlay').remove();showScreen('screen-wallet')" style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:12px;cursor:pointer">
+          <div style="font-size:24px">💰</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700">NOW Wallet</div>
+            <div style="font-size:11px;color:var(--muted)">Balance: ₹${USER?.wallet || 0}</div>
+          </div>
+          <span style="color:var(--accent);font-size:12px;font-weight:600">View →</span>
+        </div>
+      </div>
+      
+      <!-- Add Payment Method -->
+      <div style="border-top:1px solid var(--border);padding-top:16px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)">ADD NEW</div>
+        <button onclick="addNewCard()" style="width:100%;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:8px;color:var(--text)">
+          <span style="font-size:18px">💳</span> Add Debit/Credit Card
+        </button>
+        <button onclick="addNewUpi()" style="width:100%;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px;color:var(--text)">
+          <span style="font-size:18px">📱</span> Add UPI ID
+        </button>
+      </div>
+    </div>
+  `;
+  
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function addNewCard() {
+  const last4 = prompt('Enter last 4 digits of card:');
+  if (!last4 || last4.length !== 4 || isNaN(last4)) { showToast('Enter valid 4 digits', 'error'); return; }
+  
+  const expiry = prompt('Enter expiry (MM/YY):');
+  if (!expiry || !expiry.includes('/')) { showToast('Enter valid expiry', 'error'); return; }
+  
+  const brand = prompt('Card type (visa/mastercard/rupay):') || 'visa';
+  
+  const payments = JSON.parse(localStorage.getItem('now_saved_payments') || '[]');
+  payments.push({ type: 'card', last4, expiry, brand: brand.toLowerCase(), addedAt: Date.now() });
+  localStorage.setItem('now_saved_payments', JSON.stringify(payments));
+  
+  document.getElementById('savedPayOverlay')?.remove();
+  showSavedPayments();
+  showToast('Card saved ✅', 'success');
+}
+
+function addNewUpi() {
+  const upiId = prompt('Enter UPI ID (e.g. name@paytm):');
+  if (!upiId || !upiId.includes('@')) { showToast('Enter valid UPI ID', 'error'); return; }
+  
+  const payments = JSON.parse(localStorage.getItem('now_saved_payments') || '[]');
+  payments.push({ type: 'upi', upiId, addedAt: Date.now() });
+  localStorage.setItem('now_saved_payments', JSON.stringify(payments));
+  
+  document.getElementById('savedPayOverlay')?.remove();
+  showSavedPayments();
+  showToast('UPI saved ✅', 'success');
+}
+
+function deleteSavedPayment(idx) {
+  if (!confirm('Remove this payment method?')) return;
+  const payments = JSON.parse(localStorage.getItem('now_saved_payments') || '[]');
+  payments.splice(idx, 1);
+  localStorage.setItem('now_saved_payments', JSON.stringify(payments));
+  document.getElementById('savedPayOverlay')?.remove();
+  showSavedPayments();
+  showToast('Removed', 'info');
 }
 
 // --- GPS Detection (Improved) ---
