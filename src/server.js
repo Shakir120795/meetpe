@@ -1673,7 +1673,7 @@ app.get('/admin/analytics', (req, res) => {
   `).all();
   const allOrders = db.prepare(`SELECT items_json FROM orders WHERE status != 'cancelled'`).all();
   const itemSales = {};
-  for (const o of allOrders) { try { JSON.parse(o.items_json||'[]').forEach(i => { if (!itemSales[i.name]) itemSales[i.name]={qty:0,revenue:0}; itemSales[i.name].qty+=i.qty; itemSales[i.name].revenue+=i.price*i.qty; }); } catch{} }
+  for (const o of allOrders) { try { JSON.parse(o.items_json||'[]').forEach(i => { if (!itemSales[i.name]) itemSales[i.name]={qty:0,revenue:0}; itemSales[i.name].qty+=i.qty; itemSales[i.name].revenue+=i.price*i.qty; }); } catch(e){} }
   const topItems = Object.entries(itemSales).map(([name,d])=>({name,...d})).sort((a,b)=>b.revenue-a.revenue).slice(0,10);
   const byHour = db.prepare(`SELECT strftime('%H', created_at, 'localtime') as hour, COUNT(*) as count FROM orders GROUP BY hour ORDER BY hour`).all();
   const summary = db.prepare(`SELECT COUNT(*) as total_orders, COALESCE(SUM(CASE WHEN status!='cancelled' THEN total ELSE 0 END),0) as total_revenue, COUNT(DISTINCT phone) as unique_customers, COALESCE(AVG(CASE WHEN status!='cancelled' THEN total END),0) as avg_order_value FROM orders`).get();
@@ -1743,55 +1743,6 @@ app.get('/admin/dashboard', (req, res) => {
     console.error('Dashboard error:', e.message);
     res.status(500).json({ ok: false, error: 'Dashboard load failed: ' + e.message });
   }
-});
-  
-  // Revenue by day (last 30 days)
-  const daily = db.prepare(`
-    SELECT date(created_at, 'localtime') as day,
-    COUNT(*) as orders, COALESCE(SUM(total),0) as revenue
-    FROM orders WHERE status != 'cancelled'
-    AND created_at >= datetime('now', '-30 days')
-    GROUP BY day ORDER BY day ASC
-  `).all();
-
-  // Top selling items
-  const allOrders = db.prepare(`SELECT items_json FROM orders WHERE status != 'cancelled'`).all();
-  const itemSales = {};
-  for (const o of allOrders) {
-    try {
-      const items = JSON.parse(o.items_json || '[]');
-      for (const i of items) {
-        if (!itemSales[i.name]) itemSales[i.name] = { qty: 0, revenue: 0 };
-        itemSales[i.name].qty += i.qty;
-        itemSales[i.name].revenue += i.price * i.qty;
-      }
-    } catch {}
-  }
-  const topItems = Object.entries(itemSales)
-    .map(([name, d]) => ({ name, ...d }))
-    .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 10);
-
-  // Orders by hour
-  const byHour = db.prepare(`
-    SELECT strftime('%H', created_at, 'localtime') as hour, COUNT(*) as count
-    FROM orders GROUP BY hour ORDER BY hour
-  `).all();
-
-  // Summary stats
-  const summary = db.prepare(`
-    SELECT COUNT(*) as total_orders,
-    COALESCE(SUM(CASE WHEN status!='cancelled' THEN total ELSE 0 END),0) as total_revenue,
-    COUNT(DISTINCT phone) as unique_customers,
-    COALESCE(AVG(CASE WHEN status!='cancelled' THEN total END),0) as avg_order_value
-    FROM orders
-  `).get();
-
-  // This week vs last week
-  const thisWeek = db.prepare(`SELECT COUNT(*) as orders, COALESCE(SUM(total),0) as revenue FROM orders WHERE status!='cancelled' AND created_at >= datetime('now', '-7 days')`).get();
-  const lastWeek = db.prepare(`SELECT COUNT(*) as orders, COALESCE(SUM(total),0) as revenue FROM orders WHERE status!='cancelled' AND created_at BETWEEN datetime('now', '-14 days') AND datetime('now', '-7 days')`).get();
-
-  res.json({ ok: true, daily, topItems, byHour, summary, thisWeek, lastWeek });
 });
 
 // ===== Returns & Refunds =====
