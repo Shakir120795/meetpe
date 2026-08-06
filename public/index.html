@@ -4922,7 +4922,7 @@ function updateActiveOrderStrip(orders) {
       icon = '✅'; text = 'Delivered! Rate your order'; color = '#22c55e';
     }
     
-    return `<div onclick="showOrderDetail(${order.id})" style="min-width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;padding:2px 0">
+    return `<div onclick="openOrderTracking(${order.id})" style="min-width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;padding:2px 0">
       <div style="font-size:20px">${icon}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;color:${color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${text}</div>
@@ -5007,6 +5007,25 @@ function refreshActiveStrip() {
       }
     })
     .catch(() => {});
+}
+
+// Open order tracking from strip - ensures orders are loaded first
+async function openOrderTracking(orderId) {
+  // Make sure orders are loaded
+  if (!window._ORDERS || !window._ORDERS.length) {
+    try {
+      const res = await fetch('/api/orders/' + USER.phone);
+      const data = await res.json();
+      if (data.ok) {
+        window._ORDERS = data.orders;
+        window._ALL_ORDERS = data.orders;
+      }
+    } catch(e) {}
+  }
+  
+  // Navigate to orders screen and show detail
+  showScreen('screen-orders');
+  setTimeout(() => showOrderDetail(orderId), 100);
 }
 
 function showOrderMenu(orderId) {
@@ -5218,7 +5237,7 @@ function showOrderDetail(id) {
   const statusLevel = {placed:1, preparing:4, out_for_delivery:5, delivered:6, cancelled:0}[order.status] || 0;
   const isCancelled = order.status === 'cancelled';
   const isDelivered = order.status === 'delivered';
-  const isActive = ['preparing', 'out_for_delivery'].includes(order.status);
+  const isActive = ['placed', 'preparing', 'out_for_delivery'].includes(order.status);
 
   const content = document.getElementById('ordersContent');
   const title = document.getElementById('ordersTitle');
@@ -5231,22 +5250,19 @@ function showOrderDetail(id) {
   // Live Tracking Section (only for active orders)
   const liveTrackingHtml = isActive && settings.enableLiveTracking ? `
     <div class="tracking-map">
-      <div id="liveMap" style="height:220px;position:relative;background:linear-gradient(135deg,#e8f5e9,#fff);display:flex;align-items:center;justify-content:center;flex-direction:column">
-        <div style="font-size:48px;animation:bounce 2s infinite">🛵</div>
-        <div style="margin-top:12px;font-size:14px;font-weight:600;color:var(--text)">Delivery in progress</div>
-        <div style="position:absolute;bottom:10px;left:10px;background:white;padding:8px 12px;border-radius:8px;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
-          📍 ${order.address ? order.address.substring(0, 30) + '...' : 'Your location'}
-        </div>
-      </div>
+      <div id="liveTrackMap" style="height:220px;width:100%;border-radius:14px;z-index:1"></div>
     </div>
   ` : '';
   
   // ETA Section (only for active orders)
+  const etaMinutes = order.status === 'out_for_delivery' ? Math.floor((settings.defaultETA || 25) * 0.5) : (settings.defaultETA || 25);
   const etaHtml = isActive ? `
     <div class="eta-section">
-      <div class="eta-time">Arriving in <span id="etaMinutes">${settings.defaultETA || 25}</span> min</div>
+      <div class="eta-time">
+        ${order.status === 'placed' ? '⏳ Confirming order...' : order.status === 'preparing' ? '👨‍🍳 Preparing • ETA <span id="etaMinutes">' + etaMinutes + '</span> min' : '🛵 Arriving in <span id="etaMinutes">' + etaMinutes + '</span> min'}
+      </div>
       <div class="eta-bar">
-        <div class="eta-progress" id="etaProgress" style="width:${statusLevel === 5 ? '80%' : '40%'}"></div>
+        <div class="eta-progress" id="etaProgress" style="width:${order.status === 'placed' ? '10%' : order.status === 'preparing' ? '40%' : '75%'}"></div>
       </div>
     </div>
   ` : '';
@@ -5361,7 +5377,87 @@ function showOrderDetail(id) {
   
   // Start ETA countdown if order is active
   if (isActive) {
-    startETACountdown(settings.defaultETA || 25);
+    startETACountdown(etaMinutes);
+    
+    // Initialize live tracking map
+    setTimeout(() => initLiveTrackMap(order), 200);
+  }
+}
+
+// Initialize Leaflet map for live tracking
+let _trackMap = null;
+let _trackMarker = null;
+let _trackInterval = null;
+
+function initLiveTrackMap(order) {
+  const mapEl = document.getElementById('liveTrackMap');
+  if (!mapEl) return;
+  
+  // Clean up previous map
+  if (_trackMap) { _trackMap.remove(); _trackMap = null; }
+  if (_trackInterval) { clearInterval(_trackInterval); _trackInterval = null; }
+  
+  // Get vendor location from settings
+  const vendorLat = APP_SETTINGS?.vendorLocation?.lat || 27.1767;
+  const vendorLon = APP_SETTINGS?.vendorLocation?.lon || 78.0081;
+  
+  // Get user location
+  const userLat = USER?.lat || vendorLat + 0.02;
+  const userLon = USER?.lon || vendorLon + 0.01;
+  
+  // Center map between vendor and user
+  const centerLat = (vendorLat + userLat) / 2;
+  const centerLon = (vendorLon + userLon) / 2;
+  
+  _trackMap = L.map('liveTrackMap', { zoomControl: false, attributionControl: false }).setView([centerLat, centerLon], 14);
+  
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(_trackMap);
+  
+  // Vendor marker (store)
+  const storeIcon = L.divIcon({ html: '<div style="font-size:24px;text-align:center">🏪</div>', iconSize: [30, 30], className: '' });
+  L.marker([vendorLat, vendorLon], { icon: storeIcon }).addTo(_trackMap).bindPopup('Store');
+  
+  // User marker (delivery location)
+  const homeIcon = L.divIcon({ html: '<div style="font-size:24px;text-align:center">🏠</div>', iconSize: [30, 30], className: '' });
+  L.marker([userLat, userLon], { icon: homeIcon }).addTo(_trackMap).bindPopup('Your Location');
+  
+  // Delivery boy marker (animated)
+  const bikeIcon = L.divIcon({ html: '<div style="font-size:28px;text-align:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))">🛵</div>', iconSize: [34, 34], className: '' });
+  
+  // Position delivery boy based on status
+  let bikeLat, bikeLon;
+  if (order.status === 'placed') {
+    bikeLat = vendorLat;
+    bikeLon = vendorLon;
+  } else if (order.status === 'preparing') {
+    bikeLat = vendorLat;
+    bikeLon = vendorLon;
+  } else {
+    // out_for_delivery - somewhere between
+    bikeLat = vendorLat + (userLat - vendorLat) * 0.4;
+    bikeLon = vendorLon + (userLon - vendorLon) * 0.4;
+  }
+  
+  _trackMarker = L.marker([bikeLat, bikeLon], { icon: bikeIcon }).addTo(_trackMap);
+  
+  // Draw route line
+  L.polyline([[vendorLat, vendorLon], [bikeLat, bikeLon], [userLat, userLon]], {
+    color: '#E8450A', weight: 3, opacity: 0.6, dashArray: '10, 10'
+  }).addTo(_trackMap);
+  
+  // Fit bounds to show all markers
+  _trackMap.fitBounds([[vendorLat, vendorLon], [userLat, userLon]], { padding: [30, 30] });
+  
+  // Simulate movement for out_for_delivery
+  if (order.status === 'out_for_delivery') {
+    let progress = 0.4;
+    _trackInterval = setInterval(() => {
+      progress += 0.02;
+      if (progress >= 0.95) { clearInterval(_trackInterval); _trackInterval = null; return; }
+      const newLat = vendorLat + (userLat - vendorLat) * progress;
+      const newLon = vendorLon + (userLon - vendorLon) * progress;
+      _trackMarker.setLatLng([newLat, newLon]);
+    }, 3000);
   }
 }
 
