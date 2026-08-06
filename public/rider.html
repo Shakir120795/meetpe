@@ -1166,51 +1166,58 @@ function renderOrderCards(orders, containerId, type) {
     container.innerHTML = orders.map(order => {
         const badgeClass = type === 'new' ? 'badge-new' : type === 'active' ? 'badge-active' : 
             order.status === 'cancelled' ? 'badge-cancelled' : 'badge-completed';
-        const badgeText = type === 'new' ? 'New' : type === 'active' ? 'Active' : 
+        const badgeText = type === 'new' ? 'New' : type === 'active' ? (order.status || 'Active').replace(/_/g,' ') : 
             order.status === 'cancelled' ? 'Cancelled' : 'Completed';
 
+        // Get customer phone from order
+        const custPhone = (order.phone || '').replace(/\D/g, '').slice(-10);
+        
         let actions = '';
         if (type === 'new') {
             actions = `
                 <div class="order-actions">
-                    <button class="btn btn-success btn-small" onclick="acceptOrder('${order.id}')">Accept</button>
-                    <button class="btn btn-outline btn-small" onclick="rejectOrder('${order.id}')">Reject</button>
+                    <button class="btn btn-success btn-small" onclick="acceptOrder('${order.id}')">✅ Accept</button>
+                    <button class="btn btn-outline btn-small" onclick="rejectOrder('${order.id}')">❌ Reject</button>
                 </div>
             `;
         } else if (type === 'active') {
             const nextStatus = getNextStatus(order.status);
-            if (nextStatus) {
-                actions = `
-                    <div class="order-actions">
-                        <button class="btn btn-primary btn-small" onclick="updateOrderStatus('${order.id}', '${nextStatus.value}')">${nextStatus.label}</button>
-                    </div>
-                `;
-            }
+            actions = `
+                <!-- Contact & Navigate -->
+                <div style="display:flex;gap:8px;margin-top:12px;margin-bottom:8px">
+                    <a href="tel:+91${custPhone}" style="flex:1;padding:10px;background:var(--success);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px">📞 Call</a>
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address || '')}" target="_blank" style="flex:1;padding:10px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px">🗺️ Navigate</a>
+                    <a href="https://wa.me/91${custPhone}" target="_blank" style="flex:1;padding:10px;background:#25d366;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px">💬 Chat</a>
+                </div>
+                ${nextStatus ? `
+                <div class="order-actions">
+                    <button class="btn btn-primary btn-small" onclick="${nextStatus.value === 'delivered' ? 'showDeliveryOTP('+order.id+')' : 'updateOrderStatus(\''+order.id+'\', \''+nextStatus.value+'\')'}">${nextStatus.label}</button>
+                </div>` : ''}
+            `;
         }
+
+        // Payment badge
+        const payBadge = order.payment_method === 'cod' ? `<span style="background:rgba(245,158,11,.15);color:#f59e0b;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">💵 COD ₹${order.total}</span>` : `<span style="background:rgba(22,163,74,.15);color:#16a34a;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">✅ Paid</span>`;
 
         return `
             <div class="order-card">
                 <div class="order-header">
-                    <span class="order-id">#${order.id || order.orderId || '--'}</span>
+                    <span class="order-id">#${order.id || '--'}</span>
                     <span class="order-badge ${badgeClass}">${badgeText}</span>
                 </div>
                 <div class="order-details">
                     <div class="order-detail-row">
-                        <span class="label">Customer</span>
-                        <span class="value">${order.customerName || order.customer || '--'}</span>
+                        <span class="icon">📍</span>
+                        <span class="value" style="font-size:12px">${order.address || 'No address'}</span>
                     </div>
                     <div class="order-detail-row">
-                        <span class="label">Address</span>
-                        <span class="value">${order.address || order.deliveryAddress || '--'}</span>
-                    </div>
-                    <div class="order-detail-row">
-                        <span class="label">Items</span>
-                        <span class="value">${order.itemCount || order.items?.length || '--'} items</span>
+                        <span class="icon">📦</span>
+                        <span class="value">${(order.items || []).map(i => i.name + ' × ' + i.qty).join(', ') || order.items?.length + ' items'}</span>
                     </div>
                 </div>
-                <div class="order-header" style="margin-bottom:0">
-                    <span class="order-amount">₹${order.amount || order.total || 0}</span>
-                    <span style="font-size:12px;color:var(--muted)">${order.distance || '--'}</span>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+                    <span class="order-amount">₹${order.total || 0}</span>
+                    ${payBadge}
                 </div>
                 ${actions}
             </div>
@@ -1220,11 +1227,61 @@ function renderOrderCards(orders, containerId, type) {
 
 function getNextStatus(currentStatus) {
     const statusFlow = {
-        'accepted': { value: 'picked_up', label: 'Mark Picked Up' },
-        'picked_up': { value: 'on_the_way', label: 'On The Way' },
-        'on_the_way': { value: 'delivered', label: 'Mark Delivered' }
+        'preparing': { value: 'out_for_delivery', label: '🛵 Picked Up & Out for Delivery' },
+        'out_for_delivery': { value: 'delivered', label: '✅ Mark Delivered (OTP)' }
     };
     return statusFlow[currentStatus] || null;
+}
+
+// OTP Verification for Delivery
+function showDeliveryOTP(orderId) {
+    const overlay = document.createElement('div');
+    overlay.id = 'otpOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
+    
+    overlay.innerHTML = `
+        <div style="background:var(--card);border-radius:20px;padding:24px;max-width:340px;width:100%;text-align:center">
+            <div style="font-size:48px;margin-bottom:12px">🔐</div>
+            <div style="font-size:18px;font-weight:700;margin-bottom:6px">Delivery Verification</div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Ask customer for the 4-digit delivery OTP</div>
+            <input type="tel" id="deliveryOtpInput" maxlength="4" placeholder="Enter OTP" style="width:100%;padding:14px;background:var(--bg);border:2px solid var(--border);border-radius:12px;font-size:24px;text-align:center;color:var(--text);letter-spacing:8px;outline:none;margin-bottom:16px" inputmode="numeric"/>
+            <div style="display:flex;gap:10px">
+                <button onclick="verifyDeliveryOTP(${orderId})" style="flex:1;padding:14px;background:var(--success);color:white;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer">✅ Verify</button>
+                <button onclick="document.getElementById('otpOverlay').remove()" style="padding:14px 20px;background:var(--bg);border:1px solid var(--border);color:var(--muted);border-radius:12px;font-size:14px;cursor:pointer">Cancel</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    setTimeout(() => document.getElementById('deliveryOtpInput')?.focus(), 100);
+}
+
+async function verifyDeliveryOTP(orderId) {
+    const otp = document.getElementById('deliveryOtpInput')?.value?.trim();
+    if (!otp || otp.length !== 4) { showToast('Enter 4-digit OTP', 'error'); return; }
+    
+    try {
+        showLoading();
+        const response = await fetch('/api/rider/order/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ riderId: rider.id, orderId, otp })
+        });
+        const data = await response.json();
+        
+        if (data.ok) {
+            document.getElementById('otpOverlay')?.remove();
+            showToast('✅ Delivery verified! Earnings credited.', 'success');
+            loadOrders('active');
+            loadDashboard();
+        } else {
+            showToast(data.error || 'Invalid OTP', 'error');
+        }
+    } catch(e) {
+        showToast('Network error', 'error');
+    } finally {
+        hideLoading();
+    }
 }
 
 async function acceptOrder(orderId) {
