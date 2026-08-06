@@ -930,8 +930,14 @@ app.post('/admin/orders/:id/assign', (req, res) => {
   try { db.prepare('ALTER TABLE orders ADD COLUMN delivery_boy TEXT').run(); } catch(e) {}
   try { db.prepare('ALTER TABLE orders ADD COLUMN rider_id TEXT').run(); } catch(e) {}
   
-  // Set both delivery_boy AND rider_id (rider app uses rider_id)
-  db.prepare('UPDATE orders SET delivery_boy = ?, rider_id = ? WHERE id = ?').run(deliveryBoy, deliveryBoy, id);
+  if (deliveryBoy === 'all' || deliveryBoy === '') {
+    // Assign to ALL available riders (first come first serve)
+    // Set rider_id to 'all' - all riders will see it
+    db.prepare('UPDATE orders SET delivery_boy = ?, rider_id = ? WHERE id = ?').run('all', 'all', id);
+  } else {
+    // Assign to specific rider
+    db.prepare('UPDATE orders SET delivery_boy = ?, rider_id = ? WHERE id = ?').run(deliveryBoy, deliveryBoy, id);
+  }
   res.json({ ok: true, id, delivery_boy: deliveryBoy });
 });
 
@@ -3678,14 +3684,15 @@ app.get('/api/rider/orders/:riderId', (req, res) => {
   
   let orders;
   if (status === 'new') {
-    // Orders assigned to this rider but not yet accepted (placed or preparing)
-    orders = db.prepare(`SELECT * FROM orders WHERE (rider_id = ? OR delivery_boy = ?) AND status IN ('placed','preparing') ORDER BY id DESC`).all(riderId, riderId);
+    // Orders assigned to this rider OR broadcast to all riders, not yet picked up
+    orders = db.prepare(`SELECT * FROM orders WHERE (rider_id = ? OR delivery_boy = ? OR rider_id = 'all') AND status IN ('placed','preparing') ORDER BY id DESC`).all(riderId, riderId);
   } else if (status === 'active') {
-    orders = db.prepare(`SELECT * FROM orders WHERE (rider_id = ? OR delivery_boy = ?) AND status = 'out_for_delivery' ORDER BY id DESC`).all(riderId, riderId);
+    // Only orders this rider accepted (rider_id = their ID)
+    orders = db.prepare(`SELECT * FROM orders WHERE (rider_id = ? OR delivery_boy = ?) AND rider_id != 'all' AND status = 'out_for_delivery' ORDER BY id DESC`).all(riderId, riderId);
   } else if (status === 'history') {
     orders = db.prepare(`SELECT * FROM orders WHERE (rider_id = ? OR delivery_boy = ?) AND status IN ('delivered', 'cancelled') ORDER BY id DESC LIMIT 30`).all(riderId, riderId);
   } else {
-    orders = db.prepare(`SELECT * FROM orders WHERE (rider_id = ? OR delivery_boy = ?) ORDER BY id DESC LIMIT 50`).all(riderId, riderId);
+    orders = db.prepare(`SELECT * FROM orders WHERE (rider_id = ? OR delivery_boy = ? OR rider_id = 'all') ORDER BY id DESC LIMIT 50`).all(riderId, riderId);
   }
   
   // Parse items + get customer name
@@ -3702,16 +3709,21 @@ app.post('/api/rider/order/accept', (req, res) => {
   const { riderId, orderId } = req.body || {};
   if (!riderId || !orderId) return res.status(400).json({ ok: false, error: 'missing fields' });
   
-  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND (rider_id = ? OR delivery_boy = ?)').get(orderId, riderId, riderId);
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND (rider_id = ? OR delivery_boy = ? OR rider_id = ?)').get(orderId, riderId, riderId, 'all');
   if (!order) return res.status(404).json({ ok: false, error: 'order not found or not assigned to you' });
   
-  // Generate delivery OTP
+  // Check if already accepted by another rider
+  if (order.rider_id !== 'all' && order.rider_id !== riderId && order.status === 'out_for_delivery') {
+    return res.status(400).json({ ok: false, error: 'Order already accepted by another rider' });
+  }
+  
+  // Lock order to this rider + generate OTP + set status to preparing (rider will pick up)
   const otp = String(Math.floor(1000 + Math.random() * 9000));
-  db.prepare(`UPDATE orders SET status = 'out_for_delivery', rider_id = ?, rider_accepted_at = datetime('now'), delivery_otp = ? WHERE id = ?`).run(riderId, otp, orderId);
+  db.prepare(`UPDATE orders SET status = 'preparing', rider_id = ?, delivery_boy = ?, rider_accepted_at = datetime('now'), delivery_otp = ? WHERE id = ?`).run(riderId, riderId, otp, orderId);
   
   // Notify customer
   const updatedOrder = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
-  if (updatedOrder) setImmediate(() => notifyCustomer(updatedOrder, 'out_for_delivery'));
+  if (updatedOrder) setImmediate(() => notifyCustomer(updatedOrder, 'preparing'));
   
   res.json({ ok: true, otp });
 });
@@ -3726,17 +3738,20 @@ app.post('/api/rider/order/status', (req, res) => {
   if (!order) return res.status(404).json({ ok: false, error: 'order not found' });
   
   if (status === 'out_for_delivery') {
-    const otp = String(Math.floor(1000 + Math.random() * 9000));
+    const otp = order.delivery_otp || String(Math.floor(1000 + Math.random() * 9000));
     db.prepare(`UPDATE orders SET status = ?, rider_picked_at = datetime('now'), delivery_otp = ? WHERE id = ?`).run(status, otp, orderId);
   } else if (status === 'delivered') {
     db.prepare(`UPDATE orders SET status = 'delivered', rider_delivered_at = datetime('now') WHERE id = ?`).run(orderId);
-    // Credit rider earnings
-    const settings = require('./data/settings').get();
-    const zones = settings.deliveryZones || [];
-    const earning = zones[0]?.deliveryFee || 30;
-    db.prepare('INSERT INTO rider_earnings (rider_id, order_id, amount, type) VALUES (?, ?, ?, ?)').run(riderId, orderId, earning, 'delivery');
-    if (order.payment_method === 'cod') {
-      db.prepare('INSERT INTO rider_cod (rider_id, order_id, amount) VALUES (?, ?, ?)').run(riderId, orderId, order.total);
+    // Credit rider earnings (only here, not in verify too)
+    const existingEarning = db.prepare('SELECT id FROM rider_earnings WHERE rider_id = ? AND order_id = ?').get(riderId, orderId);
+    if (!existingEarning) {
+      const settings = require('./data/settings').get();
+      const zones = settings.deliveryZones || [];
+      const earning = zones[0]?.deliveryFee || 30;
+      db.prepare('INSERT INTO rider_earnings (rider_id, order_id, amount, type) VALUES (?, ?, ?, ?)').run(riderId, orderId, earning, 'delivery');
+      if (order.payment_method === 'cod') {
+        db.prepare('INSERT INTO rider_cod (rider_id, order_id, amount) VALUES (?, ?, ?)').run(riderId, orderId, order.total);
+      }
     }
   } else {
     db.prepare(`UPDATE orders SET status = ? WHERE id = ?`).run(status, orderId);
@@ -3760,20 +3775,23 @@ app.post('/api/rider/order/verify', (req, res) => {
   // Mark delivered
   db.prepare(`UPDATE orders SET status = 'delivered', rider_delivered_at = datetime('now') WHERE id = ?`).run(orderId);
   
-  // Credit earnings
-  const settings = require('./data/settings').get();
-  const zones = settings.deliveryZones || [];
-  const earning = zones[0]?.deliveryFee || 30;
-  db.prepare('INSERT INTO rider_earnings (rider_id, order_id, amount, type) VALUES (?, ?, ?, ?)').run(riderId, orderId, earning, 'delivery');
-  
-  if (order.payment_method === 'cod') {
-    db.prepare('INSERT INTO rider_cod (rider_id, order_id, amount) VALUES (?, ?, ?)').run(riderId, orderId, order.total);
+  // Credit earnings (prevent duplicate)
+  const existingEarning = db.prepare('SELECT id FROM rider_earnings WHERE rider_id = ? AND order_id = ?').get(riderId, orderId);
+  if (!existingEarning) {
+    const settings = require('./data/settings').get();
+    const zones = settings.deliveryZones || [];
+    const earning = zones[0]?.deliveryFee || 30;
+    db.prepare('INSERT INTO rider_earnings (rider_id, order_id, amount, type) VALUES (?, ?, ?, ?)').run(riderId, orderId, earning, 'delivery');
+    
+    if (order.payment_method === 'cod') {
+      db.prepare('INSERT INTO rider_cod (rider_id, order_id, amount) VALUES (?, ?, ?)').run(riderId, orderId, order.total);
+    }
   }
   
   // Notify customer
   setImmediate(() => notifyCustomer({...order, status:'delivered'}, 'delivered'));
   
-  res.json({ ok: true, message: 'Delivery verified!' });
+  res.json({ ok: true, message: 'Delivery verified! Earnings credited.' });
 });
 
 // GET /api/rider/earnings/:riderId - Earnings

@@ -1247,6 +1247,7 @@ function renderOrderCards(orders, containerId, type) {
 
 function getNextStatus(currentStatus) {
     const statusFlow = {
+        'placed': { value: 'out_for_delivery', label: '🛵 Picked Up & Out for Delivery' },
         'preparing': { value: 'out_for_delivery', label: '🛵 Picked Up & Out for Delivery' },
         'out_for_delivery': { value: 'delivered', label: '✅ Mark Delivered (OTP)' }
     };

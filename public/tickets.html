@@ -52,6 +52,8 @@ h1{font-size:24px;margin-bottom:6px}
   <button onclick="filterTickets('all')" id="ft-all" style="padding:8px 16px;background:#d62828;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">All</button>
   <button onclick="filterTickets('open')" id="ft-open" style="padding:8px 16px;background:white;color:#6b7280;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">🟡 Open</button>
   <button onclick="filterTickets('resolved')" id="ft-resolved" style="padding:8px 16px;background:white;color:#6b7280;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">✅ Resolved</button>
+  <button onclick="filterTickets('user')" id="ft-user" style="padding:8px 16px;background:white;color:#6b7280;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">👤 Users Only</button>
+  <button onclick="filterTickets('rider')" id="ft-rider" style="padding:8px 16px;background:white;color:#6b7280;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">🛵 Riders Only</button>
 </div>
 
 <!-- Tickets List -->
@@ -111,14 +113,25 @@ function filterTickets(status) {
 }
 
 function renderTickets() {
-  if (!TICKETS.length) {
+  let filtered = TICKETS;
+  
+  // Filter by user/rider
+  if (FILTER === 'user') {
+    filtered = TICKETS.filter(t => !t.name || !t.name.includes('(Rider)'));
+  } else if (FILTER === 'rider') {
+    filtered = TICKETS.filter(t => t.name && t.name.includes('(Rider)'));
+  }
+  
+  if (!filtered.length) {
     $('ticketsList').innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280">No tickets found</div>';
     return;
   }
   
-  $('ticketsList').innerHTML = TICKETS.map(t => {
+  $('ticketsList').innerHTML = filtered.map(t => {
     const statusColor = t.status === 'open' ? '#f59e0b' : '#16a34a';
     const statusLabel = t.status === 'open' ? '🟡 Open' : '✅ Resolved';
+    const isRider = t.name && t.name.includes('(Rider)');
+    const typeBadge = isRider ? '<span style="margin-left:8px;font-size:11px;background:#e0e7ff;color:#3730a3;padding:2px 6px;border-radius:4px">🛵 Rider</span>' : '<span style="margin-left:8px;font-size:11px;background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px">👤 User</span>';
     const d = new Date(t.created_at);
     const dateStr = d.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) + ' ' + d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true });
     
@@ -131,7 +144,7 @@ function renderTickets() {
         </div>
         <span style="font-size:11px;color:#6b7280">${dateStr}</span>
       </div>
-      <div style="font-size:13px;margin-bottom:6px"><strong>${t.name || 'Unknown'}</strong> <span style="color:#6b7280">(${t.phone})</span></div>
+      <div style="font-size:13px;margin-bottom:6px"><strong>${t.name || 'Unknown'}</strong> <span style="color:#6b7280">(${t.phone})</span>${typeBadge}</div>
       <div style="font-size:14px;margin-bottom:10px;line-height:1.5">${t.message}</div>
       ${t.admin_reply ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px;margin-bottom:10px;font-size:13px"><strong>Your Reply:</strong> ${t.admin_reply}</div>` : ''}
       <button onclick="openReplyModal(${t.id})" style="padding:8px 16px;background:#d62828;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">💬 Reply</button>
