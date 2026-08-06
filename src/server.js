@@ -3612,17 +3612,21 @@ try {
 // POST /api/rider/login - Rider login (uses phone from deliveryBoys)
 app.post('/api/rider/login', (req, res) => {
   const { phone } = req.body || {};
-  const cleanPhone = String(phone || '').replace(/\D/g, '');
+  const cleanPhone = String(phone || '').replace(/\D/g, '').slice(-10);
   if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
   
   // Check if this phone is a registered rider
   const settings = require('./data/settings').get();
   const riders = settings.orderTracking?.deliveryBoys || [];
-  const rider = riders.find(r => r.phone && r.phone.replace(/\D/g, '').endsWith(cleanPhone));
+  const rider = riders.find(r => {
+    if (!r.phone) return false;
+    const riderPhone = r.phone.replace(/\D/g, '').slice(-10);
+    return riderPhone === cleanPhone;
+  });
   
   if (!rider) return res.status(403).json({ ok: false, error: 'Not a registered rider. Contact admin.' });
   
-  res.json({ ok: true, rider: { id: rider.id, name: rider.name, phone: rider.phone, vehicleType: rider.vehicleType, vehicleNumber: rider.vehicleNumber, rating: rider.rating, status: rider.status } });
+  res.json({ ok: true, rider: { id: rider.id, name: rider.name, phone: rider.phone, vehicleType: rider.vehicleType, vehicleNumber: rider.vehicleNumber, rating: rider.rating, totalDeliveries: rider.totalDeliveries, status: rider.status } });
 });
 
 // POST /api/rider/status - Toggle online/offline
