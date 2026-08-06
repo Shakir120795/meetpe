@@ -144,7 +144,7 @@ input,textarea{font:inherit;color:inherit}
 .topbar-loc-top{display:flex;align-items:center;gap:4px}
 .topbar-loc-addr{display:flex;align-items:center;gap:4px;max-width:160px}
 .topbar-loc-text{font-size:13px;font-weight:700;color:var(--text);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
 .topbar-right{display:flex;align-items:center;gap:8px}
 .icon-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;
   border-radius:10px;font-size:18px;background:var(--border);position:relative}
@@ -833,7 +833,7 @@ input,textarea{font:inherit;color:inherit}
             <span id="locText" class="topbar-loc-text">Set Location</span>
           </div>
         </button>
-        <div style="display:flex;align-items:center;gap:4px;background:rgba(22,163,74,.15);border:1px solid rgba(22,163,74,.3);padding:4px 8px;border-radius:8px;font-size:11px;font-weight:700;color:#16a34a;white-space:nowrap">⚡ <span id="deliveryTimeDisplay">30</span> min</div>
+        <div style="display:flex;align-items:center;gap:3px;background:rgba(22,163,74,.15);border:1px solid rgba(22,163,74,.3);padding:3px 6px;border-radius:6px;font-size:10px;font-weight:700;color:#16a34a;white-space:nowrap">⚡<span id="deliveryTimeDisplay">30</span>m</div>
         <div style="display:flex;align-items:center;gap:6px">
           <!-- Wallet balance - wallet icon SVG -->
           <button onclick="showScreen('screen-wallet')" title="Wallet"
@@ -8503,10 +8503,10 @@ function updateLocTopbar(label) {
   const txt = document.getElementById('locText');
   if (!txt) return;
   
-  // Truncate if too long
+  // Show more of the address
   let displayText = label || 'Set Location';
-  if (displayText.length > 28) {
-    displayText = displayText.slice(0, 26) + '...';
+  if (displayText.length > 40) {
+    displayText = displayText.slice(0, 38) + '...';
   }
   
   txt.textContent = displayText;
@@ -8598,9 +8598,15 @@ function updateZoneDisplay() {
 function initLocation() {
   const saved = getSelectedAddr();
   if (saved) {
-    updateLocTopbar(saved.label || saved.full || 'Set Location');
+    updateLocTopbar(saved.full || saved.label || 'Set Location');
   } else {
-    updateLocTopbar('Set Location');
+    // Try last delivery address
+    const lastAddr = localStorage.getItem('now_last_delivery_address');
+    if (lastAddr) {
+      updateLocTopbar(lastAddr);
+    } else {
+      updateLocTopbar('Set Location');
+    }
     // Auto-open location selector on first load (after a delay for better UX)
     setTimeout(() => {
       openLocMap();
