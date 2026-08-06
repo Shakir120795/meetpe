@@ -1470,7 +1470,15 @@ app.get('/api/orders/:phone', (req, res) => {
     SELECT * FROM orders WHERE phone IN (?, ?)
     ORDER BY id DESC LIMIT 20
   `).all(webPhone, waPhone);
-  res.json({ ok: true, orders: orders.map(o => ({ ...o, items: JSON.parse(o.items_json || '[]') })) });
+  
+  // Enrich with rider name from settings
+  const settings = require('./data/settings').get();
+  const riders = settings.orderTracking?.deliveryBoys || [];
+  
+  res.json({ ok: true, orders: orders.map(o => {
+    const rider = riders.find(r => r.id === (o.rider_id || o.delivery_boy));
+    return { ...o, items: JSON.parse(o.items_json || '[]'), delivery_boy_name: rider?.name || null };
+  }) });
 });
 
 // ===== Use wallet balance =====
@@ -3615,6 +3623,17 @@ try {
   try { db.prepare('ALTER TABLE orders ADD COLUMN rider_accepted_at TEXT').run(); } catch(e) {}
   try { db.prepare('ALTER TABLE orders ADD COLUMN rider_picked_at TEXT').run(); } catch(e) {}
   try { db.prepare('ALTER TABLE orders ADD COLUMN rider_delivered_at TEXT').run(); } catch(e) {}
+  
+  // Rider ratings table (dedicated rider ratings from customers)
+  db.exec(`CREATE TABLE IF NOT EXISTS rider_ratings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    rider_id TEXT NOT NULL,
+    order_id INTEGER NOT NULL,
+    phone TEXT,
+    rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
+    comment TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
 } catch(e) { console.warn('Rider tables:', e.message); }
 
 // POST /api/rider/login - Rider login (uses phone from deliveryBoys)
@@ -3807,6 +3826,139 @@ app.get('/api/rider/earnings/:riderId', (req, res) => {
   const codDeposited = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_cod WHERE rider_id = ? AND status='deposited'`).get(riderId);
   
   res.json({ ok: true, today: today?.total||0, week: week?.total||0, month: month?.total||0, recent, codPending: (codCollected?.total||0)-(codDeposited?.total||0) });
+});
+
+// POST /api/rider/rate - Customer rates rider after delivery
+app.post('/api/rider/rate', (req, res) => {
+  const { phone, order_id, rider_rating, comment } = req.body || {};
+  const cleanPhone = String(phone || '').replace(/\D/g, '').slice(-10);
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+  const r = parseInt(rider_rating, 10);
+  if (!r || r < 1 || r > 5) return res.status(400).json({ ok: false, error: 'rating must be 1-5' });
+  if (!order_id) return res.status(400).json({ ok: false, error: 'order_id required' });
+  
+  // Find which rider delivered this order
+  const order = db.prepare('SELECT rider_id, delivery_boy FROM orders WHERE id = ?').get(order_id);
+  if (!order) return res.status(404).json({ ok: false, error: 'order not found' });
+  
+  const riderId = order.rider_id || order.delivery_boy;
+  if (!riderId || riderId === 'all') return res.status(400).json({ ok: false, error: 'no rider assigned' });
+  
+  // Prevent duplicate rating
+  const existing = db.prepare('SELECT id FROM rider_ratings WHERE order_id = ? AND phone = ?').get(order_id, cleanPhone);
+  if (existing) return res.status(400).json({ ok: false, error: 'already rated' });
+  
+  db.prepare('INSERT INTO rider_ratings (rider_id, order_id, phone, rating, comment) VALUES (?, ?, ?, ?, ?)').run(riderId, order_id, cleanPhone, r, (comment || '').trim().slice(0, 500));
+  
+  // Update rider's average rating in settings
+  const avgRow = db.prepare('SELECT ROUND(AVG(rating),1) as avg, COUNT(*) as count FROM rider_ratings WHERE rider_id = ?').get(riderId);
+  if (avgRow && avgRow.avg) {
+    try {
+      const settings = require('./data/settings');
+      const current = settings.get();
+      const riders = current.orderTracking?.deliveryBoys || [];
+      const idx = riders.findIndex(r => r.id === riderId);
+      if (idx >= 0) {
+        riders[idx].rating = avgRow.avg;
+        settings.update({ orderTracking: { ...current.orderTracking, deliveryBoys: riders } });
+      }
+    } catch(e) {}
+  }
+  
+  res.json({ ok: true, avgRating: avgRow?.avg || r });
+});
+
+// GET /admin/rider-analytics - Admin rider analytics data
+app.get('/admin/rider-analytics', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  
+  const settings = require('./data/settings').get();
+  const riders = settings.orderTracking?.deliveryBoys || [];
+  
+  const analytics = riders.map(rider => {
+    const riderId = rider.id;
+    
+    // Total orders delivered
+    const totalOrders = db.prepare(`SELECT COUNT(*) as count FROM orders WHERE (rider_id = ? OR delivery_boy = ?) AND status = 'delivered'`).get(riderId, riderId);
+    
+    // Rating stats from rider_ratings table
+    const ratingStats = db.prepare(`SELECT ROUND(AVG(rating),1) as avg, COUNT(*) as count FROM rider_ratings WHERE rider_id = ?`).get(riderId);
+    
+    // Earnings
+    const totalEarnings = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_earnings WHERE rider_id = ?`).get(riderId);
+    const todayEarnings = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_earnings WHERE rider_id = ? AND date(created_at,'localtime')=date('now','localtime')`).get(riderId);
+    const weekEarnings = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_earnings WHERE rider_id = ? AND created_at >= datetime('now','-7 days')`).get(riderId);
+    const monthEarnings = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_earnings WHERE rider_id = ? AND created_at >= datetime('now','-30 days')`).get(riderId);
+    
+    // Earnings history (last 30 days, grouped by date)
+    const earningsHistory = db.prepare(`
+      SELECT date(created_at,'localtime') as day, SUM(amount) as total, COUNT(*) as orders
+      FROM rider_earnings WHERE rider_id = ? AND created_at >= datetime('now','-30 days')
+      GROUP BY date(created_at,'localtime') ORDER BY day DESC
+    `).all(riderId);
+    
+    // COD
+    const codCollected = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_cod WHERE rider_id = ? AND status='collected'`).get(riderId);
+    const codDeposited = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_cod WHERE rider_id = ? AND status='deposited'`).get(riderId);
+    
+    // Recent ratings
+    const recentRatings = db.prepare(`
+      SELECT rr.rating, rr.comment, rr.created_at, rr.order_id, c.name as customer_name
+      FROM rider_ratings rr LEFT JOIN customers c ON c.phone LIKE '%' || rr.phone
+      WHERE rr.rider_id = ? ORDER BY rr.created_at DESC LIMIT 10
+    `).all(riderId);
+    
+    // Complaints (tickets about this rider)
+    const complaints = db.prepare(`
+      SELECT * FROM support_tickets WHERE category = 'delivery' AND message LIKE ? ORDER BY created_at DESC LIMIT 10
+    `).all(`%${rider.name || riderId}%`);
+    
+    // Average delivery time
+    const avgTime = db.prepare(`
+      SELECT AVG(
+        CAST((julianday(rider_delivered_at) - julianday(rider_accepted_at)) * 24 * 60 AS INTEGER)
+      ) as avg_minutes
+      FROM orders WHERE (rider_id = ? OR delivery_boy = ?) AND status = 'delivered' AND rider_accepted_at IS NOT NULL AND rider_delivered_at IS NOT NULL
+    `).get(riderId, riderId);
+    
+    // Orders by status
+    const activeOrders = db.prepare(`SELECT COUNT(*) as count FROM orders WHERE (rider_id = ? OR delivery_boy = ?) AND status IN ('preparing','out_for_delivery')`).get(riderId, riderId);
+    
+    return {
+      id: rider.id,
+      name: rider.name,
+      phone: rider.phone,
+      photo: rider.photo,
+      vehicleType: rider.vehicleType,
+      vehicleNumber: rider.vehicleNumber,
+      status: rider.status,
+      totalOrders: totalOrders?.count || 0,
+      activeOrders: activeOrders?.count || 0,
+      avgRating: ratingStats?.avg || rider.rating || 5.0,
+      ratingCount: ratingStats?.count || 0,
+      totalEarnings: totalEarnings?.total || 0,
+      todayEarnings: todayEarnings?.total || 0,
+      weekEarnings: weekEarnings?.total || 0,
+      monthEarnings: monthEarnings?.total || 0,
+      earningsHistory,
+      codPending: (codCollected?.total || 0) - (codDeposited?.total || 0),
+      recentRatings,
+      complaints,
+      avgDeliveryMinutes: Math.round(avgTime?.avg_minutes || 0)
+    };
+  });
+  
+  // Overall stats
+  const overallStats = {
+    totalRiders: riders.length,
+    onlineRiders: riders.filter(r => r.status === 'available').length,
+    totalDeliveries: db.prepare(`SELECT COUNT(*) as c FROM orders WHERE status='delivered' AND rider_id IS NOT NULL`).get()?.c || 0,
+    avgRating: db.prepare(`SELECT ROUND(AVG(rating),1) as avg FROM rider_ratings`).get()?.avg || 5.0,
+    totalEarnings: db.prepare(`SELECT COALESCE(SUM(amount),0) as t FROM rider_earnings`).get()?.t || 0,
+    todayDeliveries: db.prepare(`SELECT COUNT(*) as c FROM orders WHERE status='delivered' AND rider_id IS NOT NULL AND date(rider_delivered_at,'localtime')=date('now','localtime')`).get()?.c || 0
+  };
+  
+  res.json({ ok: true, riders: analytics, stats: overallStats });
 });
 
 app.listen(PORT, () => {

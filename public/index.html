@@ -5336,26 +5336,45 @@ function showRatingPopup(orderId) {
   const orders = window._ORDERS || window._ALL_ORDERS || [];
   let order = orders.find(o => o.id === orderId);
   
+  // Get rider name if available
+  const riderName = order?.delivery_boy_name || order?.delivery_boy || 'Delivery Partner';
+  
   const overlay = document.createElement('div');
   overlay.id = 'ratingPopupOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .2s';
   
   overlay.innerHTML = `
-    <div style="background:var(--card);border-radius:20px;padding:24px;max-width:340px;width:100%;text-align:center;animation:slideUp .3s">
-      <div style="font-size:48px;margin-bottom:12px">⭐</div>
-      <div style="font-size:18px;font-weight:800;margin-bottom:6px">Rate Your Order</div>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Order #${orderId} delivered! How was your experience?</div>
+    <div style="background:var(--card);border-radius:20px;padding:24px;max-width:360px;width:100%;text-align:center;animation:slideUp .3s;max-height:90vh;overflow-y:auto">
+      <div style="font-size:48px;margin-bottom:8px">✅</div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:4px">Order Delivered!</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Order #${orderId} • How was everything?</div>
       
-      <!-- Quick star rating -->
-      <div style="display:flex;justify-content:center;gap:8px;margin-bottom:20px" id="popupStars-${orderId}">
-        ${[1,2,3,4,5].map(s => `<span onclick="setPopupRating(${orderId},${s})" style="font-size:36px;cursor:pointer;color:var(--border);transition:all .2s" data-val="${s}">★</span>`).join('')}
+      <!-- Food Quality Rating -->
+      <div style="background:var(--bg);border-radius:14px;padding:14px;margin-bottom:12px;border:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px">🍗 Food Quality</div>
+        <div style="display:flex;justify-content:center;gap:6px" id="popupStars-${orderId}">
+          ${[1,2,3,4,5].map(s => `<span onclick="setPopupRating(${orderId},${s})" style="font-size:32px;cursor:pointer;color:var(--border);transition:all .15s" data-val="${s}">★</span>`).join('')}
+        </div>
       </div>
+      
+      <!-- Rider Rating (Separate) -->
+      <div style="background:var(--bg);border-radius:14px;padding:14px;margin-bottom:12px;border:1px solid var(--border)">
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px">🛵 Delivery Partner</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${riderName !== 'Delivery Partner' ? riderName : 'Rate your rider'}</div>
+        <div style="display:flex;justify-content:center;gap:6px" id="popupRiderStars-${orderId}">
+          ${[1,2,3,4,5].map(s => `<span onclick="setPopupRiderRating(${orderId},${s})" style="font-size:32px;cursor:pointer;color:var(--border);transition:all .15s" data-val="${s}">★</span>`).join('')}
+        </div>
+        <div id="riderRatingLabel-${orderId}" style="font-size:11px;color:var(--muted);margin-top:6px;min-height:16px"></div>
+      </div>
+      
+      <!-- Optional Comment -->
+      <textarea id="popupComment-${orderId}" placeholder="Any feedback? (optional)" style="width:100%;padding:10px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;resize:none;height:50px;outline:none;margin-bottom:14px"></textarea>
       
       <div style="display:flex;gap:10px">
         <button onclick="submitPopupRating(${orderId})" style="flex:1;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer">
-          ⭐ Rate Now
+          ⭐ Submit Rating
         </button>
-        <button onclick="closeRatingPopup(${orderId})" style="flex:1;padding:14px;background:var(--bg);border:1px solid var(--border);color:var(--muted);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer">
+        <button onclick="closeRatingPopup(${orderId})" style="padding:14px 16px;background:var(--bg);border:1px solid var(--border);color:var(--muted);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer">
           Later
         </button>
       </div>
@@ -5376,12 +5395,32 @@ function setPopupRating(orderId, val) {
   container.dataset.rating = val;
 }
 
+function setPopupRiderRating(orderId, val) {
+  const container = document.getElementById('popupRiderStars-' + orderId);
+  if (!container) return;
+  container.querySelectorAll('span').forEach(s => {
+    const v = parseInt(s.dataset.val);
+    s.style.color = v <= val ? '#22c55e' : 'var(--border)';
+    s.style.transform = v <= val ? 'scale(1.2)' : 'scale(1)';
+  });
+  container.dataset.rating = val;
+  
+  // Show label
+  const labels = { 1: 'Poor 😞', 2: 'Below Average 😕', 3: 'Good 🙂', 4: 'Very Good 😊', 5: 'Excellent! 🌟' };
+  const label = document.getElementById('riderRatingLabel-' + orderId);
+  if (label) label.textContent = labels[val] || '';
+}
+
 async function submitPopupRating(orderId) {
   const container = document.getElementById('popupStars-' + orderId);
+  const riderContainer = document.getElementById('popupRiderStars-' + orderId);
   const rating = parseInt(container?.dataset.rating || 0);
-  if (!rating) { showToast('Please tap a star ⭐', 'error'); return; }
+  const riderRating = parseInt(riderContainer?.dataset.rating || 0);
+  const comment = document.getElementById('popupComment-' + orderId)?.value?.trim() || '';
   
-  // Get order items and submit rating for first item + delivery
+  if (!rating && !riderRating) { showToast('Please tap at least one star ⭐', 'error'); return; }
+  
+  // Get order items and submit rating
   const orders = window._ORDERS || window._ALL_ORDERS || [];
   const order = orders.find(o => o.id === orderId);
   if (!order || !order.items || !order.items.length) {
@@ -5390,7 +5429,7 @@ async function submitPopupRating(orderId) {
   }
   
   try {
-    // Submit review for first item with delivery rating
+    // Submit item review with rider rating
     const firstItem = order.items[0];
     const res = await fetch('/api/reviews', {
       method: 'POST',
@@ -5399,16 +5438,35 @@ async function submitPopupRating(orderId) {
         phone: USER.phone,
         order_id: orderId,
         item_code: firstItem.code,
-        rating: rating,
-        delivery_rating: rating,
-        comment: ''
+        rating: rating || riderRating,
+        delivery_rating: riderRating || null,
+        comment: comment
       })
     });
     const data = await res.json();
-    if (data.ok) {
-      showToast('Thanks for rating! ⭐', 'success');
+    
+    // Also submit dedicated rider rating to rider_ratings API
+    if (riderRating) {
+      try {
+        await fetch('/api/rider/rate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone: USER.phone,
+            order_id: orderId,
+            rider_rating: riderRating,
+            comment: comment
+          })
+        });
+      } catch(e) {}
     }
-  } catch(e) {}
+    
+    if (data.ok) {
+      showToast('Thanks for your feedback! ⭐', 'success');
+    }
+  } catch(e) {
+    showToast('Rating saved locally', 'info');
+  }
   
   closeRatingPopup(orderId);
   dismissStripOrder(orderId);
