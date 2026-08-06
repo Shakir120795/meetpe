@@ -5078,7 +5078,7 @@ function downloadInvoice(orderId) {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Invoice - Order #${orderId}</title>
+      <title>Invoice_Order_${orderId}_NOW</title>
       <style>
         body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
         .header { text-align: center; margin-bottom: 30px; }
@@ -5090,6 +5090,10 @@ function downloadInvoice(orderId) {
         th { background: #f5f5f5; padding: 10px; text-align: left; }
         .total-row { font-weight: bold; font-size: 16px; }
         .footer { margin-top: 40px; text-align: center; color: #999; font-size: 12px; }
+        @media print {
+          body { margin: 20px; }
+          .no-print { display: none; }
+        }
       </style>
     </head>
     <body>
@@ -5137,18 +5141,28 @@ function downloadInvoice(orderId) {
     </html>
   `;
   
-  // Create blob and download
-  const blob = new Blob([invoiceHTML], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `invoice-${orderId}.html`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Create blob and download as PDF using print
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    showToast('Please allow popups to download invoice', 'error');
+    return;
+  }
+  printWindow.document.write(invoiceHTML);
+  printWindow.document.close();
   
-  showToast('Invoice downloaded', 'success');
+  // Wait for content to load, then trigger print (Save as PDF)
+  printWindow.onload = function() {
+    setTimeout(() => {
+      printWindow.print();
+    }, 300);
+  };
+  
+  // Fallback if onload doesn't fire
+  setTimeout(() => {
+    printWindow.print();
+  }, 1000);
+  
+  showToast('Save as PDF from print dialog', 'success');
 }
 
 function reorderItems(orderId) {
