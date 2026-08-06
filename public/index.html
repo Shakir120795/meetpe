@@ -1781,6 +1781,16 @@ input,textarea{font:inherit;color:inherit}
 
   </div><!-- /screens -->
 
+  <!-- ── Active Order Strip (above bottom nav) ── -->
+  <div id="activeOrderStrip" style="display:none;position:fixed;bottom:60px;left:0;right:0;z-index:149;background:var(--card);border-top:1px solid var(--border);padding:10px 14px;overflow:hidden">
+    <div id="activeOrderSlider" style="display:flex;transition:transform 0.3s ease;width:100%">
+      <!-- Dynamic active order cards will be inserted here -->
+    </div>
+    <!-- Dots indicator for slideshow -->
+    <div id="activeOrderDots" style="display:none;text-align:center;margin-top:6px">
+    </div>
+  </div>
+
   <!-- ── Bottom Nav ── -->
   <nav class="bottom-nav" id="bottomNav">
     <button class="nav-btn active" id="nav-home" onclick="navTo('screen-home','nav-home')">
@@ -2361,6 +2371,9 @@ function initMainApp() {
           console.log('✅ [INIT_MAIN] Settings loaded');
           applyBranding();
           console.log('✅ [INIT_MAIN] Branding applied');
+          
+          // Refresh active order strip
+          refreshActiveStrip();
         })
         .catch(e => {
           console.error('🔴 [INIT_MAIN] Settings fetch failed:', e);
@@ -4673,6 +4686,9 @@ async function loadOrders() {
     title.textContent = `My Orders (${data.orders.length})`;
     window._ORDERS = data.orders;
 
+    // Update active order strip
+    updateActiveOrderStrip(data.orders);
+
     // Check if any active orders — if so, start auto-refresh
     const hasActive = data.orders.some(o => ['placed','preparing','out_for_delivery'].includes(o.status));
     if (hasActive) {
@@ -4732,11 +4748,35 @@ function renderOrdersList(orders) {
     const color = statusColor[status] || '#888';
     const bg = statusBg[status] || 'rgba(136,136,136,.15)';
     
+    // IST time format
     const d = new Date(order.created_at);
-    const dateStr = d.toLocaleDateString('en-IN',{day:'numeric',month:'short'}) + ', ' + 
-                    d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+    const istOptions = { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' };
+    const istTimeOptions = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true };
+    const dateStr = d.toLocaleDateString('en-IN', istOptions) + ', ' + 
+                    d.toLocaleTimeString('en-IN', istTimeOptions);
     
     const isDelivered = status === 'delivered';
+    const isActive = ['placed', 'preparing', 'out_for_delivery'].includes(status);
+    
+    // Smart header text based on status
+    let headerText = '';
+    let headerIcon = '';
+    if (status === 'delivered') {
+      headerText = 'Delivered';
+      headerIcon = '✓';
+    } else if (status === 'out_for_delivery') {
+      headerText = 'Out for Delivery';
+      headerIcon = '🛵';
+    } else if (status === 'preparing') {
+      headerText = 'Preparing your order';
+      headerIcon = '👨‍🍳';
+    } else if (status === 'placed') {
+      headerText = 'Order Placed';
+      headerIcon = '📋';
+    } else if (status === 'cancelled') {
+      headerText = 'Order Cancelled';
+      headerIcon = '❌';
+    }
     
     // Get first 3 product images
     const itemImages = (order.items||[])
@@ -4756,7 +4796,7 @@ function renderOrdersList(orders) {
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
         <div style="flex:1">
           <div style="font-size:15px;font-weight:700;margin-bottom:4px">
-            ${isDelivered ? '✓' : '⚡'} Arrived in ${Math.floor(Math.random()*20)+10} minutes
+            ${headerIcon} ${headerText}
           </div>
           <div style="font-size:12px;color:var(--muted)">₹${order.total} • ${dateStr}</div>
         </div>
@@ -4798,6 +4838,99 @@ function searchOrders(query) {
   });
   
   renderOrdersList(filtered);
+}
+
+// ═══════════════════════════════════════════
+//  Active Order Strip (above bottom nav)
+// ═══════════════════════════════════════════
+let _activeStripSlide = 0;
+let _activeStripTimer = null;
+
+function updateActiveOrderStrip(orders) {
+  const strip = document.getElementById('activeOrderStrip');
+  const slider = document.getElementById('activeOrderSlider');
+  const dots = document.getElementById('activeOrderDots');
+  if (!strip || !slider) return;
+  
+  // Filter active orders
+  const activeOrders = (orders || []).filter(o => ['placed', 'preparing', 'out_for_delivery'].includes(o.status));
+  
+  // Check for recently delivered (within last 5 minutes) to show rating prompt
+  const recentDelivered = (orders || []).filter(o => {
+    if (o.status !== 'delivered') return false;
+    const deliveredTime = new Date(o.updated_at || o.created_at);
+    const now = new Date();
+    return (now - deliveredTime) < 5 * 60 * 1000; // 5 minutes
+  });
+  
+  const allStripOrders = [...activeOrders, ...recentDelivered];
+  
+  if (allStripOrders.length === 0) {
+    strip.style.display = 'none';
+    if (_activeStripTimer) { clearInterval(_activeStripTimer); _activeStripTimer = null; }
+    return;
+  }
+  
+  strip.style.display = 'block';
+  
+  // Generate strip cards
+  slider.innerHTML = allStripOrders.map(order => {
+    const status = order.status || 'placed';
+    let icon = '', text = '', color = '';
+    
+    if (status === 'placed') {
+      icon = '📋'; text = 'Order Placed • Waiting for confirmation'; color = '#f59e0b';
+    } else if (status === 'preparing') {
+      icon = '👨‍🍳'; text = 'Preparing your order...'; color = '#818cf8';
+    } else if (status === 'out_for_delivery') {
+      icon = '🛵'; text = 'Out for delivery!'; color = '#22c55e';
+    } else if (status === 'delivered') {
+      icon = '✅'; text = 'Delivered! Rate your order'; color = '#22c55e';
+    }
+    
+    return `<div onclick="showOrderDetail(${order.id})" style="min-width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;padding:2px 0">
+      <div style="font-size:20px">${icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:${color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${text}</div>
+        <div style="font-size:11px;color:var(--muted)">Order #${order.id} • ₹${order.total}</div>
+      </div>
+      <div style="font-size:12px;color:var(--accent);font-weight:600">View →</div>
+    </div>`;
+  }).join('');
+  
+  // Show dots if multiple orders
+  if (allStripOrders.length > 1) {
+    dots.style.display = 'block';
+    dots.innerHTML = allStripOrders.map((_, i) => 
+      `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;margin:0 3px;background:${i === _activeStripSlide ? 'var(--accent)' : 'var(--border)'}"></span>`
+    ).join('');
+    
+    // Auto-slide every 4 seconds
+    if (_activeStripTimer) clearInterval(_activeStripTimer);
+    _activeStripTimer = setInterval(() => {
+      _activeStripSlide = (_activeStripSlide + 1) % allStripOrders.length;
+      slider.style.transform = `translateX(-${_activeStripSlide * 100}%)`;
+      dots.innerHTML = allStripOrders.map((_, i) => 
+        `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;margin:0 3px;background:${i === _activeStripSlide ? 'var(--accent)' : 'var(--border)'}"></span>`
+      ).join('');
+    }, 4000);
+  } else {
+    dots.style.display = 'none';
+    if (_activeStripTimer) { clearInterval(_activeStripTimer); _activeStripTimer = null; }
+  }
+}
+
+// Call updateActiveOrderStrip when orders load
+function refreshActiveStrip() {
+  if (!USER || !USER.phone) return;
+  fetch('/api/orders/' + USER.phone)
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok && data.orders) {
+        updateActiveOrderStrip(data.orders);
+      }
+    })
+    .catch(() => {});
 }
 
 function showOrderMenu(orderId) {
@@ -5034,7 +5167,7 @@ function showOrderDetail(id) {
 
   // Get delivery boy details
   const deliveryBoy = getDeliveryBoy();
-  const settings = SITE_SETTINGS?.orderTracking || {};
+  const settings = APP_SETTINGS?.orderTracking || {};
   
   // Live Tracking Section (only for active orders)
   const liveTrackingHtml = isActive && settings.enableLiveTracking ? `
@@ -5211,7 +5344,7 @@ function startETACountdown(initialMinutes) {
 }
 
 function callDeliveryBoy(phone) {
-  const settings = SITE_SETTINGS?.orderTracking || {};
+  const settings = APP_SETTINGS?.orderTracking || {};
   if (!settings.enableCallButton) {
     showToast('Call feature is disabled', 'info');
     return;
@@ -5226,7 +5359,7 @@ function callDeliveryBoy(phone) {
 }
 
 function chatDeliveryBoy(phone) {
-  const settings = SITE_SETTINGS?.orderTracking || {};
+  const settings = APP_SETTINGS?.orderTracking || {};
   if (!settings.enableChatButton) {
     showToast('Chat feature is disabled', 'info');
     return;
@@ -5242,7 +5375,7 @@ function chatDeliveryBoy(phone) {
 }
 
 function getDeliveryBoy() {
-  const settings = SITE_SETTINGS?.orderTracking || {};
+  const settings = APP_SETTINGS?.orderTracking || {};
   const boys = settings.deliveryBoys || [];
   
   if (boys.length === 0) {
@@ -5757,7 +5890,7 @@ function renderPaymentContent(method) {
   const container = document.getElementById('paymentContent');
   
   // Get payment gateway settings (will be loaded from API or localStorage)
-  const settings = SITE_SETTINGS?.paymentGateway || {};
+  const settings = APP_SETTINGS?.paymentGateway || {};
   
   switch(method) {
     case 'upi':
@@ -5985,7 +6118,7 @@ async function processPayment() {
     return;
   }
   
-  const settings = SITE_SETTINGS?.paymentGateway || {};
+  const settings = APP_SETTINGS?.paymentGateway || {};
   const mockMode = settings.mockPaymentEnabled || false;
   
   // Disable pay button
