@@ -665,6 +665,49 @@ app.post('/api/membership/verify', (req, res) => {
   }
 });
 
+// POST /api/membership/wallet-pay - Pay membership using NOW Wallet balance
+app.post('/api/membership/wallet-pay', (req, res) => {
+  try {
+    const { phone, planId } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+    
+    const waPhone = `web:+91${cleanPhone}`;
+    const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
+    if (!customer) return res.status(404).json({ ok: false, error: 'Customer not found' });
+    
+    const plans = { monthly: { price: 99, duration: 30 }, yearly: { price: 999, duration: 365 } };
+    const plan = plans[planId];
+    if (!plan) return res.status(400).json({ ok: false, error: 'Invalid plan' });
+    
+    // Check wallet balance
+    const wallet = customer.wallet_balance || 0;
+    if (wallet < plan.price) {
+      return res.status(400).json({ ok: false, error: `Insufficient wallet balance (₹${wallet}). Need ₹${plan.price}.` });
+    }
+    
+    // Check 7km
+    const distance = customer.delivery_zone_distance || 0;
+    if (distance > 7) {
+      return res.status(400).json({ ok: false, error: 'Membership only within 7km of hub' });
+    }
+    
+    // Deduct wallet and activate membership
+    const now = new Date().toISOString();
+    db.prepare(`UPDATE customers SET wallet_balance = wallet_balance - ?, membership_zone = ?, membership_price = ?, delivery_credits = 10, membership_start = ?, is_plus = 1 WHERE phone = ?`)
+      .run(plan.price, planId, plan.price, now, waPhone);
+    
+    const updated = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(waPhone);
+    
+    console.log(`🎖️ Membership activated via wallet: ${planId} for ${cleanPhone} (₹${plan.price} deducted)`);
+    
+    res.json({ ok: true, message: 'Membership activated!', credits: 10, walletRemaining: updated?.wallet_balance || 0 });
+  } catch (e) {
+    console.error('Wallet membership error:', e.message);
+    res.status(500).json({ ok: false, error: 'Failed' });
+  }
+});
+
 // GET /api/membership/status - Get membership status for customer
 app.get('/api/membership/status', (req, res) => {
   try {
