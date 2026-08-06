@@ -1575,16 +1575,11 @@ input,textarea{font:inherit;color:inherit}
       <div style="padding:14px;padding-bottom:80px">
         
         <!-- Quick Actions -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
           <button onclick="helpWhatsApp()" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;cursor:pointer">
             <div style="font-size:28px;margin-bottom:8px">💬</div>
             <div style="font-size:13px;font-weight:700">WhatsApp</div>
             <div style="font-size:11px;color:var(--muted)">Chat with us</div>
-          </button>
-          <button onclick="helpCall()" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;cursor:pointer">
-            <div style="font-size:28px;margin-bottom:8px">📞</div>
-            <div style="font-size:13px;font-weight:700">Call Us</div>
-            <div style="font-size:11px;color:var(--muted)">Talk to support</div>
           </button>
           <button onclick="toggleChat()" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;cursor:pointer">
             <div style="font-size:28px;margin-bottom:8px">🤖</div>
@@ -8874,44 +8869,97 @@ function toggleChat() {
   
   if (CHAT_OPEN) {
     widget.classList.add('open');
-    // Scroll to bottom
-    setTimeout(() => {
-      const messages = document.getElementById('chatMessages');
-      if (messages) messages.scrollTop = messages.scrollHeight;
-    }, 100);
+    // Start polling for new messages
+    startChatPolling();
   } else {
     widget.classList.remove('open');
+    stopChatPolling();
   }
 }
 
 function sendQuickReply(topic) {
-  addChatMessage('user', topic);
-  const key = topic.toLowerCase().split(' ')[0];
-  const response = AUTO_RESPONSES[key] || AUTO_RESPONSES['other'];
-  setTimeout(() => {
-    addChatMessage('bot', response);
-  }, 600);
+  const input = document.getElementById('chatInput');
+  input.value = topic;
+  sendChatMessage();
 }
 
 function sendChatMessage() {
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
   if (!text) return;
+  if (!USER || !USER.phone) { showToast('Please login to chat', 'error'); return; }
   
   input.value = '';
   addChatMessage('user', text);
   
-  // Bot auto-response
+  // Send to server
+  fetch('/api/chat/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone: USER.phone, message: text })
+  }).catch(() => {});
+  
+  // Show typing indicator briefly
+  const typingEl = document.createElement('div');
+  typingEl.className = 'chat-message bot';
+  typingEl.id = 'chatTyping';
+  typingEl.innerHTML = '<div class="chat-bubble" style="opacity:.6">Typing...</div>';
+  document.getElementById('chatMessages').appendChild(typingEl);
+  
+  // Check for new admin reply after 2 seconds
   setTimeout(() => {
-    const responses = [
-      '👍 Thanks for reaching out! Our team will respond shortly.',
-      '⏳ We\'re looking into this. Hang tight!',
-      '✓ Got your message. We\'ll help you asap!',
-      '📞 Our team is here to help. What else can we do?'
-    ];
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-    addChatMessage('bot', randomResponse);
-  }, 800);
+    const typing = document.getElementById('chatTyping');
+    if (typing) typing.remove();
+    loadChatMessages();
+  }, 2000);
+}
+
+let _chatPollTimer = null;
+
+function loadChatMessages() {
+  if (!USER || !USER.phone) return;
+  
+  fetch('/api/chat/messages/' + USER.phone)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok) return;
+      
+      const messages = document.getElementById('chatMessages');
+      messages.innerHTML = '';
+      
+      if (!data.messages.length) {
+        addChatMessage('bot', '👋 Hi! How can we help you today? Our team will reply here.');
+        return;
+      }
+      
+      data.messages.forEach(msg => {
+        const type = msg.sender === 'admin' ? 'bot' : 'user';
+        const d = new Date(msg.created_at + 'Z');
+        const time = d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true });
+        
+        const bubble = document.createElement('div');
+        bubble.className = `chat-message ${type}`;
+        bubble.innerHTML = `
+          <div class="chat-bubble">${msg.message}</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:4px">${time}</div>
+        `;
+        messages.appendChild(bubble);
+      });
+      
+      messages.scrollTop = messages.scrollHeight;
+    })
+    .catch(() => {});
+}
+
+function startChatPolling() {
+  if (_chatPollTimer) clearInterval(_chatPollTimer);
+  loadChatMessages();
+  // Poll every 5 seconds for new messages
+  _chatPollTimer = setInterval(loadChatMessages, 5000);
+}
+
+function stopChatPolling() {
+  if (_chatPollTimer) { clearInterval(_chatPollTimer); _chatPollTimer = null; }
 }
 
 function addChatMessage(type, text) {
@@ -8925,26 +8973,6 @@ function addChatMessage(type, text) {
   messages.appendChild(bubble);
   messages.scrollTop = messages.scrollHeight;
 }
-
-// Save chat history to localStorage
-setInterval(() => {
-  localStorage.setItem('now_chat', JSON.stringify(CHAT_MESSAGES));
-}, 5000);
-
-// Load chat history on startup
-window.addEventListener('load', () => {
-  const saved = localStorage.getItem('now_chat');
-  if (saved) {
-    try {
-      CHAT_MESSAGES = JSON.parse(saved);
-      const messages = document.getElementById('chatMessages');
-      messages.innerHTML = '';
-      CHAT_MESSAGES.forEach(msg => {
-        addChatMessage(msg.type, msg.text);
-      });
-    } catch(e) {}
-  }
-});
 </script>
 
 <style>

@@ -3288,6 +3288,87 @@ app.get('/api/referral/earnings/:phone', (req, res) => {
   }
 });
 
+// ═══════════════════════════════════════════
+//  Live Chat System
+// ═══════════════════════════════════════════
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS chat_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone TEXT NOT NULL,
+    sender TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+} catch(e) { console.warn('chat table:', e.message); }
+
+// POST /api/chat/send — user sends message
+app.post('/api/chat/send', (req, res) => {
+  const { phone, message } = req.body || {};
+  const cleanPhone = String(phone || '').replace(/\D/g, '');
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+  if (!message || !message.trim()) return res.status(400).json({ ok: false, error: 'empty message' });
+  
+  const webPhone = `web:+91${cleanPhone}`;
+  db.prepare('INSERT INTO chat_messages (phone, sender, message) VALUES (?, ?, ?)').run(webPhone, 'user', message.trim().slice(0, 1000));
+  res.json({ ok: true });
+});
+
+// GET /api/chat/messages/:phone — get chat history for user
+app.get('/api/chat/messages/:phone', (req, res) => {
+  const cleanPhone = String(req.params.phone).replace(/\D/g, '');
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+  const webPhone = `web:+91${cleanPhone}`;
+  
+  const messages = db.prepare('SELECT * FROM chat_messages WHERE phone = ? ORDER BY created_at ASC LIMIT 100').all(webPhone);
+  res.json({ ok: true, messages });
+});
+
+// GET /admin/chats — get all active chats (admin)
+app.get('/admin/chats', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  
+  // Get unique phones with last message
+  const chats = db.prepare(`
+    SELECT phone, MAX(created_at) as last_message_at, 
+    (SELECT message FROM chat_messages m2 WHERE m2.phone = m1.phone ORDER BY m2.created_at DESC LIMIT 1) as last_message,
+    (SELECT sender FROM chat_messages m3 WHERE m3.phone = m1.phone ORDER BY m3.created_at DESC LIMIT 1) as last_sender,
+    COUNT(*) as total_messages
+    FROM chat_messages m1
+    GROUP BY phone
+    ORDER BY last_message_at DESC
+    LIMIT 50
+  `).all();
+  
+  // Get customer names
+  const result = chats.map(chat => {
+    const customer = db.prepare('SELECT name FROM customers WHERE phone = ?').get(chat.phone);
+    return { ...chat, name: customer?.name || 'Unknown' };
+  });
+  
+  res.json({ ok: true, chats: result });
+});
+
+// GET /admin/chat/:phone — get messages for a specific user (admin)
+app.get('/admin/chat/:phone', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const cleanPhone = String(req.params.phone).replace(/\D/g, '');
+  const webPhone = cleanPhone.startsWith('web:') ? req.params.phone : `web:+91${cleanPhone}`;
+  
+  const messages = db.prepare('SELECT * FROM chat_messages WHERE phone = ? ORDER BY created_at ASC LIMIT 100').all(webPhone);
+  const customer = db.prepare('SELECT name FROM customers WHERE phone = ?').get(webPhone);
+  res.json({ ok: true, messages, name: customer?.name || 'Unknown' });
+});
+
+// POST /admin/chat/reply — admin replies to user
+app.post('/admin/chat/reply', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const { phone, message } = req.body || {};
+  if (!phone || !message || !message.trim()) return res.status(400).json({ ok: false, error: 'missing fields' });
+  
+  db.prepare('INSERT INTO chat_messages (phone, sender, message) VALUES (?, ?, ?)').run(phone, 'admin', message.trim().slice(0, 1000));
+  res.json({ ok: true });
+});
+
 app.listen(PORT, () => {
   console.log(`🥩 MeatPe server listening on :${PORT}`);
 
