@@ -7788,10 +7788,14 @@ function loadUserTickets() {
         container.style.display = 'none';
         return;
       }
+      // Filter: only show user tickets (exclude rider tickets)
+      const userTickets = data.tickets.filter(t => !t.name || !t.name.includes('(Rider)'));
+      if (!userTickets.length) { container.style.display = 'none'; return; }
+      
       container.style.display = 'block';
       container.innerHTML = `
         <div style="font-size:15px;font-weight:700;margin-bottom:12px">📋 My Tickets</div>
-        ${data.tickets.map(t => {
+        ${userTickets.map(t => {
           const statusColor = t.status === 'open' ? '#f59e0b' : t.status === 'resolved' ? '#22c55e' : '#6b7280';
           const statusLabel = t.status === 'open' ? 'Open' : t.status === 'resolved' ? 'Resolved' : t.status;
           const d = new Date(t.created_at + 'Z');
