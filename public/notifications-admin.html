@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin — Push Notifications</title>
+<link rel="icon" type="image/png" href="/logo.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f3f4f6;color:#1a1a1a;padding:20px}
+.wrap{max-width:800px;margin:0 auto}
+h1{font-size:24px;margin-bottom:6px}
+.sub{color:#6b7280;margin-bottom:18px;font-size:14px}
+.section{background:white;border-radius:12px;padding:22px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.section h2{font-size:18px;margin-bottom:12px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:#6b7280}
+.field input,.field select,.field textarea{width:100%;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px}
+.field textarea{resize:vertical;min-height:80px}
+.btn-send{padding:12px 24px;background:#d62828;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;width:100%}
+.notif-item{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
+.notif-item .icon{font-size:20px}
+.notif-item .info{flex:1}
+.notif-item .info h4{font-size:13px;font-weight:700;margin-bottom:2px}
+.notif-item .info p{font-size:12px;color:#6b7280}
+.notif-item .time{font-size:10px;color:#6b7280}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🔔 Push Notifications</h1>
+<p class="sub">Send notifications to all app users</p>
+
+<div style="background:white;padding:14px 16px;border-radius:12px;margin-bottom:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+<input id="key" type="password" placeholder="Admin key" style="flex:1;min-width:200px;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px"/>
+<button onclick="loadSent()" style="padding:9px 18px;background:#d62828;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer">Load</button>
+</div>
+
+<div class="section">
+<h2>📤 Send New Notification</h2>
+<div class="field"><label>Type</label>
+<select id="nType"><option value="offers">🏷️ Offers</option><option value="orders">📦 Orders</option><option value="wallet">💰 Wallet</option><option value="membership">👑 Membership</option></select></div>
+<div class="field"><label>Icon Emoji</label><input id="nIcon" value="🔔" maxlength="4"/></div>
+<div class="field"><label>Title *</label><input id="nTitle" placeholder="Special Offer!"/></div>
+<div class="field"><label>Message *</label><textarea id="nMessage" placeholder="Get 20% off on your next order..."></textarea></div>
+<button class="btn-send" onclick="sendNotification()">📤 Send to All Users</button>
+</div>
+
+<div class="section">
+<h2>📋 Sent Notifications</h2>
+<div id="sentList">Click Load to see sent notifications</div>
+</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const saved = localStorage.getItem('meatpe_admin_key');
+if (saved) { $('key').value = saved; loadSent(); }
+function getKey() { const k = $('key').value.trim(); localStorage.setItem('meatpe_admin_key', k); return k; }
+
+async function sendNotification() {
+  const key = getKey();
+  const type = $('nType').value;
+  const icon = $('nIcon').value.trim() || '🔔';
+  const title = $('nTitle').value.trim();
+  const message = $('nMessage').value.trim();
+  if (!title || !message) { alert('Title and message required'); return; }
+  
+  try {
+    const res = await fetch('/admin/notification/send?key=' + encodeURIComponent(key), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, icon, title, message })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      alert('✅ Notification sent to all users!');
+      $('nTitle').value = ''; $('nMessage').value = '';
+      loadSent();
+    } else { alert(data.error || 'Failed'); }
+  } catch(e) { alert('Network error'); }
+}
+
+async function loadSent() {
+  const key = getKey();
+  try {
+    const res = await fetch('/admin/notifications?key=' + encodeURIComponent(key));
+    const data = await res.json();
+    if (!data.ok) return;
+    if (!data.notifications.length) { $('sentList').innerHTML = '<p style="color:#6b7280">No notifications sent yet</p>'; return; }
+    $('sentList').innerHTML = data.notifications.map(n => {
+      const d = new Date(n.created_at);
+      return `<div class="notif-item"><div class="icon">${n.icon||'🔔'}</div><div class="info"><h4>${n.title}</h4><p>${n.message}</p></div><div class="time">${d.toLocaleDateString('en-IN')}</div></div>`;
+    }).join('');
+  } catch(e) {}
+}
+</script>
+</body>
+</html>

@@ -2532,6 +2532,9 @@ function initMainApp() {
           
           // Update notification badge
           updateNotifBadge();
+          
+          // Fetch admin push notifications
+          fetchAdminNotifications();
         })
         .catch(e => {
           console.error('🔴 [INIT_MAIN] Settings fetch failed:', e);
@@ -7632,6 +7635,43 @@ function notifyOffer(title, message) {
 
 function notifyMembership(message) {
   addNotification('membership', 'Membership Update 👑', message, '👑');
+}
+
+// Fetch admin-pushed notifications and add to local store
+function fetchAdminNotifications() {
+  fetch('/api/notifications/admin')
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok || !data.notifications.length) return;
+      
+      const existing = getNotifications();
+      const lastSeen = parseInt(localStorage.getItem('now_last_admin_notif') || '0');
+      
+      data.notifications.forEach(n => {
+        if (n.id > lastSeen) {
+          // New notification from admin - add to local
+          existing.unshift({
+            id: Date.now() + Math.random(),
+            type: n.type || 'offers',
+            title: n.title,
+            message: n.message,
+            icon: n.icon || '🔔',
+            time: n.created_at ? n.created_at + 'Z' : new Date().toISOString(),
+            read: false
+          });
+        }
+      });
+      
+      // Remember latest notification ID
+      if (data.notifications.length) {
+        localStorage.setItem('now_last_admin_notif', String(data.notifications[0].id));
+      }
+      
+      // Keep max 50
+      if (existing.length > 50) existing.length = 50;
+      saveNotifications(existing);
+    })
+    .catch(() => {});
 }
 
 

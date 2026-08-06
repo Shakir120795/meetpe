@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin — Reports</title>
+<link rel="icon" type="image/png" href="/logo.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f3f4f6;color:#1a1a1a;padding:20px}
+.wrap{max-width:1000px;margin:0 auto}
+h1{font-size:24px;margin-bottom:6px}
+.sub{color:#6b7280;margin-bottom:18px;font-size:14px}
+.section{background:white;border-radius:12px;padding:22px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.section h2{font-size:18px;margin-bottom:14px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:white;border-radius:10px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.stat .num{font-size:26px;font-weight:800}
+.stat .label{font-size:11px;color:#6b7280;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f9fafb;padding:10px;text-align:left;font-weight:600;border-bottom:2px solid #e5e7eb}
+td{padding:10px;border-bottom:1px solid #f3f4f6}
+.bar{height:20px;background:linear-gradient(90deg,#d62828,#e8450a);border-radius:4px;min-width:4px}
+#content{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>📊 Reports & Analytics</h1>
+<p class="sub">Sales, revenue, product performance</p>
+
+<div style="background:white;padding:14px 16px;border-radius:12px;margin-bottom:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+<input id="key" type="password" placeholder="Admin key" style="flex:1;min-width:200px;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px"/>
+<button onclick="loadReports()" style="padding:9px 18px;background:#d62828;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer">Load Reports</button>
+</div>
+
+<div id="content">
+<!-- Summary -->
+<div class="stats-grid" id="summaryStats"></div>
+
+<!-- This Week vs Last Week -->
+<div class="section">
+<h2>📈 This Week vs Last Week</h2>
+<div id="weekComparison"></div>
+</div>
+
+<!-- Daily Revenue -->
+<div class="section">
+<h2>📅 Daily Revenue (Last 30 Days)</h2>
+<div id="dailyChart" style="max-height:300px;overflow-y:auto"></div>
+</div>
+
+<!-- Top Products -->
+<div class="section">
+<h2>🏆 Top Selling Products</h2>
+<div id="topProducts"></div>
+</div>
+
+<!-- Orders by Hour -->
+<div class="section">
+<h2>⏰ Orders by Hour</h2>
+<div id="byHour"></div>
+</div>
+</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const saved = localStorage.getItem('meatpe_admin_key');
+if (saved) { $('key').value = saved; loadReports(); }
+function getKey() { const k = $('key').value.trim(); localStorage.setItem('meatpe_admin_key', k); return k; }
+
+async function loadReports() {
+  try {
+    const res = await fetch('/admin/analytics?key=' + encodeURIComponent(getKey()));
+    const data = await res.json();
+    if (!data.ok) { alert(data.error || 'Failed'); return; }
+    $('content').style.display = 'block';
+    render(data);
+  } catch(e) { alert('Network error'); }
+}
+
+function render(data) {
+  const { summary, thisWeek, lastWeek, daily, topItems, byHour } = data;
+  
+  // Summary
+  $('summaryStats').innerHTML = `
+    <div class="stat"><div class="num" style="color:#d62828">${summary.total_orders}</div><div class="label">Total Orders</div></div>
+    <div class="stat"><div class="num" style="color:#16a34a">₹${Math.round(summary.total_revenue)}</div><div class="label">Total Revenue</div></div>
+    <div class="stat"><div class="num">${summary.unique_customers}</div><div class="label">Unique Customers</div></div>
+    <div class="stat"><div class="num">₹${Math.round(summary.avg_order_value)}</div><div class="label">Avg Order Value</div></div>
+  `;
+  
+  // Week comparison
+  const revGrowth = lastWeek.revenue > 0 ? Math.round(((thisWeek.revenue - lastWeek.revenue) / lastWeek.revenue) * 100) : 100;
+  const ordGrowth = lastWeek.orders > 0 ? Math.round(((thisWeek.orders - lastWeek.orders) / lastWeek.orders) * 100) : 100;
+  $('weekComparison').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div style="padding:16px;background:#f9fafb;border-radius:10px">
+        <div style="font-size:12px;color:#6b7280;margin-bottom:6px">This Week Revenue</div>
+        <div style="font-size:24px;font-weight:800;color:#d62828">₹${thisWeek.revenue}</div>
+        <div style="font-size:12px;color:${revGrowth>=0?'#16a34a':'#ef4444'};font-weight:600;margin-top:4px">${revGrowth>=0?'↑':'↓'} ${Math.abs(revGrowth)}% vs last week</div>
+      </div>
+      <div style="padding:16px;background:#f9fafb;border-radius:10px">
+        <div style="font-size:12px;color:#6b7280;margin-bottom:6px">This Week Orders</div>
+        <div style="font-size:24px;font-weight:800">${thisWeek.orders}</div>
+        <div style="font-size:12px;color:${ordGrowth>=0?'#16a34a':'#ef4444'};font-weight:600;margin-top:4px">${ordGrowth>=0?'↑':'↓'} ${Math.abs(ordGrowth)}% vs last week</div>
+      </div>
+    </div>
+  `;
+  
+  // Daily chart
+  const maxRev = Math.max(...daily.map(d => d.revenue), 1);
+  $('dailyChart').innerHTML = `<table><thead><tr><th>Date</th><th>Orders</th><th>Revenue</th><th></th></tr></thead><tbody>
+    ${daily.slice(-15).map(d => `<tr><td>${d.day}</td><td>${d.orders}</td><td style="font-weight:700;color:#d62828">₹${d.revenue}</td><td style="width:40%"><div class="bar" style="width:${(d.revenue/maxRev*100)}%"></div></td></tr>`).join('')}
+  </tbody></table>`;
+  
+  // Top products
+  const maxQty = Math.max(...topItems.map(t => t.qty), 1);
+  $('topProducts').innerHTML = `<table><thead><tr><th>#</th><th>Product</th><th>Qty Sold</th><th>Revenue</th><th></th></tr></thead><tbody>
+    ${topItems.map((t,i) => `<tr><td style="font-weight:700;color:${i<3?'#d62828':'#6b7280'}">${i+1}</td><td>${t.name}</td><td>${t.qty}</td><td style="font-weight:700">₹${t.revenue}</td><td style="width:30%"><div class="bar" style="width:${(t.qty/maxQty*100)}%"></div></td></tr>`).join('')}
+  </tbody></table>`;
+  
+  // By hour
+  const maxH = Math.max(...byHour.map(h => h.count), 1);
+  $('byHour').innerHTML = `<div style="display:flex;align-items:flex-end;gap:4px;height:120px;padding:10px 0">
+    ${Array.from({length:24}, (_,i) => {
+      const h = byHour.find(x => parseInt(x.hour) === i);
+      const count = h ? h.count : 0;
+      const height = count ? Math.max(8, (count/maxH*100)) : 4;
+      return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:100%;height:${height}px;background:${count?'linear-gradient(180deg,#d62828,#e8450a)':'#e5e7eb'};border-radius:3px" title="${i}:00 - ${count} orders"></div><span style="font-size:9px;color:#6b7280">${i}</span></div>`;
+    }).join('')}
+  </div>`;
+}
+</script>
+</body>
+</html>

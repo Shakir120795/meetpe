@@ -3445,6 +3445,51 @@ app.post('/admin/ticket/reply', (req, res) => {
   res.json({ ok: true });
 });
 
+// ═══════════════════════════════════════════
+//  Admin Push Notifications
+// ═══════════════════════════════════════════
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS admin_notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT DEFAULT 'offers',
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    icon TEXT DEFAULT '🔔',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+} catch(e) {}
+
+// POST /admin/notification/send — admin sends notification to all users
+app.post('/admin/notification/send', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const { type, title, message, icon } = req.body || {};
+  if (!title || !message) return res.status(400).json({ ok: false, error: 'title and message required' });
+  
+  db.prepare('INSERT INTO admin_notifications (type, title, message, icon) VALUES (?, ?, ?, ?)').run(type || 'offers', title, message, icon || '🔔');
+  res.json({ ok: true });
+});
+
+// GET /api/notifications/admin — get admin notifications (for frontend to fetch)
+app.get('/api/notifications/admin', (req, res) => {
+  try {
+    const notifs = db.prepare('SELECT * FROM admin_notifications ORDER BY created_at DESC LIMIT 20').all();
+    res.json({ ok: true, notifications: notifs });
+  } catch(e) {
+    res.json({ ok: true, notifications: [] });
+  }
+});
+
+// GET /admin/notifications — list all sent notifications (admin view)
+app.get('/admin/notifications', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  try {
+    const notifs = db.prepare('SELECT * FROM admin_notifications ORDER BY created_at DESC LIMIT 50').all();
+    res.json({ ok: true, notifications: notifs });
+  } catch(e) {
+    res.json({ ok: true, notifications: [] });
+  }
+});
+
 // POST /api/ticket/reply — user adds more info to ticket
 app.post('/api/ticket/reply', (req, res) => {
   const { phone, ticketId, message } = req.body || {};
