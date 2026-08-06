@@ -161,6 +161,20 @@ const defaults = {
       }
     ]
   },
+  // NEW: Help & Support Settings (admin-editable)
+  helpSupport: {
+    whatsappNumber: '+917617555488',
+    callNumber: '+917617555488',
+    email: '',
+    faqs: [
+      { q: 'How do I track my order?', a: 'Go to Orders tab and click on your order to see live tracking.' },
+      { q: 'What is the delivery time?', a: 'We deliver within 30-45 minutes depending on your zone.' },
+      { q: 'How do I cancel my order?', a: 'Contact us within 5 minutes of placing the order.' },
+      { q: 'What if I receive wrong items?', a: 'Report within 2 hours with a photo for instant replacement.' },
+      { q: 'How does cashback work?', a: 'You get cashback credited to your wallet after each order.' },
+      { q: 'Is COD available?', a: 'Yes, Cash on Delivery is available for orders up to ₹5000.' }
+    ]
+  },
   // NEW: Wallet & Rewards Settings (admin-editable)
   walletRewards: {
     // Wallet Settings
@@ -370,6 +384,11 @@ function read() {
         ...data.orderTracking,
         deliveryBoys: Array.isArray(data.orderTracking?.deliveryBoys) ? data.orderTracking.deliveryBoys : defaults.orderTracking.deliveryBoys
       },
+      helpSupport: { 
+        ...defaults.helpSupport, 
+        ...data.helpSupport,
+        faqs: Array.isArray(data.helpSupport?.faqs) ? data.helpSupport.faqs : defaults.helpSupport.faqs
+      },
       walletRewards: { ...defaults.walletRewards, ...data.walletRewards },
       invoice: { ...defaults.invoice, ...data.invoice },
       deliveryZones: Array.isArray(data.deliveryZones) ? data.deliveryZones : defaults.deliveryZones,
@@ -427,6 +446,11 @@ function update(patch) {
     ...current.orderTracking,
     ...patch.orderTracking,
     deliveryBoys: Array.isArray(patch.orderTracking.deliveryBoys) ? patch.orderTracking.deliveryBoys : current.orderTracking.deliveryBoys
+  };
+  if (patch.helpSupport) current.helpSupport = {
+    ...current.helpSupport,
+    ...patch.helpSupport,
+    faqs: Array.isArray(patch.helpSupport.faqs) ? patch.helpSupport.faqs : current.helpSupport.faqs
   };
   if (patch.walletRewards) current.walletRewards = { ...current.walletRewards, ...patch.walletRewards };
   if (patch.invoice) current.invoice = { ...current.invoice, ...patch.invoice };

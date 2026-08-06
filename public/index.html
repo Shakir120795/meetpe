@@ -1260,7 +1260,7 @@ input,textarea{font:inherit;color:inherit}
         <div class="screen-title">My Profile</div>
         <!-- Help & 3-dot menu in top-right -->
         <div style="position:absolute;right:14px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:8px">
-          <button onclick="toggleChat()" title="Help & Support" 
+          <button onclick="showScreen('screen-help')" title="Help & Support" 
             style="background:transparent;color:var(--accent);border:none;padding:6px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px">
             Help
           </button>
@@ -1391,6 +1391,11 @@ input,textarea{font:inherit;color:inherit}
           <div class="pm-item" onclick="showScreen('screen-about')">
             <div class="pm-icon">ℹ️</div>
             <div class="pm-label">About <span data-brand-name>NOW</span></div>
+            <div class="pm-arrow">›</div>
+          </div>
+          <div class="pm-item" onclick="showScreen('screen-help')">
+            <div class="pm-icon">🆘</div>
+            <div class="pm-label">Help & Support</div>
             <div class="pm-arrow">›</div>
           </div>
         </div>
@@ -1558,6 +1563,71 @@ input,textarea{font:inherit;color:inherit}
       </div>
       <div id="notificationsContent" style="padding:14px">
         <div class="empty"><div class="empty-icon">🔔</div><p>No notifications yet</p></div>
+      </div>
+    </div>
+
+    <!-- ═══ HELP & SUPPORT SCREEN ═══ -->
+    <div class="screen" id="screen-help">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">🆘 Help & Support</div>
+      </div>
+      <div style="padding:14px;padding-bottom:80px">
+        
+        <!-- Quick Actions -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+          <button onclick="helpWhatsApp()" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;cursor:pointer">
+            <div style="font-size:28px;margin-bottom:8px">💬</div>
+            <div style="font-size:13px;font-weight:700">WhatsApp</div>
+            <div style="font-size:11px;color:var(--muted)">Chat with us</div>
+          </button>
+          <button onclick="helpCall()" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;cursor:pointer">
+            <div style="font-size:28px;margin-bottom:8px">📞</div>
+            <div style="font-size:13px;font-weight:700">Call Us</div>
+            <div style="font-size:11px;color:var(--muted)">Talk to support</div>
+          </button>
+          <button onclick="toggleChat()" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;cursor:pointer">
+            <div style="font-size:28px;margin-bottom:8px">🤖</div>
+            <div style="font-size:13px;font-weight:700">Live Chat</div>
+            <div style="font-size:11px;color:var(--muted)">Instant help</div>
+          </button>
+          <button onclick="helpEmail()" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:center;cursor:pointer">
+            <div style="font-size:28px;margin-bottom:8px">📧</div>
+            <div style="font-size:13px;font-weight:700">Email</div>
+            <div style="font-size:11px;color:var(--muted)">Write to us</div>
+          </button>
+        </div>
+        
+        <!-- Raise Ticket -->
+        <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
+          <div style="font-size:15px;font-weight:700;margin-bottom:12px">🎫 Raise a Ticket</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Describe your issue and we'll get back within 24 hours</div>
+          <select id="ticketCategory" style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);margin-bottom:10px">
+            <option value="">Select Category</option>
+            <option value="order">Order Issue</option>
+            <option value="delivery">Delivery Problem</option>
+            <option value="quality">Quality Complaint</option>
+            <option value="payment">Payment/Refund</option>
+            <option value="account">Account Issue</option>
+            <option value="other">Other</option>
+          </select>
+          <textarea id="ticketMessage" placeholder="Describe your issue in detail..." style="width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text);resize:none;height:80px;margin-bottom:10px"></textarea>
+          <button onclick="submitTicket()" style="width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
+            Submit Ticket
+          </button>
+        </div>
+        
+        <!-- FAQs -->
+        <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
+          <div style="font-size:15px;font-weight:700;margin-bottom:12px">❓ Frequently Asked Questions</div>
+          <div id="faqList"></div>
+        </div>
+        
+        <!-- Contact Info -->
+        <div style="background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border)">
+          <div style="font-size:15px;font-weight:700;margin-bottom:12px">📍 Contact Information</div>
+          <div id="helpContactInfo" style="font-size:13px;color:var(--muted);line-height:1.8"></div>
+        </div>
       </div>
     </div>
 
@@ -2483,6 +2553,7 @@ function showScreen(id) {
   if (id === 'screen-reviews') loadMyReviews();
   if (id === 'screen-wishlist') loadWishlist();
   if (id === 'screen-notifications') loadNotifications();
+  if (id === 'screen-help') loadHelpScreen();
   if (id === 'screen-membership') loadMembershipDetails();
   if (id === 'screen-referral') loadReferralScreen();
 
@@ -2493,6 +2564,7 @@ function showScreen(id) {
     'screen-subscriptions':'nav-home','screen-returns':'nav-home',
     'screen-wallet':'nav-home','screen-reviews':'nav-home','screen-wishlist':'nav-home',
     'screen-membership':'nav-home','screen-referral':'nav-home','screen-about':'nav-home',
+    'screen-help':'nav-home','screen-notifications':'nav-home',
     'screen-settings':'nav-home','screen-delete-account':'nav-home'
   };
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -7402,6 +7474,118 @@ function notifyOffer(title, message) {
 
 function notifyMembership(message) {
   addNotification('membership', 'Membership Update 👑', message, '👑');
+}
+
+
+// ═══════════════════════════════════════════
+//  Help & Support Screen
+// ═══════════════════════════════════════════
+function loadHelpScreen() {
+  // Load FAQs
+  const faqList = document.getElementById('faqList');
+  const faqs = APP_SETTINGS?.helpSupport?.faqs || [
+    { q: 'How do I track my order?', a: 'Go to Orders tab and click on your order to see live tracking.' },
+    { q: 'What is the delivery time?', a: 'We deliver within 30-45 minutes depending on your zone.' },
+    { q: 'How do I cancel my order?', a: 'Contact us within 5 minutes of placing the order.' },
+    { q: 'What if I receive wrong items?', a: 'Report within 2 hours with a photo for instant replacement.' },
+    { q: 'How does cashback work?', a: 'You get cashback credited to your wallet after each order.' },
+    { q: 'Is COD available?', a: 'Yes, Cash on Delivery is available for orders up to ₹5000.' }
+  ];
+  
+  if (faqList) {
+    faqList.innerHTML = faqs.map((faq, i) => `
+      <div style="border-bottom:1px solid var(--border);padding:12px 0;cursor:pointer" onclick="toggleFaq(this)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:13px;font-weight:600;flex:1;padding-right:10px">${faq.q}</div>
+          <span style="font-size:14px;color:var(--muted);transition:transform .2s">▼</span>
+        </div>
+        <div style="display:none;font-size:12px;color:var(--muted);line-height:1.6;padding-top:8px">${faq.a}</div>
+      </div>
+    `).join('');
+  }
+  
+  // Load contact info
+  const contactEl = document.getElementById('helpContactInfo');
+  const contact = APP_SETTINGS?.contact || {};
+  const helpSettings = APP_SETTINGS?.helpSupport || {};
+  
+  if (contactEl) {
+    contactEl.innerHTML = `
+      ${contact.phone ? `📞 Phone: <a href="tel:${contact.phone}" style="color:var(--accent);font-weight:600">${contact.phoneDisplay || contact.phone}</a><br/>` : ''}
+      ${helpSettings.whatsappNumber || contact.phone ? `💬 WhatsApp: <a href="https://wa.me/${(helpSettings.whatsappNumber || contact.phone).replace(/\D/g,'')}" style="color:var(--accent);font-weight:600">${helpSettings.whatsappNumber || contact.phoneDisplay || contact.phone}</a><br/>` : ''}
+      ${helpSettings.email || contact.email ? `📧 Email: <a href="mailto:${helpSettings.email || contact.email}" style="color:var(--accent);font-weight:600">${helpSettings.email || contact.email}</a><br/>` : ''}
+      ${contact.timing ? `⏰ Hours: ${contact.timing}<br/>` : ''}
+      ${contact.location ? `📍 ${contact.location}` : ''}
+    `;
+  }
+}
+
+function toggleFaq(el) {
+  const answer = el.querySelector('div:last-child');
+  const arrow = el.querySelector('span');
+  if (answer.style.display === 'none' || !answer.style.display) {
+    answer.style.display = 'block';
+    arrow.style.transform = 'rotate(180deg)';
+  } else {
+    answer.style.display = 'none';
+    arrow.style.transform = 'rotate(0deg)';
+  }
+}
+
+function helpWhatsApp() {
+  const helpSettings = APP_SETTINGS?.helpSupport || {};
+  const phone = helpSettings.whatsappNumber || APP_SETTINGS?.contact?.phone || '+917617555488';
+  const msg = encodeURIComponent('Hi, I need help with my order on NOW - Nonveg On Wheel');
+  window.open(`https://wa.me/${phone.replace(/\D/g,'')}?text=${msg}`, '_blank');
+}
+
+function helpCall() {
+  const helpSettings = APP_SETTINGS?.helpSupport || {};
+  const phone = helpSettings.callNumber || APP_SETTINGS?.contact?.phone || '+917617555488';
+  window.location.href = `tel:${phone}`;
+}
+
+function helpEmail() {
+  const helpSettings = APP_SETTINGS?.helpSupport || {};
+  const email = helpSettings.email || APP_SETTINGS?.contact?.email || 'support@now.com';
+  window.location.href = `mailto:${email}?subject=Help Request - NOW App`;
+}
+
+function submitTicket() {
+  const category = document.getElementById('ticketCategory').value;
+  const message = document.getElementById('ticketMessage').value.trim();
+  
+  if (!category) { showToast('Please select a category', 'error'); return; }
+  if (!message) { showToast('Please describe your issue', 'error'); return; }
+  if (message.length < 10) { showToast('Please provide more details', 'error'); return; }
+  
+  // Save ticket to localStorage (or could be sent to server)
+  const tickets = JSON.parse(localStorage.getItem('now_tickets') || '[]');
+  tickets.push({
+    id: Date.now(),
+    category,
+    message,
+    status: 'open',
+    phone: USER?.phone || '',
+    createdAt: new Date().toISOString()
+  });
+  localStorage.setItem('now_tickets', JSON.stringify(tickets));
+  
+  // Also send via WhatsApp to admin
+  const helpSettings = APP_SETTINGS?.helpSupport || {};
+  const adminPhone = helpSettings.whatsappNumber || APP_SETTINGS?.contact?.phone || '+917617555488';
+  const ticketMsg = encodeURIComponent(`🎫 Support Ticket\nCategory: ${category}\nUser: ${USER?.name || 'Guest'} (${USER?.phone || 'N/A'})\nMessage: ${message}`);
+  
+  showToast('✅ Ticket submitted! We\'ll respond within 24hrs', 'success', 3000);
+  document.getElementById('ticketCategory').value = '';
+  document.getElementById('ticketMessage').value = '';
+  
+  // Open WhatsApp with ticket info
+  setTimeout(() => {
+    if (confirm('Open WhatsApp to send ticket details for faster response?')) {
+      window.open(`https://wa.me/${adminPhone.replace(/\D/g,'')}?text=${ticketMsg}`, '_blank');
+    }
+  }, 1000);
 }
 
 
