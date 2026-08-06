@@ -588,6 +588,120 @@
       </div>
     </div>
 
+    <!-- INVOICE SETTINGS -->
+    <div class="section">
+      <h2>🧾 Invoice / Bill Settings</h2>
+      <p class="desc">Configure all invoice fields. These will appear on downloaded invoices/bills.</p>
+      
+      <!-- Company Details -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">🏢 Company Details</h3>
+        <div class="field">
+          <label>Company Name</label>
+          <input type="text" id="invCompanyName" placeholder="NOW - Nonveg On Wheel" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Company Tagline</label>
+          <input type="text" id="invCompanyTagline" placeholder="Fresh Meat Delivered to Your Door" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Supplier Address</label>
+          <input type="text" id="invSupplierAddress" placeholder="Shop No. 5, Main Market" onchange="markDirty()"/>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>City</label>
+            <input type="text" id="invSupplierCity" placeholder="Agra, Uttar Pradesh" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>State (with code)</label>
+            <input type="text" id="invSupplierState" placeholder="Uttar Pradesh (09)" onchange="markDirty()"/>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Phone Number</label>
+            <input type="tel" id="invSupplierPhone" placeholder="+91 7617555488" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="invSupplierEmail" placeholder="info@now.com" onchange="markDirty()"/>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Legal / Tax Info -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">📋 Legal & Tax Details</h3>
+        <div class="field">
+          <label>GSTIN (GST Number)</label>
+          <input type="text" id="invGstin" placeholder="09AACCI2053A1Z5" onchange="markDirty()"/>
+          <div style="font-size:11px;color:var(--gray);margin-top:4px">Leave blank if not registered</div>
+        </div>
+        <div class="field">
+          <label>CIN (Company Identification Number)</label>
+          <input type="text" id="invCin" placeholder="U74130KA2010PTC052192" onchange="markDirty()"/>
+          <div style="font-size:11px;color:var(--gray);margin-top:4px">Leave blank if not applicable</div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>FSSAI License Number</label>
+            <input type="text" id="invFssaiNo" placeholder="10021051000412" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>PAN Number</label>
+            <input type="text" id="invPanNo" placeholder="AACCI2053A" onchange="markDirty()"/>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Invoice Format -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">⚙️ Invoice Format</h3>
+        <div class="field">
+          <label>Invoice Number Prefix</label>
+          <input type="text" id="invPrefix" placeholder="NOW" maxlength="10" onchange="markDirty()"/>
+          <div style="font-size:11px;color:var(--gray);margin-top:4px">Invoice will be: NOW000001, NOW000002, etc.</div>
+        </div>
+      </div>
+      
+      <!-- Terms & Conditions -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">📝 Terms & Conditions</h3>
+        <div class="field">
+          <label>Term 1</label>
+          <input type="text" id="invTerm1" placeholder="Goods once sold will not be taken back." onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Term 2</label>
+          <input type="text" id="invTerm2" placeholder="Quality issues within 2 hours with photo will be replaced." onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Term 3</label>
+          <input type="text" id="invTerm3" placeholder="This is a computer-generated invoice." onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Footer Note</label>
+          <input type="text" id="invFooterNote" placeholder="*Includes GST component. As per Section 31 of CGST Act." onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- Signatory -->
+      <div style="background:var(--light);padding:16px;border-radius:10px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">✍️ Authorized Signatory</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="invShowSignatory" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Show Authorized Signatory Section</span>
+          </label>
+        </div>
+        <div class="field">
+          <label>Signatory Name (optional)</label>
+          <input type="text" id="invSignatoryName" placeholder="Leave blank for no name" onchange="markDirty()"/>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Sticky save bar -->
@@ -752,6 +866,27 @@ function render() {
   $('defaultETA').value = ot.defaultETA || 30;
   $('etaUpdateInterval').value = ot.etaUpdateInterval || 30;
   renderDeliveryBoys(ot.deliveryBoys || []);
+
+  // Invoice Settings
+  const inv = SETTINGS.invoice || {};
+  $('invCompanyName').value = inv.companyName || '';
+  $('invCompanyTagline').value = inv.companyTagline || '';
+  $('invSupplierAddress').value = inv.supplierAddress || '';
+  $('invSupplierCity').value = inv.supplierCity || '';
+  $('invSupplierState').value = inv.supplierState || '';
+  $('invSupplierPhone').value = inv.supplierPhone || '';
+  $('invSupplierEmail').value = inv.supplierEmail || '';
+  $('invGstin').value = inv.gstin || '';
+  $('invCin').value = inv.cin || '';
+  $('invFssaiNo').value = inv.fssaiNo || '';
+  $('invPanNo').value = inv.panNo || '';
+  $('invPrefix').value = inv.invoicePrefix || 'NOW';
+  $('invTerm1').value = inv.termsLine1 || '';
+  $('invTerm2').value = inv.termsLine2 || '';
+  $('invTerm3').value = inv.termsLine3 || '';
+  $('invFooterNote').value = inv.footerNote || '';
+  $('invShowSignatory').checked = inv.showAuthorizedSignatory !== false;
+  $('invSignatoryName').value = inv.signatoryName || '';
 
   // Mark dirty on any input change
   content.querySelectorAll('input, textarea, select').forEach(el => {
@@ -983,7 +1118,29 @@ function collectData() {
     deliveryBoys: deliveryBoys
   };
 
-  return { branding, contact, categories, socials, pages, trendingSearches, cart, checkout, paymentGateway, orderTracking };
+  // Invoice Settings
+  const invoice = {
+    companyName: $('invCompanyName').value.trim(),
+    companyTagline: $('invCompanyTagline').value.trim(),
+    supplierAddress: $('invSupplierAddress').value.trim(),
+    supplierCity: $('invSupplierCity').value.trim(),
+    supplierState: $('invSupplierState').value.trim(),
+    supplierPhone: $('invSupplierPhone').value.trim(),
+    supplierEmail: $('invSupplierEmail').value.trim(),
+    gstin: $('invGstin').value.trim(),
+    cin: $('invCin').value.trim(),
+    fssaiNo: $('invFssaiNo').value.trim(),
+    panNo: $('invPanNo').value.trim(),
+    invoicePrefix: $('invPrefix').value.trim() || 'NOW',
+    termsLine1: $('invTerm1').value.trim(),
+    termsLine2: $('invTerm2').value.trim(),
+    termsLine3: $('invTerm3').value.trim(),
+    footerNote: $('invFooterNote').value.trim(),
+    showAuthorizedSignatory: $('invShowSignatory').checked,
+    signatoryName: $('invSignatoryName').value.trim()
+  };
+
+  return { branding, contact, categories, socials, pages, trendingSearches, cart, checkout, paymentGateway, orderTracking, invoice };
 }
 
 // ═══════════════════════════════════════════

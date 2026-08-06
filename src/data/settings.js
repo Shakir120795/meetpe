@@ -161,6 +161,27 @@ const defaults = {
       }
     ]
   },
+  // NEW: Invoice Settings (admin-editable)
+  invoice: {
+    companyName: 'NOW - Nonveg On Wheel',
+    companyTagline: 'Fresh Meat Delivered to Your Door',
+    supplierAddress: '',
+    supplierCity: 'Agra, Uttar Pradesh',
+    supplierState: 'Uttar Pradesh (09)',
+    supplierPhone: '+91 7617555488',
+    supplierEmail: '',
+    gstin: '',
+    cin: '',
+    fssaiNo: '',
+    panNo: '',
+    invoicePrefix: 'NOW',
+    termsLine1: 'Goods once sold will not be taken back.',
+    termsLine2: 'Quality issues reported within 2 hours with photo will be replaced.',
+    termsLine3: 'This is a computer-generated invoice.',
+    footerNote: '*Includes GST component. As per Section 31 of CGST Act.',
+    showAuthorizedSignatory: true,
+    signatoryName: ''
+  },
   // NEW: Trending Searches (admin-editable)
   trendingSearches: [
     'chicken breast',
@@ -314,6 +335,7 @@ function read() {
         ...data.orderTracking,
         deliveryBoys: Array.isArray(data.orderTracking?.deliveryBoys) ? data.orderTracking.deliveryBoys : defaults.orderTracking.deliveryBoys
       },
+      invoice: { ...defaults.invoice, ...data.invoice },
       deliveryZones: Array.isArray(data.deliveryZones) ? data.deliveryZones : defaults.deliveryZones,
       membershipPlans: Array.isArray(data.membershipPlans) ? data.membershipPlans : defaults.membershipPlans,
     };
@@ -370,6 +392,7 @@ function update(patch) {
     ...patch.orderTracking,
     deliveryBoys: Array.isArray(patch.orderTracking.deliveryBoys) ? patch.orderTracking.deliveryBoys : current.orderTracking.deliveryBoys
   };
+  if (patch.invoice) current.invoice = { ...current.invoice, ...patch.invoice };
   if (Array.isArray(patch.deliveryZones)) current.deliveryZones = patch.deliveryZones;
   if (Array.isArray(patch.membershipPlans)) current.membershipPlans = patch.membershipPlans;
   write(current);
