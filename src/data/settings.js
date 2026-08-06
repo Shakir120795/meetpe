@@ -123,6 +123,44 @@ const defaults = {
       extraCharge: 0 // Extra charge for COD (₹)
     }
   },
+  // NEW: Order Tracking Settings (admin-editable)
+  orderTracking: {
+    enableLiveTracking: true, // Show live map tracking
+    enableDeliveryBoyDetails: true, // Show delivery boy info
+    enableCallButton: true, // Show call delivery boy button
+    enableChatButton: true, // Show chat with delivery boy button
+    supportPhone: '+917617555488', // Support phone number
+    supportWhatsApp: '+917617555488', // Support WhatsApp number
+    mapProvider: 'google', // google, mapbox, or placeholder
+    googleMapsApiKey: '', // Google Maps API key
+    mapboxToken: '', // Mapbox token
+    defaultETA: 30, // Default ETA in minutes
+    etaUpdateInterval: 30, // Update ETA every N seconds
+    deliveryBoys: [
+      {
+        id: 'DB001',
+        name: 'Raj Kumar',
+        phone: '+919876543210',
+        photo: '', // URL to photo
+        rating: 4.8,
+        totalDeliveries: 450,
+        vehicleNumber: 'UP 16 AB 1234',
+        vehicleType: 'Bike',
+        status: 'available' // available, busy, offline
+      },
+      {
+        id: 'DB002',
+        name: 'Amit Singh',
+        phone: '+919876543211',
+        photo: '',
+        rating: 4.9,
+        totalDeliveries: 520,
+        vehicleNumber: 'UP 16 CD 5678',
+        vehicleType: 'Bike',
+        status: 'available'
+      }
+    ]
+  },
   // NEW: Trending Searches (admin-editable)
   trendingSearches: [
     'chicken breast',
@@ -271,6 +309,11 @@ function read() {
         walletOptions: { ...defaults.paymentGateway.walletOptions, ...(data.paymentGateway?.walletOptions || {}) },
         codOptions: { ...defaults.paymentGateway.codOptions, ...(data.paymentGateway?.codOptions || {}) }
       },
+      orderTracking: {
+        ...defaults.orderTracking,
+        ...data.orderTracking,
+        deliveryBoys: Array.isArray(data.orderTracking?.deliveryBoys) ? data.orderTracking.deliveryBoys : defaults.orderTracking.deliveryBoys
+      },
       deliveryZones: Array.isArray(data.deliveryZones) ? data.deliveryZones : defaults.deliveryZones,
       membershipPlans: Array.isArray(data.membershipPlans) ? data.membershipPlans : defaults.membershipPlans,
     };
@@ -321,6 +364,11 @@ function update(patch) {
     },
     walletOptions: { ...current.paymentGateway.walletOptions, ...(patch.paymentGateway.walletOptions || {}) },
     codOptions: { ...current.paymentGateway.codOptions, ...(patch.paymentGateway.codOptions || {}) }
+  };
+  if (patch.orderTracking) current.orderTracking = {
+    ...current.orderTracking,
+    ...patch.orderTracking,
+    deliveryBoys: Array.isArray(patch.orderTracking.deliveryBoys) ? patch.orderTracking.deliveryBoys : current.orderTracking.deliveryBoys
   };
   if (Array.isArray(patch.deliveryZones)) current.deliveryZones = patch.deliveryZones;
   if (Array.isArray(patch.membershipPlans)) current.membershipPlans = patch.membershipPlans;
