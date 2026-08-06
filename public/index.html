@@ -4949,7 +4949,6 @@ function updateActiveOrderStrip(orders) {
           <div style="font-size:11px;color:var(--muted)">Order #${order.id} • ₹${order.total}</div>
         </div>
         <button onclick="event.stopPropagation();showRatingPopup(${order.id})" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">Rate Now</button>
-        <button onclick="event.stopPropagation();dismissStripOrder(${order.id})" style="width:24px;height:24px;background:var(--border);border:none;border-radius:50%;color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
       </div>`;
     }
     
@@ -4959,7 +4958,6 @@ function updateActiveOrderStrip(orders) {
         <div style="font-size:13px;font-weight:700;color:${color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${text}</div>
         <div style="font-size:11px;color:var(--muted)">Order #${order.id} • ₹${order.total}</div>
       </div>
-      <button onclick="event.stopPropagation();dismissStripOrder(${order.id})" style="width:24px;height:24px;background:var(--border);border:none;border-radius:50%;color:var(--muted);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
     </div>`;
   }).join('');
   
