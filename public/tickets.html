@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin — Support Tickets</title>
+<link rel="icon" type="image/png" href="/logo.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f3f4f6;color:#1a1a1a;padding:20px}
+.wrap{max-width:900px;margin:0 auto}
+h1{font-size:24px;margin-bottom:6px}
+.sub{color:#6b7280;margin-bottom:18px;font-size:14px}
+.nav-links{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.nav-links a{padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb}
+.nav-links a:hover{color:#d62828;border-color:#d62828}
+.nav-links a.active{background:#d62828;color:white;border-color:#d62828}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🎫 Support Tickets</h1>
+<p class="sub">View and reply to customer support tickets</p>
+<div class="nav-links">
+<a href="/admin.html">📊 Dashboard</a>
+<a href="/orders.html">📦 Orders</a>
+<a href="/items.html">🍗 Items</a>
+<a href="/reviews.html">⭐ Reviews</a>
+<a href="/returns.html">↩️ Returns</a>
+<a href="/users.html">👥 Users</a>
+<a href="/tickets.html" class="active">🎫 Tickets</a>
+<a href="/settings.html">⚙️ Settings</a>
+</div>
+
+<!-- Key Bar -->
+<div style="background:white;padding:14px 16px;border-radius:12px;margin-bottom:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+  <label style="font-weight:600;font-size:14px">Admin key:</label>
+  <input id="key" type="password" placeholder="Enter admin key" style="flex:1;min-width:200px;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:monospace"/>
+  <button onclick="loadTickets()" style="padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;border:none;background:#d62828;color:white">Load Tickets</button>
+</div>
+
+<!-- Filter -->
+<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+  <button onclick="filterTickets('all')" id="ft-all" style="padding:8px 16px;background:#d62828;color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">All</button>
+  <button onclick="filterTickets('open')" id="ft-open" style="padding:8px 16px;background:white;color:#6b7280;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">🟡 Open</button>
+  <button onclick="filterTickets('resolved')" id="ft-resolved" style="padding:8px 16px;background:white;color:#6b7280;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">✅ Resolved</button>
+</div>
+
+<!-- Tickets List -->
+<div id="ticketsList" style="font-size:14px;color:#6b7280">Enter admin key and click Load Tickets</div>
+
+<!-- Reply Modal -->
+<div id="replyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="background:white;border-radius:16px;padding:24px;max-width:500px;width:100%">
+    <h3 style="margin-bottom:16px" id="replyTitle">Reply to Ticket</h3>
+    <textarea id="replyText" placeholder="Type your reply..." style="width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;resize:none;height:120px;margin-bottom:12px"></textarea>
+    <div style="display:flex;gap:10px">
+      <button onclick="sendReply('resolved')" style="flex:1;padding:12px;background:#16a34a;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">✅ Reply & Resolve</button>
+      <button onclick="sendReply('open')" style="flex:1;padding:12px;background:#f59e0b;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">💬 Reply (Keep Open)</button>
+      <button onclick="closeReplyModal()" style="padding:12px 16px;background:#f3f4f6;color:#6b7280;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Cancel</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let TICKETS = [];
+let CURRENT_TICKET = null;
+let FILTER = 'all';
+
+const saved = localStorage.getItem('meatpe_admin_key');
+if (saved) { $('key').value = saved; loadTickets(); }
+
+function getKey() {
+  const k = $('key').value.trim();
+  localStorage.setItem('meatpe_admin_key', k);
+  return k;
+}
+
+async function loadTickets() {
+  const key = getKey();
+  if (!key) return;
+  
+  const statusParam = FILTER !== 'all' ? '&status=' + FILTER : '';
+  try {
+    const res = await fetch('/admin/tickets?key=' + encodeURIComponent(key) + statusParam);
+    const data = await res.json();
+    if (!data.ok) { $('ticketsList').innerHTML = '<div style="color:red">' + (data.error || 'Failed') + '</div>'; return; }
+    TICKETS = data.tickets;
+    renderTickets();
+  } catch(e) {
+    $('ticketsList').innerHTML = '<div style="color:red">Network error</div>';
+  }
+}
+
+function filterTickets(status) {
+  FILTER = status;
+  document.querySelectorAll('[id^="ft-"]').forEach(b => { b.style.background = 'white'; b.style.color = '#6b7280'; b.style.border = '1px solid #e5e7eb'; });
+  const btn = $('ft-' + status);
+  btn.style.background = '#d62828'; btn.style.color = 'white'; btn.style.border = 'none';
+  loadTickets();
+}
+
+function renderTickets() {
+  if (!TICKETS.length) {
+    $('ticketsList').innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280">No tickets found</div>';
+    return;
+  }
+  
+  $('ticketsList').innerHTML = TICKETS.map(t => {
+    const statusColor = t.status === 'open' ? '#f59e0b' : '#16a34a';
+    const statusLabel = t.status === 'open' ? '🟡 Open' : '✅ Resolved';
+    const d = new Date(t.created_at);
+    const dateStr = d.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) + ' ' + d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true });
+    
+    return `<div style="background:white;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.04);border-left:4px solid ${statusColor}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div>
+          <span style="font-size:15px;font-weight:700">#${t.id}</span>
+          <span style="margin-left:8px;font-size:12px;background:${statusColor}20;color:${statusColor};padding:3px 8px;border-radius:4px;font-weight:600">${statusLabel}</span>
+          <span style="margin-left:8px;font-size:12px;background:#e5e7eb;padding:3px 8px;border-radius:4px;font-weight:600">${t.category}</span>
+        </div>
+        <span style="font-size:11px;color:#6b7280">${dateStr}</span>
+      </div>
+      <div style="font-size:13px;margin-bottom:6px"><strong>${t.name || 'Unknown'}</strong> <span style="color:#6b7280">(${t.phone})</span></div>
+      <div style="font-size:14px;margin-bottom:10px;line-height:1.5">${t.message}</div>
+      ${t.admin_reply ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px;margin-bottom:10px;font-size:13px"><strong>Your Reply:</strong> ${t.admin_reply}</div>` : ''}
+      <button onclick="openReplyModal(${t.id})" style="padding:8px 16px;background:#d62828;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">💬 Reply</button>
+    </div>`;
+  }).join('');
+}
+
+function openReplyModal(ticketId) {
+  CURRENT_TICKET = ticketId;
+  $('replyTitle').textContent = 'Reply to Ticket #' + ticketId;
+  $('replyText').value = '';
+  $('replyModal').style.display = 'flex';
+}
+
+function closeReplyModal() {
+  $('replyModal').style.display = 'none';
+  CURRENT_TICKET = null;
+}
+
+async function sendReply(status) {
+  const reply = $('replyText').value.trim();
+  if (!reply) { alert('Please type a reply'); return; }
+  
+  try {
+    const res = await fetch('/admin/ticket/reply?key=' + encodeURIComponent(getKey()), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticketId: CURRENT_TICKET, reply, status })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      closeReplyModal();
+      loadTickets();
+    } else {
+      alert(data.error || 'Failed');
+    }
+  } catch(e) { alert('Network error'); }
+}
+</script>
+</body>
+</html>
