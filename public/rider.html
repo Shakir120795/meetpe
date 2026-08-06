@@ -947,11 +947,12 @@ function init() {
 // ============ NAVIGATION ============
 function navigateTo(screen) {
     const screens = document.querySelectorAll('.screen');
-    screens.forEach(s => s.classList.remove('active'));
+    screens.forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
 
     const targetId = screen + 'Screen';
     const target = document.getElementById(targetId);
     if (target) {
+        target.style.display = 'block';
         target.classList.add('active');
     }
 
