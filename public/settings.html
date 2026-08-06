@@ -493,6 +493,101 @@
       </div>
     </div>
 
+    <!-- ORDER TRACKING SETTINGS -->
+    <div class="section">
+      <h2>📦 Order Tracking Settings</h2>
+      <p class="desc">Configure live tracking, delivery boy details, and customer contact options.</p>
+      
+      <!-- Feature Toggles -->
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="checkbox" id="enableLiveTracking" onchange="markDirty()" style="width:18px;height:18px;cursor:pointer"/>
+          <span>Enable Live Map Tracking</span>
+        </label>
+      </div>
+      
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="checkbox" id="enableDeliveryBoyDetails" onchange="markDirty()" style="width:18px;height:18px;cursor:pointer"/>
+          <span>Show Delivery Boy Details</span>
+        </label>
+      </div>
+      
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="checkbox" id="enableCallButton" onchange="markDirty()" style="width:18px;height:18px;cursor:pointer"/>
+          <span>Enable Call Button</span>
+        </label>
+      </div>
+      
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="checkbox" id="enableChatButton" onchange="markDirty()" style="width:18px;height:18px;cursor:pointer"/>
+          <span>Enable Chat Button (WhatsApp)</span>
+        </label>
+      </div>
+      
+      <!-- Support Contacts -->
+      <div class="field-row">
+        <div class="field">
+          <label>Support Phone Number</label>
+          <input type="tel" id="supportPhone" placeholder="+917617555488" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Support WhatsApp Number</label>
+          <input type="tel" id="supportWhatsApp" placeholder="+917617555488" onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- Map Provider -->
+      <div class="field">
+        <label>Map Provider</label>
+        <select id="mapProvider" onchange="markDirty()">
+          <option value="placeholder">Placeholder (No API required)</option>
+          <option value="google">Google Maps</option>
+          <option value="mapbox">Mapbox</option>
+        </select>
+      </div>
+      
+      <div class="field-row">
+        <div class="field">
+          <label>Google Maps API Key</label>
+          <input type="text" id="googleMapsApiKey" placeholder="Enter API key" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Mapbox Access Token</label>
+          <input type="text" id="mapboxToken" placeholder="Enter token" onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- ETA Settings -->
+      <div class="field-row">
+        <div class="field">
+          <label>Default ETA (minutes)</label>
+          <input type="number" id="defaultETA" placeholder="30" min="5" max="120" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>ETA Update Interval (seconds)</label>
+          <input type="number" id="etaUpdateInterval" placeholder="30" min="10" max="300" onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- Delivery Boys Management -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-top:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">👨‍💼 Delivery Boys</h3>
+        <p style="font-size:12px;color:var(--gray);margin-bottom:12px">
+          Add delivery personnel details. One will be randomly assigned to active orders.
+        </p>
+        
+        <div id="deliveryBoysContainer"></div>
+        
+        <button type="button" onclick="addDeliveryBoy()" 
+          style="margin-top:12px;padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">
+          ➕ Add Delivery Boy
+        </button>
+      </div>
+    </div>
+
   </div>
 
   <!-- Sticky save bar -->
@@ -642,6 +737,21 @@ function render() {
   $('codMinAmount').value = pg.codOptions?.minOrderAmount || 100;
   $('codMaxAmount').value = pg.codOptions?.maxOrderAmount || 5000;
   $('codExtraCharge').value = pg.codOptions?.extraCharge || 0;
+
+  // Order Tracking Settings
+  const ot = SETTINGS.orderTracking || {};
+  $('enableLiveTracking').checked = ot.enableLiveTracking !== false;
+  $('enableDeliveryBoyDetails').checked = ot.enableDeliveryBoyDetails !== false;
+  $('enableCallButton').checked = ot.enableCallButton !== false;
+  $('enableChatButton').checked = ot.enableChatButton !== false;
+  $('supportPhone').value = ot.supportPhone || '';
+  $('supportWhatsApp').value = ot.supportWhatsApp || '';
+  $('mapProvider').value = ot.mapProvider || 'placeholder';
+  $('googleMapsApiKey').value = ot.googleMapsApiKey || '';
+  $('mapboxToken').value = ot.mapboxToken || '';
+  $('defaultETA').value = ot.defaultETA || 30;
+  $('etaUpdateInterval').value = ot.etaUpdateInterval || 30;
+  renderDeliveryBoys(ot.deliveryBoys || []);
 
   // Mark dirty on any input change
   content.querySelectorAll('input, textarea, select').forEach(el => {
@@ -837,7 +947,43 @@ function collectData() {
     }
   };
 
-  return { branding, contact, categories, socials, pages, trendingSearches, cart, checkout, paymentGateway };
+  // Order Tracking Settings
+  const deliveryBoys = [];
+  $('deliveryBoysContainer').querySelectorAll('div[style*="background:var(--bg)"]').forEach(row => {
+    const id = row.querySelector('.db-id')?.value?.trim();
+    const name = row.querySelector('.db-name')?.value?.trim();
+    const phone = row.querySelector('.db-phone')?.value?.trim();
+    const photo = row.querySelector('.db-photo')?.value?.trim();
+    const rating = parseFloat(row.querySelector('.db-rating')?.value) || 5.0;
+    const totalDeliveries = parseInt(row.querySelector('.db-deliveries')?.value) || 0;
+    const vehicleType = row.querySelector('.db-vehicle-type')?.value?.trim();
+    const vehicleNumber = row.querySelector('.db-vehicle-number')?.value?.trim();
+    const status = row.querySelector('.db-status')?.value;
+    
+    if (id && name && phone) {
+      deliveryBoys.push({
+        id, name, phone, photo, rating, totalDeliveries,
+        vehicleNumber, vehicleType, status
+      });
+    }
+  });
+
+  const orderTracking = {
+    enableLiveTracking: $('enableLiveTracking').checked,
+    enableDeliveryBoyDetails: $('enableDeliveryBoyDetails').checked,
+    enableCallButton: $('enableCallButton').checked,
+    enableChatButton: $('enableChatButton').checked,
+    supportPhone: $('supportPhone').value.trim(),
+    supportWhatsApp: $('supportWhatsApp').value.trim(),
+    mapProvider: $('mapProvider').value,
+    googleMapsApiKey: $('googleMapsApiKey').value.trim(),
+    mapboxToken: $('mapboxToken').value.trim(),
+    defaultETA: parseInt($('defaultETA').value) || 30,
+    etaUpdateInterval: parseInt($('etaUpdateInterval').value) || 30,
+    deliveryBoys: deliveryBoys
+  };
+
+  return { branding, contact, categories, socials, pages, trendingSearches, cart, checkout, paymentGateway, orderTracking };
 }
 
 // ═══════════════════════════════════════════
@@ -1065,6 +1211,106 @@ function addBank() {
 
 function removeBank(btn) {
   btn.closest('.field-row').remove();
+  markDirty();
+}
+
+// ═══════════════════════════════════════════
+//  Delivery Boys Management
+// ═══════════════════════════════════════════
+function renderDeliveryBoys(boys) {
+  const container = $('deliveryBoysContainer');
+  container.innerHTML = '';
+  
+  boys.forEach((boy, index) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'background:var(--bg);padding:14px;border-radius:8px;margin-bottom:12px;border:1px solid var(--border)';
+    
+    row.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="field">
+          <label style="font-size:11px">ID</label>
+          <input class="db-id" value="${escapeHtml(boy.id)}" placeholder="DB001"/>
+        </div>
+        <div class="field">
+          <label style="font-size:11px">Name</label>
+          <input class="db-name" value="${escapeHtml(boy.name)}" placeholder="Raj Kumar"/>
+        </div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="field">
+          <label style="font-size:11px">Phone</label>
+          <input class="db-phone" value="${escapeHtml(boy.phone)}" placeholder="+919876543210"/>
+        </div>
+        <div class="field">
+          <label style="font-size:11px">Photo URL</label>
+          <input class="db-photo" value="${escapeHtml(boy.photo || '')}" placeholder="https://..."/>
+        </div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="field">
+          <label style="font-size:11px">Rating</label>
+          <input class="db-rating" type="number" step="0.1" min="0" max="5" value="${boy.rating || 5}" placeholder="4.8"/>
+        </div>
+        <div class="field">
+          <label style="font-size:11px">Total Deliveries</label>
+          <input class="db-deliveries" type="number" min="0" value="${boy.totalDeliveries || 0}" placeholder="450"/>
+        </div>
+        <div class="field">
+          <label style="font-size:11px">Status</label>
+          <select class="db-status">
+            <option value="available" ${boy.status === 'available' ? 'selected' : ''}>Available</option>
+            <option value="busy" ${boy.status === 'busy' ? 'selected' : ''}>Busy</option>
+            <option value="offline" ${boy.status === 'offline' ? 'selected' : ''}>Offline</option>
+          </select>
+        </div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field">
+          <label style="font-size:11px">Vehicle Type</label>
+          <input class="db-vehicle-type" value="${escapeHtml(boy.vehicleType || 'Bike')}" placeholder="Bike"/>
+        </div>
+        <div class="field">
+          <label style="font-size:11px">Vehicle Number</label>
+          <input class="db-vehicle-number" value="${escapeHtml(boy.vehicleNumber || '')}" placeholder="UP 16 AB 1234"/>
+        </div>
+      </div>
+      
+      <button type="button" onclick="removeDeliveryBoy(this)" 
+        style="margin-top:10px;padding:8px 12px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;width:100%">
+        🗑️ Remove
+      </button>
+    `;
+    
+    row.querySelectorAll('input, select').forEach(i => i.addEventListener('input', markDirty));
+    container.appendChild(row);
+  });
+}
+
+function addDeliveryBoy() {
+  const settings = SETTINGS || {};
+  const boys = settings.orderTracking?.deliveryBoys || [];
+  
+  boys.push({
+    id: 'DB' + String(Date.now()).slice(-3),
+    name: '',
+    phone: '',
+    photo: '',
+    rating: 5.0,
+    totalDeliveries: 0,
+    vehicleNumber: '',
+    vehicleType: 'Bike',
+    status: 'available'
+  });
+  
+  renderDeliveryBoys(boys);
+  markDirty();
+}
+
+function removeDeliveryBoy(btn) {
+  btn.closest('div[style*="background:var(--bg)"]').remove();
   markDirty();
 }
 
