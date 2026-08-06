@@ -534,141 +534,129 @@ app.post('/api/zone/detect', (req, res) => {
   }
 });
 
-// ===== Zone-Based Membership System =====
+// ===== NOW Plus Membership System (Simple: ₹99/month or ₹999/year) =====
 
-// GET /api/membership/plans - Get available membership plans for user's zone
+// GET /api/membership/plans - Get membership plans
 app.get('/api/membership/plans', (req, res) => {
   try {
     const { phone } = req.query;
-    
-    if (!phone) {
-      return res.status(400).json({ ok: false, error: 'Phone required' });
-    }
+    if (!phone) return res.status(400).json({ ok: false, error: 'Phone required' });
     
     const cleanPhone = String(phone).replace(/\D/g, '');
-    if (cleanPhone.length !== 10) {
-      return res.status(400).json({ ok: false, error: 'Invalid phone' });
-    }
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'Invalid phone' });
     
     const waPhone = `web:+91${cleanPhone}`;
+    const customer = db.prepare('SELECT delivery_zone, delivery_zone_distance FROM customers WHERE phone = ?').get(waPhone);
     
-    // Get customer's zone
-    const customer = db.prepare('SELECT delivery_zone FROM customers WHERE phone = ?').get(waPhone);
+    // Check if within 7km radius of supplier hub
+    const distance = customer?.delivery_zone_distance || 0;
+    const eligible = distance > 0 && distance <= 7;
     
-    if (!customer || !customer.delivery_zone) {
-      return res.status(400).json({ ok: false, error: 'Zone not detected. Please set your location first.' });
-    }
-    
-    // Get membership plans from settings
-    const settingsData = settings.get();
-    const allPlans = settingsData.membershipPlans || [];
-    
-    // Filter plan for user's zone
-    const plan = allPlans.find(p => p.zoneId === customer.delivery_zone);
-    
-    if (!plan) {
-      return res.status(404).json({ ok: false, error: 'No membership plan for your zone' });
-    }
-    
-    res.json({ ok: true, plan, currentZone: customer.delivery_zone });
+    res.json({ 
+      ok: true, 
+      eligible,
+      distance: Math.round(distance * 10) / 10,
+      plans: [
+        { id: 'monthly', name: 'Monthly', price: 99, duration: 30, credits: 10, label: '₹99/month' },
+        { id: 'yearly', name: 'Yearly', price: 999, duration: 365, credits: 10, label: '₹999/year', saving: 189 }
+      ]
+    });
   } catch (e) {
     console.error('Get membership plans error:', e);
     res.status(500).json({ ok: false, error: 'Failed to fetch plans' });
   }
 });
 
-// POST /api/membership/purchase - Purchase membership (mock payment for now)
-app.post('/api/membership/purchase', (req, res) => {
+// POST /api/membership/purchase - Create Razorpay order for membership
+app.post('/api/membership/purchase', async (req, res) => {
   try {
-    const { phone, zoneId, paymentMethod } = req.body;
-    
-    if (!phone || !zoneId) {
-      return res.status(400).json({ ok: false, error: 'Phone and zone required' });
-    }
+    const { phone, planId } = req.body;
+    if (!phone || !planId) return res.status(400).json({ ok: false, error: 'Phone and plan required' });
     
     const cleanPhone = String(phone).replace(/\D/g, '');
-    if (cleanPhone.length !== 10) {
-      return res.status(400).json({ ok: false, error: 'Invalid phone' });
-    }
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'Invalid phone' });
     
     const waPhone = `web:+91${cleanPhone}`;
-    
-    // Get membership plan
-    const settingsData = settings.get();
-    const plan = (settingsData.membershipPlans || []).find(p => p.zoneId === zoneId);
-    
-    if (!plan) {
-      return res.status(404).json({ ok: false, error: 'Invalid membership plan' });
-    }
-    
-    // Check if customer exists
     const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
+    if (!customer) return res.status(404).json({ ok: false, error: 'Customer not found' });
     
-    if (!customer) {
-      return res.status(404).json({ ok: false, error: 'Customer not found' });
+    // Verify within 7km
+    const distance = customer.delivery_zone_distance || 0;
+    if (distance <= 0 || distance > 7) {
+      return res.status(400).json({ ok: false, error: 'Membership available only within 7km of supplier hub. Your distance: ' + Math.round(distance*10)/10 + 'km' });
     }
+    
+    // Check plan
+    const plans = { monthly: { price: 99, duration: 30 }, yearly: { price: 999, duration: 365 } };
+    const plan = plans[planId];
+    if (!plan) return res.status(400).json({ ok: false, error: 'Invalid plan' });
     
     // Check if already has active membership
-    if (customer.membership_zone && customer.membership_start) {
+    if (customer.membership_start && customer.delivery_credits > 0) {
       const startDate = new Date(customer.membership_start);
       const now = new Date();
-      const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
-      
-      if (daysSinceStart < 30 && customer.delivery_credits > 0) {
-        return res.status(400).json({ 
-          ok: false, 
-          error: 'You already have an active membership',
-          daysRemaining: 30 - daysSinceStart,
-          creditsRemaining: customer.delivery_credits
-        });
+      const duration = planId === 'yearly' ? 365 : 30;
+      const daysSince = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+      if (daysSince < duration) {
+        return res.status(400).json({ ok: false, error: 'You already have an active membership with ' + customer.delivery_credits + ' credits remaining' });
       }
     }
     
-    // TODO: Real payment integration (Razorpay, etc.)
-    // For now, we'll just activate membership
+    // Create Razorpay order
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) return res.status(500).json({ ok: false, error: 'Payment not configured' });
+    
+    const orderRes = await axios.post(
+      'https://api.razorpay.com/v1/orders',
+      { amount: plan.price * 100, currency: 'INR', receipt: `membership_${planId}_${cleanPhone}_${Date.now()}` },
+      { auth: { username: keyId, password: keySecret }, timeout: 10000 }
+    );
+    
+    res.json({ ok: true, order: orderRes.data, keyId, plan: planId, price: plan.price });
+  } catch (e) {
+    console.error('Membership order error:', e.response?.data || e.message);
+    res.status(500).json({ ok: false, error: 'Could not create payment order' });
+  }
+});
+
+// POST /api/membership/verify - Verify Razorpay payment and activate membership
+app.post('/api/membership/verify', (req, res) => {
+  try {
+    const { phone, planId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
+    const cleanPhone = String(phone || '').replace(/\D/g, '');
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+    
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keySecret) return res.status(500).json({ ok: false, error: 'Payment not configured' });
+    
+    // Verify signature
+    const crypto = require('crypto');
+    const body = razorpay_order_id + '|' + razorpay_payment_id;
+    const expectedSig = crypto.createHmac('sha256', keySecret).update(body).digest('hex');
+    
+    if (expectedSig !== razorpay_signature) {
+      return res.status(400).json({ ok: false, error: 'Payment verification failed' });
+    }
     
     // Activate membership
+    const waPhone = `web:+91${cleanPhone}`;
+    const plans = { monthly: { price: 99, duration: 30 }, yearly: { price: 999, duration: 365 } };
+    const plan = plans[planId] || plans.monthly;
+    
     const now = new Date().toISOString();
     db.prepare(`
       UPDATE customers 
-      SET membership_zone = ?,
-          membership_price = ?,
-          delivery_credits = ?,
-          membership_start = ?
+      SET membership_zone = ?, membership_price = ?, delivery_credits = 10, membership_start = ?, is_plus = 1
       WHERE phone = ?
-    `).run(zoneId, plan.price, plan.deliveryCredits, now, waPhone);
+    `).run(planId, plan.price, now, waPhone);
     
-    // Notify admin (optional)
-    if (process.env.ADMIN_WHATSAPP) {
-      const adminMsg = `🎉 *New Membership Purchased!*
-
-👤 ${customer.name || 'Customer'}
-📞 +91${cleanPhone}
-💳 ${plan.zoneName} Membership
-💰 ₹${plan.price}/month
-🎟️ ${plan.deliveryCredits} delivery credits activated
-
-Valid for 30 days from today.`;
-      
-      sendMessage(process.env.ADMIN_WHATSAPP, adminMsg).catch(err =>
-        console.warn('Admin membership notification failed:', err.message));
-    }
+    console.log(`🎖️ Membership activated: ${planId} for ${cleanPhone} (${razorpay_payment_id})`);
     
-    res.json({ 
-      ok: true, 
-      message: 'Membership activated successfully!',
-      membership: {
-        zone: zoneId,
-        zoneName: plan.zoneName,
-        price: plan.price,
-        credits: plan.deliveryCredits,
-        startDate: now,
-        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-      }
-    });
+    res.json({ ok: true, message: 'Membership activated!', credits: 10, plan: planId });
   } catch (e) {
-    console.error('Purchase membership error:', e);
-    res.status(500).json({ ok: false, error: 'Failed to purchase membership' });
+    console.error('Membership verify error:', e.message);
+    res.status(500).json({ ok: false, error: 'Verification failed' });
   }
 });
 
@@ -676,56 +664,42 @@ Valid for 30 days from today.`;
 app.get('/api/membership/status', (req, res) => {
   try {
     const { phone } = req.query;
-    
-    if (!phone) {
-      return res.status(400).json({ ok: false, error: 'Phone required' });
-    }
+    if (!phone) return res.status(400).json({ ok: false, error: 'Phone required' });
     
     const cleanPhone = String(phone).replace(/\D/g, '');
-    if (cleanPhone.length !== 10) {
-      return res.status(400).json({ ok: false, error: 'Invalid phone' });
-    }
+    if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'Invalid phone' });
     
     const waPhone = `web:+91${cleanPhone}`;
-    
     const customer = db.prepare(`
       SELECT membership_zone, membership_price, delivery_credits, membership_start
       FROM customers WHERE phone = ?
     `).get(waPhone);
     
-    if (!customer || !customer.membership_zone) {
+    if (!customer || !customer.membership_zone || !customer.membership_start) {
       return res.json({ ok: true, hasActiveMembership: false });
     }
     
     const startDate = new Date(customer.membership_start);
     const now = new Date();
     const daysSinceStart = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
-    const daysRemaining = Math.max(0, 30 - daysSinceStart);
+    const duration = customer.membership_zone === 'yearly' ? 365 : 30;
+    const daysRemaining = Math.max(0, duration - daysSinceStart);
     
-    // Check if expired
-    if (daysRemaining === 0 || customer.delivery_credits === 0) {
-      return res.json({ 
-        ok: true, 
-        hasActiveMembership: false,
-        expired: true
-      });
+    if (daysRemaining === 0) {
+      // Expired — deactivate
+      db.prepare('UPDATE customers SET is_plus = 0 WHERE phone = ?').run(waPhone);
+      return res.json({ ok: true, hasActiveMembership: false, expired: true });
     }
-    
-    // Get zone name
-    const settingsData = settings.get();
-    const plan = (settingsData.membershipPlans || []).find(p => p.zoneId === customer.membership_zone);
     
     res.json({ 
       ok: true, 
       hasActiveMembership: true,
       membership: {
-        zone: customer.membership_zone,
-        zoneName: plan ? plan.zoneName : customer.membership_zone,
+        plan: customer.membership_zone,
         price: customer.membership_price,
         credits: customer.delivery_credits,
         startDate: customer.membership_start,
-        daysRemaining,
-        benefits: plan ? plan.benefits : []
+        daysRemaining
       }
     });
   } catch (e) {

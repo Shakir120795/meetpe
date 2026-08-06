@@ -1315,7 +1315,7 @@ input,textarea{font:inherit;color:inherit}
             <span style="font-size:22px">🎖️</span>
             <div style="flex:1">
               <div style="font-size:13px;font-weight:700">NOW Plus Membership</div>
-              <div style="font-size:11px;color:var(--muted)" id="membershipSubtext">Free delivery • Priority slots • Member offers</div>
+              <div style="font-size:11px;color:var(--muted)" id="membershipSubtext">₹99/month • 10 free deliveries • Priority orders</div>
             </div>
             <button id="membershipBtn" style="background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer"
               onclick="showScreen('screen-membership')">View</button>
@@ -6902,213 +6902,238 @@ async function loadMembershipDetails() {
     el.innerHTML = `<div class="empty">
       <div class="empty-icon">🔒</div>
       <h3>Login Required</h3>
-      <p>Sign in to view membership details</p>
+      <p>Sign in to view membership</p>
       <button onclick="showScreen('screen-login')" style="margin-top:12px;padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer">Login Now</button>
     </div>`;
     return;
   }
   
-  // Show loading
-  el.innerHTML = `<div style="text-align:center;padding:40px">
-    <div style="font-size:36px;margin-bottom:12px">⏳</div>
-    <div style="color:var(--muted)">Loading membership details...</div>
-  </div>`;
+  el.innerHTML = `<div style="text-align:center;padding:40px"><div style="font-size:36px;animation:spin 1s linear infinite">⏳</div></div>`;
   
   try {
-    // Fetch membership status
-    const res = await fetch(`/api/membership/status?phone=${USER.phone}`);
-    const data = await res.json();
-    
-    if (!data.ok) {
-      throw new Error(data.error || 'Failed to load membership');
-    }
-    
-    const hasActive = data.hasActiveMembership;
-    const membership = data.membership || null;
-    
-    // Fetch available plans (for user's zone)
-    const plansRes = await fetch(`/api/membership/plans?phone=${USER.phone}`);
+    const [statusRes, plansRes] = await Promise.all([
+      fetch('/api/membership/status?phone=' + USER.phone),
+      fetch('/api/membership/plans?phone=' + USER.phone)
+    ]);
+    const statusData = await statusRes.json();
     const plansData = await plansRes.json();
     
-    if (!plansData.ok) {
-      // User needs to set location first
-      el.innerHTML = `<div class="empty">
-        <div class="empty-icon">📍</div>
-        <h3>Location Required</h3>
-        <p>Please set your delivery location first to view membership plans</p>
-        <button onclick="showScreen('screen-home'); setTimeout(openLocMap, 300)" style="margin-top:12px;padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer">Set Location</button>
-      </div>`;
-      return;
-    }
+    if (!plansData.ok) throw new Error(plansData.error);
     
-    const plan = plansData.plan;
-    const currentZone = plansData.currentZone;
+    const hasActive = statusData.hasActiveMembership;
+    const membership = statusData.membership || null;
+    const eligible = plansData.eligible;
     
-    // Render UI
     let statusHTML = '';
     
     if (hasActive && membership) {
-      const daysLeft = membership.daysRemaining || 0;
-      const credits = membership.credits || 0;
-      
       statusHTML = `
-        <!-- Active Membership Card -->
         <div style="background:linear-gradient(135deg,#004d1a,#00662d);border-radius:20px;padding:24px;margin-bottom:16px;border:2px solid #00b359;text-align:center">
-          <div style="font-size:48px;margin-bottom:12px">🎖️</div>
-          <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px">${membership.zoneName}</div>
-          <div style="display:inline-block;background:#22c55e;color:#fff;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:700;margin-bottom:12px">✓ ACTIVE</div>
+          <div style="font-size:42px;margin-bottom:8px">🎖️</div>
+          <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:6px">NOW Plus Active</div>
+          <div style="display:inline-block;background:#22c55e;color:#fff;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700">✓ ${membership.plan === 'yearly' ? 'YEARLY' : 'MONTHLY'} PLAN</div>
           
           <div style="display:flex;justify-content:space-around;margin-top:20px">
             <div>
-              <div style="font-size:28px;font-weight:800;color:#22c55e">${credits}</div>
-              <div style="font-size:11px;color:rgba(255,255,255,.7)">Delivery Credits</div>
+              <div style="font-size:28px;font-weight:800;color:#22c55e">${membership.credits}</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.7)">Credits Left</div>
             </div>
             <div style="width:1px;background:rgba(255,255,255,.2)"></div>
             <div>
-              <div style="font-size:28px;font-weight:800;color:#f59e0b">${daysLeft}</div>
-              <div style="font-size:11px;color:rgba(255,255,255,.7)">Days Remaining</div>
+              <div style="font-size:28px;font-weight:800;color:#f59e0b">${membership.daysRemaining}</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.7)">Days Left</div>
             </div>
-          </div>
-          
-          <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:16px">
-            Membership started: ${new Date(membership.startDate).toLocaleDateString()}
           </div>
         </div>
       `;
     } else {
       statusHTML = `
-        <!-- Inactive Membership Card -->
         <div style="background:linear-gradient(135deg,#1a0800,#3d1a00);border-radius:20px;padding:24px;margin-bottom:16px;border:1px solid #5a2d00;text-align:center">
-          <div style="font-size:48px;margin-bottom:12px">🎖️</div>
-          <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px">Zone Membership</div>
-          <div style="display:inline-block;background:var(--muted);color:var(--text);padding:6px 16px;border-radius:20px;font-size:13px;font-weight:700">NOT ACTIVE</div>
-          <div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:12px">Get 10 free deliveries every month!</div>
+          <div style="font-size:42px;margin-bottom:8px">🎖️</div>
+          <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:6px">NOW Plus Membership</div>
+          <div style="display:inline-block;background:var(--muted);color:#fff;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700">NOT ACTIVE</div>
+          <div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:10px">10 free deliveries every month!</div>
         </div>
       `;
     }
     
-    // Benefits section
-    const benefitsHTML = `
-      <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border)">
-        <div style="font-size:14px;font-weight:700;margin-bottom:12px">✨ Member Benefits</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          ${(membership?.benefits || plan.benefits).map(benefit => `
-            <div style="display:flex;align-items:center;gap:10px">
-              <span style="font-size:18px">✓</span>
-              <div style="font-size:13px">${benefit}</div>
-            </div>
-          `).join('')}
+    // Eligibility check
+    let eligibilityHTML = '';
+    if (!eligible) {
+      eligibilityHTML = `
+        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:14px;padding:16px;margin-bottom:14px;text-align:center">
+          <div style="font-size:14px;font-weight:700;color:#dc2626;margin-bottom:6px">📍 Not Eligible</div>
+          <div style="font-size:13px;color:#7f1d1d">Membership is available only within 7km of our supplier hub. Your distance: ${plansData.distance}km</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:8px">Set your correct delivery location and try again.</div>
         </div>
-      </div>
-    `;
+      `;
+    }
     
-    // Membership plan card
-    const planHTML = `
-      <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border)">
-        <div style="font-size:14px;font-weight:700;margin-bottom:12px">💳 Your Zone Membership</div>
-        
-        <div style="background:linear-gradient(135deg,#1a1a00,#2d2500);border-radius:12px;padding:16px;border:2px solid #3d3500">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
-            <div>
-              <div style="font-size:16px;font-weight:700;color:#fff">${plan.zoneName}</div>
-              <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px">${plan.deliveryCredits} delivery credits/month</div>
+    // Plan selection (only if eligible and not active)
+    let planHTML = '';
+    if (eligible && !hasActive) {
+      planHTML = `
+        <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border)">
+          <div style="font-size:14px;font-weight:700;margin-bottom:14px">💳 Choose Your Plan</div>
+          
+          <div style="display:flex;gap:10px;margin-bottom:16px" id="membershipPlanSelector">
+            <div onclick="selectMembershipPlan('monthly')" id="plan-monthly" class="membership-plan-card selected" style="flex:1;background:var(--bg);border:2px solid var(--accent);border-radius:14px;padding:16px;text-align:center;cursor:pointer;transition:all .2s">
+              <div style="font-size:24px;font-weight:800;color:var(--accent)">₹99</div>
+              <div style="font-size:12px;font-weight:600;margin-top:4px">Monthly</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">10 credits / 30 days</div>
             </div>
-            <div style="text-align:right">
-              <div style="font-size:24px;font-weight:800;color:#f59e0b">₹${plan.price}</div>
-              <div style="font-size:11px;color:#22c55e">Save ₹${plan.saving}/month</div>
+            <div onclick="selectMembershipPlan('yearly')" id="plan-yearly" class="membership-plan-card" style="flex:1;background:var(--bg);border:2px solid var(--border);border-radius:14px;padding:16px;text-align:center;cursor:pointer;transition:all .2s;position:relative">
+              <div style="position:absolute;top:-8px;right:8px;background:#22c55e;color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px">SAVE ₹189</div>
+              <div style="font-size:24px;font-weight:800;color:var(--text)">₹999</div>
+              <div style="font-size:12px;font-weight:600;margin-top:4px">Yearly</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">10 credits / 365 days</div>
             </div>
           </div>
           
-          <div style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:10px;margin-bottom:12px">
-            <div style="font-size:11px;color:#f59e0b;font-weight:600">💰 How you save:</div>
-            <div style="font-size:12px;color:rgba(255,255,255,.8);margin-top:4px">
-              10 deliveries would cost <span style="text-decoration:line-through">₹${plan.price + plan.saving}</span> 
-              → Get it for only ₹${plan.price}!
-            </div>
-          </div>
-          
-          ${!hasActive ? `
-            <button onclick="purchaseMembership('${plan.zoneId}', ${plan.price})" 
-              style="width:100%;padding:14px;background:#f59e0b;color:#000;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:transform .2s">
-              Get Membership for ₹${plan.price}/month
-            </button>
-          ` : `
-            <div style="text-align:center;font-size:13px;color:#22c55e;font-weight:600">
-              ✓ You're a member! Use your credits on orders.
-            </div>
-          `}
+          <button onclick="initMembershipPayment()" id="membershipPayBtn" style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">
+            Pay ₹99 & Activate
+          </button>
         </div>
-      </div>
-    `;
+      `;
+    }
     
     // How it works
-    const howItWorksHTML = `
+    const howHTML = `
       <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border)">
         <div style="font-size:14px;font-weight:700;margin-bottom:12px">ℹ️ How It Works</div>
-        <div style="font-size:13px;color:var(--muted);line-height:1.7">
-          <div style="margin-bottom:8px">1️⃣ Purchase membership for your delivery zone</div>
-          <div style="margin-bottom:8px">2️⃣ Get 10 delivery credits instantly</div>
-          <div style="margin-bottom:8px">3️⃣ Each order automatically uses 1 credit</div>
-          <div style="margin-bottom:8px">4️⃣ Delivery fee waived when credit is used</div>
-          <div>5️⃣ Membership valid for 30 days</div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.8">
+          <div style="margin-bottom:6px">1️⃣ Purchase membership (₹99/month or ₹999/year)</div>
+          <div style="margin-bottom:6px">2️⃣ Get 10 delivery credits instantly</div>
+          <div style="margin-bottom:6px">3️⃣ Each order automatically uses 1 credit</div>
+          <div style="margin-bottom:6px">4️⃣ Delivery fee waived when credit is used</div>
+          <div>5️⃣ Available only within 7km of supplier hub</div>
+        </div>
+      </div>
+      
+      <div style="background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--border)">
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px">✨ Member Benefits</div>
+        <div style="font-size:13px;line-height:1.8">
+          <div style="margin-bottom:6px">✓ 10 free delivery credits</div>
+          <div style="margin-bottom:6px">✓ Priority order processing</div>
+          <div style="margin-bottom:6px">✓ Exclusive member-only offers</div>
+          <div>✓ Save up to ₹290/month on delivery</div>
         </div>
       </div>
     `;
     
-    el.innerHTML = statusHTML + benefitsHTML + planHTML + howItWorksHTML;
+    el.innerHTML = statusHTML + eligibilityHTML + planHTML + howHTML;
     
   } catch (e) {
     console.error('Load membership error:', e);
     el.innerHTML = `<div class="empty">
       <div class="empty-icon">❌</div>
-      <h3>Error Loading Membership</h3>
+      <h3>Error</h3>
       <p>${e.message}</p>
       <button onclick="loadMembershipDetails()" style="margin-top:12px;padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer">Retry</button>
     </div>`;
   }
 }
 
-// Purchase membership function
-async function purchaseMembership(zoneId, price) {
-  if (!USER || !USER.phone) {
-    showToast('Please login first', 'error');
-    return;
-  }
+// Plan selection
+let SELECTED_MEMBERSHIP_PLAN = 'monthly';
+
+function selectMembershipPlan(plan) {
+  SELECTED_MEMBERSHIP_PLAN = plan;
+  const monthly = document.getElementById('plan-monthly');
+  const yearly = document.getElementById('plan-yearly');
+  const btn = document.getElementById('membershipPayBtn');
   
-  if (!confirm(`Purchase ${zoneId.toUpperCase()} membership for ₹${price}/month?\n\nYou'll get 10 delivery credits valid for 30 days.`)) {
-    return;
+  if (plan === 'monthly') {
+    monthly.style.borderColor = 'var(--accent)';
+    yearly.style.borderColor = 'var(--border)';
+    btn.textContent = 'Pay ₹99 & Activate';
+  } else {
+    yearly.style.borderColor = 'var(--accent)';
+    monthly.style.borderColor = 'var(--border)';
+    btn.textContent = 'Pay ₹999 & Activate (Save ₹189)';
   }
+}
+
+// Razorpay payment for membership
+async function initMembershipPayment() {
+  if (!USER || !USER.phone) { showToast('Please login first', 'error'); return; }
+  
+  const btn = document.getElementById('membershipPayBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Processing...';
   
   try {
-    showToast('Processing payment...', 'info');
-    
-    // TODO: Integrate real payment gateway (Razorpay, etc.)
-    // For now, mock payment
-    
+    // Create order
     const res = await fetch('/api/membership/purchase', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        phone: USER.phone,
-        zoneId: zoneId,
-        paymentMethod: 'mock' // Will be replaced with real payment
-      })
+      body: JSON.stringify({ phone: USER.phone, planId: SELECTED_MEMBERSHIP_PLAN })
     });
-    
     const data = await res.json();
     
-    if (data.ok) {
-      showToast('🎉 Membership activated successfully!', 'success', 4000);
-      // Reload membership details
-      setTimeout(() => {
-        loadMembershipDetails();
-      }, 1000);
-    } else {
-      showToast(data.error || 'Purchase failed', 'error');
+    if (!data.ok) { showToast(data.error || 'Failed', 'error'); btn.disabled = false; btn.textContent = 'Pay & Activate'; return; }
+    
+    // Load Razorpay
+    if (!window.Razorpay) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
     }
+    
+    const options = {
+      key: data.keyId,
+      amount: data.price * 100,
+      currency: 'INR',
+      name: 'NOW Plus Membership',
+      description: SELECTED_MEMBERSHIP_PLAN === 'yearly' ? 'Yearly Plan - ₹999' : 'Monthly Plan - ₹99',
+      order_id: data.order.id,
+      prefill: { contact: '+91' + USER.phone, name: USER.name || '' },
+      theme: { color: '#E8450A' },
+      handler: async function(response) {
+        // Verify payment
+        try {
+          const vRes = await fetch('/api/membership/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: USER.phone,
+              planId: SELECTED_MEMBERSHIP_PLAN,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            })
+          });
+          const vData = await vRes.json();
+          if (vData.ok) {
+            showToast('🎉 Membership activated! 10 delivery credits added.', 'success', 4000);
+            USER.is_plus = true;
+            USER.membership_active = true;
+            saveUser();
+            setTimeout(() => loadMembershipDetails(), 1000);
+          } else {
+            showToast(vData.error || 'Verification failed', 'error');
+          }
+        } catch(e) {
+          showToast('Verification error. Contact support.', 'error');
+        }
+      }
+    };
+    
+    const rzp = new window.Razorpay(options);
+    rzp.on('payment.failed', function(r) {
+      showToast('Payment failed: ' + (r.error.description || 'Try again'), 'error');
+    });
+    rzp.open();
+    
   } catch (e) {
-    console.error('Purchase error:', e);
-    showToast('Network error. Please try again.', 'error');
+    showToast('Network error. Try again.', 'error');
+  } finally {
+    btn.disabled = false;
+    const price = SELECTED_MEMBERSHIP_PLAN === 'yearly' ? '999' : '99';
+    btn.textContent = `Pay ₹${price} & Activate`;
   }
 }
 
