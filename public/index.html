@@ -1156,22 +1156,6 @@ input,textarea{font:inherit;color:inherit}
         <div class="basket-list" id="basketList"></div>
         <div class="divider"></div>
 
-        <div class="section-box">
-          <div class="section-box-title">💳 Payment Method</div>
-          <div class="pay-option" onclick="selectPayment('cod')">
-            <div class="pay-radio checked" id="pay-cod"></div>
-            <div class="pay-label"><strong>💵 Cash on Delivery</strong><small>Pay when your order arrives</small></div>
-          </div>
-          <div class="pay-option" onclick="selectPayment('pay_online')">
-            <div class="pay-radio" id="pay-pay_online"></div>
-            <div class="pay-label"><strong>📱 Pay Online</strong><small>UPI / Cards via Razorpay</small></div>
-          </div>
-          <div class="pay-option" onclick="selectPayment('upi')">
-            <div class="pay-radio" id="pay-upi"></div>
-            <div class="pay-label"><strong>🏦 UPI Direct</strong><small>Google Pay, PhonePe, Paytm</small></div>
-          </div>
-        </div>
-
         <div class="section-box" id="walletSection" style="display:none">
           <div class="section-box-title">💳 NOW Wallet</div>
           <div class="wallet-row">
@@ -4330,14 +4314,6 @@ function renderPrices(sub) {
   }
   
   document.getElementById('priceTotal').textContent = '₹' + total;
-}
-
-function selectPayment(method) {
-  PAYMENT = method;
-  ['cod','pay_online','upi'].forEach(m => {
-    const el = document.getElementById('pay-' + m);
-    if (el) el.className = 'pay-radio' + (m === method ? ' checked' : '');
-  });
 }
 
 function toggleWallet() {
