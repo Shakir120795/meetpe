@@ -36,11 +36,10 @@ const defaults = {
     name: 'MeatPe Main Warehouse'
   },
   socials: [
-    // { platform: 'instagram', handle: '@meatpe', url: 'https://instagram.com/meatpe', icon: '📷' },
-    // { platform: 'facebook', handle: 'MeatPe', url: 'https://facebook.com/meatpe', icon: '👍' },
-    // { platform: 'twitter', handle: '@meatpe', url: 'https://twitter.com/meatpe', icon: '🐦' },
-    // { platform: 'youtube', handle: 'MeatPe', url: 'https://youtube.com/@meatpe', icon: '▶️' },
-    // { platform: 'linkedin', handle: 'MeatPe', url: 'https://linkedin.com/company/meatpe', icon: '💼' },
+    { platform: 'instagram', handle: '@now_nonvegonwheel', url: 'https://instagram.com', icon: '📷' },
+    { platform: 'x', handle: '@now_meat', url: 'https://twitter.com', icon: '✖️' },
+    { platform: 'facebook', handle: 'NOW', url: 'https://facebook.com', icon: '👍' },
+    { platform: 'youtube', handle: 'NOW', url: 'https://youtube.com', icon: '▶️' },
   ],
   pages: {
     about: 'MeatPe is a fresh meat delivery service built for households who care about quality, hygiene, and convenience. We deliver freshly cut chicken, mutton, fish, and ready-to-cook items to your doorstep in 30 minutes — cleaned, cut, and packed exactly the way you want.',
