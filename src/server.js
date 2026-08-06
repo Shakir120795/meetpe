@@ -3299,7 +3299,70 @@ try {
     message TEXT NOT NULL,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
-} catch(e) { console.warn('chat table:', e.message); }
+  db.exec(`CREATE TABLE IF NOT EXISTS support_tickets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone TEXT NOT NULL,
+    name TEXT,
+    category TEXT NOT NULL,
+    message TEXT NOT NULL,
+    status TEXT DEFAULT 'open',
+    admin_reply TEXT,
+    replied_at TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+} catch(e) { console.warn('chat/ticket table:', e.message); }
+
+// POST /api/ticket/submit — user submits ticket
+app.post('/api/ticket/submit', (req, res) => {
+  const { phone, name, category, message } = req.body || {};
+  const cleanPhone = String(phone || '').replace(/\D/g, '');
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+  if (!category || !message || !message.trim()) return res.status(400).json({ ok: false, error: 'category and message required' });
+  
+  const webPhone = `web:+91${cleanPhone}`;
+  const info = db.prepare('INSERT INTO support_tickets (phone, name, category, message) VALUES (?, ?, ?, ?)')
+    .run(webPhone, name || '', category, message.trim().slice(0, 2000));
+  res.json({ ok: true, ticketId: info.lastInsertRowid });
+});
+
+// GET /api/tickets/:phone — user's tickets
+app.get('/api/tickets/:phone', (req, res) => {
+  const cleanPhone = String(req.params.phone).replace(/\D/g, '');
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+  const webPhone = `web:+91${cleanPhone}`;
+  const tickets = db.prepare('SELECT * FROM support_tickets WHERE phone = ? ORDER BY created_at DESC LIMIT 20').all(webPhone);
+  res.json({ ok: true, tickets });
+});
+
+// GET /admin/tickets — all tickets (admin)
+app.get('/admin/tickets', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const status = req.query.status || '';
+  let tickets;
+  if (status) {
+    tickets = db.prepare('SELECT * FROM support_tickets WHERE status = ? ORDER BY created_at DESC LIMIT 100').all(status);
+  } else {
+    tickets = db.prepare('SELECT * FROM support_tickets ORDER BY created_at DESC LIMIT 100').all();
+  }
+  res.json({ ok: true, tickets });
+});
+
+// POST /admin/ticket/reply — admin replies to ticket
+app.post('/admin/ticket/reply', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const { ticketId, reply, status } = req.body || {};
+  if (!ticketId) return res.status(400).json({ ok: false, error: 'ticketId required' });
+  
+  const updates = [];
+  const params = [];
+  if (reply) { updates.push('admin_reply = ?'); params.push(reply.trim()); updates.push("replied_at = datetime('now')"); }
+  if (status) { updates.push('status = ?'); params.push(status); }
+  if (!updates.length) return res.status(400).json({ ok: false, error: 'nothing to update' });
+  
+  params.push(ticketId);
+  db.prepare(`UPDATE support_tickets SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+  res.json({ ok: true });
+});
 
 // POST /api/chat/send — user sends message
 app.post('/api/chat/send', (req, res) => {

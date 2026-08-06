@@ -1607,6 +1607,10 @@ input,textarea{font:inherit;color:inherit}
           </button>
         </div>
         
+        <!-- User's Tickets -->
+        <div id="userTicketsList" style="display:none;background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
+        </div>
+        
         <!-- FAQs -->
         <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)">
           <div style="font-size:15px;font-weight:700;margin-bottom:12px">❓ Frequently Asked Questions</div>
@@ -7488,20 +7492,8 @@ function loadHelpScreen() {
     `).join('');
   }
   
-  // Load contact info
-  const contactEl = document.getElementById('helpContactInfo');
-  const contact = APP_SETTINGS?.contact || {};
-  const helpSettings = APP_SETTINGS?.helpSupport || {};
-  
-  if (contactEl) {
-    contactEl.innerHTML = `
-      ${contact.phone ? `📞 Phone: <a href="tel:${contact.phone}" style="color:var(--accent);font-weight:600">${contact.phoneDisplay || contact.phone}</a><br/>` : ''}
-      ${helpSettings.whatsappNumber || contact.phone ? `💬 WhatsApp: <a href="https://wa.me/${(helpSettings.whatsappNumber || contact.phone).replace(/\D/g,'')}" style="color:var(--accent);font-weight:600">${helpSettings.whatsappNumber || contact.phoneDisplay || contact.phone}</a><br/>` : ''}
-      ${helpSettings.email || contact.email ? `📧 Email: <a href="mailto:${helpSettings.email || contact.email}" style="color:var(--accent);font-weight:600">${helpSettings.email || contact.email}</a><br/>` : ''}
-      ${contact.timing ? `⏰ Hours: ${contact.timing}<br/>` : ''}
-      ${contact.location ? `📍 ${contact.location}` : ''}
-    `;
-  }
+  // Load user's tickets
+  loadUserTickets();
 }
 
 function toggleFaq(el) {
@@ -7542,34 +7534,61 @@ function submitTicket() {
   if (!category) { showToast('Please select a category', 'error'); return; }
   if (!message) { showToast('Please describe your issue', 'error'); return; }
   if (message.length < 10) { showToast('Please provide more details', 'error'); return; }
+  if (!USER || !USER.phone) { showToast('Please login first', 'error'); return; }
   
-  // Save ticket to localStorage (or could be sent to server)
-  const tickets = JSON.parse(localStorage.getItem('now_tickets') || '[]');
-  tickets.push({
-    id: Date.now(),
-    category,
-    message,
-    status: 'open',
-    phone: USER?.phone || '',
-    createdAt: new Date().toISOString()
-  });
-  localStorage.setItem('now_tickets', JSON.stringify(tickets));
-  
-  // Also send via WhatsApp to admin
-  const helpSettings = APP_SETTINGS?.helpSupport || {};
-  const adminPhone = helpSettings.whatsappNumber || APP_SETTINGS?.contact?.phone || '+917617555488';
-  const ticketMsg = encodeURIComponent(`🎫 Support Ticket\nCategory: ${category}\nUser: ${USER?.name || 'Guest'} (${USER?.phone || 'N/A'})\nMessage: ${message}`);
-  
-  showToast('✅ Ticket submitted! We\'ll respond within 24hrs', 'success', 3000);
-  document.getElementById('ticketCategory').value = '';
-  document.getElementById('ticketMessage').value = '';
-  
-  // Open WhatsApp with ticket info
-  setTimeout(() => {
-    if (confirm('Open WhatsApp to send ticket details for faster response?')) {
-      window.open(`https://wa.me/${adminPhone.replace(/\D/g,'')}?text=${ticketMsg}`, '_blank');
+  // Submit to server
+  fetch('/api/ticket/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone: USER.phone, name: USER.name || '', category, message })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      showToast('✅ Ticket #' + data.ticketId + ' submitted! We\'ll respond within 24hrs', 'success', 3000);
+      document.getElementById('ticketCategory').value = '';
+      document.getElementById('ticketMessage').value = '';
+      loadUserTickets();
+    } else {
+      showToast(data.error || 'Failed to submit', 'error');
     }
-  }, 1000);
+  })
+  .catch(() => showToast('Network error', 'error'));
+}
+
+function loadUserTickets() {
+  if (!USER || !USER.phone) return;
+  const container = document.getElementById('userTicketsList');
+  if (!container) return;
+  
+  fetch('/api/tickets/' + USER.phone)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok || !data.tickets.length) {
+        container.style.display = 'none';
+        return;
+      }
+      container.style.display = 'block';
+      container.innerHTML = `
+        <div style="font-size:15px;font-weight:700;margin-bottom:12px">📋 My Tickets</div>
+        ${data.tickets.map(t => {
+          const statusColor = t.status === 'open' ? '#f59e0b' : t.status === 'resolved' ? '#22c55e' : '#6b7280';
+          const statusLabel = t.status === 'open' ? 'Open' : t.status === 'resolved' ? 'Resolved' : t.status;
+          const d = new Date(t.created_at + 'Z');
+          const dateStr = d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short' });
+          return `<div style="background:var(--bg);border-radius:10px;padding:12px;margin-bottom:8px;border:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <span style="font-size:12px;font-weight:700">#${t.id} • ${t.category}</span>
+              <span style="font-size:10px;font-weight:700;color:${statusColor};background:${statusColor}20;padding:2px 8px;border-radius:4px">${statusLabel}</span>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:4px">${t.message.slice(0,80)}${t.message.length>80?'...':''}</div>
+            ${t.admin_reply ? `<div style="font-size:12px;color:var(--accent);margin-top:6px;padding:8px;background:rgba(232,69,10,.05);border-radius:6px;border-left:3px solid var(--accent)">💬 ${t.admin_reply}</div>` : ''}
+            <div style="font-size:10px;color:var(--muted);margin-top:4px">${dateStr}</div>
+          </div>`;
+        }).join('')}
+      `;
+    })
+    .catch(() => {});
 }
 
 
