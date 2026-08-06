@@ -1372,7 +1372,7 @@ input,textarea{font:inherit;color:inherit}
             <div class="pm-label">Returns &amp; Refunds</div>
             <div class="pm-arrow">›</div>
           </div>
-          <div class="pm-item" onclick="showCouponsModal()">
+          <div class="pm-item" onclick="showScreen('screen-offers')">
             <div class="pm-icon">🎁</div>
             <div class="pm-label">Coupons &amp; Offers</div>
             <div class="pm-arrow">›</div>
@@ -1621,6 +1621,17 @@ input,textarea{font:inherit;color:inherit}
           <div style="font-size:15px;font-weight:700;margin-bottom:12px">❓ Frequently Asked Questions</div>
           <div id="faqList"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- ═══ OFFERS SCREEN ═══ -->
+    <div class="screen" id="screen-offers">
+      <div class="screen-header">
+        <button class="back-btn" onclick="goBack()">←</button>
+        <div class="screen-title">🎟️ Offers & Coupons</div>
+      </div>
+      <div id="offersContent" style="padding:14px;padding-bottom:80px">
+        <div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div>
       </div>
     </div>
 
@@ -2547,6 +2558,7 @@ function showScreen(id) {
   if (id === 'screen-wishlist') loadWishlist();
   if (id === 'screen-notifications') loadNotifications();
   if (id === 'screen-help') loadHelpScreen();
+  if (id === 'screen-offers') loadOffersScreen();
   if (id === 'screen-membership') loadMembershipDetails();
   if (id === 'screen-referral') loadReferralScreen();
 
@@ -7740,6 +7752,99 @@ function addTicketReply(ticketId) {
   .catch(() => showToast('Failed to send', 'error'));
 }
 
+
+// ═══════════════════════════════════════════
+//  Offers & Coupons Screen
+// ═══════════════════════════════════════════
+async function loadOffersScreen() {
+  const el = document.getElementById('offersContent');
+  el.innerHTML = `<div class="empty"><div class="empty-icon" style="animation:spin 1s linear infinite">⏳</div></div>`;
+  
+  const wr = APP_SETTINGS?.walletRewards || {};
+  
+  try {
+    // Fetch coupons from API
+    const res = await fetch('/api/coupons');
+    const coupons = await res.json();
+    
+    let html = '';
+    
+    // Cashback Offer Banner
+    if (wr.enableCashback) {
+      html += `
+        <div style="background:linear-gradient(135deg,#1a0800,#3d1a00);border-radius:16px;padding:20px;margin-bottom:16px;border:1px solid #5a2d00">
+          <div style="font-size:11px;font-weight:700;color:#f59e0b;letter-spacing:1px;margin-bottom:6px">💸 CASHBACK OFFER</div>
+          <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:4px">${wr.cashbackPercent || 5}% Cashback</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.7)">On all orders above ₹${wr.cashbackMinOrder || 299} (max ₹${wr.cashbackMaxAmount || 100})</div>
+          <div style="margin-top:10px;padding:6px 12px;background:rgba(255,255,255,.1);border-radius:6px;display:inline-block;font-size:11px;color:#22c55e;font-weight:700">Auto-applied ✓</div>
+        </div>
+      `;
+    }
+    
+    // Membership Offer
+    html += `
+      <div style="background:linear-gradient(135deg,#0a001a,#1a003d);border-radius:16px;padding:20px;margin-bottom:16px;border:1px solid #3d0080" onclick="showScreen('screen-membership')">
+        <div style="font-size:11px;font-weight:700;color:#a855f7;letter-spacing:1px;margin-bottom:6px">👑 MEMBERSHIP</div>
+        <div style="font-size:18px;font-weight:800;color:#fff;margin-bottom:4px">NOW+ Free Delivery</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.7)">Get 10 free deliveries/month • Priority processing</div>
+        <div style="margin-top:10px;padding:8px 16px;background:var(--accent);border-radius:8px;display:inline-block;font-size:12px;color:#fff;font-weight:700;cursor:pointer">View Plans →</div>
+      </div>
+    `;
+    
+    // Referral Offer
+    if (wr.enableReferralBonus) {
+      html += `
+        <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:16px;border:1px solid var(--border)" onclick="showScreen('screen-referral')">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="font-size:32px">🤝</div>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:700">Refer & Earn ₹${wr.referralBonus || 50}</div>
+              <div style="font-size:12px;color:var(--muted)">Your friend gets ₹${wr.refereeBonus || 30} too!</div>
+            </div>
+            <span style="color:var(--accent);font-size:13px;font-weight:600">Share →</span>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Coupons Section
+    html += `<div style="font-size:14px;font-weight:700;margin-bottom:12px;margin-top:8px">🎫 Available Coupons</div>`;
+    
+    if (coupons && coupons.length) {
+      html += coupons.map(c => `
+        <div style="background:var(--card);border:1.5px dashed var(--accent);border-radius:14px;padding:16px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:16px;font-weight:800;color:var(--accent);letter-spacing:1px;font-family:monospace">${c.code}</span>
+            <button onclick="copyAndApplyCoupon('${c.code}')" style="background:var(--accent);color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer">Apply</button>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">${c.description || (c.type==='percent' ? c.value + '% off' : 'Flat ₹' + c.value + ' off')}</div>
+          ${c.minOrder ? `<div style="font-size:11px;color:var(--muted)">Min order: ₹${c.minOrder}</div>` : ''}
+        </div>
+      `).join('');
+    } else {
+      html += `<div style="background:var(--card);border-radius:12px;padding:20px;text-align:center;border:1px solid var(--border)">
+        <div style="font-size:13px;color:var(--muted)">No coupon codes available right now</div>
+      </div>`;
+    }
+    
+    // Reward Info
+    if (wr.enableRewards) {
+      html += `
+        <div style="margin-top:16px;padding:14px;background:rgba(34,197,94,.08);border-radius:12px;border:1px solid rgba(34,197,94,.2)">
+          <div style="font-size:13px;font-weight:700;color:#16a34a;margin-bottom:4px">🎁 Rewards Program</div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6">
+            ${wr.earnRuleText || ('Order above ₹' + (wr.rewardThreshold || 500) + ' and earn ₹' + (wr.rewardAmount || 30) + ' reward!')}
+            <br/>Valid for ${wr.rewardExpiry || 15} days after earning.
+          </div>
+        </div>
+      `;
+    }
+    
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">❌</div><p>Failed to load offers</p></div>`;
+  }
+}
 
 // ═══════════════════════════════════════════
 //  Coupons Modal
