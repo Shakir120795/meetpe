@@ -1807,7 +1807,7 @@ input,textarea{font:inherit;color:inherit}
   </div><!-- /screens -->
 
   <!-- ── Active Order Strip (above bottom nav) ── -->
-  <div id="activeOrderStrip" style="display:none;position:fixed;bottom:60px;left:0;right:0;z-index:149;background:var(--card);border-top:1px solid var(--border);padding:10px 14px;overflow:hidden">
+  <div id="activeOrderStrip" style="display:none;position:fixed;bottom:60px;left:0;right:0;z-index:140;background:var(--card);border-top:1px solid var(--border);padding:10px 14px;overflow:hidden;pointer-events:auto">
     <div id="activeOrderSlider" style="display:flex;transition:transform 0.3s ease;width:100%">
       <!-- Dynamic active order cards will be inserted here -->
     </div>
@@ -4546,10 +4546,19 @@ function showCheckoutModal() {
   renderSavedAddresses();
 
   // Auto-fill selected delivery address
-  const saved = getSelectedAddr();
-  if (saved && saved.full) {
-    const addrField = document.getElementById('oAddress');
-    if (addrField && !addrField.value) addrField.value = saved.full;
+  const addrField = document.getElementById('oAddress');
+  if (addrField && !addrField.value) {
+    // Priority: 1. Selected location, 2. Last delivery address, 3. From last order
+    const saved = getSelectedAddr();
+    if (saved && saved.full) {
+      addrField.value = saved.full;
+    } else {
+      // Try last delivery address from localStorage
+      const lastAddr = localStorage.getItem('now_last_delivery_address');
+      if (lastAddr) {
+        addrField.value = lastAddr;
+      }
+    }
   }
 
   // Show summary
@@ -4590,6 +4599,9 @@ async function submitOrder(e) {
   if (!name) { showToast('Please enter your name','error'); return; }
   if (phone.length !== 10) { showToast('Please enter a valid 10-digit phone','error'); return; }
   if (!address) { showToast('Please enter your delivery address','error'); return; }
+
+  // Save last used delivery address for next time
+  localStorage.setItem('now_last_delivery_address', address);
 
   const btn = document.getElementById('submitOrderBtn');
   btn.disabled = true; btn.textContent = '⏳ Placing order...';
@@ -4921,11 +4933,13 @@ function updateActiveOrderStrip(orders) {
   
   if (allStripOrders.length === 0) {
     strip.style.display = 'none';
+    strip.style.pointerEvents = 'none';
     if (_activeStripTimer) { clearInterval(_activeStripTimer); _activeStripTimer = null; }
     return;
   }
   
   strip.style.display = 'block';
+  strip.style.pointerEvents = 'auto';
   
   // Generate strip cards
   slider.innerHTML = allStripOrders.map(order => {
