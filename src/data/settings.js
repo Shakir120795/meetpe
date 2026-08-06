@@ -161,6 +161,41 @@ const defaults = {
       }
     ]
   },
+  // NEW: Wallet & Rewards Settings (admin-editable)
+  walletRewards: {
+    // Wallet Settings
+    enableWallet: true,
+    minTopup: 10,
+    maxTopup: 10000,
+    autoApplyWallet: false, // Auto-apply wallet balance at checkout
+    
+    // Reward System
+    enableRewards: true,
+    rewardThreshold: 500, // Min order amount to earn reward
+    rewardAmount: 30, // Reward amount earned per qualifying order
+    rewardExpiry: 15, // Days until reward expires
+    rewardLabel: 'Cashback Reward',
+    
+    // Cashback System
+    enableCashback: true,
+    cashbackPercent: 5, // Cashback percentage on orders
+    cashbackMaxAmount: 100, // Max cashback per order
+    cashbackMinOrder: 299, // Min order for cashback
+    cashbackCreditDelay: 0, // Hours delay before crediting (0 = instant)
+    cashbackLabel: 'Order Cashback',
+    
+    // Referral Bonus
+    enableReferralBonus: true,
+    referralBonus: 50, // Bonus for referrer
+    refereeBonus: 30, // Bonus for new user
+    
+    // Display
+    showWalletInTopbar: true,
+    showRewardsSection: true,
+    showCashbackBanner: true,
+    earnRuleText: 'Earn ₹30 on every order above ₹500',
+    cashbackRuleText: '5% cashback on all orders (max ₹100)'
+  },
   // NEW: Invoice Settings (admin-editable)
   invoice: {
     companyName: 'NOW - Nonveg On Wheel',
@@ -335,6 +370,7 @@ function read() {
         ...data.orderTracking,
         deliveryBoys: Array.isArray(data.orderTracking?.deliveryBoys) ? data.orderTracking.deliveryBoys : defaults.orderTracking.deliveryBoys
       },
+      walletRewards: { ...defaults.walletRewards, ...data.walletRewards },
       invoice: { ...defaults.invoice, ...data.invoice },
       deliveryZones: Array.isArray(data.deliveryZones) ? data.deliveryZones : defaults.deliveryZones,
       membershipPlans: Array.isArray(data.membershipPlans) ? data.membershipPlans : defaults.membershipPlans,
@@ -392,6 +428,7 @@ function update(patch) {
     ...patch.orderTracking,
     deliveryBoys: Array.isArray(patch.orderTracking.deliveryBoys) ? patch.orderTracking.deliveryBoys : current.orderTracking.deliveryBoys
   };
+  if (patch.walletRewards) current.walletRewards = { ...current.walletRewards, ...patch.walletRewards };
   if (patch.invoice) current.invoice = { ...current.invoice, ...patch.invoice };
   if (Array.isArray(patch.deliveryZones)) current.deliveryZones = patch.deliveryZones;
   if (Array.isArray(patch.membershipPlans)) current.membershipPlans = patch.membershipPlans;

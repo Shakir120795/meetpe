@@ -5769,11 +5769,31 @@ async function loadWallet() {
       <div style="padding:14px;background:rgba(232,69,10,.08);border-radius:12px;border:1px solid rgba(232,69,10,.2)">
         <div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px">💡 How to earn?</div>
         <div style="font-size:12px;color:var(--muted);line-height:1.6">
-          • Order above ₹500 → earn ₹30 reward<br/>
-          • Wallet balance auto-applied at checkout<br/>
-          • Rewards valid for 15 days
+          ${getWalletEarnRules()}
         </div>
       </div>`;
+}
+
+function getWalletEarnRules() {
+  const wr = APP_SETTINGS?.walletRewards || {};
+  let rules = '';
+  
+  if (wr.enableRewards !== false) {
+    rules += '• ' + (wr.earnRuleText || ('Order above ₹' + (wr.rewardThreshold || 500) + ' → earn ₹' + (wr.rewardAmount || 30) + ' reward')) + '<br/>';
+  }
+  
+  if (wr.enableCashback) {
+    rules += '• ' + (wr.cashbackRuleText || ((wr.cashbackPercent || 5) + '% cashback on orders above ₹' + (wr.cashbackMinOrder || 299) + ' (max ₹' + (wr.cashbackMaxAmount || 100) + ')')) + '<br/>';
+  }
+  
+  rules += '• Wallet balance auto-applied at checkout<br/>';
+  rules += '• Rewards valid for ' + (wr.rewardExpiry || 15) + ' days';
+  
+  if (wr.enableReferralBonus) {
+    rules += '<br/>• Refer a friend → earn ₹' + (wr.referralBonus || 50);
+  }
+  
+  return rules;
 }
 
 let _walletAddAmt = 0;

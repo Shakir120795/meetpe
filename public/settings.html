@@ -588,6 +588,130 @@
       </div>
     </div>
 
+    <!-- WALLET & REWARDS SETTINGS -->
+    <div class="section">
+      <h2>💰 Wallet & Rewards Settings</h2>
+      <p class="desc">Configure wallet, cashback, rewards rules. Changes apply to all new orders.</p>
+      
+      <!-- Wallet Settings -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">💳 Wallet Settings</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="wrEnableWallet" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Wallet</span>
+          </label>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Min Topup Amount (₹)</label>
+            <input type="number" id="wrMinTopup" placeholder="10" min="1" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>Max Topup Amount (₹)</label>
+            <input type="number" id="wrMaxTopup" placeholder="10000" min="100" onchange="markDirty()"/>
+          </div>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="wrAutoApply" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Auto-apply wallet balance at checkout</span>
+          </label>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="wrShowTopbar" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Show wallet balance in topbar</span>
+          </label>
+        </div>
+      </div>
+      
+      <!-- Reward System -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">🎁 Reward System</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="wrEnableRewards" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Rewards (earn on orders)</span>
+          </label>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Min Order for Reward (₹)</label>
+            <input type="number" id="wrRewardThreshold" placeholder="500" min="0" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>Reward Amount (₹)</label>
+            <input type="number" id="wrRewardAmount" placeholder="30" min="1" onchange="markDirty()"/>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Reward Expiry (days)</label>
+            <input type="number" id="wrRewardExpiry" placeholder="15" min="1" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>Reward Label</label>
+            <input type="text" id="wrRewardLabel" placeholder="Cashback Reward" onchange="markDirty()"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Earn Rule Text (shown to users)</label>
+          <input type="text" id="wrEarnRuleText" placeholder="Earn ₹30 on every order above ₹500" onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- Cashback System -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">💸 Cashback System</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="wrEnableCashback" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Cashback (% credited to wallet)</span>
+          </label>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Cashback Percentage (%)</label>
+            <input type="number" id="wrCashbackPercent" placeholder="5" min="0" max="50" step="0.5" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>Max Cashback per Order (₹)</label>
+            <input type="number" id="wrCashbackMax" placeholder="100" min="1" onchange="markDirty()"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Min Order for Cashback (₹)</label>
+          <input type="number" id="wrCashbackMinOrder" placeholder="299" min="0" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Cashback Rule Text (shown to users)</label>
+          <input type="text" id="wrCashbackRuleText" placeholder="5% cashback on all orders (max ₹100)" onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- Referral Bonus -->
+      <div style="background:var(--light);padding:16px;border-radius:10px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">🤝 Referral Bonus</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="wrEnableReferral" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Referral Bonus</span>
+          </label>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Referrer Bonus (₹)</label>
+            <input type="number" id="wrReferralBonus" placeholder="50" min="0" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>New User Bonus (₹)</label>
+            <input type="number" id="wrRefereeBonus" placeholder="30" min="0" onchange="markDirty()"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- INVOICE SETTINGS -->
     <div class="section">
       <h2>🧾 Invoice / Bill Settings</h2>
@@ -867,6 +991,28 @@ function render() {
   $('etaUpdateInterval').value = ot.etaUpdateInterval || 30;
   renderDeliveryBoys(ot.deliveryBoys || []);
 
+  // Wallet & Rewards Settings
+  const wr = SETTINGS.walletRewards || {};
+  $('wrEnableWallet').checked = wr.enableWallet !== false;
+  $('wrMinTopup').value = wr.minTopup || 10;
+  $('wrMaxTopup').value = wr.maxTopup || 10000;
+  $('wrAutoApply').checked = wr.autoApplyWallet === true;
+  $('wrShowTopbar').checked = wr.showWalletInTopbar !== false;
+  $('wrEnableRewards').checked = wr.enableRewards !== false;
+  $('wrRewardThreshold').value = wr.rewardThreshold || 500;
+  $('wrRewardAmount').value = wr.rewardAmount || 30;
+  $('wrRewardExpiry').value = wr.rewardExpiry || 15;
+  $('wrRewardLabel').value = wr.rewardLabel || '';
+  $('wrEarnRuleText').value = wr.earnRuleText || '';
+  $('wrEnableCashback').checked = wr.enableCashback === true;
+  $('wrCashbackPercent').value = wr.cashbackPercent || 5;
+  $('wrCashbackMax').value = wr.cashbackMaxAmount || 100;
+  $('wrCashbackMinOrder').value = wr.cashbackMinOrder || 299;
+  $('wrCashbackRuleText').value = wr.cashbackRuleText || '';
+  $('wrEnableReferral').checked = wr.enableReferralBonus !== false;
+  $('wrReferralBonus').value = wr.referralBonus || 50;
+  $('wrRefereeBonus').value = wr.refereeBonus || 30;
+
   // Invoice Settings
   const inv = SETTINGS.invoice || {};
   $('invCompanyName').value = inv.companyName || '';
@@ -1118,6 +1264,29 @@ function collectData() {
     deliveryBoys: deliveryBoys
   };
 
+  // Wallet & Rewards Settings
+  const walletRewards = {
+    enableWallet: $('wrEnableWallet').checked,
+    minTopup: parseInt($('wrMinTopup').value) || 10,
+    maxTopup: parseInt($('wrMaxTopup').value) || 10000,
+    autoApplyWallet: $('wrAutoApply').checked,
+    showWalletInTopbar: $('wrShowTopbar').checked,
+    enableRewards: $('wrEnableRewards').checked,
+    rewardThreshold: parseInt($('wrRewardThreshold').value) || 500,
+    rewardAmount: parseInt($('wrRewardAmount').value) || 30,
+    rewardExpiry: parseInt($('wrRewardExpiry').value) || 15,
+    rewardLabel: $('wrRewardLabel').value.trim(),
+    earnRuleText: $('wrEarnRuleText').value.trim(),
+    enableCashback: $('wrEnableCashback').checked,
+    cashbackPercent: parseFloat($('wrCashbackPercent').value) || 5,
+    cashbackMaxAmount: parseInt($('wrCashbackMax').value) || 100,
+    cashbackMinOrder: parseInt($('wrCashbackMinOrder').value) || 299,
+    cashbackRuleText: $('wrCashbackRuleText').value.trim(),
+    enableReferralBonus: $('wrEnableReferral').checked,
+    referralBonus: parseInt($('wrReferralBonus').value) || 50,
+    refereeBonus: parseInt($('wrRefereeBonus').value) || 30
+  };
+
   // Invoice Settings
   const invoice = {
     companyName: $('invCompanyName').value.trim(),
@@ -1140,7 +1309,7 @@ function collectData() {
     signatoryName: $('invSignatoryName').value.trim()
   };
 
-  return { branding, contact, categories, socials, pages, trendingSearches, cart, checkout, paymentGateway, orderTracking, invoice };
+  return { branding, contact, categories, socials, pages, trendingSearches, cart, checkout, paymentGateway, orderTracking, walletRewards, invoice };
 }
 
 // ═══════════════════════════════════════════

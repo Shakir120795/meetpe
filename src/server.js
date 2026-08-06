@@ -254,8 +254,17 @@ app.post('/api/order', (req, res) => {
 
     const total = Math.max(0, subtotal - couponDiscount - actualWalletDeducted + delivery);
 
-    const reward = Number(process.env.REWARD_THRESHOLD || 500);
-    const rewardAmt = Number(process.env.REWARD_AMOUNT || 30);
+    // Get wallet/rewards settings from admin panel
+    const siteSettings = require('./data/settings').get();
+    const wr = siteSettings.walletRewards || {};
+    const rewardThreshold = wr.rewardThreshold || Number(process.env.REWARD_THRESHOLD || 500);
+    const rewardAmt = wr.rewardAmount || Number(process.env.REWARD_AMOUNT || 30);
+    const rewardExpiry = wr.rewardExpiry || 15;
+    const enableRewards = wr.enableRewards !== false;
+    const enableCashback = wr.enableCashback === true;
+    const cashbackPercent = wr.cashbackPercent || 5;
+    const cashbackMax = wr.cashbackMaxAmount || 100;
+    const cashbackMinOrder = wr.cashbackMinOrder || 299;
 
     // Upsert customer
     db.prepare(`
@@ -286,10 +295,21 @@ app.post('/api/order', (req, res) => {
     }
 
     let earnedReward = 0;
-    if (subtotal >= reward) {
-      db.prepare(`INSERT INTO rewards (phone, amount, expires_at) VALUES (?, ?, datetime('now', '+15 days'))`)
+    if (enableRewards && subtotal >= rewardThreshold) {
+      db.prepare(`INSERT INTO rewards (phone, amount, expires_at) VALUES (?, ?, datetime('now', '+${rewardExpiry} days'))`)
         .run(webPhone, rewardAmt);
       earnedReward = rewardAmt;
+    }
+    
+    // Cashback calculation
+    let cashbackEarned = 0;
+    if (enableCashback && subtotal >= cashbackMinOrder) {
+      cashbackEarned = Math.min(Math.round(subtotal * cashbackPercent / 100), cashbackMax);
+      if (cashbackEarned > 0) {
+        // Credit cashback to wallet
+        db.prepare('UPDATE customers SET wallet_balance = wallet_balance + ? WHERE phone = ?')
+          .run(cashbackEarned, webPhone);
+      }
     }
 
     const paymentLabel = payment === 'pay_online'
@@ -324,6 +344,7 @@ Delivery: ₹${delivery}
       couponDiscount, couponCode: appliedCouponCode,
       walletDeducted: actualWalletDeducted,
       delivery, total, reward: earnedReward,
+      cashback: cashbackEarned,
       creditUsed: usedCredit,
       creditsRemaining: usedCredit && customer ? customer.delivery_credits - 1 : null
     });
