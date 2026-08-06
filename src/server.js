@@ -3634,7 +3634,7 @@ app.post('/api/rider/login', (req, res) => {
   
   if (!rider) return res.status(403).json({ ok: false, error: 'Not a registered rider. Contact admin.' });
   
-  res.json({ ok: true, rider: { id: rider.id, name: rider.name, phone: rider.phone, vehicleType: rider.vehicleType, vehicleNumber: rider.vehicleNumber, rating: rider.rating, totalDeliveries: rider.totalDeliveries, status: rider.status } });
+  res.json({ ok: true, rider: { id: rider.id, name: rider.name, phone: rider.phone, vehicleType: rider.vehicleType, vehicleNumber: rider.vehicleNumber, rating: rider.rating, totalDeliveries: rider.totalDeliveries, status: rider.status, bankDetails: rider.bankDetails, upiId: rider.upiId } });
 });
 
 // POST /api/rider/status - Toggle online/offline

@@ -113,6 +113,13 @@ h1{font-size:24px;margin-bottom:6px}
   <div class="field"><label>ID</label><input id="mId" placeholder="Auto-generated"/></div>
 </div>
 
+<h3 style="font-size:14px;margin:16px 0 10px;color:#6b7280">🏦 Bank & Payment Details</h3>
+<div class="field-row">
+  <div class="field"><label>Bank Name & Account</label><input id="mBankDetails" placeholder="SBI - 12345678901"/></div>
+  <div class="field"><label>UPI ID</label><input id="mUpiId" placeholder="rider@paytm"/></div>
+</div>
+<div class="field"><label>IFSC Code</label><input id="mIfsc" placeholder="SBIN0001234"/></div>
+
 <h3 style="font-size:14px;margin:16px 0 10px;color:#6b7280">📋 KYC Documents (Optional)</h3>
 <div class="field-row">
   <div class="field"><label>Aadhaar Number</label><input id="mAadhaar" placeholder="XXXX XXXX XXXX"/></div>
@@ -222,6 +229,7 @@ function editRider(i) {
   $('mPhoto').value = r.photo || ''; $('mStatus').value = r.status || 'available';
   $('mId').value = r.id || '';
   $('mAadhaar').value = r.aadhaar || ''; $('mPan').value = r.pan || ''; $('mDL').value = r.drivingLicense || '';
+  $('mBankDetails').value = r.bankDetails || ''; $('mUpiId').value = r.upiId || ''; $('mIfsc').value = r.ifsc || '';
   $('riderModal').classList.add('show');
 }
 
@@ -240,7 +248,10 @@ async function saveRider() {
     status: $('mStatus').value,
     aadhaar: $('mAadhaar').value.trim(),
     pan: $('mPan').value.trim(),
-    drivingLicense: $('mDL').value.trim()
+    drivingLicense: $('mDL').value.trim(),
+    bankDetails: $('mBankDetails').value.trim(),
+    upiId: $('mUpiId').value.trim(),
+    ifsc: $('mIfsc').value.trim()
   };
   
   if (!rider.name || !rider.phone) { alert('Name and Phone required'); return; }

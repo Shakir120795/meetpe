@@ -896,6 +896,14 @@
             <span class="profile-item-label">📋 ID</span>
             <span class="profile-item-value" id="profileId">--</span>
         </div>
+        <div class="profile-item">
+            <span class="profile-item-label">🏦 Bank</span>
+            <span class="profile-item-value" id="profileBank">--</span>
+        </div>
+        <div class="profile-item">
+            <span class="profile-item-label">📱 UPI</span>
+            <span class="profile-item-value" id="profileUpi">--</span>
+        </div>
     </div>
     
     <!-- Support Section -->
@@ -1419,6 +1427,8 @@ function loadProfile() {
     document.getElementById('profileRating').textContent = (rider.rating || 5.0) + ' ⭐';
     document.getElementById('profileDeliveries').textContent = rider.totalDeliveries || '0';
     document.getElementById('profileId').textContent = rider.id || '--';
+    document.getElementById('profileBank').textContent = rider.bankDetails || 'Not added (contact admin)';
+    document.getElementById('profileUpi').textContent = rider.upiId || 'Not added (contact admin)';
     
     // Load rider's tickets
     loadRiderTickets();
