@@ -869,7 +869,7 @@
 <div class="screen" id="profileScreen">
     <div class="topbar">
         <div class="topbar-left">
-            <span class="topbar-name">Profile</span>
+            <span class="topbar-name">Profile & Settings</span>
         </div>
     </div>
     <div class="profile-header">
@@ -877,25 +877,62 @@
         <div class="profile-name" id="profileName">Rider</div>
         <div class="profile-phone" id="profilePhone">--</div>
     </div>
+    
+    <!-- Profile Info -->
     <div class="profile-info">
         <div class="profile-item">
-            <span class="profile-item-label">Vehicle</span>
+            <span class="profile-item-label">🛵 Vehicle</span>
             <span class="profile-item-value" id="profileVehicle">--</span>
         </div>
         <div class="profile-item">
-            <span class="profile-item-label">Rating</span>
+            <span class="profile-item-label">⭐ Rating</span>
             <span class="profile-item-value" id="profileRating">--</span>
         </div>
         <div class="profile-item">
-            <span class="profile-item-label">Total Deliveries</span>
+            <span class="profile-item-label">📦 Total Deliveries</span>
             <span class="profile-item-value" id="profileDeliveries">--</span>
         </div>
         <div class="profile-item">
-            <span class="profile-item-label">Joined</span>
-            <span class="profile-item-value" id="profileJoined">--</span>
+            <span class="profile-item-label">📋 ID</span>
+            <span class="profile-item-value" id="profileId">--</span>
         </div>
     </div>
-    <button class="btn btn-danger logout-btn" onclick="handleLogout()">Logout</button>
+    
+    <!-- Support Section -->
+    <div style="padding:20px 20px 0">
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--muted)">🛠 SUPPORT</div>
+        <div class="profile-info" style="padding:0">
+            <div class="profile-item" onclick="openRiderChat()" style="cursor:pointer">
+                <span class="profile-item-label">💬 Live Chat</span>
+                <span class="profile-item-value" style="color:var(--accent)">Open →</span>
+            </div>
+            <div class="profile-item" onclick="callSupport()" style="cursor:pointer">
+                <span class="profile-item-label">📞 Call Support</span>
+                <span class="profile-item-value" style="color:var(--accent)">Call →</span>
+            </div>
+            <div class="profile-item" onclick="openRiderTicket()" style="cursor:pointer">
+                <span class="profile-item-label">🎫 Raise Ticket</span>
+                <span class="profile-item-value" style="color:var(--accent)">Open →</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Section -->
+    <div style="padding:20px 20px 0">
+        <div style="font-size:14px;font-weight:700;margin-bottom:12px;color:var(--muted)">⚙️ SETTINGS</div>
+        <div class="profile-info" style="padding:0">
+            <div class="profile-item">
+                <span class="profile-item-label">🌙 Dark Mode</span>
+                <span class="profile-item-value" style="color:var(--success)">Always On</span>
+            </div>
+            <div class="profile-item">
+                <span class="profile-item-label">🔔 Notifications</span>
+                <span class="profile-item-value" style="color:var(--success)">Enabled</span>
+            </div>
+        </div>
+    </div>
+    
+    <button class="btn btn-danger logout-btn" onclick="handleLogout()">🚪 Logout</button>
 </div>
 
 <!-- Bottom Navigation -->
@@ -1375,9 +1412,67 @@ function loadProfile() {
     document.getElementById('profileName').textContent = rider.name || 'Rider';
     document.getElementById('profilePhone').textContent = rider.phone || '--';
     document.getElementById('profileVehicle').textContent = (rider.vehicleType || 'Bike') + ' • ' + (rider.vehicleNumber || '--');
-    document.getElementById('profileRating').textContent = rider.rating ? rider.rating + ' ⭐' : '5.0 ⭐';
+    document.getElementById('profileRating').textContent = (rider.rating || 5.0) + ' ⭐';
     document.getElementById('profileDeliveries').textContent = rider.totalDeliveries || '0';
-    document.getElementById('profileJoined').textContent = 'Active';
+    document.getElementById('profileId').textContent = rider.id || '--';
+}
+
+// ============ SUPPORT ============
+function openRiderChat() {
+    const phone = '917617555488'; // Support number
+    const msg = encodeURIComponent('Hi, I am rider ' + (rider?.name || '') + ' (' + (rider?.id || '') + '). I need help.');
+    window.open('https://wa.me/' + phone + '?text=' + msg, '_blank');
+}
+
+function callSupport() {
+    window.location.href = 'tel:+917617555488';
+}
+
+function openRiderTicket() {
+    const overlay = document.createElement('div');
+    overlay.id = 'ticketOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
+    
+    overlay.innerHTML = `
+        <div style="background:var(--card);border-radius:20px;padding:24px;max-width:360px;width:100%">
+            <div style="font-size:18px;font-weight:700;margin-bottom:16px">🎫 Raise Ticket</div>
+            <select id="riderTicketCat" style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:12px">
+                <option value="">Select Issue</option>
+                <option value="payment">Payment Issue</option>
+                <option value="order">Order Issue</option>
+                <option value="app">App Problem</option>
+                <option value="account">Account Issue</option>
+                <option value="other">Other</option>
+            </select>
+            <textarea id="riderTicketMsg" placeholder="Describe your issue..." style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;resize:none;height:100px;margin-bottom:12px"></textarea>
+            <div style="display:flex;gap:10px">
+                <button onclick="submitRiderTicket()" style="flex:1;padding:12px;background:var(--accent);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">Submit</button>
+                <button onclick="document.getElementById('ticketOverlay').remove()" style="padding:12px 16px;background:var(--bg);border:1px solid var(--border);color:var(--muted);border-radius:10px;font-size:14px;cursor:pointer">Cancel</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+async function submitRiderTicket() {
+    const cat = document.getElementById('riderTicketCat').value;
+    const msg = document.getElementById('riderTicketMsg').value.trim();
+    if (!cat || !msg) { showToast('Fill all fields', 'error'); return; }
+    
+    try {
+        const response = await fetch('/api/ticket/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: rider.phone?.replace(/\D/g,'').slice(-10), name: rider.name + ' (Rider)', category: cat, message: msg })
+        });
+        const data = await response.json();
+        if (data.ok) {
+            document.getElementById('ticketOverlay').remove();
+            showToast('Ticket submitted! #' + data.ticketId, 'success');
+        } else {
+            showToast(data.error || 'Failed', 'error');
+        }
+    } catch(e) { showToast('Network error', 'error'); }
 }
 
 // ============ LOGOUT ============
