@@ -6712,7 +6712,7 @@ function toggleWishlist(code, name, unit, price, img) {
     showToast('Removed from wishlist ❌', 'info');
   } else {
     // Add to wishlist
-    wishlist.push({ code, name, unit, price, img });
+    wishlist.push({ code, name, unit, price, img, addedAt: Date.now() });
     showToast('Added to wishlist ❤️', 'success');
   }
   
@@ -6725,23 +6725,62 @@ function loadWishlist() {
   const wishlist = JSON.parse(localStorage.getItem('now_wishlist') || '[]');
   
   if (!wishlist.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">❤️</div><h3>No Saved Items</h3><p>Save your favorite items to your wishlist</p></div>`;
+    el.innerHTML = `<div class="empty">
+      <div class="empty-icon">❤️</div>
+      <h3>No Saved Items</h3>
+      <p style="margin-bottom:16px">Tap the heart ❤️ on products to save them here</p>
+      <button onclick="showScreen('screen-home')" style="padding:12px 24px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">
+        🛒 Browse Products
+      </button>
+    </div>`;
     return;
   }
   
-  el.innerHTML = wishlist.map((item, idx) => `
-    <div style="background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:12px;border:1px solid var(--border);display:flex;gap:12px;padding:12px">
-      <img src="${item.img || '/logo.png'}" alt="${item.name}" style="width:80px;height:80px;border-radius:10px;object-fit:cover;flex-shrink:0" onerror="this.src='/logo.png'"/>
-      <div style="flex:1">
-        <div style="font-size:14px;font-weight:700;margin-bottom:4px">${item.name}</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${item.unit}</div>
-        <div style="font-size:14px;font-weight:800;color:var(--accent);margin-bottom:8px">₹${item.price}</div>
+  // Header with count and clear all
+  let html = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:700">${wishlist.length} item${wishlist.length > 1 ? 's' : ''} saved</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="addAllWishlistToCart()" style="padding:8px 14px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">
+          🛒 Add All to Cart
+        </button>
+        <button onclick="clearWishlist()" style="padding:8px 14px;background:var(--bg);border:1px solid var(--border);color:var(--muted);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">
+          🗑️ Clear
+        </button>
+      </div>
+    </div>
+  `;
+  
+  html += wishlist.map((item, idx) => {
+    // Check stock status from MENU
+    const menuItem = MENU.find(m => m.code === item.code);
+    const inStock = menuItem ? menuItem.inStock : false;
+    const currentPrice = menuItem ? menuItem.price : item.price;
+    const priceChanged = menuItem && menuItem.price !== item.price;
+    
+    return `<div style="background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:12px;border:1px solid var(--border);display:flex;gap:12px;padding:12px;${!inStock ? 'opacity:0.6' : ''}">
+      <div onclick="openProduct('${item.code}')" style="cursor:pointer;flex-shrink:0">
+        <img src="${item.img || '/logo.png'}" alt="${item.name}" style="width:80px;height:80px;border-radius:10px;object-fit:cover" onerror="this.src='/logo.png'"/>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div onclick="openProduct('${item.code}')" style="cursor:pointer">
+          <div style="font-size:14px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${item.unit || ''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="font-size:15px;font-weight:800;color:var(--accent)">₹${currentPrice}</div>
+          ${priceChanged ? `<div style="font-size:11px;color:var(--muted);text-decoration:line-through">₹${item.price}</div>` : ''}
+          ${!inStock ? '<span style="font-size:11px;color:#ef4444;font-weight:600;background:rgba(239,68,68,.1);padding:2px 8px;border-radius:4px">Out of Stock</span>' : '<span style="font-size:11px;color:#16a34a;font-weight:600">In Stock</span>'}
+        </div>
         <div style="display:flex;gap:6px">
-          <button onclick="addToCartFromWishlist('${item.code}',${idx})" style="flex:1;padding:8px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">Add to Cart</button>
-          <button onclick="removeFromWishlist(${idx})" style="padding:8px 12px;background:var(--border);color:var(--text);border:none;border-radius:8px;cursor:pointer;font-size:14px">❌</button>
+          ${inStock ? `<button onclick="addToCartFromWishlist('${item.code}',${idx})" style="flex:1;padding:8px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">🛒 Add to Cart</button>` : `<button disabled style="flex:1;padding:8px;background:var(--border);color:var(--muted);border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:not-allowed">Out of Stock</button>`}
+          <button onclick="removeFromWishlist(${idx})" style="padding:8px 12px;background:rgba(239,68,68,.1);color:#ef4444;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600">✕</button>
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+  
+  el.innerHTML = html;
 }
 
 function removeFromWishlist(idx) {
@@ -6749,6 +6788,7 @@ function removeFromWishlist(idx) {
   wishlist.splice(idx, 1);
   localStorage.setItem('now_wishlist', JSON.stringify(wishlist));
   loadWishlist();
+  renderProducts(); // Update heart icons
   showToast('Removed from wishlist', 'info');
 }
 
@@ -6760,8 +6800,58 @@ function addToCartFromWishlist(code, idx) {
   }
   CART[code] = (CART[code] || 0) + 1;
   saveCart();
+  updateCartBar();
   removeFromWishlist(idx);
   showToast('Added to cart 🛒', 'success');
+}
+
+function addAllWishlistToCart() {
+  let wishlist = JSON.parse(localStorage.getItem('now_wishlist') || '[]');
+  let added = 0;
+  let unavailable = 0;
+  
+  wishlist.forEach(item => {
+    const menuItem = MENU.find(m => m.code === item.code);
+    if (menuItem && menuItem.inStock) {
+      CART[item.code] = (CART[item.code] || 0) + 1;
+      added++;
+    } else {
+      unavailable++;
+    }
+  });
+  
+  if (added > 0) {
+    saveCart();
+    updateCartBar();
+    // Remove added items from wishlist (keep out-of-stock ones)
+    wishlist = wishlist.filter(item => {
+      const menuItem = MENU.find(m => m.code === item.code);
+      return !menuItem || !menuItem.inStock;
+    });
+    localStorage.setItem('now_wishlist', JSON.stringify(wishlist));
+    loadWishlist();
+    renderProducts();
+    showToast(`${added} item${added>1?'s':''} added to cart! 🛒`, 'success');
+  }
+  
+  if (unavailable > 0) {
+    showToast(`${unavailable} item${unavailable>1?'s':''} out of stock`, 'info');
+  }
+}
+
+function clearWishlist() {
+  if (!confirm('Remove all items from wishlist?')) return;
+  localStorage.setItem('now_wishlist', '[]');
+  loadWishlist();
+  renderProducts();
+  showToast('Wishlist cleared', 'info');
+}
+
+function openProduct(code) {
+  const item = MENU.find(i => i.code === code);
+  if (item) {
+    showProductDetail(item);
+  }
 }
 
 
