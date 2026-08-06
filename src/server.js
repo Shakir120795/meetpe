@@ -3577,6 +3577,214 @@ app.post('/admin/chat/reply', (req, res) => {
   res.json({ ok: true });
 });
 
+// ═══════════════════════════════════════════════════════════════
+//  RIDER APP APIs
+// ═══════════════════════════════════════════════════════════════
+
+// DB setup for rider
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS rider_earnings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    rider_id TEXT NOT NULL,
+    order_id INTEGER,
+    amount REAL DEFAULT 0,
+    type TEXT DEFAULT 'delivery',
+    status TEXT DEFAULT 'pending',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  db.exec(`CREATE TABLE IF NOT EXISTS rider_cod (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    rider_id TEXT NOT NULL,
+    order_id INTEGER NOT NULL,
+    amount REAL NOT NULL,
+    status TEXT DEFAULT 'collected',
+    deposited_at TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+  // Add rider columns to orders if not exist
+  try { db.prepare('ALTER TABLE orders ADD COLUMN rider_id TEXT').run(); } catch(e) {}
+  try { db.prepare('ALTER TABLE orders ADD COLUMN delivery_otp TEXT').run(); } catch(e) {}
+  try { db.prepare('ALTER TABLE orders ADD COLUMN rider_accepted_at TEXT').run(); } catch(e) {}
+  try { db.prepare('ALTER TABLE orders ADD COLUMN rider_picked_at TEXT').run(); } catch(e) {}
+  try { db.prepare('ALTER TABLE orders ADD COLUMN rider_delivered_at TEXT').run(); } catch(e) {}
+} catch(e) { console.warn('Rider tables:', e.message); }
+
+// POST /api/rider/login - Rider login (uses phone from deliveryBoys)
+app.post('/api/rider/login', (req, res) => {
+  const { phone } = req.body || {};
+  const cleanPhone = String(phone || '').replace(/\D/g, '');
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+  
+  // Check if this phone is a registered rider
+  const settings = require('./data/settings').get();
+  const riders = settings.orderTracking?.deliveryBoys || [];
+  const rider = riders.find(r => r.phone && r.phone.replace(/\D/g, '').endsWith(cleanPhone));
+  
+  if (!rider) return res.status(403).json({ ok: false, error: 'Not a registered rider. Contact admin.' });
+  
+  res.json({ ok: true, rider: { id: rider.id, name: rider.name, phone: rider.phone, vehicleType: rider.vehicleType, vehicleNumber: rider.vehicleNumber, rating: rider.rating, status: rider.status } });
+});
+
+// POST /api/rider/status - Toggle online/offline
+app.post('/api/rider/status', (req, res) => {
+  const { riderId, status } = req.body || {};
+  if (!riderId || !['available', 'busy', 'offline'].includes(status)) return res.status(400).json({ ok: false, error: 'invalid' });
+  
+  const settings = require('./data/settings');
+  const current = settings.get();
+  const riders = current.orderTracking?.deliveryBoys || [];
+  const idx = riders.findIndex(r => r.id === riderId);
+  if (idx === -1) return res.status(404).json({ ok: false, error: 'rider not found' });
+  
+  riders[idx].status = status;
+  settings.update({ orderTracking: { ...current.orderTracking, deliveryBoys: riders } });
+  res.json({ ok: true, status });
+});
+
+// GET /api/rider/dashboard/:riderId - Dashboard stats
+app.get('/api/rider/dashboard/:riderId', (req, res) => {
+  const riderId = req.params.riderId;
+  
+  // Today's stats
+  const todayEarnings = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_earnings WHERE rider_id = ? AND date(created_at, 'localtime') = date('now', 'localtime')`).get(riderId);
+  const todayDeliveries = db.prepare(`SELECT COUNT(*) as count FROM orders WHERE rider_id = ? AND status = 'delivered' AND date(created_at, 'localtime') = date('now', 'localtime')`).get(riderId);
+  const pendingOrders = db.prepare(`SELECT COUNT(*) as count FROM orders WHERE rider_id = ? AND status IN ('placed', 'preparing', 'out_for_delivery')`).get(riderId);
+  
+  // Rating from settings
+  const settings = require('./data/settings').get();
+  const riders = settings.orderTracking?.deliveryBoys || [];
+  const rider = riders.find(r => r.id === riderId);
+  
+  res.json({
+    ok: true,
+    todayEarnings: todayEarnings?.total || 0,
+    todayDeliveries: todayDeliveries?.count || 0,
+    pendingOrders: pendingOrders?.count || 0,
+    rating: rider?.rating || 5.0,
+    totalDeliveries: rider?.totalDeliveries || 0
+  });
+});
+
+// GET /api/rider/orders/:riderId - Get rider's orders
+app.get('/api/rider/orders/:riderId', (req, res) => {
+  const riderId = req.params.riderId;
+  const status = req.query.status || '';
+  
+  let orders;
+  if (status === 'new') {
+    // Orders assigned to this rider but not yet accepted
+    orders = db.prepare(`SELECT * FROM orders WHERE rider_id = ? AND status = 'placed' ORDER BY id DESC`).all(riderId);
+  } else if (status === 'active') {
+    orders = db.prepare(`SELECT * FROM orders WHERE rider_id = ? AND status IN ('preparing', 'out_for_delivery') ORDER BY id DESC`).all(riderId);
+  } else if (status === 'history') {
+    orders = db.prepare(`SELECT * FROM orders WHERE rider_id = ? AND status IN ('delivered', 'cancelled') ORDER BY id DESC LIMIT 30`).all(riderId);
+  } else {
+    orders = db.prepare(`SELECT * FROM orders WHERE rider_id = ? ORDER BY id DESC LIMIT 50`).all(riderId);
+  }
+  
+  // Parse items
+  const result = orders.map(o => ({
+    ...o,
+    items: JSON.parse(o.items_json || '[]')
+  }));
+  
+  res.json({ ok: true, orders: result });
+});
+
+// POST /api/rider/order/accept - Accept order
+app.post('/api/rider/order/accept', (req, res) => {
+  const { riderId, orderId } = req.body || {};
+  if (!riderId || !orderId) return res.status(400).json({ ok: false, error: 'missing fields' });
+  
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND rider_id = ?').get(orderId, riderId);
+  if (!order) return res.status(404).json({ ok: false, error: 'order not found' });
+  
+  db.prepare(`UPDATE orders SET status = 'preparing', rider_accepted_at = datetime('now') WHERE id = ?`).run(orderId);
+  res.json({ ok: true });
+});
+
+// POST /api/rider/order/status - Update order status
+app.post('/api/rider/order/status', (req, res) => {
+  const { riderId, orderId, status } = req.body || {};
+  const allowed = ['preparing', 'out_for_delivery', 'delivered'];
+  if (!allowed.includes(status)) return res.status(400).json({ ok: false, error: 'invalid status' });
+  
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND rider_id = ?').get(orderId, riderId);
+  if (!order) return res.status(404).json({ ok: false, error: 'order not found' });
+  
+  const updates = [`status = ?`];
+  const params = [status];
+  
+  if (status === 'out_for_delivery') {
+    updates.push(`rider_picked_at = datetime('now')`);
+    // Generate delivery OTP
+    const otp = String(Math.floor(1000 + Math.random() * 9000));
+    updates.push(`delivery_otp = ?`);
+    params.push(otp);
+  }
+  if (status === 'delivered') {
+    updates.push(`rider_delivered_at = datetime('now')`);
+    // Credit rider earnings
+    const settings = require('./data/settings').get();
+    const zone = settings.deliveryZones?.find(z => true) || {};
+    const earning = zone.deliveryFee || 30;
+    db.prepare('INSERT INTO rider_earnings (rider_id, order_id, amount, type) VALUES (?, ?, ?, ?)').run(riderId, orderId, earning, 'delivery');
+    
+    // Track COD if applicable
+    if (order.payment_method === 'cod') {
+      db.prepare('INSERT INTO rider_cod (rider_id, order_id, amount) VALUES (?, ?, ?)').run(riderId, orderId, order.total);
+    }
+  }
+  
+  params.push(orderId);
+  db.prepare(`UPDATE orders SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+  
+  // Notify customer
+  const updatedOrder = db.prepare('SELECT * FROM orders WHERE id = ?').get(orderId);
+  if (updatedOrder) setImmediate(() => notifyCustomer(updatedOrder, status));
+  
+  res.json({ ok: true, status });
+});
+
+// POST /api/rider/order/verify - Verify delivery OTP
+app.post('/api/rider/order/verify', (req, res) => {
+  const { riderId, orderId, otp } = req.body || {};
+  
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND rider_id = ?').get(orderId, riderId);
+  if (!order) return res.status(404).json({ ok: false, error: 'order not found' });
+  if (order.delivery_otp !== otp) return res.status(400).json({ ok: false, error: 'Invalid OTP' });
+  
+  // Mark delivered
+  db.prepare(`UPDATE orders SET status = 'delivered', rider_delivered_at = datetime('now') WHERE id = ?`).run(orderId);
+  
+  // Credit earnings
+  const settings = require('./data/settings').get();
+  const zone = settings.deliveryZones?.find(z => true) || {};
+  const earning = zone.deliveryFee || 30;
+  db.prepare('INSERT INTO rider_earnings (rider_id, order_id, amount, type) VALUES (?, ?, ?, ?)').run(riderId, orderId, earning, 'delivery');
+  
+  if (order.payment_method === 'cod') {
+    db.prepare('INSERT INTO rider_cod (rider_id, order_id, amount) VALUES (?, ?, ?)').run(riderId, orderId, order.total);
+  }
+  
+  res.json({ ok: true, message: 'Delivery verified!' });
+});
+
+// GET /api/rider/earnings/:riderId - Earnings
+app.get('/api/rider/earnings/:riderId', (req, res) => {
+  const riderId = req.params.riderId;
+  const today = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_earnings WHERE rider_id = ? AND date(created_at,'localtime')=date('now','localtime')`).get(riderId);
+  const week = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_earnings WHERE rider_id = ? AND created_at >= datetime('now','-7 days')`).get(riderId);
+  const month = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_earnings WHERE rider_id = ? AND created_at >= datetime('now','-30 days')`).get(riderId);
+  const recent = db.prepare(`SELECT * FROM rider_earnings WHERE rider_id = ? ORDER BY created_at DESC LIMIT 20`).all(riderId);
+  
+  // COD
+  const codCollected = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_cod WHERE rider_id = ? AND status='collected'`).get(riderId);
+  const codDeposited = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_cod WHERE rider_id = ? AND status='deposited'`).get(riderId);
+  
+  res.json({ ok: true, today: today?.total||0, week: week?.total||0, month: month?.total||0, recent, codPending: (codCollected?.total||0)-(codDeposited?.total||0) });
+});
+
 app.listen(PORT, () => {
   console.log(`🥩 MeatPe server listening on :${PORT}`);
 
