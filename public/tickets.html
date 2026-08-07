@@ -107,6 +107,7 @@ async function loadTickets() {
 
 function filterTickets(status) {
   FILTER = status;
+  window._ticketsPage = 1;
   document.querySelectorAll('[id^="ft-"]').forEach(b => { b.style.background = 'white'; b.style.color = '#6b7280'; b.style.border = '1px solid #e5e7eb'; });
   const btn = $('ft-' + status);
   btn.style.background = '#d62828'; btn.style.color = 'white'; btn.style.border = 'none';
@@ -133,8 +134,32 @@ function renderTickets() {
     $('ticketsList').innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280">No tickets found</div>';
     return;
   }
+
+  // Pagination
+  const perPage = window._ticketsPerPage || 10;
+  const page = window._ticketsPage || 1;
+  const totalItems = filtered.length;
+  const totalPages = Math.ceil(totalItems / perPage);
+  const startIdx = (page - 1) * perPage;
+  const paginated = filtered.slice(startIdx, startIdx + perPage);
+
+  const paginationHtml = totalItems > 10 ? `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;background:white;padding:12px 16px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.04)">
+      <div style="font-size:13px;color:#6b7280">Showing ${startIdx+1}-${Math.min(startIdx+perPage, totalItems)} of ${totalItems}</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <select onchange="window._ticketsPerPage=parseInt(this.value);window._ticketsPage=1;renderTickets()" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px">
+          <option ${perPage===10?'selected':''} value="10">10/page</option>
+          <option ${perPage===20?'selected':''} value="20">20/page</option>
+          <option ${perPage===50?'selected':''} value="50">50/page</option>
+        </select>
+        <button onclick="if(window._ticketsPage>1){window._ticketsPage--;renderTickets()}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;cursor:pointer;background:white" ${page<=1?'disabled':''}>← Prev</button>
+        <span style="font-size:12px;font-weight:600">${page}/${totalPages}</span>
+        <button onclick="if(window._ticketsPage<${totalPages}){window._ticketsPage=(window._ticketsPage||1)+1;renderTickets()}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;cursor:pointer;background:white" ${page>=totalPages?'disabled':''}>Next →</button>
+      </div>
+    </div>
+  ` : '';
   
-  $('ticketsList').innerHTML = filtered.map(t => {
+  $('ticketsList').innerHTML = paginationHtml + paginated.map(t => {
     const statusColor = t.status === 'open' ? '#f59e0b' : '#16a34a';
     const statusLabel = t.status === 'open' ? '🟡 Open' : '✅ Resolved';
     const isRider = t.name && t.name.includes('(Rider)');

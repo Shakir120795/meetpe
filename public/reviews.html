@@ -203,7 +203,31 @@ function render() {
     return;
   }
 
-  content.innerHTML = ALL_REVIEWS.map(renderReview).join('');
+  // Pagination
+  const perPage = window._reviewsPerPage || 10;
+  const page = window._reviewsPage || 1;
+  const totalItems = ALL_REVIEWS.length;
+  const totalPages = Math.ceil(totalItems / perPage);
+  const startIdx = (page - 1) * perPage;
+  const paginated = ALL_REVIEWS.slice(startIdx, startIdx + perPage);
+
+  const paginationHtml = totalItems > 10 ? `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;background:white;padding:12px 16px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.04)">
+      <div style="font-size:13px;color:#6b7280">Showing ${startIdx+1}-${Math.min(startIdx+perPage, totalItems)} of ${totalItems}</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <select onchange="window._reviewsPerPage=parseInt(this.value);window._reviewsPage=1;render()" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px">
+          <option ${perPage===10?'selected':''} value="10">10/page</option>
+          <option ${perPage===20?'selected':''} value="20">20/page</option>
+          <option ${perPage===50?'selected':''} value="50">50/page</option>
+        </select>
+        <button onclick="if(window._reviewsPage>1){window._reviewsPage--;render()}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;cursor:pointer;background:white" ${page<=1?'disabled':''}>← Prev</button>
+        <span style="font-size:12px;font-weight:600">${page}/${totalPages}</span>
+        <button onclick="if(window._reviewsPage<${totalPages}){window._reviewsPage=(window._reviewsPage||1)+1;render()}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;cursor:pointer;background:white" ${page>=totalPages?'disabled':''}>Next →</button>
+      </div>
+    </div>
+  ` : '';
+
+  content.innerHTML = paginationHtml + paginated.map(renderReview).join('');
 }
 
 function renderReview(r) {
