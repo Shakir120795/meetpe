@@ -415,6 +415,8 @@ function read() {
       invoice: { ...defaults.invoice, ...data.invoice },
       deliveryZones: Array.isArray(data.deliveryZones) ? data.deliveryZones : defaults.deliveryZones,
       membershipPlans: Array.isArray(data.membershipPlans) ? data.membershipPlans : defaults.membershipPlans,
+      storeOpen: data.storeOpen !== undefined ? data.storeOpen : true,
+      storeClosedMessage: data.storeClosedMessage || 'We are currently unavailable. Please try again later.',
     };
   } catch (e) {
     console.warn('settings.json read failed:', e.message);
@@ -487,6 +489,8 @@ function update(patch) {
   if (Array.isArray(patch.supplierHubs)) current.supplierHubs = patch.supplierHubs;
   if (Array.isArray(patch.deliveryRules)) current.deliveryRules = patch.deliveryRules;
   if (Array.isArray(patch.membershipRules)) current.membershipRules = patch.membershipRules;
+  if (patch.storeOpen !== undefined) current.storeOpen = patch.storeOpen;
+  if (patch.storeClosedMessage !== undefined) current.storeClosedMessage = patch.storeClosedMessage;
   write(current);
   return { ok: true, settings: current };
 }
