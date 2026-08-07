@@ -5198,16 +5198,15 @@ function updateActiveOrderStrip(orders) {
   // Filter active orders
   const activeOrders = (orders || []).filter(o => ['placed', 'preparing', 'out_for_delivery'].includes(o.status));
   
-  // Show delivered orders until user rates them
+  // Show ONLY the most recent delivered order for rating (not all old ones)
   const dismissed = JSON.parse(localStorage.getItem('now_dismissed_strip') || '[]');
   const recentDelivered = (orders || []).filter(o => {
     if (o.status !== 'delivered') return false;
     if (dismissed.includes(o.id)) return false;
-    // Only show delivered orders from last 24 hours (not all old ones)
     const deliveredTime = new Date(o.updated_at || o.created_at);
     const now = new Date();
     return (now - deliveredTime) < 24 * 60 * 60 * 1000;
-  });
+  }).slice(0, 1); // Only show the LATEST one
   
   // Filter out dismissed orders
   const allStripOrders = [...activeOrders, ...recentDelivered].filter(o => !dismissed.includes(o.id));
