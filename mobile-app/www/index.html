@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOW</title>
+  <style>
+    body { margin: 0; background: #0D0D0D; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: system-ui; }
+    .loader { text-align: center; color: #fff; }
+    .loader img { width: 80px; border-radius: 16px; margin-bottom: 16px; }
+    .loader h1 { font-size: 28px; margin: 0 0 8px; }
+    .loader p { color: #888; font-size: 14px; }
+    .spinner { width: 32px; height: 32px; border: 3px solid rgba(232,69,10,.2); border-top-color: #E8450A; border-radius: 50%; animation: spin .8s linear infinite; margin: 20px auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="loader">
+    <img src="logo.png" alt="NOW" onerror="this.style.display='none'">
+    <h1>NOW</h1>
+    <p>Nonveg On Wheel</p>
+    <div class="spinner"></div>
+    <p style="font-size:12px;margin-top:10px">Loading...</p>
+  </div>
+  <script>
+    // Fallback: if server URL doesn't load within 5 seconds, show error
+    setTimeout(() => {
+      document.querySelector('.loader p:last-child').textContent = 'Please check your internet connection';
+    }, 10000);
+  </script>
+</body>
+</html>
