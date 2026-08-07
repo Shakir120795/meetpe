@@ -316,8 +316,8 @@ app.post('/api/order', (req, res) => {
 
     let earnedReward = 0;
     if (enableRewards && subtotal >= rewardThreshold) {
-      db.prepare(`INSERT INTO rewards (phone, amount, expires_at) VALUES (?, ?, datetime('now', '+${rewardExpiry} days'))`)
-        .run(webPhone, rewardAmt);
+      // Credit reward directly to wallet (instead of separate rewards table)
+      db.prepare('UPDATE customers SET wallet_balance = wallet_balance + ? WHERE phone = ?').run(rewardAmt, webPhone);
       earnedReward = rewardAmt;
     }
     
