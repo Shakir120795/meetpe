@@ -70,6 +70,7 @@ h1 img{height:36px}
 <div class="key-bar">
 <input id="key" type="password" placeholder="Admin key"/>
 <button onclick="loadDashboard()">Load Dashboard</button>
+<button id="storeToggleDash" onclick="toggleStoreDash()" style="margin-left:auto;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:#16a34a;color:white">🟢 OPEN</button>
 </div>
 
 <div id="content">
@@ -213,6 +214,31 @@ function renderAlerts(data, stockData) {
 setInterval(() => {
   if ($('content').style.display !== 'none') loadDashboard();
 }, 30000);
+
+// Store Open/Closed Toggle
+let _dashStoreOpen = true;
+async function loadStoreDash() {
+  try {
+    const r = await fetch('/admin/store-status');
+    const d = await r.json();
+    _dashStoreOpen = d.open;
+    const btn = $('storeToggleDash');
+    btn.style.background = _dashStoreOpen ? '#16a34a' : '#dc2626';
+    btn.textContent = _dashStoreOpen ? '🟢 OPEN' : '🔴 CLOSED';
+  } catch(e) {}
+}
+async function toggleStoreDash() {
+  const key = $('key').value.trim();
+  if (!key) { alert('Enter admin key'); return; }
+  const newVal = !_dashStoreOpen;
+  if (!newVal && !confirm('Close the store? No new orders will be accepted.')) return;
+  try {
+    const r = await fetch(`/admin/store-status?key=${encodeURIComponent(key)}&open=${newVal?'1':'0'}`, {method:'POST'});
+    const d = await r.json();
+    if (d.ok) { _dashStoreOpen = d.open; loadStoreDash(); }
+  } catch(e) {}
+}
+loadStoreDash();
 </script>
 </body>
 </html>
