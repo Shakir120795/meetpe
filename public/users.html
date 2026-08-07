@@ -447,6 +447,8 @@ function renderUserDetail(user) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
         <div style="background:var(--light);padding:10px;border-radius:8px"><strong>Membership:</strong> ${user.membership_active ? '✅ Active (' + user.membership_credits + ' credits)' : '❌ Not active'}</div>
         <div style="background:var(--light);padding:10px;border-radius:8px"><strong>Wallet:</strong> ₹${user.wallet_balance || 0}</div>
+        <div style="background:var(--light);padding:10px;border-radius:8px"><strong>Rewards:</strong> ₹${user.rewards_balance || 0}</div>
+        <div style="background:var(--light);padding:10px;border-radius:8px"><strong>Plan:</strong> ${user.membership_zone ? user.membership_zone.toUpperCase() : 'None'}</div>
       </div>
     </div>
     
@@ -475,6 +477,17 @@ function renderUserDetail(user) {
     <div class="detail-section">
       <h3>⭐ Reviews Given (${user.reviews ? user.reviews.length : 0})</h3>
       ${reviewsHtml}
+    </div>
+    
+    <div class="detail-section">
+      <h3>🛵 Delivery Ratings Given</h3>
+      ${user.delivery_ratings && user.delivery_ratings.length > 0 ? user.delivery_ratings.map(dr => `
+        <div style="background:var(--light);padding:10px;border-radius:8px;margin-bottom:6px;font-size:12px">
+          <span style="color:#f59e0b;font-weight:700">${'⭐'.repeat(dr.rating)}</span>
+          <span style="color:var(--gray);margin-left:8px">Order #${dr.order_id || '-'}</span>
+          ${dr.comment ? `<div style="margin-top:4px;color:#4b5563">"${escapeHtml(dr.comment)}"</div>` : ''}
+        </div>
+      `).join('') : '<p style="color:var(--gray);font-size:13px">No delivery ratings yet.</p>'}
     </div>
   `;
 }

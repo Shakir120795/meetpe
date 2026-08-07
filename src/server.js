@@ -1026,83 +1026,53 @@ app.get('/admin/users', (req, res) => {
 app.get('/admin/users/:phone/detail', (req, res) => {
   if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   
-  let phone = req.params.phone;
+  let phone = req.params.phone.replace(/\D/g, '').slice(-10);
+  if (phone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
   
-  // Clean: remove non-digits, take last 10 digits
-  phone = phone.replace(/\D/g, '').slice(-10);
-  if (phone.length !== 10) {
-    return res.status(400).json({ ok: false, error: 'invalid phone' });
-  }
-  
-  // Build the clean pattern for matching
-  const cleanPattern = `%${phone}%`;
+  // All possible phone formats in DB
+  const webPhone = `web:+91${phone}`;
+  const waPhone = `whatsapp:+91${phone}`;
+  const phoneVariants = [webPhone, waPhone, phone, `+91${phone}`, `91${phone}`];
   
   try {
-    // Get first matching phone from orders table with this clean phone
-    const firstMatch = db.prepare(`
-      SELECT phone FROM orders
-      WHERE phone LIKE ?
-      LIMIT 1
-    `).get(cleanPattern);
+    // Find customer record (try web: first, then others)
+    let customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(webPhone);
+    if (!customer) customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
+    if (!customer) customer = db.prepare('SELECT * FROM customers WHERE phone LIKE ?').get(`%${phone}%`);
     
-    if (!firstMatch) {
-      return res.status(404).json({ ok: false, error: 'user not found' });
-    }
-    
-    const matchPhone = firstMatch.phone; // e.g., "web:+918126812317"
-    
-    // Now fetch all data using this exact phone
-    const user = db.prepare(`
-      SELECT 
-        c.phone,
-        c.name,
-        c.wallet_balance,
-        COUNT(DISTINCT o.id) AS total_orders,
-        COALESCE(SUM(o.total), 0) AS total_spent,
-        MIN(o.created_at) AS first_order_date,
-        MAX(o.created_at) AS last_order_date
-      FROM customers c
-      LEFT JOIN orders o ON o.phone = c.phone
-      WHERE c.phone = ?
-      GROUP BY c.phone
-    `).get(matchPhone);
-    
-    if (!user) {
-      return res.status(404).json({ ok: false, error: 'user not found' });
-    }
-    
-    // Recent orders
+    // Get ALL orders for this phone (any format)
     const orders = db.prepare(`
-      SELECT id, items_json, total, status, created_at, address
-      FROM orders
-      WHERE phone = ?
+      SELECT id, items_json, total, status, created_at, address, payment_method, delivery_fee
+      FROM orders WHERE phone IN (?, ?, ?, ?, ?)
       ORDER BY created_at DESC
-      LIMIT 10
-    `).all(matchPhone);
+    `).all(...phoneVariants);
     
-    // Top items
-    const topItems = db.prepare(`
-      SELECT 
-        json_extract(value, '$.code') AS item_code,
-        json_extract(value, '$.name') AS item_name,
-        SUM(json_extract(value, '$.qty')) AS count
-      FROM orders, json_each(orders.items_json)
-      WHERE orders.phone = ?
-      GROUP BY item_code
-      ORDER BY count DESC
-      LIMIT 5
-    `).all(matchPhone);
+    if (!customer && !orders.length) {
+      return res.status(404).json({ ok: false, error: 'user not found' });
+    }
     
-    // Reviews
+    const totalOrders = orders.length;
+    const totalSpent = orders.reduce((s, o) => s + (o.total || 0), 0);
+    
+    // Top items across all orders
+    const allItemsFlat = [];
+    orders.forEach(o => {
+      try { JSON.parse(o.items_json || '[]').forEach(i => allItemsFlat.push(i)); } catch(e) {}
+    });
+    const itemCounts = {};
+    allItemsFlat.forEach(i => {
+      if (!itemCounts[i.code]) itemCounts[i.code] = { item_code: i.code, item_name: i.name, count: 0 };
+      itemCounts[i.code].count += (i.qty || 1);
+    });
+    const topItems = Object.values(itemCounts).sort((a,b) => b.count - a.count).slice(0, 5);
+    
+    // Reviews (any phone format)
     const reviews = db.prepare(`
-      SELECT r.id, r.item_code, r.rating, r.comment, r.created_at
-      FROM reviews r
-      WHERE r.phone = ?
-      ORDER BY r.created_at DESC
-      LIMIT 10
-    `).all(matchPhone);
+      SELECT id, item_code, rating, comment, delivery_rating, created_at
+      FROM reviews WHERE phone IN (?, ?, ?, ?, ?)
+      ORDER BY created_at DESC LIMIT 10
+    `).all(...phoneVariants);
     
-    // Add item names
     const catalogItems = getCatalog();
     const reviewsWithNames = reviews.map(r => {
       const item = catalogItems.find(i => i.code === r.item_code);
@@ -1110,76 +1080,72 @@ app.get('/admin/users/:phone/detail', (req, res) => {
     });
     
     // Average rating
-    const avgRating = db.prepare(`
-      SELECT AVG(rating) as avg_rating FROM reviews WHERE phone = ?
-    `).get(matchPhone);
+    const avgRating = reviews.length ? (reviews.reduce((s,r) => s + r.rating, 0) / reviews.length).toFixed(1) : '0.0';
+    
+    // Delivery ratings given
+    const deliveryRatings = reviews.filter(r => r.delivery_rating).map(r => ({
+      rating: r.delivery_rating, comment: r.comment, order_id: r.order_id, created_at: r.created_at
+    }));
     
     // Addresses
-    const addresses = db.prepare(`
-      SELECT DISTINCT address, COUNT(*) as order_count
-      FROM orders
-      WHERE phone = ?
-      GROUP BY address
-      ORDER BY order_count DESC
-    `).all(matchPhone);
-    
-    // Address breakdown
-    const addressBreakdown = addresses.map(addr => {
-      const addrOrders = db.prepare(`
-        SELECT id, items_json, total, status, created_at
-        FROM orders
-        WHERE phone = ? AND address = ?
-        ORDER BY created_at DESC
-      `).all(matchPhone, addr.address);
-      
-      const addrTopItems = db.prepare(`
-        SELECT 
-          json_extract(value, '$.code') AS item_code,
-          json_extract(value, '$.name') AS item_name,
-          SUM(json_extract(value, '$.qty')) AS count
-        FROM orders, json_each(orders.items_json)
-        WHERE orders.phone = ? AND orders.address = ?
-        GROUP BY item_code
-        ORDER BY count DESC
-        LIMIT 3
-      `).all(matchPhone, addr.address);
-      
-      return {
-        address: addr.address,
-        order_count: addr.order_count,
-        orders: addrOrders,
-        top_items: addrTopItems
-      };
+    const addrMap = {};
+    orders.forEach(o => {
+      if (!o.address) return;
+      if (!addrMap[o.address]) addrMap[o.address] = { address: o.address, order_count: 0, orders: [] };
+      addrMap[o.address].order_count++;
+      addrMap[o.address].orders.push(o);
     });
+    const addresses = Object.values(addrMap).sort((a,b) => b.order_count - a.order_count);
+    
+    // Payment methods
+    const pmMap = {};
+    orders.forEach(o => {
+      const pm = o.payment_method || 'cod';
+      pmMap[pm] = (pmMap[pm] || 0) + 1;
+    });
+    const paymentMethods = Object.entries(pmMap).map(([m, c]) => ({ payment_method: m, count: c }));
+    
+    // Membership check
+    let membershipActive = false;
+    let membershipCredits = 0;
+    if (customer) {
+      membershipCredits = customer.delivery_credits || 0;
+      if (customer.is_plus && membershipCredits > 0) {
+        membershipActive = true;
+      } else if (customer.membership_start && membershipCredits > 0) {
+        const start = new Date(customer.membership_start);
+        const dur = customer.membership_zone === 'yearly' ? 365 : 30;
+        membershipActive = new Date(start.getTime() + dur*24*60*60*1000) > new Date();
+      }
+    }
+    
+    // Rewards
+    const rewards = db.prepare(`
+      SELECT COALESCE(SUM(amount),0) as total FROM rewards 
+      WHERE phone IN (?, ?, ?, ?, ?) AND used = 0 AND expires_at > datetime('now')
+    `).get(...phoneVariants);
     
     const userDetail = {
-      phone: phone, // Return clean 10 digits
-      name: user.name || 'Customer',
-      wallet_balance: user.wallet_balance || 0,
-      total_orders: user.total_orders,
-      total_spent: user.total_spent,
-      first_order_date: user.first_order_date,
-      last_order_date: user.last_order_date,
-      orders,
+      phone,
+      name: customer?.name || 'Customer',
+      wallet_balance: customer?.wallet_balance || 0,
+      total_orders: totalOrders,
+      total_spent: totalSpent,
+      first_order_date: orders.length ? orders[orders.length-1].created_at : null,
+      last_order_date: orders.length ? orders[0].created_at : null,
+      orders: orders.slice(0, 10).map(o => ({ ...o, items: JSON.parse(o.items_json || '[]') })),
       top_items: topItems,
       reviews: reviewsWithNames,
-      avg_rating: avgRating?.avg_rating || 0,
-      addresses: addresses,
-      address_breakdown: addressBreakdown,
-      // Extra analytics
-      membership_active: (() => {
-        const c = db.prepare('SELECT membership_start, membership_zone, delivery_credits, is_plus FROM customers WHERE phone = ?').get(matchPhone);
-        if (!c) return false;
-        if (c.is_plus && c.delivery_credits > 0) return true;
-        if (!c.membership_start || !c.delivery_credits) return false;
-        const start = new Date(c.membership_start);
-        const dur = c.membership_zone === 'yearly' ? 365 : 30;
-        return new Date(start.getTime() + dur * 24*60*60*1000) > new Date();
-      })(),
-      membership_credits: (() => { const c = db.prepare('SELECT delivery_credits FROM customers WHERE phone = ?').get(matchPhone); return c?.delivery_credits || 0; })(),
-      delivery_ratings: db.prepare('SELECT rating, comment, order_id, created_at FROM reviews WHERE phone = ? AND delivery_rating IS NOT NULL ORDER BY created_at DESC LIMIT 10').all(matchPhone),
-      payment_methods: db.prepare('SELECT payment_method, COUNT(*) as count FROM orders WHERE phone = ? GROUP BY payment_method ORDER BY count DESC').all(matchPhone),
-      is_blocked: (() => { const c = db.prepare('SELECT is_blocked FROM customers WHERE phone = ?').get(matchPhone); return c?.is_blocked || 0; })()
+      avg_rating: avgRating,
+      addresses,
+      delivery_ratings: deliveryRatings,
+      payment_methods: paymentMethods,
+      membership_active: membershipActive,
+      membership_credits: membershipCredits,
+      rewards_balance: rewards?.total || 0,
+      is_blocked: customer?.is_blocked || 0,
+      is_plus: customer?.is_plus || 0,
+      membership_zone: customer?.membership_zone || null
     };
     
     res.json({ ok: true, user: userDetail });
