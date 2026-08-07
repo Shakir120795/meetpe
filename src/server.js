@@ -939,6 +939,13 @@ app.post('/admin/orders/:id/status', (req, res) => {
   const info = db.prepare('UPDATE orders SET status = ? WHERE id = ?').run(status, id);
   if (info.changes === 0) return res.status(404).json({ ok: false, error: 'order not found' });
 
+  // When admin accepts (marks preparing), auto-broadcast to all riders
+  if (status === 'preparing') {
+    try { db.prepare('ALTER TABLE orders ADD COLUMN rider_id TEXT').run(); } catch(e) {}
+    try { db.prepare('ALTER TABLE orders ADD COLUMN delivery_boy TEXT').run(); } catch(e) {}
+    db.prepare('UPDATE orders SET rider_id = ?, delivery_boy = ? WHERE id = ? AND (rider_id IS NULL OR rider_id = "")').run('all', 'all', id);
+  }
+
   // Fetch the updated order to notify customer
   const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
   res.json({ ok: true, id, status });

@@ -5566,6 +5566,10 @@ function downloadInvoice(orderId) {
     showToast('Order not found', 'error');
     return;
   }
+  if (order.status === 'cancelled') {
+    showToast('Invoice not available for cancelled orders', 'error');
+    return;
+  }
   
   // IST date
   const rawDate = order.created_at || '';
@@ -5729,8 +5733,9 @@ function showOrderDetail(id) {
     </div>
   ` : '';
   
-  // Delivery Boy Card (only if enabled and order is active)
-  const deliveryBoyHtml = isActive && settings.enableDeliveryBoyDetails && deliveryBoy ? `
+  // Delivery Boy Card (only if rider has accepted the order — not when broadcast to 'all')
+  const riderAssigned = order.delivery_boy && order.delivery_boy !== 'all' && order.rider_id !== 'all';
+  const deliveryBoyHtml = isActive && settings.enableDeliveryBoyDetails && deliveryBoy && riderAssigned ? `
     <div class="delivery-boy-card">
       ${deliveryBoy.photo ? 
         `<img src="${deliveryBoy.photo}" alt="${deliveryBoy.name}" class="db-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
@@ -5738,15 +5743,15 @@ function showOrderDetail(id) {
         `<div class="db-photo">👤</div>`
       }
       <div class="db-info">
-        <div class="db-name">${deliveryBoy.name}</div>
+        <div class="db-name">${order.delivery_boy_name || deliveryBoy.name}</div>
         <div class="db-rating">⭐ ${deliveryBoy.rating} • ${deliveryBoy.totalDeliveries} deliveries</div>
         <div class="db-vehicle">🛵 ${deliveryBoy.vehicleType} • ${deliveryBoy.vehicleNumber}</div>
       </div>
     </div>
   ` : '';
   
-  // Action Buttons (only for active orders)
-  const actionButtonsHtml = isActive && deliveryBoy ? `
+  // Action Buttons (only for active orders with assigned rider)
+  const actionButtonsHtml = isActive && deliveryBoy && riderAssigned ? `
     <div class="tracking-actions">
       ${settings.enableCallButton ? 
         `<button onclick="callDeliveryBoy('${deliveryBoy.phone}')">📞 Call</button>` : ''}

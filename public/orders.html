@@ -298,7 +298,7 @@ $('refreshBtn').addEventListener('click', () => loadOrders(false));
 keyInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadOrders(true); });
 $('autoRefresh').addEventListener('change', (e) => {
   if (e.target.checked) {
-    autoTimer = setInterval(() => loadOrders(false), 30000);
+    autoTimer = setInterval(() => loadOrders(false), 15000);
   } else {
     clearInterval(autoTimer); autoTimer = null;
   }
@@ -499,6 +499,7 @@ async function assignDeliveryBoy(orderId, boyId) {
 function downloadOrderInvoice(orderId) {
   const order = ALL_ORDERS.find(o => o.id === orderId);
   if (!order) return;
+  if (order.status === 'cancelled') { alert('Cannot generate invoice for cancelled orders.'); return; }
   
   const d = new Date(order.created_at);
   const dateStr = d.toLocaleDateString('en-IN', { day:'2-digit', month:'2-digit', year:'numeric' });
@@ -514,6 +515,28 @@ function downloadOrderInvoice(orderId) {
 
 // Load delivery boys on page load
 if (saved) loadDeliveryBoys();
+
+// ===== SOUND ALERT for new orders =====
+let _prevOrderCount = 0;
+const _orderSound = new Audio('data:audio/wav;base64,UklGRl4GAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YToGAACAgICAgICAgICAgICAgICAgICAgICAgICA/3+AgH+Af4B/f39/gH9/f4B/f39/f39/f4B/f35+fn5+fn5+fn5+fn5+fn5+fn5+fn19fX5+fn5+f4CAgYKDhIWGh4iJi4yNj5CRk5SWl5manJ2foKKjpaanqaqsra+ws7W3ubu9v8HDxsfKzM7P0dPV19nb3d/h4+Xn6evu8PL09vj6/P7//v38+/n49vXz8fDu7Ovp5+Xj4d/d29nX1dPR0M7MysrIxsXDwcC+vby6ubi2tbSzsrCvrq2sq6qpqKelpKOioaCfnp2cm5qZmJeWlZSTkpGQj46NjIuKiYiHhoWEg4KBgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==');
+
+function checkNewOrderSound() {
+  const currentCount = STATS_DATA ? (STATS_DATA.placed || 0) : 0;
+  if (_prevOrderCount > 0 && currentCount > _prevOrderCount) {
+    // New order arrived! Play sound
+    _orderSound.play().catch(()=>{});
+    msg.innerHTML = '<div style="background:#fef3c7;color:#92400e;padding:10px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600">🔔 New order received!</div>';
+    setTimeout(() => msg.innerHTML = '', 5000);
+  }
+  _prevOrderCount = currentCount;
+}
+
+// Override render to include sound check
+const _origRender = render;
+render = function() {
+  _origRender();
+  checkNewOrderSound();
+};
 </script>
 </body>
 </html>

@@ -1668,8 +1668,51 @@ function toggleRiderTheme() {
     showToast(riderTheme === 'dark' ? '🌙 Dark mode' : '☀️ Light mode', 'success');
 }
 
+// ============ NEW ORDER SOUND ALERT + AUTO REFRESH ============
+let _riderPrevNewCount = 0;
+let _riderRefreshInterval = null;
+const _riderOrderSound = new Audio('data:audio/wav;base64,UklGRl4GAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YToGAACAgICAgICAgICAgICAgICAgICAgICAgICA/3+AgH+Af4B/f39/gH9/f4B/f39/f39/f4B/f35+fn5+fn5+fn5+fn5+fn5+fn5+fn19fX5+fn5+f4CAgYKDhIWGh4iJi4yNj5CRk5SWl5manJ2foKKjpaanqaqsra+ws7W3ubu9v8HDxsfKzM7P0dPV19nb3d/h4+Xn6evu8PL09vj6/P7//v38+/n49vXz8fDu7Ovp5+Xj4d/d29nX1dPR0M7MysrIxsXDwcC+vby6ubi2tbSzsrCvrq2sq6qpqKelpKOioaCfnp2cm5qZmJeWlZSTkpGQj46NjIuKiYiHhoWEg4KBgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==');
+
+function startRiderAutoRefresh() {
+  if (_riderRefreshInterval) return;
+  _riderRefreshInterval = setInterval(async () => {
+    if (!rider || !isOnline) return;
+    try {
+      const res = await fetch(`/api/rider/orders/${rider.id}?status=new`);
+      const data = await res.json();
+      const newCount = (data.ok && data.orders) ? data.orders.length : 0;
+      
+      if (_riderPrevNewCount >= 0 && newCount > _riderPrevNewCount && _riderPrevNewCount !== 0) {
+        // New order arrived! Sound alert
+        _riderOrderSound.play().catch(()=>{});
+        showToast('🔔 New delivery order!', 'success');
+      }
+      _riderPrevNewCount = newCount;
+      
+      // Update badge on nav
+      const navOrders = document.querySelector('[data-screen="orders"]');
+      if (navOrders && newCount > 0) {
+        navOrders.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg><span>Orders</span><span style="position:absolute;top:4px;right:calc(50% - 18px);background:#ef4444;color:#fff;font-size:10px;font-weight:800;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center">${newCount}</span>`;
+      }
+      
+      // If on orders screen with 'new' tab, auto-reload
+      if (currentScreen === 'orders' && currentOrderTab === 'new') {
+        loadOrders('new');
+      }
+    } catch(e) {}
+  }, 15000); // check every 15 seconds
+}
+
+// Start auto-refresh when rider goes online
+const _origToggle = toggleOnlineStatus;
+toggleOnlineStatus = async function() {
+  await _origToggle();
+  if (isOnline) startRiderAutoRefresh();
+};
+
 // ============ START APP ============
 init();
+if (rider && isOnline) startRiderAutoRefresh();
 </script>
 </body>
 </html>
