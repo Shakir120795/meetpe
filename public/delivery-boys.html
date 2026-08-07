@@ -174,13 +174,37 @@ function render() {
     <div class="stat"><div class="num">${RIDERS.length}</div><div class="label">Total Riders</div></div>
   `;
   
-  // Cards
+  // Cards with pagination
   if (!RIDERS.length) {
     $('ridersList').innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280">No delivery boys added yet. Click "➕ Add Rider"</div>';
     return;
   }
   
-  $('ridersList').innerHTML = RIDERS.map((r, i) => {
+  const perPage = window._ridersPerPage || 10;
+  const page = window._ridersPage || 1;
+  const totalPages = Math.ceil(RIDERS.length / perPage);
+  const startIdx = (page - 1) * perPage;
+  const paginated = RIDERS.slice(startIdx, startIdx + perPage);
+  
+  // Pagination controls
+  const paginationHtml = RIDERS.length > 10 ? `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:13px;color:#6b7280">Showing ${startIdx+1}-${Math.min(startIdx+perPage, RIDERS.length)} of ${RIDERS.length}</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <select onchange="window._ridersPerPage=parseInt(this.value);window._ridersPage=1;render()" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px">
+          <option ${perPage===10?'selected':''} value="10">10 / page</option>
+          <option ${perPage===20?'selected':''} value="20">20 / page</option>
+          <option ${perPage===50?'selected':''} value="50">50 / page</option>
+        </select>
+        <button onclick="if(window._ridersPage>1){window._ridersPage--;render()}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;cursor:pointer;background:white" ${page<=1?'disabled':''}>← Prev</button>
+        <span style="font-size:12px;font-weight:600">${page}/${totalPages}</span>
+        <button onclick="if(window._ridersPage<${totalPages}){window._ridersPage=(window._ridersPage||1)+1;render()}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;cursor:pointer;background:white" ${page>=totalPages?'disabled':''}>Next →</button>
+      </div>
+    </div>
+  ` : '';
+  
+  $('ridersList').innerHTML = paginationHtml + paginated.map((r, idx) => {
+    const i = startIdx + idx;
     const badgeClass = r.status === 'available' ? 'badge-available' : r.status === 'busy' ? 'badge-busy' : 'badge-offline';
     return `<div class="card ${r.status}">
       <div class="card-header">
