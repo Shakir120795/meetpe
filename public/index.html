@@ -894,6 +894,9 @@ input,textarea{font:inherit;color:inherit}
         </div>
       </div>
 
+      <!-- Store Closed Banner -->
+      <div id="storeClosedBanner" style="display:none;margin:0 14px 12px;background:linear-gradient(135deg,#991b1b,#7f1d1d);border-radius:14px;padding:14px 16px;color:#fff;border:1px solid #dc2626"></div>
+
       <div class="hero-banner" id="heroBannerEl">
         <div class="hero-txt">
           <div class="chip-badge">⚡ NOW OPEN</div>
@@ -2156,6 +2159,27 @@ async function loadAppSettings() {
   } catch(e) {
     console.warn('Could not load app settings:', e);
   }
+  // Check store open/closed status
+  checkStoreStatus();
+}
+
+async function checkStoreStatus() {
+  try {
+    const res = await fetch('/api/store-status');
+    const data = await res.json();
+    const banner = document.getElementById('storeClosedBanner');
+    if (!data.open) {
+      // Show closed banner
+      if (banner) {
+        banner.style.display = 'block';
+        banner.innerHTML = `<div style="display:flex;align-items:center;gap:10px;justify-content:center"><span style="font-size:20px">🚫</span><div><div style="font-size:14px;font-weight:700">Currently Unavailable</div><div style="font-size:12px;opacity:.8">${data.message || 'We are closed right now. Please try again later.'}</div></div></div>`;
+      }
+      window._STORE_CLOSED = true;
+    } else {
+      if (banner) banner.style.display = 'none';
+      window._STORE_CLOSED = false;
+    }
+  } catch(e) {}
 }
 
 function applyBranding() {
@@ -4839,6 +4863,13 @@ function closeCheckoutModal() {
 
 async function submitOrder(e) {
   e.preventDefault();
+  
+  // Check if store is closed
+  if (window._STORE_CLOSED) {
+    showToast('Store is currently closed. Please try again later.', 'error');
+    return;
+  }
+  
   const name = document.getElementById('oName').value.trim();
   const phone = document.getElementById('oPhone').value.replace(/\D/g,'');
   const address = document.getElementById('oAddress').value.trim();

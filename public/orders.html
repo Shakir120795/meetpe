@@ -256,7 +256,8 @@
     <input id="key" type="password" placeholder="Enter ADMIN_KEY" autocomplete="off" />
     <button id="loadBtn">Load orders</button>
     <button id="refreshBtn" class="refresh" style="display:none">↻ Refresh</button>
-    <label class="auto-refresh-toggle"><input type="checkbox" id="autoRefresh" /> Auto-refresh (30s)</label>
+    <label class="auto-refresh-toggle"><input type="checkbox" id="autoRefresh" /> Auto-refresh (15s)</label>
+    <button id="storeToggleBtn" onclick="toggleStoreStatus()" style="margin-left:8px;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:none;background:#16a34a;color:white">🟢 OPEN</button>
   </div>
 
   <div id="msg"></div>
@@ -515,6 +516,49 @@ function downloadOrderInvoice(orderId) {
 
 // Load delivery boys on page load
 if (saved) loadDeliveryBoys();
+
+// ===== STORE OPEN/CLOSED TOGGLE =====
+let _storeOpen = true;
+
+async function loadStoreStatus() {
+  try {
+    const res = await fetch('/admin/store-status');
+    const data = await res.json();
+    _storeOpen = data.open;
+    updateStoreBtn();
+  } catch(e) {}
+}
+
+function updateStoreBtn() {
+  const btn = document.getElementById('storeToggleBtn');
+  if (!btn) return;
+  if (_storeOpen) {
+    btn.style.background = '#16a34a';
+    btn.textContent = '🟢 OPEN';
+  } else {
+    btn.style.background = '#dc2626';
+    btn.textContent = '🔴 CLOSED';
+  }
+}
+
+async function toggleStoreStatus() {
+  const key = keyInput.value.trim();
+  if (!key) return;
+  const newStatus = !_storeOpen;
+  if (!newStatus && !confirm('Close the store? No new orders will be accepted until you re-open.')) return;
+  try {
+    const res = await fetch(`/admin/store-status?key=${encodeURIComponent(key)}&open=${newStatus?'1':'0'}`, { method:'POST' });
+    const data = await res.json();
+    if (data.ok) {
+      _storeOpen = data.open;
+      updateStoreBtn();
+      msg.innerHTML = `<div style="background:${_storeOpen?'#d1fae5':'#fee2e2'};color:${_storeOpen?'#065f46':'#991b1b'};padding:10px;border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:600">${_storeOpen ? '✅ Store is now OPEN' : '🔴 Store is now CLOSED — no new orders'}</div>`;
+      setTimeout(() => msg.innerHTML = '', 4000);
+    }
+  } catch(e) {}
+}
+
+loadStoreStatus();
 
 // ===== SOUND ALERT for new orders =====
 let _prevOrderCount = 0;

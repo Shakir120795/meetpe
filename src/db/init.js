@@ -95,6 +95,9 @@ try {
 try {
   db.exec(`ALTER TABLE orders ADD COLUMN notes TEXT DEFAULT ''`);
 } catch(e) {}
+try {
+  db.exec(`ALTER TABLE customers ADD COLUMN is_blocked INTEGER DEFAULT 0`);
+} catch(e) {}
 
 console.log(`✅ DB ready at ${dbPath}`);
 module.exports = db;

@@ -180,12 +180,25 @@ async function notifyCustomer(order, status) {
 
 app.post('/api/order', (req, res) => {
   try {
+    // Check if store is open
+    const storeSettings = require('./data/settings').get();
+    if (storeSettings.storeOpen === false) {
+      return res.status(400).json({ ok: false, error: 'Store is currently closed. Please try again later.' });
+    }
+    
     const { name, phone, address, payment, delivery_slot, notes, items, couponCode, walletAmount, tip } = req.body || {};
     if (!name || !phone || !address || !Array.isArray(items) || !items.length) {
       return res.status(400).json({ ok: false, error: 'missing fields' });
     }
     const cleanPhone = String(phone).replace(/\D/g, '');
     if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+
+    // Check if user is blocked
+    const webPhoneCheck = `web:+91${cleanPhone}`;
+    const blockedCheck = db.prepare('SELECT is_blocked FROM customers WHERE phone = ?').get(webPhoneCheck);
+    if (blockedCheck && blockedCheck.is_blocked) {
+      return res.status(403).json({ ok: false, error: 'Your account has been suspended. Contact support.' });
+    }
 
     // Validate + price items server-side
     const cleanItems = [];
@@ -1152,7 +1165,13 @@ app.get('/admin/users/:phone/detail', (req, res) => {
       reviews: reviewsWithNames,
       avg_rating: avgRating?.avg_rating || 0,
       addresses: addresses,
-      address_breakdown: addressBreakdown
+      address_breakdown: addressBreakdown,
+      // Extra analytics
+      membership_active: !!( (() => { const c = db.prepare('SELECT membership_start, membership_zone, delivery_credits, is_plus FROM customers WHERE phone = ?').get(matchPhone); return c && c.membership_start && c.delivery_credits > 0; })() ),
+      membership_credits: (() => { const c = db.prepare('SELECT delivery_credits FROM customers WHERE phone = ?').get(matchPhone); return c?.delivery_credits || 0; })(),
+      delivery_ratings: db.prepare('SELECT rating, comment, order_id, created_at FROM reviews WHERE phone = ? AND delivery_rating IS NOT NULL ORDER BY created_at DESC LIMIT 10').all(matchPhone),
+      payment_methods: db.prepare('SELECT payment_method, COUNT(*) as count FROM orders WHERE phone = ? GROUP BY payment_method ORDER BY count DESC').all(matchPhone),
+      is_blocked: (() => { const c = db.prepare('SELECT is_blocked FROM customers WHERE phone = ?').get(matchPhone); return c?.is_blocked || 0; })()
     };
     
     res.json({ ok: true, user: userDetail });
@@ -1160,6 +1179,51 @@ app.get('/admin/users/:phone/detail', (req, res) => {
     console.error('User detail error:', e);
     res.status(500).json({ ok: false, error: e.message });
   }
+});
+
+// ===== Admin: block/unblock user =====
+app.post('/admin/users/:phone/block', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const phone = req.params.phone.replace(/\D/g, '');
+  const waPhone = `web:+91${phone}`;
+  const block = req.query.block === '1' ? 1 : 0;
+  try { db.prepare('ALTER TABLE customers ADD COLUMN is_blocked INTEGER DEFAULT 0').run(); } catch(e) {}
+  db.prepare('UPDATE customers SET is_blocked = ? WHERE phone = ?').run(block, waPhone);
+  res.json({ ok: true, blocked: !!block });
+});
+
+// ===== Admin: delete user account =====
+app.post('/admin/users/:phone/delete', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const phone = req.params.phone.replace(/\D/g, '');
+  const waPhone = `web:+91${phone}`;
+  db.prepare('DELETE FROM customers WHERE phone = ?').run(waPhone);
+  db.prepare('DELETE FROM reviews WHERE phone = ?').run(waPhone);
+  db.prepare('DELETE FROM saved_addresses WHERE phone = ?').run(waPhone);
+  res.json({ ok: true, deleted: true });
+});
+
+// ===== Admin: Store Open/Closed Toggle =====
+app.get('/admin/store-status', (req, res) => {
+  const settingsData = require('./data/settings').get();
+  res.json({ ok: true, open: settingsData.storeOpen !== false });
+});
+
+app.post('/admin/store-status', (req, res) => {
+  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+  const open = req.query.open === '1';
+  const settingsMod = require('./data/settings');
+  settingsMod.update({ storeOpen: open });
+  console.log(`🏪 Store is now ${open ? 'OPEN' : 'CLOSED'}`);
+  res.json({ ok: true, open });
+});
+
+// Public: check if store is open (used by customer app)
+app.get('/api/store-status', (req, res) => {
+  const settingsData = require('./data/settings').get();
+  const isOpen = settingsData.storeOpen !== false;
+  const closedMessage = settingsData.storeClosedMessage || 'We are currently unavailable. Please try again later.';
+  res.json({ ok: true, open: isOpen, message: isOpen ? '' : closedMessage });
 });
 
 // ===== Admin: list all reviews =====
