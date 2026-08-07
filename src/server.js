@@ -1028,8 +1028,8 @@ app.get('/admin/users/:phone/detail', (req, res) => {
   
   let phone = req.params.phone;
   
-  // Clean: remove non-digits
-  phone = phone.replace(/\D/g, '');
+  // Clean: remove non-digits, take last 10 digits
+  phone = phone.replace(/\D/g, '').slice(-10);
   if (phone.length !== 10) {
     return res.status(400).json({ ok: false, error: 'invalid phone' });
   }
