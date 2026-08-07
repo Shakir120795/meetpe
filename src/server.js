@@ -1167,7 +1167,15 @@ app.get('/admin/users/:phone/detail', (req, res) => {
       addresses: addresses,
       address_breakdown: addressBreakdown,
       // Extra analytics
-      membership_active: !!( (() => { const c = db.prepare('SELECT membership_start, membership_zone, delivery_credits, is_plus FROM customers WHERE phone = ?').get(matchPhone); return c && c.membership_start && c.delivery_credits > 0; })() ),
+      membership_active: (() => {
+        const c = db.prepare('SELECT membership_start, membership_zone, delivery_credits, is_plus FROM customers WHERE phone = ?').get(matchPhone);
+        if (!c) return false;
+        if (c.is_plus && c.delivery_credits > 0) return true;
+        if (!c.membership_start || !c.delivery_credits) return false;
+        const start = new Date(c.membership_start);
+        const dur = c.membership_zone === 'yearly' ? 365 : 30;
+        return new Date(start.getTime() + dur * 24*60*60*1000) > new Date();
+      })(),
       membership_credits: (() => { const c = db.prepare('SELECT delivery_credits FROM customers WHERE phone = ?').get(matchPhone); return c?.delivery_credits || 0; })(),
       delivery_ratings: db.prepare('SELECT rating, comment, order_id, created_at FROM reviews WHERE phone = ? AND delivery_rating IS NOT NULL ORDER BY created_at DESC LIMIT 10').all(matchPhone),
       payment_methods: db.prepare('SELECT payment_method, COUNT(*) as count FROM orders WHERE phone = ? GROUP BY payment_method ORDER BY count DESC').all(matchPhone),
