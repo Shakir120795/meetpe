@@ -7,6 +7,7 @@
 <meta name="description" content="Fresh chicken & mutton delivered in 30 min across Agra"/>
 <link rel="manifest" href="/manifest.json"/>
 <meta name="theme-color" content="#E8450A"/>
+<link rel="preload" href="/splash-intro.png" as="image"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
@@ -106,9 +107,9 @@ input,textarea{font:inherit;color:inherit}
 .payment-tab:hover{background:rgba(232,69,10,.05)}
 
 /* ── Splash screen ── */
-#screen-splash{background:#e8e0d4;
-  display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden}
-#screen-splash img.splash-img{width:100%;height:100%;object-fit:cover;object-position:center}
+#screen-splash{background:#d4c8b8;
+  display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden;padding-bottom:0!important}
+#screen-splash img.splash-img{width:100%;height:100vh;object-fit:contain;object-position:center top}
 
 @keyframes zoomIn {
   from { transform:scale(0.5);opacity:0; }
