@@ -2690,9 +2690,18 @@ function toggleAboutAcc(header) {
 
 function goBack() {
   SCREEN_HISTORY.pop();
-  const prev = SCREEN_HISTORY[SCREEN_HISTORY.length - 1] || 'screen-home';
+  let prev = SCREEN_HISTORY[SCREEN_HISTORY.length - 1] || 'screen-home';
+  
+  // Never go back to login — always go to home instead
+  if (prev === 'screen-login' || prev === 'screen-otp') {
+    SCREEN_HISTORY = ['screen-home'];
+    prev = 'screen-home';
+  }
+  
   const screens = document.querySelectorAll('.screen');
   const target = document.getElementById(prev);
+  if (!target) return;
+  
   // Hide all screens first
   screens.forEach(s => {
     s.classList.remove('active', 'slide-left');
@@ -3071,6 +3080,9 @@ function guestLogin() {
 }
 
 function loginSuccess() {
+  // Clear history so back button never goes to login
+  SCREEN_HISTORY = [];
+  
   document.getElementById('bottomNav').style.display = 'flex';
   document.getElementById('cartBar').style.display = '';
   loadMenu();
@@ -5199,6 +5211,13 @@ function updateActiveOrderStrip(orders) {
   const slider = document.getElementById('activeOrderSlider');
   const dots = document.getElementById('activeOrderDots');
   if (!strip || !slider) return;
+  
+  // Hide strip on login screen
+  const currentScreen = SCREEN_HISTORY[SCREEN_HISTORY.length - 1];
+  if (currentScreen === 'screen-login' || currentScreen === 'screen-otp' || !USER || !USER.phone) {
+    strip.style.display = 'none';
+    return;
+  }
   
   // Filter active orders
   const activeOrders = (orders || []).filter(o => ['placed', 'preparing', 'out_for_delivery'].includes(o.status));
@@ -9231,9 +9250,9 @@ function detectGPSAndOpenMap() {
     done = true;
     btn.innerHTML = origHTML; 
     btn.disabled = false;
-    showToast('GPS timeout. Opening map...', '', 2000);
+    showToast('GPS timeout. Please enter address manually.', 'error', 3000);
     openMapForCurrentLoc();
-  }, 15000);
+  }, 25000);
 
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
@@ -9333,9 +9352,9 @@ function detectGPSAndOpenMap() {
       }
     },
     { 
-      enableHighAccuracy: true, 
-      timeout: 12000, 
-      maximumAge: 5000 
+      enableHighAccuracy: false, 
+      timeout: 20000, 
+      maximumAge: 30000 
     }
   );
 }
