@@ -1538,6 +1538,27 @@ app.get('/api/customer/:phone', (req, res) => {
   });
 });
 
+// ===== Wishlist (server-side sync) =====
+app.get('/api/wishlist/:phone', (req, res) => {
+  const cleanPhone = String(req.params.phone).replace(/\D/g, '').slice(-10);
+  if (cleanPhone.length !== 10) return res.json({ ok: true, wishlist: [] });
+  const waPhone = `web:+91${cleanPhone}`;
+  try { db.prepare('ALTER TABLE customers ADD COLUMN wishlist_json TEXT DEFAULT "[]"').run(); } catch(e) {}
+  const row = db.prepare('SELECT wishlist_json FROM customers WHERE phone = ?').get(waPhone);
+  const wishlist = row?.wishlist_json ? JSON.parse(row.wishlist_json) : [];
+  res.json({ ok: true, wishlist });
+});
+
+app.post('/api/wishlist/sync', (req, res) => {
+  const { phone, wishlist } = req.body || {};
+  const cleanPhone = String(phone || '').replace(/\D/g, '').slice(-10);
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false });
+  const waPhone = `web:+91${cleanPhone}`;
+  try { db.prepare('ALTER TABLE customers ADD COLUMN wishlist_json TEXT DEFAULT "[]"').run(); } catch(e) {}
+  db.prepare('UPDATE customers SET wishlist_json = ? WHERE phone = ?').run(JSON.stringify(wishlist || []), waPhone);
+  res.json({ ok: true });
+});
+
 // ===== Delete customer account =====
 app.post('/api/customer/delete', (req, res) => {
   try {

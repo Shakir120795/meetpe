@@ -3089,7 +3089,18 @@ function loginSuccess() {
   showScreen('screen-home');
   initLocation();
   updateTopbarUser();
-  detectDeliveryZone(); // Detect user's delivery zone
+  detectDeliveryZone();
+  
+  // Restore wishlist from server
+  if (USER && USER.phone) {
+    fetch('/api/wishlist/' + USER.phone).then(r => r.json()).then(data => {
+      if (data.ok && data.wishlist && data.wishlist.length > 0) {
+        localStorage.setItem('now_wishlist', JSON.stringify(data.wishlist));
+      }
+    }).catch(()=>{});
+  }
+  
+  showToast('Welcome! 🥩','success');
   showToast('Welcome! 🥩','success');
 }
 
@@ -3271,11 +3282,14 @@ function logout() {
   if (dropdown) dropdown.style.display = 'none';
   
   USER = null;
-  USER_ZONE = null; // Clear zone data
+  USER_ZONE = null;
   CART = {};
   localStorage.removeItem('now_user');
-  localStorage.removeItem('now_user_zone'); // Clear zone from storage
+  localStorage.removeItem('now_user_zone');
   localStorage.removeItem('now_cart');
+  // Keep wishlist, location, theme — these should persist across sessions
+  // localStorage.removeItem('now_wishlist'); — intentionally NOT cleared
+  // localStorage.removeItem('now_location'); — intentionally NOT cleared
   document.getElementById('bottomNav').style.display = 'none';
   document.getElementById('cartBar').style.display = 'none';
   // Hide all screens, show only login
@@ -3288,6 +3302,9 @@ function logout() {
   loginScreen.classList.add('active');
   SCREEN_HISTORY = ['screen-login'];
   updateCartBar();
+  // Hide active order strip
+  const strip = document.getElementById('activeOrderStrip');
+  if (strip) strip.style.display = 'none';
 }
 
 function showDeleteAccountModal() {
@@ -7563,16 +7580,19 @@ function toggleWishlist(code, name, unit, price, img) {
   const existingIdx = wishlist.findIndex(w => w.code === code);
   
   if (existingIdx >= 0) {
-    // Remove from wishlist
     wishlist.splice(existingIdx, 1);
     showToast('Removed from wishlist ❌', 'info');
   } else {
-    // Add to wishlist
     wishlist.push({ code, name, unit, price, img, addedAt: Date.now() });
     showToast('Added to wishlist ❤️', 'success');
   }
   
   localStorage.setItem('now_wishlist', JSON.stringify(wishlist));
+  
+  // Sync to server
+  if (USER && USER.phone) {
+    fetch('/api/wishlist/sync', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ phone: USER.phone, wishlist }) }).catch(()=>{});
+  }
   
   // Update all heart buttons for this product code without full re-render
   document.querySelectorAll('.wishlist-btn').forEach(btn => {
