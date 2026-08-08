@@ -3,9 +3,8 @@
   "appName": "NOW",
   "webDir": "www",
   "server": {
-    "url": "http://34.100.249.86",
-    "cleartext": true,
-    "androidScheme": "http"
+    "url": "https://summaries-sox-vocational-berlin.trycloudflare.com",
+    "cleartext": false
   },
   "plugins": {
     "SplashScreen": {
