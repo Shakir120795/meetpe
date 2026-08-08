@@ -9554,6 +9554,32 @@ function toggleManualAddr() {}
 function saveManualAddr() {}
 function locSearch_old() {}
 
+// ============ MOBILE APP: Hardware Back Button ============
+document.addEventListener('backbutton', function(e) {
+  e.preventDefault();
+  const currentScreen = SCREEN_HISTORY[SCREEN_HISTORY.length - 1];
+  if (currentScreen && currentScreen !== 'screen-home') {
+    goBack();
+  } else {
+    // On home screen — confirm exit
+    if (confirm('Exit app?')) {
+      if (navigator.app) navigator.app.exitApp();
+    }
+  }
+}, false);
+
+// Also handle Capacitor App plugin back button
+if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+  window.Capacitor.Plugins.App.addListener('backButton', ({ canGoBack }) => {
+    const currentScreen = SCREEN_HISTORY[SCREEN_HISTORY.length - 1];
+    if (currentScreen && currentScreen !== 'screen-home') {
+      goBack();
+    } else {
+      window.Capacitor.Plugins.App.exitApp();
+    }
+  });
+}
+
 </script>
 
 <!-- Service Worker Registration -->
