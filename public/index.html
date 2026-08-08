@@ -4053,6 +4053,7 @@ function updateCartBar() {
 //  Product Detail Screen
 // ═══════════════════════════════════════════
 function openProduct(code) {
+  try {
   const item = MENU.find(i => i.code === code);
   if (!item) return;
   CURRENT_PRODUCT = item;
@@ -4131,6 +4132,7 @@ function openProduct(code) {
   
   // Load similar products from same category
   loadSimilarProducts(item.cat, item.code);
+  } catch(e) { console.error('openProduct error:', e); showScreen('screen-product'); }
 }
 
 // Helper functions for product detail sections
@@ -7688,12 +7690,7 @@ function clearWishlist() {
   showToast('Wishlist cleared', 'info');
 }
 
-function openProduct(code) {
-  const item = MENU.find(i => i.code === code);
-  if (item) {
-    showProductDetail(item);
-  }
-}
+// openProduct defined above in Product Detail section
 
 // ═══════════════════════════════════════════
 //  Notifications Screen
@@ -9555,30 +9552,15 @@ function saveManualAddr() {}
 function locSearch_old() {}
 
 // ============ MOBILE APP: Hardware Back Button ============
+// Handled natively in MainActivity.java for Capacitor apps
+// Web fallback for browser testing
 document.addEventListener('backbutton', function(e) {
   e.preventDefault();
   const currentScreen = SCREEN_HISTORY[SCREEN_HISTORY.length - 1];
   if (currentScreen && currentScreen !== 'screen-home') {
     goBack();
-  } else {
-    // On home screen — confirm exit
-    if (confirm('Exit app?')) {
-      if (navigator.app) navigator.app.exitApp();
-    }
   }
 }, false);
-
-// Also handle Capacitor App plugin back button
-if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-  window.Capacitor.Plugins.App.addListener('backButton', ({ canGoBack }) => {
-    const currentScreen = SCREEN_HISTORY[SCREEN_HISTORY.length - 1];
-    if (currentScreen && currentScreen !== 'screen-home') {
-      goBack();
-    } else {
-      window.Capacitor.Plugins.App.exitApp();
-    }
-  });
-}
 
 </script>
 
