@@ -28,12 +28,15 @@ public class MainActivity extends BridgeActivity {
             public void handleOnBackPressed() {
                 WebView webView = getBridge().getWebView();
                 if (webView != null) {
-                    // Call JS to check current screen and go back
                     webView.evaluateJavascript(
                         "try { " +
-                        "  if (typeof SCREEN_HISTORY !== 'undefined' && SCREEN_HISTORY.length > 1) { " +
+                        "  var locMap = document.getElementById('locMapScreen'); " +
+                        "  if (locMap && locMap.style.display !== 'none') { closeLocMap(); 'stayed'; } " +
+                        "  else if (document.getElementById('mapPickerScreen') && document.getElementById('mapPickerScreen').classList.contains('open')) { document.getElementById('mapPickerScreen').classList.remove('open'); 'stayed'; } " +
+                        "  else if (document.getElementById('ratingPopupOverlay')) { document.getElementById('ratingPopupOverlay').remove(); 'stayed'; } " +
+                        "  else if (typeof SCREEN_HISTORY !== 'undefined' && SCREEN_HISTORY.length > 0) { " +
                         "    var cur = SCREEN_HISTORY[SCREEN_HISTORY.length - 1]; " +
-                        "    if (cur && cur !== 'screen-home' && cur !== 'screen-login') { " +
+                        "    if (cur && cur !== 'screen-home') { " +
                         "      goBack(); 'stayed'; " +
                         "    } else { 'exit'; } " +
                         "  } else { 'exit'; } " +
@@ -61,14 +64,7 @@ public class MainActivity extends BridgeActivity {
             webView.getSettings().setGeolocationEnabled(true);
             webView.getSettings().setJavaScriptEnabled(true);
             webView.getSettings().setDomStorageEnabled(true);
-            
-            webView.setWebChromeClient(new WebChromeClient() {
-                @Override
-                public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
-                    // Auto-grant geolocation permission to our app
-                    callback.invoke(origin, true, true);
-                }
-            });
+            webView.getSettings().setGeolocationDatabasePath(getFilesDir().getPath());
         }
     }
 

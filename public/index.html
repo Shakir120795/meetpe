@@ -9578,11 +9578,33 @@ function locSearch_old() {}
 // Web fallback for browser testing
 document.addEventListener('backbutton', function(e) {
   e.preventDefault();
+  handleAppBack();
+}, false);
+
+function handleAppBack() {
+  // Check if any overlay/modal is open first
+  const locMap = document.getElementById('locMapScreen');
+  if (locMap && locMap.style.display !== 'none') { closeLocMap(); return; }
+  
+  const mapPicker = document.getElementById('mapPickerScreen');
+  if (mapPicker && mapPicker.classList.contains('open')) { mapPicker.classList.remove('open'); return; }
+  
+  const ratingPopup = document.getElementById('ratingPopupOverlay');
+  if (ratingPopup) { ratingPopup.remove(); return; }
+  
+  const orderMenu = window._orderMenuOverlay;
+  if (orderMenu) { closeOrderMenu(); return; }
+  
+  const modal = document.getElementById('modalOverlay');
+  if (modal && modal.style.display !== 'none') { closeModal(); return; }
+  
+  // Then handle screen navigation
   const currentScreen = SCREEN_HISTORY[SCREEN_HISTORY.length - 1];
   if (currentScreen && currentScreen !== 'screen-home') {
     goBack();
   }
-}, false);
+  // On home screen — do nothing (Java will exit)
+}
 
 </script>
 
