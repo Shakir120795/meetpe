@@ -3431,16 +3431,16 @@ async function renderRecentlyOrdered() {
   }
   
   try {
-    const res = await fetch(`/api/orders?phone=${USER.phone}&limit=5`);
-    const orders = await res.json();
+    const res = await fetch(`/api/orders/${USER.phone}`);
+    const data = await res.json();
+    const orders = (data.ok && data.orders) ? data.orders.slice(0, 5) : [];
     
     // Extract unique item codes from last 5 orders
     const recentItemCodes = new Set();
     orders.forEach(order => {
       try {
-        const items = typeof order.items_json === 'string' 
-          ? JSON.parse(order.items_json) 
-          : order.items_json;
+        const items = Array.isArray(order.items) ? order.items : 
+          (typeof order.items_json === 'string' ? JSON.parse(order.items_json) : []);
         items.forEach(i => recentItemCodes.add(i.code));
       } catch(e) {}
     });
@@ -4132,7 +4132,7 @@ function openProduct(code) {
   
   // Load similar products from same category
   loadSimilarProducts(item.cat, item.code);
-  } catch(e) { console.error('openProduct error:', e); showScreen('screen-product'); }
+  } catch(e) { console.error('openProduct error:', e); }
 }
 
 // Helper functions for product detail sections
