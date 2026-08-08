@@ -3,7 +3,7 @@
   "appName": "NOW",
   "webDir": "www",
   "server": {
-    "url": "https://summaries-sox-vocational-berlin.trycloudflare.com",
+    "url": "https://trunk-yellow-bring-drilling.trycloudflare.com",
     "cleartext": false
   },
   "plugins": {
