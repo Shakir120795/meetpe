@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin — Delivery Boys</title>
+<link rel="icon" type="image/png" href="/logo.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f3f4f6;color:#1a1a1a;padding:20px}
+.wrap{max-width:1000px;margin:0 auto}
+h1{font-size:24px;margin-bottom:6px}
+.sub{color:#6b7280;margin-bottom:18px;font-size:14px}
+.nav-links{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.nav-links a{padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb}
+.nav-links a:hover{color:#d62828;border-color:#d62828}
+.nav-links a.active{background:#d62828;color:white;border-color:#d62828}
+.key-bar{background:white;padding:14px 16px;border-radius:12px;margin-bottom:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.key-bar input{flex:1;min-width:200px;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:monospace}
+.key-bar button{padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;border:none;background:#d62828;color:white}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:18px}
+.stat{background:white;border-radius:10px;padding:14px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.stat .num{font-size:24px;font-weight:800}
+.stat .label{font-size:11px;color:#6b7280;margin-top:2px}
+.card{background:white;border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.04);border-left:4px solid #16a34a}
+.card.offline{border-left-color:#6b7280;opacity:.7}
+.card.busy{border-left-color:#f59e0b}
+.card-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.avatar{width:48px;height:48px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#6b7280}
+.card-info{flex:1}
+.card-info h3{font-size:15px;font-weight:700;margin-bottom:2px}
+.card-info p{font-size:12px;color:#6b7280}
+.badge{padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700}
+.badge-available{background:#d1fae5;color:#065f46}
+.badge-busy{background:#fef3c7;color:#92400e}
+.badge-offline{background:#e5e7eb;color:#6b7280}
+.card-details{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;font-size:12px}
+.card-details .item{background:#f9fafb;padding:8px;border-radius:6px}
+.card-details .item .lbl{color:#6b7280;font-size:10px;text-transform:uppercase}
+.card-details .item .val{font-weight:700;margin-top:2px}
+.card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.card-actions button{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid #e5e7eb;background:white}
+.card-actions button:hover{border-color:#d62828;color:#d62828}
+.card-actions button.danger{color:#ef4444;border-color:#ef4444}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;padding:20px}
+.modal.show{display:flex}
+.modal-box{background:white;border-radius:16px;padding:24px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto}
+.modal-box h2{font-size:18px;margin-bottom:16px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:#6b7280}
+.field input,.field select{width:100%;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#content{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🛵 Delivery Boys</h1>
+<p class="sub">Manage delivery partners — add, edit, assign orders, track status</p>
+
+<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <a href="/skrdashboard.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📊 Dashboard</a>
+    <a href="/skradmin.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📦 Stock</a>
+    <a href="/skrorders.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📋 Orders</a>
+    <a href="/skritems.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🍗 Items</a>
+    <a href="/skrcoupons.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🏷️ Coupons</a>
+    <a href="/skrreviews.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">⭐ Reviews</a>
+    <a href="/skrreturns.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">↩️ Returns</a>
+    <a href="/skrusers.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">👥 Users</a>
+    <a href="/skrtickets.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🎫 Tickets</a>
+    <a href="/skrdelivery.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🚚 Delivery</a>
+    <a href="/skrdelivery-boys.html" style="padding:8px 14px;background:#d62828;color:white;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;border-color:#d62828">🛵 Riders</a>
+    <a href="/skrrider-analytics.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📊 Rider Analytics</a>
+    <a href="/skrbanners.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🎨 Banners</a>
+    <a href="/skrnotifications-admin.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🔔 Notify</a>
+    <a href="/skrreports.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📊 Reports</a>
+    <a href="/skrsettings.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">⚙️ Settings</a>
+    <a href="/" target="_blank" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🌐 View Site</a>
+</div>
+
+<div class="key-bar">
+<input id="key" type="password" placeholder="Admin key"/>
+<button onclick="loadData()">Load</button>
+<button onclick="showAddModal()" style="background:#16a34a">➕ Add Rider</button>
+</div>
+
+<div id="content">
+<div class="stats" id="statsGrid"></div>
+<div id="ridersList"></div>
+</div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal" id="riderModal">
+<div class="modal-box">
+<h2 id="modalTitle">Add Delivery Boy</h2>
+<div class="field-row">
+  <div class="field"><label>Name *</label><input id="mName" placeholder="Raj Kumar"/></div>
+  <div class="field"><label>Phone *</label><input id="mPhone" placeholder="+919876543210"/></div>
+</div>
+<div class="field-row">
+  <div class="field"><label>Vehicle Type</label><input id="mVehicle" placeholder="Bike"/></div>
+  <div class="field"><label>Vehicle Number</label><input id="mVehicleNum" placeholder="UP 16 AB 1234"/></div>
+</div>
+<div class="field-row">
+  <div class="field"><label>Rating</label><input id="mRating" type="number" step="0.1" min="0" max="5" value="5.0"/></div>
+  <div class="field"><label>Total Deliveries</label><input id="mDeliveries" type="number" value="0"/></div>
+</div>
+<div class="field"><label>Photo URL</label><input id="mPhoto" placeholder="https://..."/></div>
+<div class="field-row">
+  <div class="field"><label>Status</label>
+    <select id="mStatus"><option value="available">Available</option><option value="busy">Busy</option><option value="offline">Offline</option></select>
+  </div>
+  <div class="field"><label>ID</label><input id="mId" placeholder="Auto-generated"/></div>
+</div>
+
+<h3 style="font-size:14px;margin:16px 0 10px;color:#6b7280">🏦 Bank & Payment Details</h3>
+<div class="field-row">
+  <div class="field"><label>Bank Name & Account</label><input id="mBankDetails" placeholder="SBI - 12345678901"/></div>
+  <div class="field"><label>UPI ID</label><input id="mUpiId" placeholder="rider@paytm"/></div>
+</div>
+<div class="field"><label>IFSC Code</label><input id="mIfsc" placeholder="SBIN0001234"/></div>
+
+<h3 style="font-size:14px;margin:16px 0 10px;color:#6b7280">📋 KYC Documents (Optional)</h3>
+<div class="field-row">
+  <div class="field"><label>Aadhaar Number</label><input id="mAadhaar" placeholder="XXXX XXXX XXXX"/></div>
+  <div class="field"><label>PAN Number</label><input id="mPan" placeholder="ABCDE1234F"/></div>
+</div>
+<div class="field"><label>Driving License</label><input id="mDL" placeholder="DL-XXXXXXXXXX"/></div>
+
+<div style="display:flex;gap:10px;margin-top:18px">
+  <button onclick="saveRider()" style="flex:1;padding:12px;background:#d62828;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Save</button>
+  <button onclick="closeModal()" style="padding:12px 20px;background:#f3f4f6;border:none;border-radius:8px;font-size:14px;cursor:pointer">Cancel</button>
+</div>
+</div>
+</div>
+
+
+<script>
+const $ = id => document.getElementById(id);
+let SETTINGS = null;
+let RIDERS = [];
+let EDIT_INDEX = -1;
+
+const saved = localStorage.getItem('meatpe_admin_key');
+if (saved) { $('key').value = saved; loadData(); }
+
+function getKey() { const k = $('key').value.trim(); localStorage.setItem('meatpe_admin_key', k); return k; }
+
+async function loadData() {
+  const key = getKey();
+  if (!key) return;
+  try {
+    const res = await fetch('/admin/settings?key=' + encodeURIComponent(key));
+    const data = await res.json();
+    if (!data.ok) { alert(data.error); return; }
+    SETTINGS = data.settings;
+    RIDERS = SETTINGS.orderTracking?.deliveryBoys || [];
+    $('content').style.display = 'block';
+    render();
+  } catch(e) { alert('Network error'); }
+}
+
+function render() {
+  // Stats
+  const available = RIDERS.filter(r => r.status === 'available').length;
+  const busy = RIDERS.filter(r => r.status === 'busy').length;
+  const offline = RIDERS.filter(r => r.status === 'offline').length;
+  
+  $('statsGrid').innerHTML = `
+    <div class="stat"><div class="num" style="color:#16a34a">${available}</div><div class="label">Available</div></div>
+    <div class="stat"><div class="num" style="color:#f59e0b">${busy}</div><div class="label">Busy</div></div>
+    <div class="stat"><div class="num" style="color:#6b7280">${offline}</div><div class="label">Offline</div></div>
+    <div class="stat"><div class="num">${RIDERS.length}</div><div class="label">Total Riders</div></div>
+  `;
+  
+  // Cards with pagination
+  if (!RIDERS.length) {
+    $('ridersList').innerHTML = '<div style="text-align:center;padding:40px;color:#6b7280">No delivery boys added yet. Click "➕ Add Rider"</div>';
+    return;
+  }
+  
+  const perPage = window._ridersPerPage || 10;
+  const page = window._ridersPage || 1;
+  const totalPages = Math.ceil(RIDERS.length / perPage);
+  const startIdx = (page - 1) * perPage;
+  const paginated = RIDERS.slice(startIdx, startIdx + perPage);
+  
+  // Pagination controls
+  const paginationHtml = RIDERS.length > 10 ? `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:13px;color:#6b7280">Showing ${startIdx+1}-${Math.min(startIdx+perPage, RIDERS.length)} of ${RIDERS.length}</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <select onchange="window._ridersPerPage=parseInt(this.value);window._ridersPage=1;render()" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px">
+          <option ${perPage===10?'selected':''} value="10">10 / page</option>
+          <option ${perPage===20?'selected':''} value="20">20 / page</option>
+          <option ${perPage===50?'selected':''} value="50">50 / page</option>
+        </select>
+        <button onclick="if(window._ridersPage>1){window._ridersPage--;render()}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;cursor:pointer;background:white" ${page<=1?'disabled':''}>← Prev</button>
+        <span style="font-size:12px;font-weight:600">${page}/${totalPages}</span>
+        <button onclick="if(window._ridersPage<${totalPages}){window._ridersPage=(window._ridersPage||1)+1;render()}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;cursor:pointer;background:white" ${page>=totalPages?'disabled':''}>Next →</button>
+      </div>
+    </div>
+  ` : '';
+  
+  $('ridersList').innerHTML = paginationHtml + paginated.map((r, idx) => {
+    const i = startIdx + idx;
+    const badgeClass = r.status === 'available' ? 'badge-available' : r.status === 'busy' ? 'badge-busy' : 'badge-offline';
+    return `<div class="card ${r.status}">
+      <div class="card-header">
+        <div class="avatar">${r.photo ? '<img src="'+r.photo+'" style="width:100%;height:100%;border-radius:50%;object-fit:cover"/>' : r.name?.charAt(0) || '?'}</div>
+        <div class="card-info">
+          <h3>${r.name || 'Unnamed'}</h3>
+          <p>${r.phone || 'No phone'} • ${r.vehicleType || 'Bike'} • ${r.vehicleNumber || ''}</p>
+        </div>
+        <span class="badge ${badgeClass}">${r.status}</span>
+      </div>
+      <div class="card-details">
+        <div class="item"><div class="lbl">Rating</div><div class="val">⭐ ${r.rating || 5.0}</div></div>
+        <div class="item"><div class="lbl">Deliveries</div><div class="val">${r.totalDeliveries || 0}</div></div>
+        <div class="item"><div class="lbl">ID</div><div class="val">${r.id || '-'}</div></div>
+        ${r.aadhaar ? '<div class="item"><div class="lbl">Aadhaar</div><div class="val">✅ Verified</div></div>' : ''}
+        ${r.pan ? '<div class="item"><div class="lbl">PAN</div><div class="val">✅ Verified</div></div>' : ''}
+        ${r.drivingLicense ? '<div class="item"><div class="lbl">DL</div><div class="val">✅ Verified</div></div>' : ''}
+      </div>
+      <div class="card-actions">
+        <button onclick="editRider(${i})">✏️ Edit</button>
+        <button onclick="toggleStatus(${i})">${r.status==='available'?'🔴 Set Offline':'🟢 Set Available'}</button>
+        <button onclick="callRider('${r.phone}')">📞 Call</button>
+        <button class="danger" onclick="deleteRider(${i})">🗑️ Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showAddModal() {
+  EDIT_INDEX = -1;
+  $('modalTitle').textContent = 'Add Delivery Boy';
+  $('mName').value = ''; $('mPhone').value = ''; $('mVehicle').value = 'Bike';
+  $('mVehicleNum').value = ''; $('mRating').value = '5.0'; $('mDeliveries').value = '0';
+  $('mPhoto').value = ''; $('mStatus').value = 'available';
+  $('mId').value = 'DB' + String(Date.now()).slice(-4);
+  $('mAadhaar').value = ''; $('mPan').value = ''; $('mDL').value = '';
+  $('riderModal').classList.add('show');
+}
+
+function editRider(i) {
+  EDIT_INDEX = i;
+  const r = RIDERS[i];
+  $('modalTitle').textContent = 'Edit: ' + r.name;
+  $('mName').value = r.name || ''; $('mPhone').value = r.phone || '';
+  $('mVehicle').value = r.vehicleType || 'Bike'; $('mVehicleNum').value = r.vehicleNumber || '';
+  $('mRating').value = r.rating || 5; $('mDeliveries').value = r.totalDeliveries || 0;
+  $('mPhoto').value = r.photo || ''; $('mStatus').value = r.status || 'available';
+  $('mId').value = r.id || '';
+  $('mAadhaar').value = r.aadhaar || ''; $('mPan').value = r.pan || ''; $('mDL').value = r.drivingLicense || '';
+  $('mBankDetails').value = r.bankDetails || ''; $('mUpiId').value = r.upiId || ''; $('mIfsc').value = r.ifsc || '';
+  $('riderModal').classList.add('show');
+}
+
+function closeModal() { $('riderModal').classList.remove('show'); }
+
+async function saveRider() {
+  const rider = {
+    id: $('mId').value.trim() || 'DB' + String(Date.now()).slice(-4),
+    name: $('mName').value.trim(),
+    phone: $('mPhone').value.trim(),
+    vehicleType: $('mVehicle').value.trim() || 'Bike',
+    vehicleNumber: $('mVehicleNum').value.trim(),
+    rating: parseFloat($('mRating').value) || 5.0,
+    totalDeliveries: parseInt($('mDeliveries').value) || 0,
+    photo: $('mPhoto').value.trim(),
+    status: $('mStatus').value,
+    aadhaar: $('mAadhaar').value.trim(),
+    pan: $('mPan').value.trim(),
+    drivingLicense: $('mDL').value.trim(),
+    bankDetails: $('mBankDetails').value.trim(),
+    upiId: $('mUpiId').value.trim(),
+    ifsc: $('mIfsc').value.trim()
+  };
+  
+  if (!rider.name || !rider.phone) { alert('Name and Phone required'); return; }
+  
+  if (EDIT_INDEX >= 0) {
+    RIDERS[EDIT_INDEX] = rider;
+  } else {
+    RIDERS.push(rider);
+  }
+  
+  await saveToServer();
+  closeModal();
+  render();
+}
+
+function toggleStatus(i) {
+  RIDERS[i].status = RIDERS[i].status === 'available' ? 'offline' : 'available';
+  saveToServer();
+  render();
+}
+
+function deleteRider(i) {
+  if (!confirm('Delete ' + RIDERS[i].name + '?')) return;
+  RIDERS.splice(i, 1);
+  saveToServer();
+  render();
+}
+
+function callRider(phone) {
+  if (phone) window.location.href = 'tel:' + phone;
+}
+
+async function saveToServer() {
+  const key = getKey();
+  try {
+    await fetch('/admin/settings?key=' + encodeURIComponent(key), {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderTracking: { ...SETTINGS.orderTracking, deliveryBoys: RIDERS } })
+    });
+  } catch(e) { alert('Save failed'); }
+}
+</script>
+</body>
+</html>

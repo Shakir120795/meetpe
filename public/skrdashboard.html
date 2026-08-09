@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin — Dashboard</title>
+<link rel="icon" type="image/png" href="/logo.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f3f4f6;color:#1a1a1a;padding:20px}
+.wrap{max-width:1100px;margin:0 auto}
+h1{font-size:24px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+h1 img{height:36px}
+.sub{color:#6b7280;margin-bottom:18px;font-size:14px}
+.nav-links{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.nav-links a{padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb}
+.nav-links a:hover{color:#d62828;border-color:#d62828}
+.nav-links a.active{background:#d62828;color:white;border-color:#d62828}
+.key-bar{background:white;padding:14px 16px;border-radius:12px;margin-bottom:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.key-bar input{flex:1;min-width:200px;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:monospace}
+.key-bar button{padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;border:none;background:#d62828;color:white}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.04);text-align:center}
+.stat-card .num{font-size:28px;font-weight:800;margin-bottom:4px}
+.stat-card .label{font-size:12px;color:#6b7280;font-weight:600}
+.section{background:white;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.section h2{font-size:16px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.order-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6;font-size:13px}
+.order-row:last-child{border:none}
+.badge{padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700}
+.badge-placed{background:#fef3c7;color:#92400e}
+.badge-preparing{background:#e0e7ff;color:#3730a3}
+.badge-out{background:#d1fae5;color:#065f46}
+.badge-delivered{background:#d1fae5;color:#065f46}
+.badge-cancelled{background:#fee2e2;color:#991b1b}
+.top-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6}
+.top-item:last-child{border:none}
+.quick-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:20px}
+.quick-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px;background:white;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;text-decoration:none;color:#1a1a1a;font-size:12px;font-weight:600;transition:all .2s}
+.quick-btn:hover{border-color:#d62828;color:#d62828}
+.quick-btn .icon{font-size:22px}
+#content{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1><img src="/logo.png" alt=""/>Dashboard</h1>
+<p class="sub">Live business overview — orders, revenue, products</p>
+
+<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <a href="/skrdashboard.html" style="padding:8px 14px;background:#d62828;color:white;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;border-color:#d62828">📊 Dashboard</a>
+    <a href="/skradmin.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📦 Stock</a>
+    <a href="/skrorders.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📋 Orders</a>
+    <a href="/skritems.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🍗 Items</a>
+    <a href="/skrcoupons.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🏷️ Coupons</a>
+    <a href="/skrreviews.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">⭐ Reviews</a>
+    <a href="/skrreturns.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">↩️ Returns</a>
+    <a href="/skrusers.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">👥 Users</a>
+    <a href="/skrtickets.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🎫 Tickets</a>
+    <a href="/skrdelivery.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🚚 Delivery</a>
+    <a href="/skrdelivery-boys.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🛵 Riders</a>
+    <a href="/skrrider-analytics.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📊 Rider Analytics</a>
+    <a href="/skrbanners.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🎨 Banners</a>
+    <a href="/skrnotifications-admin.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🔔 Notify</a>
+    <a href="/skrreports.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📊 Reports</a>
+    <a href="/skrsettings.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">⚙️ Settings</a>
+    <a href="/" target="_blank" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🌐 View Site</a>
+</div>
+
+<div class="key-bar">
+<input id="key" type="password" placeholder="Admin key"/>
+<button onclick="loadDashboard()">Load Dashboard</button>
+<button id="storeToggleDash" onclick="toggleStoreDash()" style="margin-left:auto;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;background:#16a34a;color:white">🟢 OPEN</button>
+</div>
+
+<div id="content">
+<!-- Stats Grid -->
+<div class="stats-grid" id="statsGrid"></div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+<a href="/skrorders.html" class="quick-btn"><span class="icon">📋</span>Orders</a>
+<a href="/skritems.html" class="quick-btn"><span class="icon">🍗</span>Products</a>
+<a href="/skrtickets.html" class="quick-btn"><span class="icon">🎫</span>Tickets</a>
+<a href="/skrdelivery.html" class="quick-btn"><span class="icon">🚚</span>Delivery</a>
+<a href="/skrusers.html" class="quick-btn"><span class="icon">👥</span>Users</a>
+<a href="/skrsettings.html" class="quick-btn"><span class="icon">⚙️</span>Settings</a>
+</div>
+
+<!-- Two column layout -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+<!-- Recent Orders -->
+<div class="section">
+<h2>📋 Recent Orders</h2>
+<div id="recentOrders">Loading...</div>
+</div>
+
+<!-- Top Products -->
+<div class="section">
+<h2>🏆 Top Products (7 days)</h2>
+<div id="topProducts">Loading...</div>
+</div>
+</div>
+
+<!-- Alerts -->
+<div class="section" id="alertsSection" style="display:none">
+<h2>⚠️ Alerts</h2>
+<div id="alerts"></div>
+</div>
+
+</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const saved = localStorage.getItem('meatpe_admin_key');
+if (saved) { $('key').value = saved; loadDashboard(); }
+
+function getKey() { const k = $('key').value.trim(); localStorage.setItem('meatpe_admin_key', k); return k; }
+
+
+async function loadDashboard() {
+  const key = getKey();
+  if (!key) return;
+  
+  try {
+    const [dashRes, stockRes] = await Promise.all([
+      fetch('/admin/dashboard?key=' + encodeURIComponent(key)),
+      fetch('/admin/inventory/alerts?key=' + encodeURIComponent(key))
+    ]);
+    const data = await dashRes.json();
+    const stockData = await stockRes.json();
+    if (!data.ok) { alert(data.error || 'Failed'); return; }
+    
+    $('content').style.display = 'block';
+    renderStats(data);
+    renderRecentOrders(data.recent);
+    renderTopProducts(data.topProducts);
+    renderAlerts(data, stockData);
+  } catch(e) { alert('Network error'); }
+}
+
+function renderStats(data) {
+  const { counts, today, total } = data;
+  const totalOrders = (counts.placed||0) + (counts.preparing||0) + (counts.out_for_delivery||0) + (counts.delivered||0) + (counts.cancelled||0);
+  
+  $('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="num" style="color:#f59e0b">${counts.placed||0}</div><div class="label">Pending</div></div>
+    <div class="stat-card"><div class="num" style="color:#818cf8">${counts.preparing||0}</div><div class="label">Preparing</div></div>
+    <div class="stat-card"><div class="num" style="color:#22c55e">${counts.out_for_delivery||0}</div><div class="label">Out for Delivery</div></div>
+    <div class="stat-card"><div class="num" style="color:#16a34a">${counts.delivered||0}</div><div class="label">Delivered</div></div>
+    <div class="stat-card"><div class="num" style="color:#ef4444">${counts.cancelled||0}</div><div class="label">Cancelled</div></div>
+    <div class="stat-card" style="border:2px solid #d62828"><div class="num" style="color:#d62828">₹${today?.revenue || 0}</div><div class="label">Today Revenue</div></div>
+    <div class="stat-card"><div class="num">${today?.orders || 0}</div><div class="label">Today Orders</div></div>
+    <div class="stat-card"><div class="num">₹${total?.revenue || 0}</div><div class="label">Total Revenue</div></div>
+    <div class="stat-card"><div class="num">${total?.customers || 0}</div><div class="label">Total Customers</div></div>
+  `;
+}
+
+function renderRecentOrders(orders) {
+  if (!orders || !orders.length) {
+    $('recentOrders').innerHTML = '<div style="color:#6b7280;text-align:center;padding:20px">No orders yet</div>';
+    return;
+  }
+  
+  const badgeClass = { placed:'badge-placed', preparing:'badge-preparing', out_for_delivery:'badge-out', delivered:'badge-delivered', cancelled:'badge-cancelled' };
+  
+  $('recentOrders').innerHTML = orders.map(o => {
+    const d = new Date(o.created_at);
+    const time = d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true });
+    return `<div class="order-row">
+      <span style="font-weight:700;min-width:40px">#${o.id}</span>
+      <span style="flex:1">${o.name || 'Guest'}</span>
+      <span style="font-weight:700;color:#d62828">₹${o.total}</span>
+      <span class="badge ${badgeClass[o.status]||''}">${o.status}</span>
+      <span style="color:#6b7280;font-size:11px">${time}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderTopProducts(products) {
+  if (!products || !products.length) {
+    $('topProducts').innerHTML = '<div style="color:#6b7280;text-align:center;padding:20px">No data yet</div>';
+    return;
+  }
+  
+  $('topProducts').innerHTML = products.map((p, i) => `
+    <div class="top-item">
+      <span style="font-size:16px;font-weight:800;color:${i<3?'#d62828':'#6b7280'};min-width:24px">${i+1}</span>
+      <span style="flex:1;font-weight:600">${p.name}</span>
+      <span style="color:#6b7280;font-size:12px">${p.qty} sold</span>
+      <span style="font-weight:700;color:#d62828">₹${p.revenue}</span>
+    </div>
+  `).join('');
+}
+
+function renderAlerts(data, stockData) {
+  const alerts = [];
+  if (data.pendingTickets > 0) alerts.push(`🎫 ${data.pendingTickets} open support ticket${data.pendingTickets>1?'s':''}`);
+  if (data.unreadChats > 0) alerts.push(`💬 ${data.unreadChats} unread chat${data.unreadChats>1?'s':''}`);
+  if ((data.counts?.placed||0) > 0) alerts.push(`📋 ${data.counts.placed} new order${data.counts.placed>1?'s':''} waiting`);
+  if (stockData?.ok && stockData.outOfStockCount > 0) alerts.push(`🚫 ${stockData.outOfStockCount} product${stockData.outOfStockCount>1?'s':''} out of stock`);
+  if (stockData?.ok && stockData.lowStockCount > 0) alerts.push(`⚠️ ${stockData.lowStockCount} product${stockData.lowStockCount>1?'s':''} low stock`);
+  
+  if (alerts.length) {
+    $('alertsSection').style.display = 'block';
+    $('alerts').innerHTML = alerts.map(a => `<div style="padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:14px">${a}</div>`).join('');
+  } else {
+    $('alertsSection').style.display = 'none';
+  }
+}
+
+// Auto-refresh every 30 seconds
+setInterval(() => {
+  if ($('content').style.display !== 'none') loadDashboard();
+}, 30000);
+
+// Store Open/Closed Toggle
+let _dashStoreOpen = true;
+async function loadStoreDash() {
+  try {
+    const r = await fetch('/admin/store-status');
+    const d = await r.json();
+    _dashStoreOpen = d.open;
+    const btn = $('storeToggleDash');
+    btn.style.background = _dashStoreOpen ? '#16a34a' : '#dc2626';
+    btn.textContent = _dashStoreOpen ? '🟢 OPEN' : '🔴 CLOSED';
+  } catch(e) {}
+}
+async function toggleStoreDash() {
+  const key = $('key').value.trim();
+  if (!key) { alert('Enter admin key'); return; }
+  const newVal = !_dashStoreOpen;
+  if (!newVal && !confirm('Close the store? No new orders will be accepted.')) return;
+  try {
+    const r = await fetch(`/admin/store-status?key=${encodeURIComponent(key)}&open=${newVal?'1':'0'}`, {method:'POST'});
+    const d = await r.json();
+    if (d.ok) { _dashStoreOpen = d.open; loadStoreDash(); }
+  } catch(e) {}
+}
+loadStoreDash();
+</script>
+</body>
+</html>

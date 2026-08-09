@@ -1,0 +1,28 @@
+{
+  "appId": "com.now.rider",
+  "appName": "NOW Rider",
+  "webDir": "www",
+  "server": {
+    "url": "https://nonvegonwheel.in/rider.html",
+    "cleartext": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "backgroundColor": "#0D0D0D",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "splashFullScreen": false,
+      "splashImmersive": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0D0D0D"
+    }
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#0D0D0D",
+    "webContentsDebuggingEnabled": false
+  }
+}

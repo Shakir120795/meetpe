@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin — Rider Analytics</title>
+<link rel="icon" type="image/png" href="/logo.png"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f3f4f6;color:#1a1a1a;padding:20px}
+.wrap{max-width:1200px;margin:0 auto}
+h1{font-size:24px;margin-bottom:6px}
+.sub{color:#6b7280;margin-bottom:18px;font-size:14px}
+.key-bar{background:white;padding:14px 16px;border-radius:12px;margin-bottom:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.key-bar input{flex:1;min-width:200px;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:monospace}
+.key-bar button{padding:9px 18px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;border:none;background:#d62828;color:white}
+.overview{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:white;border-radius:12px;padding:16px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.stat-card .num{font-size:28px;font-weight:800}
+.stat-card .label{font-size:11px;color:#6b7280;margin-top:4px;text-transform:uppercase}
+.rider-card{background:white;border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,0,0,.05);border-left:4px solid #16a34a;transition:all .2s}
+.rider-card.offline{border-left-color:#6b7280;opacity:.85}
+.rider-card.busy{border-left-color:#f59e0b}
+.rider-header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.avatar{width:52px;height:52px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#6b7280;overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.rider-info{flex:1}
+.rider-info h3{font-size:16px;font-weight:700;margin-bottom:3px}
+.rider-info p{font-size:12px;color:#6b7280}
+.badge{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700}
+.badge-available{background:#d1fae5;color:#065f46}
+.badge-busy{background:#fef3c7;color:#92400e}
+.badge-offline{background:#e5e7eb;color:#6b7280}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:16px}
+.metric{background:#f9fafb;border-radius:10px;padding:12px;text-align:center}
+.metric .val{font-size:20px;font-weight:800;color:#1a1a1a}
+.metric .lbl{font-size:10px;color:#6b7280;text-transform:uppercase;margin-top:2px}
+.metric.good .val{color:#16a34a}
+.metric.warn .val{color:#f59e0b}
+.metric.bad .val{color:#ef4444}
+.section{margin-top:16px;padding-top:16px;border-top:1px solid #f0f0f0}
+.section h4{font-size:13px;font-weight:700;color:#6b7280;margin-bottom:10px;text-transform:uppercase}
+.rating-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:#f9fafb;border-radius:8px;margin-bottom:6px;font-size:13px}
+.rating-row .stars{color:#f59e0b;font-weight:700;min-width:80px}
+.rating-row .comment{flex:1;color:#4b5563}
+.rating-row .meta{font-size:11px;color:#9ca3af;white-space:nowrap}
+.complaint-row{padding:10px;background:#fef2f2;border-radius:8px;margin-bottom:6px;font-size:13px;border-left:3px solid #ef4444}
+.complaint-row .msg{color:#4b5563;margin-bottom:4px}
+.complaint-row .meta{font-size:11px;color:#9ca3af}
+.earnings-chart{display:flex;align-items:flex-end;gap:3px;height:80px;padding:8px 0}
+.bar{background:linear-gradient(to top,#16a34a,#22c55e);border-radius:3px 3px 0 0;min-width:12px;flex:1;position:relative;cursor:pointer;transition:opacity .2s}
+.bar:hover{opacity:.8}
+.bar-tip{display:none;position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;font-size:10px;padding:3px 6px;border-radius:4px;white-space:nowrap}
+.bar:hover .bar-tip{display:block}
+.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid #e5e7eb;background:white;color:#6b7280;transition:all .2s}
+.tab.active{background:#d62828;color:white;border-color:#d62828}
+.tab:hover:not(.active){border-color:#d62828;color:#d62828}
+.empty{text-align:center;padding:40px;color:#6b7280;font-size:14px}
+#content{display:none}
+.nav-links{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.nav-links a{padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb}
+.nav-links a:hover{color:#d62828;border-color:#d62828}
+.nav-links a.active{background:#d62828;color:white;border-color:#d62828}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>📊 Rider Analytics</h1>
+<p class="sub">Performance metrics, ratings, earnings history & complaints for all delivery partners</p>
+
+<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <a href="/skrdashboard.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📊 Dashboard</a>
+    <a href="/skrorders.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📋 Orders</a>
+    <a href="/skrdelivery-boys.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🛵 Riders</a>
+    <a href="/skrrider-analytics.html" style="padding:8px 14px;background:#d62828;color:white;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;border-color:#d62828">📊 Rider Analytics</a>
+    <a href="/skrreports.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📈 Reports</a>
+    <a href="/skrtickets.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🎫 Tickets</a>
+    <a href="/skrsettings.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">⚙️ Settings</a>
+</div>
+
+<div class="key-bar">
+<input id="key" type="password" placeholder="Admin key"/>
+<button onclick="loadAnalytics()">Load Analytics</button>
+</div>
+
+<div id="content">
+<div class="overview" id="overviewGrid"></div>
+<div class="tabs" id="riderTabs"></div>
+<div id="riderDetails"></div>
+</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let DATA = null;
+let SELECTED_RIDER = null;
+
+const saved = localStorage.getItem('meatpe_admin_key');
+if (saved) { $('key').value = saved; loadAnalytics(); }
+
+function getKey() { const k = $('key').value.trim(); localStorage.setItem('meatpe_admin_key', k); return k; }
+
+async function loadAnalytics() {
+  const key = getKey();
+  if (!key) return;
+  try {
+    const res = await fetch('/admin/rider-analytics?key=' + encodeURIComponent(key));
+    const data = await res.json();
+    if (!data.ok) { alert(data.error); return; }
+    DATA = data;
+    $('content').style.display = 'block';
+    renderOverview();
+    renderTabs();
+    if (data.riders.length) {
+      SELECTED_RIDER = data.riders[0].id;
+      renderRiderDetail();
+    }
+  } catch(e) { alert('Network error: ' + e.message); }
+}
+
+function renderOverview() {
+  const s = DATA.stats;
+  $('overviewGrid').innerHTML = `
+    <div class="stat-card"><div class="num">${s.totalRiders}</div><div class="label">Total Riders</div></div>
+    <div class="stat-card"><div class="num" style="color:#16a34a">${s.onlineRiders}</div><div class="label">Online Now</div></div>
+    <div class="stat-card"><div class="num">${s.totalDeliveries}</div><div class="label">Total Deliveries</div></div>
+    <div class="stat-card"><div class="num" style="color:#f59e0b">${s.avgRating} ⭐</div><div class="label">Avg Rating</div></div>
+    <div class="stat-card"><div class="num" style="color:#16a34a">₹${Math.round(s.totalEarnings)}</div><div class="label">Total Earnings</div></div>
+    <div class="stat-card"><div class="num">${s.todayDeliveries}</div><div class="label">Today's Deliveries</div></div>
+  `;
+}
+
+function renderTabs() {
+  $('riderTabs').innerHTML = DATA.riders.map(r => 
+    `<div class="tab ${SELECTED_RIDER === r.id ? 'active' : ''}" onclick="selectRider('${r.id}')">
+      ${r.name} ${r.status === 'available' ? '🟢' : r.status === 'busy' ? '🟡' : '⚪'}
+    </div>`
+  ).join('');
+}
+
+function selectRider(id) {
+  SELECTED_RIDER = id;
+  window._ratingsPage = 1;
+  window._complaintsPage = 1;
+  renderTabs();
+  renderRiderDetail();
+}
+
+function renderRiderDetail() {
+  const r = DATA.riders.find(x => x.id === SELECTED_RIDER);
+  if (!r) { $('riderDetails').innerHTML = '<div class="empty">Select a rider</div>'; return; }
+  
+  const badgeClass = r.status === 'available' ? 'badge-available' : r.status === 'busy' ? 'badge-busy' : 'badge-offline';
+  const ratingClass = r.avgRating >= 4 ? 'good' : r.avgRating >= 3 ? 'warn' : 'bad';
+  
+  // Earnings chart (last 30 days)
+  const maxEarning = Math.max(...(r.earningsHistory||[]).map(e => e.total), 1);
+  const chartBars = (r.earningsHistory||[]).slice(0, 30).reverse().map(e => {
+    const h = Math.max(4, (e.total / maxEarning) * 100);
+    const d = new Date(e.day);
+    const label = d.toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+    return `<div class="bar" style="height:${h}%"><div class="bar-tip">₹${e.total} • ${e.orders} orders<br>${label}</div></div>`;
+  }).join('');
+  
+  // Star distribution
+  const starDist = [5,4,3,2,1].map(s => {
+    const count = (r.recentRatings||[]).filter(x => x.rating === s).length;
+    return { star: s, count };
+  });
+  
+  $('riderDetails').innerHTML = `
+    <div class="rider-card ${r.status}">
+      <div class="rider-header">
+        <div class="avatar">${r.photo ? `<img src="${r.photo}"/>` : (r.name||'R').charAt(0)}</div>
+        <div class="rider-info">
+          <h3>${r.name || 'Unnamed'}</h3>
+          <p>${r.phone || ''} • ${r.vehicleType || 'Bike'} • ${r.vehicleNumber || ''}</p>
+        </div>
+        <span class="badge ${badgeClass}">${r.status}</span>
+      </div>
+      
+      <!-- Key Metrics -->
+      <div class="metrics">
+        <div class="metric"><div class="val">${r.totalOrders}</div><div class="lbl">Total Deliveries</div></div>
+        <div class="metric ${ratingClass}"><div class="val">${r.avgRating} ⭐</div><div class="lbl">Avg Rating (${r.ratingCount})</div></div>
+        <div class="metric"><div class="val">₹${Math.round(r.totalEarnings)}</div><div class="lbl">Total Earnings</div></div>
+        <div class="metric"><div class="val">${r.avgDeliveryMinutes || '—'} min</div><div class="lbl">Avg Delivery Time</div></div>
+        <div class="metric"><div class="val">${r.activeOrders}</div><div class="lbl">Active Orders</div></div>
+        <div class="metric"><div class="val" style="color:#f59e0b">₹${Math.round(r.codPending)}</div><div class="lbl">COD Pending</div></div>
+      </div>
+      
+      <!-- Earnings Breakdown -->
+      <div class="section">
+        <h4>💰 Earnings Breakdown</h4>
+        <div class="metrics" style="margin-bottom:0">
+          <div class="metric"><div class="val" style="color:#16a34a">₹${Math.round(r.todayEarnings)}</div><div class="lbl">Today</div></div>
+          <div class="metric"><div class="val" style="color:#16a34a">₹${Math.round(r.weekEarnings)}</div><div class="lbl">This Week</div></div>
+          <div class="metric"><div class="val" style="color:#16a34a">₹${Math.round(r.monthEarnings)}</div><div class="lbl">This Month</div></div>
+        </div>
+      </div>
+      
+      <!-- Bank Details -->
+      <div class="section">
+        <h4>🏦 Bank & Payment Details</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">
+          <div style="background:#f9fafb;padding:10px;border-radius:8px"><div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:3px">Bank Account</div><div style="font-weight:700">${r.bankDetails || '<em style=color:#9ca3af>Not added</em>'}</div></div>
+          <div style="background:#f9fafb;padding:10px;border-radius:8px"><div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:3px">UPI ID</div><div style="font-weight:700">${r.upiId || '<em style=color:#9ca3af>Not added</em>'}</div></div>
+          <div style="background:#f9fafb;padding:10px;border-radius:8px"><div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:3px">IFSC Code</div><div style="font-weight:700">${r.ifsc || '<em style=color:#9ca3af>Not added</em>'}</div></div>
+          <div style="background:#f9fafb;padding:10px;border-radius:8px"><div style="font-size:10px;color:#6b7280;text-transform:uppercase;margin-bottom:3px">COD Pending</div><div style="font-weight:700;color:#f59e0b">₹${Math.round(r.codPending)}</div></div>
+        </div>
+      </div>
+      
+      <!-- Earnings Chart -->
+      ${r.earningsHistory && r.earningsHistory.length ? `
+      <div class="section">
+        <h4>📈 Earnings History (Last 30 Days)</h4>
+        <div class="earnings-chart">${chartBars}</div>
+      </div>` : ''}
+      
+      <!-- Recent Ratings -->
+      <div class="section">
+        <h4>⭐ Customer Ratings (${r.ratingCount} total)</h4>
+        ${(() => {
+          const allRatings = r.recentRatings || [];
+          if (!allRatings.length) return '<div style="font-size:13px;color:#9ca3af;padding:10px">No ratings yet</div>';
+          const perPage = window._ratingsPerPage || 10;
+          const page = window._ratingsPage || 1;
+          const totalItems = allRatings.length;
+          const totalPages = Math.ceil(totalItems / perPage);
+          const startIdx = (page - 1) * perPage;
+          const paginated = allRatings.slice(startIdx, startIdx + perPage);
+          const paginationHtml = totalItems > 10 ? `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;background:#f9fafb;padding:12px 16px;border-radius:10px;">
+              <div style="font-size:13px;color:#6b7280">Showing ${startIdx+1}-${Math.min(startIdx+perPage, totalItems)} of ${totalItems}</div>
+              <div style="display:flex;gap:6px;align-items:center">
+                <select onchange="window._ratingsPerPage=parseInt(this.value);window._ratingsPage=1;renderRiderDetail()" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px">
+                  <option ${perPage===10?'selected':''} value="10">10/page</option>
+                  <option ${perPage===20?'selected':''} value="20">20/page</option>
+                  <option ${perPage===50?'selected':''} value="50">50/page</option>
+                </select>
+                <button onclick="if(window._ratingsPage>1){window._ratingsPage--;renderRiderDetail()}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;cursor:pointer;background:white" ${page<=1?'disabled':''}>← Prev</button>
+                <span style="font-size:12px;font-weight:600">${page}/${totalPages}</span>
+                <button onclick="if(window._ratingsPage<${totalPages}){window._ratingsPage=(window._ratingsPage||1)+1;renderRiderDetail()}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;cursor:pointer;background:white" ${page>=totalPages?'disabled':''}>Next →</button>
+              </div>
+            </div>
+          ` : '';
+          return paginationHtml + paginated.map(rt => {
+            const stars = '⭐'.repeat(rt.rating) + '☆'.repeat(5 - rt.rating);
+            const d = new Date(rt.created_at);
+            const dateStr = d.toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+            return `<div class="rating-row">
+              <div class="stars">${stars}</div>
+              <div class="comment">${rt.comment || '<em style="color:#9ca3af">No comment</em>'}</div>
+              <div class="meta">#${rt.order_id} • ${rt.customer_name || 'Customer'} • ${dateStr}</div>
+            </div>`;
+          }).join('');
+        })()}
+      </div>
+      
+      <!-- Complaints -->
+      <div class="section">
+        <h4>⚠️ Delivery Complaints (${(r.complaints||[]).length})</h4>
+        ${(() => {
+          const allComplaints = r.complaints || [];
+          if (!allComplaints.length) return '<div style="font-size:13px;color:#9ca3af;padding:10px">No complaints 🎉</div>';
+          const perPage = window._complaintsPerPage || 10;
+          const page = window._complaintsPage || 1;
+          const totalItems = allComplaints.length;
+          const totalPages = Math.ceil(totalItems / perPage);
+          const startIdx = (page - 1) * perPage;
+          const paginated = allComplaints.slice(startIdx, startIdx + perPage);
+          const paginationHtml = totalItems > 10 ? `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;background:#f9fafb;padding:12px 16px;border-radius:10px;">
+              <div style="font-size:13px;color:#6b7280">Showing ${startIdx+1}-${Math.min(startIdx+perPage, totalItems)} of ${totalItems}</div>
+              <div style="display:flex;gap:6px;align-items:center">
+                <select onchange="window._complaintsPerPage=parseInt(this.value);window._complaintsPage=1;renderRiderDetail()" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px">
+                  <option ${perPage===10?'selected':''} value="10">10/page</option>
+                  <option ${perPage===20?'selected':''} value="20">20/page</option>
+                  <option ${perPage===50?'selected':''} value="50">50/page</option>
+                </select>
+                <button onclick="if(window._complaintsPage>1){window._complaintsPage--;renderRiderDetail()}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;cursor:pointer;background:white" ${page<=1?'disabled':''}>← Prev</button>
+                <span style="font-size:12px;font-weight:600">${page}/${totalPages}</span>
+                <button onclick="if(window._complaintsPage<${totalPages}){window._complaintsPage=(window._complaintsPage||1)+1;renderRiderDetail()}" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;cursor:pointer;background:white" ${page>=totalPages?'disabled':''}>Next →</button>
+              </div>
+            </div>
+          ` : '';
+          return paginationHtml + paginated.map(c => {
+            const d = new Date(c.created_at);
+            const dateStr = d.toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+            const statusBadge = c.status === 'open' ? '<span style="color:#f59e0b;font-weight:700">OPEN</span>' : '<span style="color:#16a34a;font-weight:700">RESOLVED</span>';
+            return `<div class="complaint-row">
+              <div class="msg">${c.message.slice(0,150)}</div>
+              <div class="meta">#${c.id} • ${c.name || 'Customer'} • ${dateStr} • ${statusBadge}</div>
+            </div>`;
+          }).join('');
+        })()}
+      </div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>

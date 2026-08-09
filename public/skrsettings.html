@@ -1,0 +1,1695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MeatPe Admin — Site Settings</title>
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #d62828; --green: #16a34a; --orange: #f77f00;
+      --blue: #2563eb; --gray: #6b7280; --light: #f3f4f6;
+      --border: #e5e7eb; --dark: #1a1a1a;
+    }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--light); color: var(--dark); padding: 20px; }
+    .wrap { max-width: 1000px; margin: 0 auto; }
+    h1 { font-size: 24px; margin-bottom: 6px; display: flex; align-items: center; gap: 12px; }
+    h1 img { height: 36px; }
+    .sub { color: var(--gray); margin-bottom: 18px; }
+    .nav-links { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .nav-links a {
+      padding: 8px 14px; background: white; border-radius: 8px; color: var(--gray);
+      text-decoration: none; font-size: 13px; font-weight: 600; border: 1px solid var(--border);
+    }
+    .nav-links a:hover { color: var(--primary); border-color: var(--primary); }
+    .nav-links a.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .key-bar {
+      background: white; padding: 14px 16px; border-radius: 12px; margin-bottom: 18px;
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    .key-bar label { font-weight: 600; font-size: 14px; }
+    .key-bar input {
+      flex: 1; min-width: 200px; padding: 9px 12px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; font-family: monospace;
+    }
+    .key-bar button { padding: 9px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; border: none; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-green { background: var(--green); color: white; }
+    .btn-ghost { background: transparent; color: var(--gray); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--dark); border-color: var(--dark); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-danger { background: #ef4444; color: white; }
+
+    .section {
+      background: white; border-radius: 12px; padding: 22px 24px;
+      margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    }
+    .section h2 {
+      font-size: 18px; margin-bottom: 4px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section .desc { font-size: 13px; color: var(--gray); margin-bottom: 16px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: var(--dark); }
+    .field input, .field textarea, .field select {
+      width: 100%; padding: 10px 12px; font-size: 14px;
+      border: 1px solid var(--border); border-radius: 8px; font-family: inherit;
+    }
+    .field textarea { resize: vertical; min-height: 80px; }
+    .field input:focus, .field textarea:focus { outline: none; border-color: var(--primary); }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 600px) { .field-row { grid-template-columns: 1fr; } }
+
+    .cat-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .cat-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; background: var(--light); border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .cat-item .icon-input { width: 50px; text-align: center; font-size: 18px; }
+    .cat-item .key-display { font-family: monospace; font-size: 12px; color: var(--gray); min-width: 100px; }
+    .cat-item .label-input { flex: 1; }
+    .cat-item .remove-cat { width: 28px; height: 28px; border-radius: 50%; background: #fee2e2; color: #dc2626; border: none; cursor: pointer; font-size: 14px; }
+    .cat-item .remove-cat:hover { background: #fecaca; }
+
+    .social-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+    .social-item {
+      display: grid; grid-template-columns: 50px 120px 1fr 1fr 32px; gap: 8px;
+      align-items: center; padding: 8px 12px; background: var(--light);
+      border-radius: 8px; border: 1px solid var(--border);
+    }
+    .social-item input { padding: 8px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: 6px; }
+    .social-item .remove-social { width: 28px; height: 28px; border-radius: 50%; background: #fee2e2; color: #dc2626; border: none; cursor: pointer; font-size: 14px; }
+    @media (max-width: 700px) {
+      .social-item { grid-template-columns: 1fr 1fr; }
+      .social-item .remove-social { grid-column: 2; justify-self: end; }
+    }
+
+    .save-bar {
+      position: sticky; bottom: 16px; z-index: 10;
+      background: white; padding: 14px 20px; border-radius: 12px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,.1);
+      display: none; align-items: center; justify-content: space-between;
+    }
+    .save-bar.show { display: flex; }
+    .save-bar .msg { font-size: 14px; color: var(--gray); }
+    .save-bar button { padding: 10px 24px; }
+
+    .toast {
+      position: fixed; bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--dark); color: white; padding: 12px 20px; border-radius: 10px;
+      font-size: 14px; font-weight: 500; z-index: 200;
+      opacity: 0; pointer-events: none; transition: all .25s;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { background: #16a34a; }
+    .toast.error { background: #dc2626; }
+    .err { background: #fee; color: #b91c1c; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 13px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1><img src="/logo.png" alt="MeatPe" />Site Settings</h1>
+  <p class="sub">Edit website content, categories, footer, social handles — all from here.</p>
+
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <a href="/skrdashboard.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📊 Dashboard</a>
+    <a href="/skradmin.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📦 Stock</a>
+    <a href="/skrorders.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📋 Orders</a>
+    <a href="/skritems.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🍗 Items</a>
+    <a href="/skrcoupons.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🏷️ Coupons</a>
+    <a href="/skrreviews.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">⭐ Reviews</a>
+    <a href="/skrreturns.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">↩️ Returns</a>
+    <a href="/skrusers.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">👥 Users</a>
+    <a href="/skrtickets.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🎫 Tickets</a>
+    <a href="/skrdelivery.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🚚 Delivery</a>
+    <a href="/skrdelivery-boys.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🛵 Riders</a>
+    <a href="/skrbanners.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🎨 Banners</a>
+    <a href="/skrnotifications-admin.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🔔 Notify</a>
+    <a href="/skrreports.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📊 Reports</a>
+    <a href="/skrsettings.html" style="padding:8px 14px;background:#d62828;color:white;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;border-color:#d62828">⚙️ Settings</a>
+    <a href="/" target="_blank" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🌐 View Site</a>
+  </div>
+
+  <div class="key-bar">
+    <label>Admin key:</label>
+    <input id="key" type="password" placeholder="Enter ADMIN_KEY" autocomplete="off" />
+    <button id="loadBtn" class="btn-primary">Load settings</button>
+  </div>
+
+  <div id="msg"></div>
+  <div id="content" style="display:none">
+
+    <!-- BRANDING -->
+    <div class="section">
+      <h2>🎨 Branding</h2>
+      <p class="desc">Shop name, tagline, logo, and top announcement bar.</p>
+      <div class="field-row">
+        <div class="field"><label>Shop Name</label><input id="brandName" /></div>
+        <div class="field"><label>Logo URL</label><input id="brandLogo" placeholder="/logo.png" /></div>
+      </div>
+      <div class="field"><label>Tagline</label><input id="brandTagline" /></div>
+      <div class="field"><label>Top Bar Text</label><input id="brandTopbar" placeholder="Announcement text shown at top of website" /></div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div class="section">
+      <h2>📂 Categories</h2>
+      <p class="desc">Add, remove, or rename menu categories. Key is used internally (no spaces, lowercase).</p>
+      <div id="catList" class="cat-list"></div>
+      <button id="addCatBtn" class="btn-ghost btn-sm">+ Add category</button>
+    </div>
+
+    <!-- CONTACT -->
+    <div class="section">
+      <h2>📞 Contact & Reach Us</h2>
+      <p class="desc">Phone, email, timing, service location shown in footer.</p>
+      <div class="field-row">
+        <div class="field"><label>Phone (with country code)</label><input id="contactPhone" placeholder="+917617555488" /></div>
+        <div class="field"><label>Display Phone</label><input id="contactPhoneDisplay" placeholder="+91 76175 55488" /></div>
+      </div>
+      <div class="field"><label>Email (optional)</label><input id="contactEmail" placeholder="hello@meatpe.in" /></div>
+      <div class="field"><label>Timing / Hours</label><input id="contactTiming" placeholder="8:00 AM – 9:30 PM, all days" /></div>
+      <div class="field"><label>Service Location</label><input id="contactLocation" placeholder="Live now, expanding to all major cities 🚀" /></div>
+    </div>
+
+    <!-- SOCIALS -->
+    <div class="section">
+      <h2>🌐 Social Handles</h2>
+      <p class="desc">Add your social media links. Leave empty to hide from website.</p>
+      <div id="socialList" class="social-list"></div>
+      <button id="addSocialBtn" class="btn-ghost btn-sm">+ Add social link</button>
+    </div>
+
+    <!-- PAGES -->
+    <div class="section">
+      <h2>📝 Page Content</h2>
+      <p class="desc">Edit About Us, Safety, Privacy, Terms text. Shown on /about.html page.</p>
+      <div class="field"><label>About Us</label><textarea id="pageAbout" rows="5"></textarea></div>
+      <div class="field"><label>Safety & Quality</label><textarea id="pageSafety" rows="5"></textarea></div>
+      <div class="field"><label>Privacy Policy</label><textarea id="pagePrivacy" rows="5"></textarea></div>
+      <div class="field"><label>Terms of Service</label><textarea id="pageTerms" rows="5"></textarea></div>
+      <div class="field"><label>Refund Policy</label><textarea id="pageRefund" rows="5"></textarea></div>
+      <div class="field"><label>Delivery Policy</label><textarea id="pageDelivery" rows="5"></textarea></div>
+      <div class="field"><label>Membership Rules</label><textarea id="pageMembership" rows="5"></textarea></div>
+      <div class="field"><label>FAQ</label><textarea id="pageFaq" rows="5"></textarea></div>
+    </div>
+    
+    <!-- TRENDING SEARCHES -->
+    <div class="section">
+      <h2>🔥 Trending Searches</h2>
+      <p class="desc">Add popular search terms that users can click on. Shown when search box is focused (empty). One per line, max 10 terms.</p>
+      <div class="field">
+        <label>Trending Search Terms <small style="font-weight:400;color:var(--gray)">(one per line)</small></label>
+        <textarea id="trendingSearches" rows="6" placeholder="chicken breast&#10;boneless mutton&#10;fresh fish&#10;marinated chicken&#10;tandoori"></textarea>
+        <div style="font-size:11px;color:var(--gray);margin-top:6px">💡 Tip: Use common customer queries like "boneless chicken", "mutton curry cut", "fish fillet", etc.</div>
+      </div>
+    </div>
+    
+    <!-- CART & CHECKOUT SETTINGS -->
+    <div class="section">
+      <h2>🛒 Cart & Checkout Settings</h2>
+      <p class="desc">Configure price breakdown, charges, discounts, and tip options shown in cart.</p>
+      
+      <!-- Delivery Charges -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">🚚 Delivery Charges</h3>
+        <div class="field-row">
+          <div class="field">
+            <label>Free Delivery Above (₹)</label>
+            <input type="number" id="cartFreeAbove" placeholder="699" min="0"/>
+          </div>
+          <div class="field">
+            <label>Low Order Threshold (₹)</label>
+            <input type="number" id="cartLowThreshold" placeholder="399" min="0"/>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Low Order Fee (₹)</label>
+            <input type="number" id="cartLowFee" placeholder="29" min="0"/>
+          </div>
+          <div class="field">
+            <label>Regular Order Fee (₹)</label>
+            <input type="number" id="cartRegularFee" placeholder="19" min="0"/>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Taxes & Charges -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">💰 Taxes & Charges</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="cartShowTaxes" style="width:18px;height:18px;cursor:pointer"/>
+            <span>Show Taxes Breakdown in Cart</span>
+          </label>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>GST Percent (%)</label>
+            <input type="number" id="cartGstPercent" placeholder="5" min="0" max="100" step="0.1"/>
+          </div>
+          <div class="field">
+            <label>Packaging Charge (₹)</label>
+            <input type="number" id="cartPackaging" placeholder="10" min="0"/>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Membership Discount -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">⭐ NOW+ Membership Discount</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="cartEnableMembership" style="width:18px;height:18px;cursor:pointer"/>
+            <span>Enable Membership Discount in Cart</span>
+          </label>
+        </div>
+        <div class="field">
+          <label>Membership Discount Percent (%)</label>
+          <input type="number" id="cartMembershipPercent" placeholder="5" min="0" max="100" step="0.1"/>
+          <div style="font-size:11px;color:var(--gray);margin-top:4px">Applied on subtotal for NOW+ members</div>
+        </div>
+      </div>
+      
+      <!-- Tip Delivery Partner -->
+      <div style="background:var(--light);padding:16px;border-radius:10px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">💝 Tip Delivery Partner</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="cartEnableTip" style="width:18px;height:18px;cursor:pointer"/>
+            <span>Enable Tip Delivery Partner Section</span>
+          </label>
+        </div>
+        <div class="field">
+          <label>Tip Options (₹) <small style="font-weight:400;color:var(--gray)">(comma-separated)</small></label>
+          <input id="cartTipOptions" placeholder="10, 20, 30, 50"/>
+          <div style="font-size:11px;color:var(--gray);margin-top:4px">💡 Tip: Use values like "10, 20, 30, 50" for quick selection</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHECKOUT PAGE SETTINGS -->
+    <div class="section">
+      <h2>📦 Checkout Page Settings</h2>
+      <p class="desc">Configure delivery slots, payment methods, and checkout options.</p>
+      
+      <!-- Delivery Slots -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">⏰ Delivery Slots</h3>
+        <p style="font-size:12px;color:var(--gray);margin-bottom:12px">Add or edit time slots for delivery. Users can select preferred slot during checkout.</p>
+        
+        <div id="deliverySlotsContainer"></div>
+        
+        <button type="button" onclick="addDeliverySlot()" style="margin-top:12px;padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">
+          ➕ Add Delivery Slot
+        </button>
+      </div>
+      
+      <!-- Payment Methods -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">💳 Payment Methods</h3>
+        <p style="font-size:12px;color:var(--gray);margin-bottom:12px">Enable/disable payment options. Users will see enabled methods during checkout.</p>
+        
+        <div id="paymentMethodsContainer"></div>
+        
+        <button type="button" onclick="addPaymentMethod()" style="margin-top:12px;padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">
+          ➕ Add Payment Method
+        </button>
+      </div>
+      
+      <!-- Other Checkout Settings -->
+      <div style="background:var(--light);padding:16px;border-radius:10px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">⚙️ Other Settings</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="checkoutEnableSavedAddr" style="width:18px;height:18px;cursor:pointer"/>
+            <span>Enable Saved Addresses</span>
+          </label>
+          <div style="font-size:11px;color:var(--gray);margin-top:4px">Allow users to save and reuse delivery addresses</div>
+        </div>
+        <div class="field">
+          <label>Max Saved Addresses</label>
+          <input type="number" id="checkoutMaxAddresses" placeholder="5" min="1" max="10"/>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="checkoutRequirePhone" style="width:18px;height:18px;cursor:pointer"/>
+            <span>Require Phone Number</span>
+          </label>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="checkoutAllowGuest" style="width:18px;height:18px;cursor:pointer"/>
+            <span>Allow Guest Checkout (without login)</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT GATEWAY SETTINGS -->
+    <div class="section">
+      <h2>💳 Payment Gateway Settings</h2>
+      <p class="desc">Configure payment gateway credentials and payment method options. All changes require saving.</p>
+      
+      <!-- Provider Selection -->
+      <div class="field">
+        <label>Payment Provider</label>
+        <select id="paymentProvider" onchange="markDirty()">
+          <option value="razorpay">Razorpay</option>
+          <option value="stripe">Stripe</option>
+          <option value="paytm">Paytm</option>
+          <option value="mock">Mock (Testing Only)</option>
+        </select>
+      </div>
+      
+      <div class="field-row">
+        <div class="field">
+          <label>Mode</label>
+          <select id="paymentMode" onchange="markDirty()">
+            <option value="test">Test Mode</option>
+            <option value="live">Live Mode</option>
+          </select>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="mockPaymentEnabled" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Mock Payments (for testing)</span>
+          </label>
+        </div>
+      </div>
+      
+      <!-- Razorpay Settings -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">🔑 Razorpay Credentials</h3>
+        <div class="field">
+          <label>Key ID</label>
+          <input type="text" id="razorpayKeyId" placeholder="rzp_test_..." onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Key Secret</label>
+          <input type="password" id="razorpayKeySecret" placeholder="Enter key secret" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Webhook Secret</label>
+          <input type="password" id="razorpayWebhookSecret" placeholder="whsec_..." onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- UPI Options -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">📱 UPI Payment Options</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="upiEnabled" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable UPI Payments</span>
+          </label>
+        </div>
+        <div class="field">
+          <label>Merchant UPI ID</label>
+          <input type="text" id="upiMerchantVpa" placeholder="yourstore@paytm" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Merchant Name</label>
+          <input type="text" id="upiMerchantName" placeholder="MeatPe" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="upiShowQrCode" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Show QR Code for UPI</span>
+          </label>
+        </div>
+      </div>
+      
+      <!-- Card Options -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">💳 Card Payment Options</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="cardEnabled" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Card Payments</span>
+          </label>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="cardSaveOption" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Allow Save Card for Future</span>
+          </label>
+        </div>
+      </div>
+      
+      <!-- Net Banking Options -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">🏦 Net Banking Options</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="netBankingEnabled" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Net Banking</span>
+          </label>
+        </div>
+        
+        <p style="font-size:12px;color:var(--gray);margin:12px 0">Supported Banks</p>
+        <div id="banksContainer"></div>
+        
+        <button type="button" onclick="addBank()" style="margin-top:12px;padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">
+          ➕ Add Bank
+        </button>
+      </div>
+      
+      <!-- Wallet Options -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">💰 Wallet Payment Options</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="walletEnabled" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Wallet Payments</span>
+          </label>
+        </div>
+        <div class="field">
+          <label>Minimum Wallet Balance</label>
+          <input type="number" id="walletMinBalance" placeholder="10" min="1" onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- COD Options -->
+      <div style="background:var(--light);padding:16px;border-radius:10px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">💵 Cash on Delivery Options</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="codEnabled" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Cash on Delivery</span>
+          </label>
+        </div>
+        <div class="field">
+          <label>Min Order Amount for COD (₹)</label>
+          <input type="number" id="codMinAmount" placeholder="100" min="0" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Max Order Amount for COD (₹)</label>
+          <input type="number" id="codMaxAmount" placeholder="5000" min="0" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Extra COD Charge (₹)</label>
+          <input type="number" id="codExtraCharge" placeholder="0" min="0" onchange="markDirty()"/>
+          <div style="font-size:11px;color:var(--gray);margin-top:4px">Additional charge for COD orders (0 for no charge)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDER TRACKING SETTINGS -->
+    <div class="section">
+      <h2>📦 Order Tracking Settings</h2>
+      <p class="desc">Configure live tracking, delivery boy details, and customer contact options.</p>
+      
+      <!-- Feature Toggles -->
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="checkbox" id="enableLiveTracking" onchange="markDirty()" style="width:18px;height:18px;cursor:pointer"/>
+          <span>Enable Live Map Tracking</span>
+        </label>
+      </div>
+      
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="checkbox" id="enableDeliveryBoyDetails" onchange="markDirty()" style="width:18px;height:18px;cursor:pointer"/>
+          <span>Show Delivery Boy Details</span>
+        </label>
+      </div>
+      
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="checkbox" id="enableCallButton" onchange="markDirty()" style="width:18px;height:18px;cursor:pointer"/>
+          <span>Enable Call Button</span>
+        </label>
+      </div>
+      
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+          <input type="checkbox" id="enableChatButton" onchange="markDirty()" style="width:18px;height:18px;cursor:pointer"/>
+          <span>Enable Chat Button (WhatsApp)</span>
+        </label>
+      </div>
+      
+      <!-- Support Contacts -->
+      <div class="field-row">
+        <div class="field">
+          <label>Support Phone Number</label>
+          <input type="tel" id="supportPhone" placeholder="+917617555488" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Support WhatsApp Number</label>
+          <input type="tel" id="supportWhatsApp" placeholder="+917617555488" onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- Map Provider -->
+      <div class="field">
+        <label>Map Provider</label>
+        <select id="mapProvider" onchange="markDirty()">
+          <option value="placeholder">Placeholder (No API required)</option>
+          <option value="google">Google Maps</option>
+          <option value="mapbox">Mapbox</option>
+        </select>
+      </div>
+      
+      <div class="field-row">
+        <div class="field">
+          <label>Google Maps API Key</label>
+          <input type="text" id="googleMapsApiKey" placeholder="Enter API key" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Mapbox Access Token</label>
+          <input type="text" id="mapboxToken" placeholder="Enter token" onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- ETA Settings -->
+      <div class="field-row">
+        <div class="field">
+          <label>Default ETA (minutes)</label>
+          <input type="number" id="defaultETA" placeholder="30" min="5" max="120" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>ETA Update Interval (seconds)</label>
+          <input type="number" id="etaUpdateInterval" placeholder="30" min="10" max="300" onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- Delivery Boys Management -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-top:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">👨‍💼 Delivery Boys</h3>
+        <p style="font-size:12px;color:var(--gray);margin-bottom:12px">
+          Add delivery personnel details. One will be randomly assigned to active orders.
+        </p>
+        
+        <div id="deliveryBoysContainer"></div>
+        
+        <button type="button" onclick="addDeliveryBoy()" 
+          style="margin-top:12px;padding:8px 16px;background:var(--primary);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">
+          ➕ Add Delivery Boy
+        </button>
+      </div>
+    </div>
+
+    <!-- WALLET & REWARDS SETTINGS -->
+    <div class="section">
+      <h2>💰 Wallet & Rewards Settings</h2>
+      <p class="desc">Configure wallet, cashback, rewards rules. Changes apply to all new orders.</p>
+      
+      <!-- Wallet Settings -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">💳 Wallet Settings</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="wrEnableWallet" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Wallet</span>
+          </label>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Min Topup Amount (₹)</label>
+            <input type="number" id="wrMinTopup" placeholder="10" min="1" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>Max Topup Amount (₹)</label>
+            <input type="number" id="wrMaxTopup" placeholder="10000" min="100" onchange="markDirty()"/>
+          </div>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="wrAutoApply" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Auto-apply wallet balance at checkout</span>
+          </label>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="wrShowTopbar" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Show wallet balance in topbar</span>
+          </label>
+        </div>
+      </div>
+      
+      <!-- Reward System -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">🎁 Reward System</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="wrEnableRewards" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Rewards (earn on orders)</span>
+          </label>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Min Order for Reward (₹)</label>
+            <input type="number" id="wrRewardThreshold" placeholder="500" min="0" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>Reward Amount (₹)</label>
+            <input type="number" id="wrRewardAmount" placeholder="30" min="1" onchange="markDirty()"/>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Reward Expiry (days)</label>
+            <input type="number" id="wrRewardExpiry" placeholder="15" min="1" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>Reward Label</label>
+            <input type="text" id="wrRewardLabel" placeholder="Cashback Reward" onchange="markDirty()"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Earn Rule Text (shown to users)</label>
+          <input type="text" id="wrEarnRuleText" placeholder="Earn ₹30 on every order above ₹500" onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- Cashback System -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">💸 Cashback System</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="wrEnableCashback" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Cashback (% credited to wallet)</span>
+          </label>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Cashback Percentage (%)</label>
+            <input type="number" id="wrCashbackPercent" placeholder="5" min="0" max="50" step="0.5" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>Max Cashback per Order (₹)</label>
+            <input type="number" id="wrCashbackMax" placeholder="100" min="1" onchange="markDirty()"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Min Order for Cashback (₹)</label>
+          <input type="number" id="wrCashbackMinOrder" placeholder="299" min="0" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Cashback Rule Text (shown to users)</label>
+          <input type="text" id="wrCashbackRuleText" placeholder="5% cashback on all orders (max ₹100)" onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- Referral Bonus -->
+      <div style="background:var(--light);padding:16px;border-radius:10px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">🤝 Referral Bonus</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="wrEnableReferral" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Enable Referral Bonus</span>
+          </label>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Referrer Bonus (₹)</label>
+            <input type="number" id="wrReferralBonus" placeholder="50" min="0" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>New User Bonus (₹)</label>
+            <input type="number" id="wrRefereeBonus" placeholder="30" min="0" onchange="markDirty()"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVOICE SETTINGS -->
+    <div class="section">
+      <h2>🧾 Invoice / Bill Settings</h2>
+      <p class="desc">Configure all invoice fields. These will appear on downloaded invoices/bills.</p>
+      
+      <!-- Company Details -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">🏢 Company Details</h3>
+        <div class="field">
+          <label>Company Name</label>
+          <input type="text" id="invCompanyName" placeholder="NOW - Nonveg On Wheel" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Company Tagline</label>
+          <input type="text" id="invCompanyTagline" placeholder="Fresh Meat Delivered to Your Door" onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Supplier Address</label>
+          <input type="text" id="invSupplierAddress" placeholder="Shop No. 5, Main Market" onchange="markDirty()"/>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>City</label>
+            <input type="text" id="invSupplierCity" placeholder="Agra, Uttar Pradesh" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>State (with code)</label>
+            <input type="text" id="invSupplierState" placeholder="Uttar Pradesh (09)" onchange="markDirty()"/>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Phone Number</label>
+            <input type="tel" id="invSupplierPhone" placeholder="+91 7617555488" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="invSupplierEmail" placeholder="info@now.com" onchange="markDirty()"/>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Legal / Tax Info -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">📋 Legal & Tax Details</h3>
+        <div class="field">
+          <label>GSTIN (GST Number)</label>
+          <input type="text" id="invGstin" placeholder="09AACCI2053A1Z5" onchange="markDirty()"/>
+          <div style="font-size:11px;color:var(--gray);margin-top:4px">Leave blank if not registered</div>
+        </div>
+        <div class="field">
+          <label>CIN (Company Identification Number)</label>
+          <input type="text" id="invCin" placeholder="U74130KA2010PTC052192" onchange="markDirty()"/>
+          <div style="font-size:11px;color:var(--gray);margin-top:4px">Leave blank if not applicable</div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>FSSAI License Number</label>
+            <input type="text" id="invFssaiNo" placeholder="10021051000412" onchange="markDirty()"/>
+          </div>
+          <div class="field">
+            <label>PAN Number</label>
+            <input type="text" id="invPanNo" placeholder="AACCI2053A" onchange="markDirty()"/>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Invoice Format -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">⚙️ Invoice Format</h3>
+        <div class="field">
+          <label>Invoice Number Prefix</label>
+          <input type="text" id="invPrefix" placeholder="NOW" maxlength="10" onchange="markDirty()"/>
+          <div style="font-size:11px;color:var(--gray);margin-top:4px">Invoice will be: NOW000001, NOW000002, etc.</div>
+        </div>
+      </div>
+      
+      <!-- Terms & Conditions -->
+      <div style="background:var(--light);padding:16px;border-radius:10px;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">📝 Terms & Conditions</h3>
+        <div class="field">
+          <label>Term 1</label>
+          <input type="text" id="invTerm1" placeholder="Goods once sold will not be taken back." onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Term 2</label>
+          <input type="text" id="invTerm2" placeholder="Quality issues within 2 hours with photo will be replaced." onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Term 3</label>
+          <input type="text" id="invTerm3" placeholder="This is a computer-generated invoice." onchange="markDirty()"/>
+        </div>
+        <div class="field">
+          <label>Footer Note</label>
+          <input type="text" id="invFooterNote" placeholder="*Includes GST component. As per Section 31 of CGST Act." onchange="markDirty()"/>
+        </div>
+      </div>
+      
+      <!-- Signatory -->
+      <div style="background:var(--light);padding:16px;border-radius:10px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:12px">✍️ Authorized Signatory</h3>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+            <input type="checkbox" id="invShowSignatory" style="width:18px;height:18px;cursor:pointer" onchange="markDirty()"/>
+            <span>Show Authorized Signatory Section</span>
+          </label>
+        </div>
+        <div class="field">
+          <label>Signatory Name (optional)</label>
+          <input type="text" id="invSignatoryName" placeholder="Leave blank for no name" onchange="markDirty()"/>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Sticky save bar -->
+  <div class="save-bar" id="saveBar">
+    <span class="msg">⚠️ You have unsaved changes</span>
+    <button class="btn-green" id="saveBtn">💾 Save all settings</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const keyInput = $('key');
+const content = $('content');
+const msg = $('msg');
+const saveBar = $('saveBar');
+
+let SETTINGS = null;
+let DIRTY = false;
+
+const saved = localStorage.getItem('meatpe_admin_key');
+if (saved) keyInput.value = saved;
+
+$('loadBtn').addEventListener('click', loadSettings);
+keyInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadSettings(); });
+$('saveBtn').addEventListener('click', saveSettings);
+$('addCatBtn').addEventListener('click', () => { addCatRow({ key: '', label: '', icon: '🍽️' }); markDirty(); });
+$('addSocialBtn').addEventListener('click', () => { addSocialRow({ platform: '', handle: '', url: '', icon: '🔗' }); markDirty(); });
+
+if (saved) loadSettings();
+
+function markDirty() { DIRTY = true; saveBar.classList.add('show'); }
+
+async function loadSettings() {
+  msg.innerHTML = '';
+  const key = keyInput.value.trim();
+  if (!key) { msg.innerHTML = '<div class="err">Enter admin key.</div>'; return; }
+  localStorage.setItem('meatpe_admin_key', key);
+  try {
+    const res = await fetch(`/admin/settings?key=${encodeURIComponent(key)}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'failed');
+    SETTINGS = data.settings;
+    render();
+    content.style.display = 'block';
+    DIRTY = false;
+    saveBar.classList.remove('show');
+  } catch (e) {
+    msg.innerHTML = `<div class="err">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function render() {
+  // Branding
+  $('brandName').value = SETTINGS.branding.name || '';
+  $('brandLogo').value = SETTINGS.branding.logo || '';
+  $('brandTagline').value = SETTINGS.branding.tagline || '';
+  $('brandTopbar').value = SETTINGS.branding.topbar || '';
+
+  // Contact
+  $('contactPhone').value = SETTINGS.contact.phone || '';
+  $('contactPhoneDisplay').value = SETTINGS.contact.phoneDisplay || '';
+  $('contactEmail').value = SETTINGS.contact.email || '';
+  $('contactTiming').value = SETTINGS.contact.timing || '';
+  $('contactLocation').value = SETTINGS.contact.location || '';
+
+  // Categories
+  const catList = $('catList');
+  catList.innerHTML = '';
+  (SETTINGS.categories || []).forEach(c => addCatRow(c));
+
+  // Socials
+  const socialList = $('socialList');
+  socialList.innerHTML = '';
+  (SETTINGS.socials || []).forEach(s => addSocialRow(s));
+
+  // Pages
+  $('pageAbout').value = SETTINGS.pages.about || '';
+  $('pageSafety').value = SETTINGS.pages.safety || '';
+  $('pagePrivacy').value = SETTINGS.pages.privacy || '';
+  $('pageTerms').value = SETTINGS.pages.terms || '';
+  $('pageRefund').value = SETTINGS.pages.refund || '';
+  $('pageDelivery').value = SETTINGS.pages.delivery || '';
+  $('pageMembership').value = SETTINGS.pages.membership || '';
+  $('pageFaq').value = SETTINGS.pages.faq || '';
+  
+  // Trending Searches
+  const trending = SETTINGS.trendingSearches || [];
+  $('trendingSearches').value = trending.join('\n');
+  
+  // Cart & Checkout Settings
+  const cart = SETTINGS.cart || {};
+  const dc = cart.deliveryCharges || {};
+  $('cartFreeAbove').value = dc.freeAbove || 699;
+  $('cartLowThreshold').value = dc.belowThreshold || 399;
+  $('cartLowFee').value = dc.lowOrderFee || 29;
+  $('cartRegularFee').value = dc.regularOrderFee || 19;
+  $('cartShowTaxes').checked = cart.showTaxesBreakdown !== false;
+  $('cartGstPercent').value = cart.gstPercent || 5;
+  $('cartPackaging').value = cart.packagingCharge || 10;
+  $('cartEnableMembership').checked = cart.enableMembershipDiscount !== false;
+  $('cartMembershipPercent').value = cart.membershipDiscountPercent || 5;
+  $('cartEnableTip').checked = cart.enableTipDeliveryPartner !== false;
+  $('cartTipOptions').value = (cart.tipOptions || [10, 20, 30, 50]).join(', ');
+
+  // Checkout Settings
+  const checkout = SETTINGS.checkout || {};
+  renderDeliverySlots(checkout.deliverySlots || []);
+  renderPaymentMethods(checkout.paymentMethods || []);
+  $('checkoutEnableSavedAddr').checked = checkout.enableSavedAddresses !== false;
+  $('checkoutMaxAddresses').value = checkout.maxSavedAddresses || 5;
+  $('checkoutRequirePhone').checked = checkout.requirePhone !== false;
+  $('checkoutAllowGuest').checked = checkout.allowGuestCheckout === true;
+
+  // Payment Gateway Settings
+  const pg = SETTINGS.paymentGateway || {};
+  $('paymentProvider').value = pg.provider || 'razorpay';
+  $('paymentMode').value = pg.mode || 'test';
+  $('mockPaymentEnabled').checked = pg.mockPaymentEnabled === true;
+  
+  // Razorpay
+  $('razorpayKeyId').value = pg.razorpay?.keyId || '';
+  $('razorpayKeySecret').value = pg.razorpay?.keySecret || '';
+  $('razorpayWebhookSecret').value = pg.razorpay?.webhookSecret || '';
+  
+  // UPI
+  $('upiEnabled').checked = pg.upiOptions?.enabled !== false;
+  $('upiMerchantVpa').value = pg.upiOptions?.merchantVpa || '';
+  $('upiMerchantName').value = pg.upiOptions?.merchantName || '';
+  $('upiShowQrCode').checked = pg.upiOptions?.showQrCode !== false;
+  
+  // Cards
+  $('cardEnabled').checked = pg.cardOptions?.enabled !== false;
+  $('cardSaveOption').checked = pg.cardOptions?.saveCardOption === true;
+  
+  // Net Banking
+  $('netBankingEnabled').checked = pg.netBankingOptions?.enabled !== false;
+  renderBanks(pg.netBankingOptions?.banks || []);
+  
+  // Wallet
+  $('walletEnabled').checked = pg.walletOptions?.enabled !== false;
+  $('walletMinBalance').value = pg.walletOptions?.minWalletBalance || 10;
+  
+  // COD
+  $('codEnabled').checked = pg.codOptions?.enabled !== false;
+  $('codMinAmount').value = pg.codOptions?.minOrderAmount || 100;
+  $('codMaxAmount').value = pg.codOptions?.maxOrderAmount || 5000;
+  $('codExtraCharge').value = pg.codOptions?.extraCharge || 0;
+
+  // Order Tracking Settings
+  const ot = SETTINGS.orderTracking || {};
+  $('enableLiveTracking').checked = ot.enableLiveTracking !== false;
+  $('enableDeliveryBoyDetails').checked = ot.enableDeliveryBoyDetails !== false;
+  $('enableCallButton').checked = ot.enableCallButton !== false;
+  $('enableChatButton').checked = ot.enableChatButton !== false;
+  $('supportPhone').value = ot.supportPhone || '';
+  $('supportWhatsApp').value = ot.supportWhatsApp || '';
+  $('mapProvider').value = ot.mapProvider || 'placeholder';
+  $('googleMapsApiKey').value = ot.googleMapsApiKey || '';
+  $('mapboxToken').value = ot.mapboxToken || '';
+  $('defaultETA').value = ot.defaultETA || 30;
+  $('etaUpdateInterval').value = ot.etaUpdateInterval || 30;
+  renderDeliveryBoys(ot.deliveryBoys || []);
+
+  // Wallet & Rewards Settings
+  const wr = SETTINGS.walletRewards || {};
+  $('wrEnableWallet').checked = wr.enableWallet !== false;
+  $('wrMinTopup').value = wr.minTopup || 10;
+  $('wrMaxTopup').value = wr.maxTopup || 10000;
+  $('wrAutoApply').checked = wr.autoApplyWallet === true;
+  $('wrShowTopbar').checked = wr.showWalletInTopbar !== false;
+  $('wrEnableRewards').checked = wr.enableRewards !== false;
+  $('wrRewardThreshold').value = wr.rewardThreshold || 500;
+  $('wrRewardAmount').value = wr.rewardAmount || 30;
+  $('wrRewardExpiry').value = wr.rewardExpiry || 15;
+  $('wrRewardLabel').value = wr.rewardLabel || '';
+  $('wrEarnRuleText').value = wr.earnRuleText || '';
+  $('wrEnableCashback').checked = wr.enableCashback === true;
+  $('wrCashbackPercent').value = wr.cashbackPercent || 5;
+  $('wrCashbackMax').value = wr.cashbackMaxAmount || 100;
+  $('wrCashbackMinOrder').value = wr.cashbackMinOrder || 299;
+  $('wrCashbackRuleText').value = wr.cashbackRuleText || '';
+  $('wrEnableReferral').checked = wr.enableReferralBonus !== false;
+  $('wrReferralBonus').value = wr.referralBonus || 50;
+  $('wrRefereeBonus').value = wr.refereeBonus || 30;
+
+  // Invoice Settings
+  const inv = SETTINGS.invoice || {};
+  $('invCompanyName').value = inv.companyName || '';
+  $('invCompanyTagline').value = inv.companyTagline || '';
+  $('invSupplierAddress').value = inv.supplierAddress || '';
+  $('invSupplierCity').value = inv.supplierCity || '';
+  $('invSupplierState').value = inv.supplierState || '';
+  $('invSupplierPhone').value = inv.supplierPhone || '';
+  $('invSupplierEmail').value = inv.supplierEmail || '';
+  $('invGstin').value = inv.gstin || '';
+  $('invCin').value = inv.cin || '';
+  $('invFssaiNo').value = inv.fssaiNo || '';
+  $('invPanNo').value = inv.panNo || '';
+  $('invPrefix').value = inv.invoicePrefix || 'NOW';
+  $('invTerm1').value = inv.termsLine1 || '';
+  $('invTerm2').value = inv.termsLine2 || '';
+  $('invTerm3').value = inv.termsLine3 || '';
+  $('invFooterNote').value = inv.footerNote || '';
+  $('invShowSignatory').checked = inv.showAuthorizedSignatory !== false;
+  $('invSignatoryName').value = inv.signatoryName || '';
+
+  // Mark dirty on any input change
+  content.querySelectorAll('input, textarea, select').forEach(el => {
+    el.addEventListener('input', markDirty);
+  });
+}
+
+function addCatRow(cat) {
+  const list = $('catList');
+  const row = document.createElement('div');
+  row.className = 'cat-item';
+  row.innerHTML = `
+    <input class="icon-input" value="${escapeHtml(cat.icon || '🍽️')}" maxlength="4" title="Emoji icon" />
+    <input class="key-display" value="${escapeHtml(cat.key || '')}" placeholder="key (e.g. eggs)" title="Internal key (lowercase, no spaces)" />
+    <input class="label-input" value="${escapeHtml(cat.label || '')}" placeholder="Display name" />
+    <button class="remove-cat" title="Remove">×</button>
+  `;
+  row.querySelector('.remove-cat').addEventListener('click', () => { row.remove(); markDirty(); });
+  row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+  list.appendChild(row);
+}
+
+function addSocialRow(s) {
+  const list = $('socialList');
+  const row = document.createElement('div');
+  row.className = 'social-item';
+  row.innerHTML = `
+    <input value="${escapeHtml(s.icon || '🔗')}" maxlength="4" title="Icon emoji" style="text-align:center;font-size:18px" />
+    <input value="${escapeHtml(s.platform || '')}" placeholder="Platform (e.g. instagram)" />
+    <input value="${escapeHtml(s.handle || '')}" placeholder="Handle (e.g. @meatpe)" />
+    <input value="${escapeHtml(s.url || '')}" placeholder="Full URL" />
+    <button class="remove-social" title="Remove">×</button>
+  `;
+  row.querySelector('.remove-social').addEventListener('click', () => { row.remove(); markDirty(); });
+  row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+  list.appendChild(row);
+}
+
+function collectData() {
+  // Branding
+  const branding = {
+    name: $('brandName').value.trim(),
+    logo: $('brandLogo').value.trim(),
+    tagline: $('brandTagline').value.trim(),
+    topbar: $('brandTopbar').value.trim(),
+  };
+
+  // Contact
+  const contact = {
+    phone: $('contactPhone').value.trim(),
+    phoneDisplay: $('contactPhoneDisplay').value.trim(),
+    email: $('contactEmail').value.trim(),
+    timing: $('contactTiming').value.trim(),
+    location: $('contactLocation').value.trim(),
+  };
+
+  // Categories
+  const categories = [];
+  $('catList').querySelectorAll('.cat-item').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const icon = inputs[0].value.trim();
+    const key = inputs[1].value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+    const label = inputs[2].value.trim();
+    if (key && label) categories.push({ key, label, icon });
+  });
+
+  // Socials
+  const socials = [];
+  $('socialList').querySelectorAll('.social-item').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const icon = inputs[0].value.trim();
+    const platform = inputs[1].value.trim().toLowerCase();
+    const handle = inputs[2].value.trim();
+    const url = inputs[3].value.trim();
+    if (platform && url) socials.push({ icon, platform, handle, url });
+  });
+
+  // Pages
+  const pages = {
+    about: $('pageAbout').value.trim(),
+    safety: $('pageSafety').value.trim(),
+    privacy: $('pagePrivacy').value.trim(),
+    terms: $('pageTerms').value.trim(),
+    refund: $('pageRefund').value.trim(),
+    delivery: $('pageDelivery').value.trim(),
+    membership: $('pageMembership').value.trim(),
+    faq: $('pageFaq').value.trim(),
+  };
+  
+  // Trending Searches
+  const trendingSearchesText = $('trendingSearches').value.trim();
+  const trendingSearches = trendingSearchesText 
+    ? trendingSearchesText.split('\n').map(t => t.trim()).filter(t => t).slice(0, 10)
+    : [];
+  
+  // Cart & Checkout Settings
+  const tipOptionsText = $('cartTipOptions').value.trim();
+  const tipOptions = tipOptionsText 
+    ? tipOptionsText.split(',').map(t => parseInt(t.trim())).filter(n => !isNaN(n))
+    : [10, 20, 30, 50];
+  
+  const cart = {
+    enableMembershipDiscount: $('cartEnableMembership').checked,
+    membershipDiscountPercent: parseFloat($('cartMembershipPercent').value) || 5,
+    showTaxesBreakdown: $('cartShowTaxes').checked,
+    gstPercent: parseFloat($('cartGstPercent').value) || 0,
+    packagingCharge: parseFloat($('cartPackaging').value) || 0,
+    enableTipDeliveryPartner: $('cartEnableTip').checked,
+    tipOptions: tipOptions,
+    deliveryCharges: {
+      freeAbove: parseInt($('cartFreeAbove').value) || 699,
+      belowThreshold: parseInt($('cartLowThreshold').value) || 399,
+      lowOrderFee: parseInt($('cartLowFee').value) || 29,
+      regularOrderFee: parseInt($('cartRegularFee').value) || 19
+    }
+  };
+
+  // Checkout Settings
+  const deliverySlots = [];
+  $('deliverySlotsContainer').querySelectorAll('.field-row').forEach(row => {
+    const id = row.querySelector('.slot-id').value.trim();
+    const label = row.querySelector('.slot-label').value.trim();
+    const enabled = row.querySelector('.slot-enabled').checked;
+    if (id && label) {
+      deliverySlots.push({ id, label, enabled });
+    }
+  });
+
+  const paymentMethods = [];
+  $('paymentMethodsContainer').querySelectorAll('.field-row').forEach(row => {
+    const id = row.querySelector('.method-id').value.trim();
+    const label = row.querySelector('.method-label').value.trim();
+    const icon = row.querySelector('.method-icon').value.trim() || '💳';
+    const description = row.querySelector('.method-desc').value.trim();
+    const enabled = row.querySelector('.method-enabled').checked;
+    if (id && label) {
+      paymentMethods.push({ id, label, icon, description, enabled });
+    }
+  });
+
+  const checkout = {
+    deliverySlots,
+    paymentMethods,
+    enableSavedAddresses: $('checkoutEnableSavedAddr').checked,
+    maxSavedAddresses: parseInt($('checkoutMaxAddresses').value) || 5,
+    requirePhone: $('checkoutRequirePhone').checked,
+    allowGuestCheckout: $('checkoutAllowGuest').checked
+  };
+
+  // Payment Gateway Settings
+  const banks = [];
+  $('banksContainer').querySelectorAll('.field-row').forEach(row => {
+    const id = row.querySelector('.bank-id').value.trim();
+    const name = row.querySelector('.bank-name').value.trim();
+    const icon = row.querySelector('.bank-icon').value.trim() || '🏦';
+    if (id && name) {
+      banks.push({ id, name, icon });
+    }
+  });
+
+  const paymentGateway = {
+    provider: $('paymentProvider').value,
+    mode: $('paymentMode').value,
+    mockPaymentEnabled: $('mockPaymentEnabled').checked,
+    razorpay: {
+      keyId: $('razorpayKeyId').value.trim(),
+      keySecret: $('razorpayKeySecret').value.trim(),
+      webhookSecret: $('razorpayWebhookSecret').value.trim()
+    },
+    upiOptions: {
+      enabled: $('upiEnabled').checked,
+      merchantVpa: $('upiMerchantVpa').value.trim(),
+      merchantName: $('upiMerchantName').value.trim(),
+      showQrCode: $('upiShowQrCode').checked
+    },
+    cardOptions: {
+      enabled: $('cardEnabled').checked,
+      saveCardOption: $('cardSaveOption').checked
+    },
+    netBankingOptions: {
+      enabled: $('netBankingEnabled').checked,
+      banks: banks
+    },
+    walletOptions: {
+      enabled: $('walletEnabled').checked,
+      minWalletBalance: parseInt($('walletMinBalance').value) || 10
+    },
+    codOptions: {
+      enabled: $('codEnabled').checked,
+      minOrderAmount: parseInt($('codMinAmount').value) || 100,
+      maxOrderAmount: parseInt($('codMaxAmount').value) || 5000,
+      extraCharge: parseInt($('codExtraCharge').value) || 0
+    }
+  };
+
+  // Order Tracking Settings
+  const deliveryBoys = [];
+  $('deliveryBoysContainer').querySelectorAll('div[style*="background:var(--bg)"]').forEach(row => {
+    const id = row.querySelector('.db-id')?.value?.trim();
+    const name = row.querySelector('.db-name')?.value?.trim();
+    const phone = row.querySelector('.db-phone')?.value?.trim();
+    const photo = row.querySelector('.db-photo')?.value?.trim();
+    const rating = parseFloat(row.querySelector('.db-rating')?.value) || 5.0;
+    const totalDeliveries = parseInt(row.querySelector('.db-deliveries')?.value) || 0;
+    const vehicleType = row.querySelector('.db-vehicle-type')?.value?.trim();
+    const vehicleNumber = row.querySelector('.db-vehicle-number')?.value?.trim();
+    const status = row.querySelector('.db-status')?.value;
+    
+    if (id && name && phone) {
+      deliveryBoys.push({
+        id, name, phone, photo, rating, totalDeliveries,
+        vehicleNumber, vehicleType, status
+      });
+    }
+  });
+
+  const orderTracking = {
+    enableLiveTracking: $('enableLiveTracking').checked,
+    enableDeliveryBoyDetails: $('enableDeliveryBoyDetails').checked,
+    enableCallButton: $('enableCallButton').checked,
+    enableChatButton: $('enableChatButton').checked,
+    supportPhone: $('supportPhone').value.trim(),
+    supportWhatsApp: $('supportWhatsApp').value.trim(),
+    mapProvider: $('mapProvider').value,
+    googleMapsApiKey: $('googleMapsApiKey').value.trim(),
+    mapboxToken: $('mapboxToken').value.trim(),
+    defaultETA: parseInt($('defaultETA').value) || 30,
+    etaUpdateInterval: parseInt($('etaUpdateInterval').value) || 30,
+    deliveryBoys: deliveryBoys
+  };
+
+  // Wallet & Rewards Settings
+  const walletRewards = {
+    enableWallet: $('wrEnableWallet').checked,
+    minTopup: parseInt($('wrMinTopup').value) || 10,
+    maxTopup: parseInt($('wrMaxTopup').value) || 10000,
+    autoApplyWallet: $('wrAutoApply').checked,
+    showWalletInTopbar: $('wrShowTopbar').checked,
+    enableRewards: $('wrEnableRewards').checked,
+    rewardThreshold: parseInt($('wrRewardThreshold').value) || 500,
+    rewardAmount: parseInt($('wrRewardAmount').value) || 30,
+    rewardExpiry: parseInt($('wrRewardExpiry').value) || 15,
+    rewardLabel: $('wrRewardLabel').value.trim(),
+    earnRuleText: $('wrEarnRuleText').value.trim(),
+    enableCashback: $('wrEnableCashback').checked,
+    cashbackPercent: parseFloat($('wrCashbackPercent').value) || 5,
+    cashbackMaxAmount: parseInt($('wrCashbackMax').value) || 100,
+    cashbackMinOrder: parseInt($('wrCashbackMinOrder').value) || 299,
+    cashbackRuleText: $('wrCashbackRuleText').value.trim(),
+    enableReferralBonus: $('wrEnableReferral').checked,
+    referralBonus: parseInt($('wrReferralBonus').value) || 50,
+    refereeBonus: parseInt($('wrRefereeBonus').value) || 30
+  };
+
+  // Invoice Settings
+  const invoice = {
+    companyName: $('invCompanyName').value.trim(),
+    companyTagline: $('invCompanyTagline').value.trim(),
+    supplierAddress: $('invSupplierAddress').value.trim(),
+    supplierCity: $('invSupplierCity').value.trim(),
+    supplierState: $('invSupplierState').value.trim(),
+    supplierPhone: $('invSupplierPhone').value.trim(),
+    supplierEmail: $('invSupplierEmail').value.trim(),
+    gstin: $('invGstin').value.trim(),
+    cin: $('invCin').value.trim(),
+    fssaiNo: $('invFssaiNo').value.trim(),
+    panNo: $('invPanNo').value.trim(),
+    invoicePrefix: $('invPrefix').value.trim() || 'NOW',
+    termsLine1: $('invTerm1').value.trim(),
+    termsLine2: $('invTerm2').value.trim(),
+    termsLine3: $('invTerm3').value.trim(),
+    footerNote: $('invFooterNote').value.trim(),
+    showAuthorizedSignatory: $('invShowSignatory').checked,
+    signatoryName: $('invSignatoryName').value.trim()
+  };
+
+  return { branding, contact, categories, socials, pages, trendingSearches, cart, checkout, paymentGateway, orderTracking, walletRewards, invoice };
+}
+
+// ═══════════════════════════════════════════
+//  Delivery Slots Management
+// ═══════════════════════════════════════════
+function renderDeliverySlots(slots) {
+  const container = $('deliverySlotsContainer');
+  container.innerHTML = '';
+  
+  slots.forEach((slot, index) => {
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.style.cssText = 'background:var(--bg);padding:12px;border-radius:8px;margin-bottom:10px;border:1px solid var(--border)';
+    row.innerHTML = `
+      <div class="field" style="flex:2">
+        <label style="font-size:11px">Slot ID</label>
+        <input class="slot-id" value="${escapeHtml(slot.id)}" placeholder="asap"/>
+      </div>
+      <div class="field" style="flex:3">
+        <label style="font-size:11px">Label</label>
+        <input class="slot-label" value="${escapeHtml(slot.label)}" placeholder="ASAP (30-45 min)"/>
+      </div>
+      <div class="field" style="flex:1">
+        <label style="font-size:11px;display:flex;align-items:center;gap:6px">
+          <input type="checkbox" class="slot-enabled" ${slot.enabled ? 'checked' : ''} style="width:16px;height:16px"/>
+          <span>Enabled</span>
+        </label>
+      </div>
+      <button type="button" onclick="removeDeliverySlot(this)" style="padding:8px 12px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;align-self:flex-end">
+        🗑️
+      </button>
+    `;
+    
+    row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+    container.appendChild(row);
+  });
+}
+
+function addDeliverySlot() {
+  const container = $('deliverySlotsContainer');
+  
+  const row = document.createElement('div');
+  row.className = 'field-row';
+  row.style.cssText = 'background:var(--bg);padding:12px;border-radius:8px;margin-bottom:10px;border:1px solid var(--border)';
+  row.innerHTML = `
+    <div class="field" style="flex:2">
+      <label style="font-size:11px">Slot ID</label>
+      <input class="slot-id" value="" placeholder="evening"/>
+    </div>
+    <div class="field" style="flex:3">
+      <label style="font-size:11px">Label</label>
+      <input class="slot-label" value="" placeholder="Evening (4-8 PM)"/>
+    </div>
+    <div class="field" style="flex:1">
+      <label style="font-size:11px;display:flex;align-items:center;gap:6px">
+        <input type="checkbox" class="slot-enabled" checked style="width:16px;height:16px"/>
+        <span>Enabled</span>
+      </label>
+    </div>
+    <button type="button" onclick="removeDeliverySlot(this)" style="padding:8px 12px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;align-self:flex-end">
+      🗑️
+    </button>
+  `;
+  
+  row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+  container.appendChild(row);
+  markDirty();
+}
+
+function removeDeliverySlot(btn) {
+  btn.closest('.field-row').remove();
+  markDirty();
+}
+
+// ═══════════════════════════════════════════
+//  Payment Methods Management
+// ═══════════════════════════════════════════
+function renderPaymentMethods(methods) {
+  const container = $('paymentMethodsContainer');
+  container.innerHTML = '';
+  
+  methods.forEach((method, index) => {
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.style.cssText = 'background:var(--bg);padding:12px;border-radius:8px;margin-bottom:10px;border:1px solid var(--border)';
+    row.innerHTML = `
+      <div class="field" style="flex:1">
+        <label style="font-size:11px">ID</label>
+        <input class="method-id" value="${escapeHtml(method.id)}" placeholder="cod"/>
+      </div>
+      <div class="field" style="flex:2">
+        <label style="font-size:11px">Label</label>
+        <input class="method-label" value="${escapeHtml(method.label)}" placeholder="Cash on Delivery"/>
+      </div>
+      <div class="field" style="flex:1">
+        <label style="font-size:11px">Icon</label>
+        <input class="method-icon" value="${escapeHtml(method.icon)}" placeholder="💵" maxlength="4" style="text-align:center;font-size:20px"/>
+      </div>
+      <div class="field" style="flex:2">
+        <label style="font-size:11px">Description</label>
+        <input class="method-desc" value="${escapeHtml(method.description)}" placeholder="Pay when order arrives"/>
+      </div>
+      <div class="field" style="flex:1">
+        <label style="font-size:11px;display:flex;align-items:center;gap:6px">
+          <input type="checkbox" class="method-enabled" ${method.enabled ? 'checked' : ''} style="width:16px;height:16px"/>
+          <span>Enabled</span>
+        </label>
+      </div>
+      <button type="button" onclick="removePaymentMethod(this)" style="padding:8px 12px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;align-self:flex-end">
+        🗑️
+      </button>
+    `;
+    
+    row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+    container.appendChild(row);
+  });
+}
+
+function addPaymentMethod() {
+  const container = $('paymentMethodsContainer');
+  
+  const row = document.createElement('div');
+  row.className = 'field-row';
+  row.style.cssText = 'background:var(--bg);padding:12px;border-radius:8px;margin-bottom:10px;border:1px solid var(--border)';
+  row.innerHTML = `
+    <div class="field" style="flex:1">
+      <label style="font-size:11px">ID</label>
+      <input class="method-id" value="" placeholder="wallet"/>
+    </div>
+    <div class="field" style="flex:2">
+      <label style="font-size:11px">Label</label>
+      <input class="method-label" value="" placeholder="Wallet Payment"/>
+    </div>
+    <div class="field" style="flex:1">
+      <label style="font-size:11px">Icon</label>
+      <input class="method-icon" value="💰" placeholder="💰" maxlength="4" style="text-align:center;font-size:20px"/>
+    </div>
+    <div class="field" style="flex:2">
+      <label style="font-size:11px">Description</label>
+      <input class="method-desc" value="" placeholder="Pay via wallet"/>
+    </div>
+    <div class="field" style="flex:1">
+      <label style="font-size:11px;display:flex;align-items:center;gap:6px">
+        <input type="checkbox" class="method-enabled" checked style="width:16px;height:16px"/>
+        <span>Enabled</span>
+      </label>
+    </div>
+    <button type="button" onclick="removePaymentMethod(this)" style="padding:8px 12px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;align-self:flex-end">
+      🗑️
+    </button>
+  `;
+  
+  row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+  container.appendChild(row);
+  markDirty();
+}
+
+function removePaymentMethod(btn) {
+  btn.closest('.field-row').remove();
+  markDirty();
+}
+
+// ═══════════════════════════════════════════
+//  Banks Management
+// ═══════════════════════════════════════════
+function renderBanks(banks) {
+  const container = $('banksContainer');
+  container.innerHTML = '';
+  
+  banks.forEach((bank, index) => {
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.style.cssText = 'background:var(--bg);padding:12px;border-radius:8px;margin-bottom:10px;border:1px solid var(--border)';
+    row.innerHTML = `
+      <div class="field" style="flex:1">
+        <label style="font-size:11px">Bank ID</label>
+        <input class="bank-id" value="${escapeHtml(bank.id)}" placeholder="sbi"/>
+      </div>
+      <div class="field" style="flex:2">
+        <label style="font-size:11px">Bank Name</label>
+        <input class="bank-name" value="${escapeHtml(bank.name)}" placeholder="State Bank of India"/>
+      </div>
+      <div class="field" style="flex:1">
+        <label style="font-size:11px">Icon</label>
+        <input class="bank-icon" value="${escapeHtml(bank.icon || '🏦')}" placeholder="🏦" maxlength="4"/>
+      </div>
+      <button type="button" onclick="removeBank(this)" style="padding:8px 12px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;align-self:flex-end">
+        🗑️
+      </button>
+    `;
+    
+    row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+    container.appendChild(row);
+  });
+}
+
+function addBank() {
+  const container = $('banksContainer');
+  
+  const row = document.createElement('div');
+  row.className = 'field-row';
+  row.style.cssText = 'background:var(--bg);padding:12px;border-radius:8px;margin-bottom:10px;border:1px solid var(--border)';
+  row.innerHTML = `
+    <div class="field" style="flex:1">
+      <label style="font-size:11px">Bank ID</label>
+      <input class="bank-id" value="" placeholder="axis"/>
+    </div>
+    <div class="field" style="flex:2">
+      <label style="font-size:11px">Bank Name</label>
+      <input class="bank-name" value="" placeholder="Axis Bank"/>
+    </div>
+    <div class="field" style="flex:1">
+      <label style="font-size:11px">Icon</label>
+      <input class="bank-icon" value="🏦" placeholder="🏦" maxlength="4"/>
+    </div>
+    <button type="button" onclick="removeBank(this)" style="padding:8px 12px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;align-self:flex-end">
+      🗑️
+    </button>
+  `;
+  
+  row.querySelectorAll('input').forEach(i => i.addEventListener('input', markDirty));
+  container.appendChild(row);
+  markDirty();
+}
+
+function removeBank(btn) {
+  btn.closest('.field-row').remove();
+  markDirty();
+}
+
+// ═══════════════════════════════════════════
+//  Delivery Boys Management
+// ═══════════════════════════════════════════
+function renderDeliveryBoys(boys) {
+  const container = $('deliveryBoysContainer');
+  container.innerHTML = '';
+  
+  boys.forEach((boy, index) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'background:var(--bg);padding:14px;border-radius:8px;margin-bottom:12px;border:1px solid var(--border)';
+    
+    row.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="field">
+          <label style="font-size:11px">ID</label>
+          <input class="db-id" value="${escapeHtml(boy.id)}" placeholder="DB001"/>
+        </div>
+        <div class="field">
+          <label style="font-size:11px">Name</label>
+          <input class="db-name" value="${escapeHtml(boy.name)}" placeholder="Raj Kumar"/>
+        </div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="field">
+          <label style="font-size:11px">Phone</label>
+          <input class="db-phone" value="${escapeHtml(boy.phone)}" placeholder="+919876543210"/>
+        </div>
+        <div class="field">
+          <label style="font-size:11px">Photo URL</label>
+          <input class="db-photo" value="${escapeHtml(boy.photo || '')}" placeholder="https://..."/>
+        </div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="field">
+          <label style="font-size:11px">Rating</label>
+          <input class="db-rating" type="number" step="0.1" min="0" max="5" value="${boy.rating || 5}" placeholder="4.8"/>
+        </div>
+        <div class="field">
+          <label style="font-size:11px">Total Deliveries</label>
+          <input class="db-deliveries" type="number" min="0" value="${boy.totalDeliveries || 0}" placeholder="450"/>
+        </div>
+        <div class="field">
+          <label style="font-size:11px">Status</label>
+          <select class="db-status">
+            <option value="available" ${boy.status === 'available' ? 'selected' : ''}>Available</option>
+            <option value="busy" ${boy.status === 'busy' ? 'selected' : ''}>Busy</option>
+            <option value="offline" ${boy.status === 'offline' ? 'selected' : ''}>Offline</option>
+          </select>
+        </div>
+      </div>
+      
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field">
+          <label style="font-size:11px">Vehicle Type</label>
+          <input class="db-vehicle-type" value="${escapeHtml(boy.vehicleType || 'Bike')}" placeholder="Bike"/>
+        </div>
+        <div class="field">
+          <label style="font-size:11px">Vehicle Number</label>
+          <input class="db-vehicle-number" value="${escapeHtml(boy.vehicleNumber || '')}" placeholder="UP 16 AB 1234"/>
+        </div>
+      </div>
+      
+      <button type="button" onclick="removeDeliveryBoy(this)" 
+        style="margin-top:10px;padding:8px 12px;background:var(--danger);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;width:100%">
+        🗑️ Remove
+      </button>
+    `;
+    
+    row.querySelectorAll('input, select').forEach(i => i.addEventListener('input', markDirty));
+    container.appendChild(row);
+  });
+}
+
+function addDeliveryBoy() {
+  const settings = SETTINGS || {};
+  const boys = settings.orderTracking?.deliveryBoys || [];
+  
+  boys.push({
+    id: 'DB' + String(Date.now()).slice(-3),
+    name: '',
+    phone: '',
+    photo: '',
+    rating: 5.0,
+    totalDeliveries: 0,
+    vehicleNumber: '',
+    vehicleType: 'Bike',
+    status: 'available'
+  });
+  
+  renderDeliveryBoys(boys);
+  markDirty();
+}
+
+function removeDeliveryBoy(btn) {
+  btn.closest('div[style*="background:var(--bg)"]').remove();
+  markDirty();
+}
+
+async function saveSettings() {
+  const key = keyInput.value.trim();
+  const payload = collectData();
+  $('saveBtn').disabled = true;
+  $('saveBtn').textContent = 'Saving...';
+  try {
+    const res = await fetch(`/admin/settings?key=${encodeURIComponent(key)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'save failed');
+    SETTINGS = data.settings;
+    DIRTY = false;
+    saveBar.classList.remove('show');
+    toast('✅ Settings saved! Refresh website to see changes.', 'success');
+  } catch (e) {
+    toast('❌ ' + (e.message || 'Save failed'), 'error');
+  } finally {
+    $('saveBtn').disabled = false;
+    $('saveBtn').textContent = '💾 Save all settings';
+  }
+}
+
+// Warn before leaving with unsaved changes
+window.addEventListener('beforeunload', (e) => {
+  if (DIRTY) { e.preventDefault(); e.returnValue = ''; }
+});
+
+let toastTimer;
+function toast(text, type = '') {
+  const el = $('toast');
+  el.textContent = text;
+  el.className = `toast show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>
+
