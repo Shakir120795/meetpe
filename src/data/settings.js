@@ -202,12 +202,12 @@ const defaults = {
     // Reward System
     enableRewards: true,
     rewardThreshold: 500, // Min order amount to earn reward
-    rewardAmount: 30, // Reward amount earned per qualifying order
+    rewardAmount: 10, // Reward amount earned per qualifying order
     rewardExpiry: 15, // Days until reward expires
     rewardLabel: 'Cashback Reward',
     
     // Cashback System
-    enableCashback: true,
+    enableCashback: false,
     cashbackPercent: 5, // Cashback percentage on orders
     cashbackMaxAmount: 100, // Max cashback per order
     cashbackMinOrder: 299, // Min order for cashback
@@ -216,14 +216,14 @@ const defaults = {
     
     // Referral Bonus
     enableReferralBonus: true,
-    referralBonus: 50, // Bonus for referrer
-    refereeBonus: 30, // Bonus for new user
+    referralBonus: 20, // Bonus for referrer
+    refereeBonus: 20, // Bonus for new user
     
     // Display
     showWalletInTopbar: true,
     showRewardsSection: true,
-    showCashbackBanner: true,
-    earnRuleText: 'Earn ₹30 on every order above ₹500',
+    showCashbackBanner: false,
+    earnRuleText: 'Earn ₹10 on every order above ₹500',
     cashbackRuleText: '5% cashback on all orders (max ₹100)'
   },
   // NEW: Invoice Settings (admin-editable)

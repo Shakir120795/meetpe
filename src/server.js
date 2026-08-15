@@ -316,8 +316,10 @@ app.post('/api/order', (req, res) => {
 
     let earnedReward = 0;
     if (enableRewards && subtotal >= rewardThreshold) {
-      // Credit reward directly to wallet (instead of separate rewards table)
+      // Credit reward to wallet_balance
       db.prepare('UPDATE customers SET wallet_balance = wallet_balance + ? WHERE phone = ?').run(rewardAmt, webPhone);
+      // Also insert into rewards table so frontend "Reward Points" shows correctly
+      db.prepare(`INSERT INTO rewards (phone, amount, expires_at, used) VALUES (?, ?, datetime('now', '+${rewardExpiry} days'), 0)`).run(webPhone, rewardAmt);
       earnedReward = rewardAmt;
     }
     
@@ -329,6 +331,8 @@ app.post('/api/order', (req, res) => {
         // Credit cashback to wallet
         db.prepare('UPDATE customers SET wallet_balance = wallet_balance + ? WHERE phone = ?')
           .run(cashbackEarned, webPhone);
+        // Also log cashback in rewards table
+        db.prepare(`INSERT INTO rewards (phone, amount, expires_at, used) VALUES (?, ?, datetime('now', '+30 days'), 0)`).run(webPhone, cashbackEarned);
       }
     }
 
@@ -1407,15 +1411,15 @@ app.post('/api/auth/verify-otp', async (req, res) => {
             VALUES (?, '', 20, ?, ?)
           `).run(waPhone, referredBy, userReferralCode);
           
-          // Give ₹100 bonus to referrer
+          // Give ₹20 bonus to referrer (same as referee)
           db.prepare(`
             UPDATE customers 
-            SET wallet_balance = wallet_balance + 100 
+            SET wallet_balance = wallet_balance + 20 
             WHERE phone = ?
           `).run(referredBy);
           
           referralBonus = '₹20';
-          console.log(`🎁 Referral: ${cleanPhone} used code ${referralCode}, got ₹20. Referrer got ₹100`);
+          console.log(`🎁 Referral: ${cleanPhone} used code ${referralCode}, got ₹20. Referrer got ₹20`);
         }
       }
       
@@ -3407,10 +3411,33 @@ app.post('/api/wallet/topup/verify', (req, res) => {
       return res.status(400).json({ ok: false, error: 'Payment verification failed' });
     }
 
+    // ✅ Idempotency check - same payment_id se dobara credit nahi hoga
+    try { db.exec(`CREATE TABLE IF NOT EXISTS wallet_transactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone TEXT NOT NULL,
+      payment_id TEXT UNIQUE,
+      amount INTEGER NOT NULL,
+      type TEXT DEFAULT 'topup',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`); } catch(e) {}
+
+    // Check if already processed
+    const existing = db.prepare('SELECT id FROM wallet_transactions WHERE payment_id = ?').get(razorpay_payment_id);
+    if (existing) {
+      // Already processed - return current balance without crediting again
+      const current = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(`web:+91${cleanPhone}`);
+      console.warn(`⚠️ Duplicate wallet topup attempt: ${razorpay_payment_id}`);
+      return res.json({ ok: true, wallet: current ? current.wallet_balance : 0 });
+    }
+
     // Credit wallet
     const amt = parseInt(amount, 10);
     const waPhone = `web:+91${cleanPhone}`;
     db.prepare('UPDATE customers SET wallet_balance = wallet_balance + ? WHERE phone = ?').run(amt, waPhone);
+    
+    // Record transaction
+    db.prepare('INSERT INTO wallet_transactions (phone, payment_id, amount, type) VALUES (?, ?, ?, ?)').run(waPhone, razorpay_payment_id, amt, 'topup');
+    
     const updated = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(waPhone);
 
     console.log(`💳 Wallet topped up: +₹${amt} for ${cleanPhone} (${razorpay_payment_id})`);

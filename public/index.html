@@ -4909,7 +4909,12 @@ async function submitOrder(e) {
   const items = Object.entries(CART).map(([code,qty]) => ({ code, qty }));
   const sub = cartSubtotal();
   const couponDisc = COUPON ? COUPON.discount : 0;
-  const walletAmt = (WALLET_APPLIED && USER) ? Math.min(USER.wallet || 0, Math.max(0, sub - couponDisc)) : 0;
+  // Fix: include membershipDiscount in walletAmt calculation (same as renderPrices)
+  const cartSettings2 = (APP_SETTINGS && APP_SETTINGS.cart) || {};
+  const membershipPercent2 = cartSettings2.membershipDiscountPercent || 5;
+  const membershipDiscount2 = (USER && USER.is_plus && cartSettings2.enableMembershipDiscount !== false)
+    ? Math.round((sub * membershipPercent2) / 100) : 0;
+  const walletAmt = (WALLET_APPLIED && USER) ? Math.min(USER.wallet || 0, Math.max(0, sub - couponDisc - membershipDiscount2)) : 0;
 
   try {
     const res = await fetch('/api/order', {
@@ -6463,7 +6468,7 @@ function getWalletEarnRules() {
   rules += '• Rewards valid for ' + (wr.rewardExpiry || 15) + ' days';
   
   if (wr.enableReferralBonus) {
-    rules += '<br/>• Refer a friend → earn ₹' + (wr.referralBonus || 50);
+    rules += '<br/>• Refer a friend → earn ₹' + (wr.referralBonus || 20);
   }
   
   return rules;
@@ -7297,7 +7302,7 @@ function loadReferralScreen() {
   
   // Get settings from admin
   const wr = APP_SETTINGS?.walletRewards || {};
-  const referrerBonus = wr.referralBonus || 50;
+  const referrerBonus = wr.referralBonus || 20;
   const refereeBonus = wr.refereeBonus || 30;
   
   const referralCode = generateReferralCode();
@@ -8128,8 +8133,8 @@ async function loadOffersScreen() {
           <div style="display:flex;align-items:center;gap:12px">
             <div style="font-size:32px">🤝</div>
             <div style="flex:1">
-              <div style="font-size:14px;font-weight:700">Refer & Earn ₹${wr.referralBonus || 50}</div>
-              <div style="font-size:12px;color:var(--muted)">Your friend gets ₹${wr.refereeBonus || 30} too!</div>
+              <div style="font-size:14px;font-weight:700">Refer & Earn ₹${wr.referralBonus || 20}</div>
+              <div style="font-size:12px;color:var(--muted)">Your friend gets ₹${wr.refereeBonus || 20} too!</div>
             </div>
             <span style="color:var(--accent);font-size:13px;font-weight:600">Share →</span>
           </div>
