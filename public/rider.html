@@ -1717,10 +1717,10 @@ toggleOnlineStatus = async function() {
 init();
 if (rider && isOnline) startRiderAutoRefresh();
 </script>
-</body>
-</html>
 
 
+
+<script>
 // ============ DELIVERY LOCATION MAP FOR RIDER ============
 function showDeliveryMap(orderId) {
     if (!rider) return;
@@ -2003,3 +2003,6 @@ updateOrderStatus = async function(orderId, status) {
 if (rider) {
     initLocationTracking();
 }
+</script>
+</body>
+</html>
