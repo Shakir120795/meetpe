@@ -6,6 +6,9 @@
     <title>MeetPe Rider</title>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0D0D0D">
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root {
             --bg: #0D0D0D;
@@ -1227,7 +1230,7 @@ function renderOrderCards(orders, containerId, type) {
                 <!-- Contact & Navigate -->
                 <div style="display:flex;gap:8px;margin-top:12px;margin-bottom:8px">
                     <a href="tel:+91${custPhone}" style="flex:1;padding:10px;background:var(--success);color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px">📞 Call</a>
-                    <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address || '')}" target="_blank" style="flex:1;padding:10px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px">🗺️ Navigate</a>
+                    <button onclick="showDeliveryMap('${order.id}')" style="flex:1;padding:10px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px">📍 Location</button>
                     <a href="https://wa.me/91${custPhone}" target="_blank" style="flex:1;padding:10px;background:#25d366;color:white;border:none;border-radius:8px;font-size:12px;font-weight:600;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px">💬 Chat</a>
                 </div>
                 ${nextStatus ? `
@@ -1716,3 +1719,287 @@ if (rider && isOnline) startRiderAutoRefresh();
 </script>
 </body>
 </html>
+
+
+// ============ DELIVERY LOCATION MAP FOR RIDER ============
+function showDeliveryMap(orderId) {
+    if (!rider) return;
+
+    // Create full-screen map overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'deliveryMapOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column';
+
+    overlay.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;background:var(--card);border-bottom:1px solid var(--border)">
+            <button onclick="closeDeliveryMap()" style="background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px">←</button>
+            <div>
+                <div style="font-size:16px;font-weight:700">📍 Delivery Location</div>
+                <div style="font-size:12px;color:var(--muted)">Order #${orderId}</div>
+            </div>
+            <div id="delivMapStatus" style="margin-left:auto;font-size:12px;color:var(--muted)">Loading...</div>
+        </div>
+        <div id="deliveryMapEl" style="flex:1;width:100%"></div>
+        <div style="padding:16px;background:var(--card);border-top:1px solid var(--border)">
+            <div id="deliveryAddrText" style="font-size:13px;color:var(--muted);margin-bottom:12px;text-align:center">Fetching address...</div>
+            <div style="display:flex;gap:10px">
+                <button id="navigateBtn" onclick="openNavigation()" style="flex:1;padding:12px;background:#2563eb;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">🗺️ Open in Maps</button>
+                <button onclick="closeDeliveryMap()" style="padding:12px 20px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:10px;font-size:14px;cursor:pointer">Close</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Init Leaflet map
+    setTimeout(() => {
+        const map = L.map('deliveryMapEl', {
+            zoomControl: true,
+            attributionControl: false
+        }).setView([27.1767, 78.0081], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+        window._deliveryMap = { map, orderId, delivLat: null, delivLng: null };
+
+        // Get delivery location from API
+        fetch('/api/rider/order/' + orderId + '/delivery-location?riderId=' + rider.id)
+            .then(r => r.json())
+            .then(data => {
+                const statusEl = document.getElementById('delivMapStatus');
+                const addrEl = document.getElementById('deliveryAddrText');
+
+                if (!data.ok || !data.delivery) {
+                    if (statusEl) statusEl.textContent = '❌ No location';
+                    if (addrEl) addrEl.textContent = data.delivery?.address || 'Address not available';
+                    return;
+                }
+
+                const delivery = data.delivery;
+                if (addrEl) addrEl.textContent = '📍 ' + (delivery.label || delivery.address || 'Delivery Address');
+
+                if (delivery.lat && delivery.lng) {
+                    window._deliveryMap.delivLat = delivery.lat;
+                    window._deliveryMap.delivLng = delivery.lng;
+
+                    // Delivery marker
+                    const delIcon = L.divIcon({
+                        html: '<div style="background:#E8450A;color:#fff;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.4)">📍</div>',
+                        className: '', iconSize: [44, 44], iconAnchor: [22, 22]
+                    });
+                    L.marker([delivery.lat, delivery.lng], { icon: delIcon })
+                        .addTo(map)
+                        .bindPopup('<b>' + (delivery.label || 'Delivery Address') + '</b><br>' + (delivery.address || ''))
+                        .openPopup();
+
+                    map.setView([delivery.lat, delivery.lng], 16);
+                    if (statusEl) statusEl.textContent = '✅ Location found';
+
+                    // Also show rider's current location
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(pos => {
+                            const riderIcon = L.divIcon({
+                                html: '<div style="background:#16A34A;color:#fff;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)">🛵</div>',
+                                className: '', iconSize: [40, 40], iconAnchor: [20, 20]
+                            });
+                            L.marker([pos.coords.latitude, pos.coords.longitude], { icon: riderIcon })
+                                .addTo(map).bindPopup('<b>🛵 You (Rider)</b>');
+
+                            // Draw route line
+                            L.polyline([
+                                [pos.coords.latitude, pos.coords.longitude],
+                                [delivery.lat, delivery.lng]
+                            ], { color: '#E8450A', weight: 3, dashArray: '10,10' }).addTo(map);
+
+                            // Fit both
+                            map.fitBounds(L.latLngBounds(
+                                [pos.coords.latitude, pos.coords.longitude],
+                                [delivery.lat, delivery.lng]
+                            ), { padding: [40, 40] });
+                        }, () => {}, { enableHighAccuracy: true });
+                    }
+                } else {
+                    if (statusEl) statusEl.textContent = '⚠️ No coordinates';
+                    if (addrEl) addrEl.textContent = '📍 ' + (delivery.address || 'Address saved but no map coordinates');
+                }
+            })
+            .catch(err => {
+                console.error('Delivery map error:', err);
+                const statusEl = document.getElementById('delivMapStatus');
+                if (statusEl) statusEl.textContent = '❌ Error';
+            });
+    }, 100);
+}
+
+function closeDeliveryMap() {
+    const overlay = document.getElementById('deliveryMapOverlay');
+    if (overlay) {
+        if (window._deliveryMap) {
+            try { window._deliveryMap.map.remove(); } catch(e) {}
+            window._deliveryMap = null;
+        }
+        overlay.remove();
+    }
+}
+
+function openNavigation() {
+    if (!window._deliveryMap) return;
+    const { delivLat, delivLng } = window._deliveryMap;
+    if (delivLat && delivLng) {
+        window.open('https://www.google.com/maps/dir/?api=1&destination=' + delivLat + ',' + delivLng, '_blank');
+    }
+}
+
+// ============ GPS LOCATION TRACKING ============
+let locationWatchId = null;
+let currentActiveOrder = null;
+let locationUpdateInterval = null;
+
+// Start GPS tracking when order is out for delivery
+function startLocationTracking(orderId) {
+    if (!navigator.geolocation) {
+        console.error('Geolocation not supported');
+        return;
+    }
+    
+    currentActiveOrder = orderId;
+    console.log('📍 Starting location tracking for order:', orderId);
+    
+    // Request high accuracy location
+    const options = {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+    };
+    
+    // Watch position continuously
+    locationWatchId = navigator.geolocation.watchPosition(
+        (position) => {
+            sendLocationUpdate(orderId, position);
+        },
+        (error) => {
+            console.error('GPS error:', error);
+            // Retry with lower accuracy if high accuracy fails
+            if (error.code === error.TIMEOUT) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => sendLocationUpdate(orderId, pos),
+                    () => {},
+                    { enableHighAccuracy: false, timeout: 5000 }
+                );
+            }
+        },
+        options
+    );
+    
+    // Also set interval for backup updates (every 5 seconds)
+    locationUpdateInterval = setInterval(() => {
+        navigator.geolocation.getCurrentPosition(
+            (position) => sendLocationUpdate(orderId, position),
+            () => {},
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+    }, 5000);
+}
+
+// Stop GPS tracking
+function stopLocationTracking() {
+    console.log('📍 Stopping location tracking');
+    
+    if (locationWatchId !== null) {
+        navigator.geolocation.clearWatch(locationWatchId);
+        locationWatchId = null;
+    }
+    
+    if (locationUpdateInterval) {
+        clearInterval(locationUpdateInterval);
+        locationUpdateInterval = null;
+    }
+    
+    currentActiveOrder = null;
+}
+
+// Send location to backend
+async function sendLocationUpdate(orderId, position) {
+    if (!rider) return;
+    
+    const locationData = {
+        orderId: orderId,
+        riderId: rider.id,
+        riderName: rider.name || 'Rider',
+        riderPhone: rider.phone || '',
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        heading: position.coords.heading || 0,
+        speed: position.coords.speed || 0
+    };
+    
+    try {
+        await fetch('/api/rider/location/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(locationData)
+        });
+        console.log('📍 Location updated:', locationData.latitude.toFixed(6), locationData.longitude.toFixed(6));
+    } catch (err) {
+        console.error('Failed to update location:', err);
+    }
+}
+
+// Check active orders and start/stop tracking accordingly
+function checkAndManageTracking() {
+    if (!rider) return;
+    
+    fetch(`/api/rider/orders/${rider.id}?status=active`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.ok && data.orders && data.orders.length > 0) {
+                // Find out_for_delivery orders
+                const activeDelivery = data.orders.find(o => o.status === 'out_for_delivery');
+                
+                if (activeDelivery && currentActiveOrder !== activeDelivery.id) {
+                    // Start tracking this order
+                    stopLocationTracking(); // Stop previous if any
+                    startLocationTracking(activeDelivery.id);
+                } else if (!activeDelivery && currentActiveOrder) {
+                    // No active delivery, stop tracking
+                    stopLocationTracking();
+                }
+            } else if (currentActiveOrder) {
+                // No active orders, stop tracking
+                stopLocationTracking();
+            }
+        })
+        .catch(err => console.error('Error checking orders:', err));
+}
+
+// Initialize tracking manager
+function initLocationTracking() {
+    // Check every 10 seconds for active orders
+    setInterval(checkAndManageTracking, 10000);
+    
+    // Check immediately
+    checkAndManageTracking();
+}
+
+// Modify updateOrderStatus to start tracking when status becomes out_for_delivery
+const originalUpdateOrderStatus = updateOrderStatus;
+updateOrderStatus = async function(orderId, status) {
+    await originalUpdateOrderStatus(orderId, status);
+    
+    // If status is now out_for_delivery, start tracking
+    if (status === 'out_for_delivery') {
+        setTimeout(() => {
+            stopLocationTracking(); // Stop any previous
+            startLocationTracking(orderId);
+        }, 1000);
+    } else if (status === 'delivered') {
+        // Order delivered, stop tracking
+        stopLocationTracking();
+    }
+};
+
+// Initialize when rider logs in
+if (rider) {
+    initLocationTracking();
+}

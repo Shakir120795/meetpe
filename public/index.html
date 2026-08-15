@@ -68,35 +68,34 @@ input,textarea{font:inherit;color:inherit}
   box-shadow:0 2px 8px rgba(239,68,68,.5);border:2px solid var(--card);z-index:200}
 
 /* ── Login screen ── */
-#screen-login{background:linear-gradient(160deg,#1a0500 0%,#0D0D0D 60%,#000 100%)}
+#screen-login{background:#FFFFFF}
 .login-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;
   justify-content:center;padding:32px 24px;gap:24px}
 .login-logo{width:200px;height:auto;border-radius:16px;object-fit:contain;
-  background:rgba(255,255,255,0.95);padding:12px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+  background:#FFFFFF;padding:12px;box-shadow:0 4px 20px rgba(0,0,0,.1)}
 .login-brand{font-size:36px;font-weight:900;letter-spacing:-1px;
   background:linear-gradient(135deg,#E8450A,#ff9a3c);-webkit-background-clip:text;
   -webkit-text-fill-color:transparent}
-.login-tagline{color:rgba(255,255,255,.65);font-size:15px;text-align:center;line-height:1.6;
+.login-tagline{color:#666666;font-size:15px;text-align:center;line-height:1.6;
   font-weight:600;letter-spacing:.5px}
 .login-card{width:100%;max-width:360px;
-  background:rgba(28,28,30,.85);
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  background:#FFFFFF;
   border-radius:24px;padding:28px 24px;
-  border:1px solid rgba(255,255,255,.08);
-  box-shadow:0 24px 64px rgba(0,0,0,.6),0 0 0 1px rgba(232,69,10,.15)}
-.login-card h2{font-size:20px;font-weight:700;margin-bottom:6px}
-.login-card p{color:var(--muted);font-size:13px;margin-bottom:20px}
-.phone-row{display:flex;border:1.5px solid var(--border);border-radius:12px;overflow:hidden;
-  background:var(--bg);transition:border-color .2s}
+  border:1px solid #e0e0e0;
+  box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.login-card h2{font-size:20px;font-weight:700;margin-bottom:6px;color:#1a1a1a}
+.login-card p{color:#666666;font-size:13px;margin-bottom:20px}
+.phone-row{display:flex;border:1.5px solid #e0e0e0;border-radius:12px;overflow:hidden;
+  background:#FFFFFF;transition:border-color .2s}
 .phone-row:focus-within{border-color:var(--accent)}
-.phone-prefix{padding:0 12px;display:flex;align-items:center;color:var(--muted);
-  font-size:15px;font-weight:600;border-right:1.5px solid var(--border);white-space:nowrap}
-.phone-input{flex:1;padding:14px 12px;font-size:16px;background:none;border:none;outline:none}
+.phone-prefix{padding:0 12px;display:flex;align-items:center;color:#666666;
+  font-size:15px;font-weight:600;border-right:1.5px solid #e0e0e0;white-space:nowrap}
+.phone-input{flex:1;padding:14px 12px;font-size:16px;background:none;border:none;outline:none;color:#1a1a1a}
 .btn-accent{width:100%;padding:15px;background:var(--accent);color:#fff;font-size:16px;
   font-weight:700;border-radius:12px;margin-top:14px;transition:opacity .2s,transform .1s}
 .btn-accent:active{transform:scale(.98);opacity:.9}
 .btn-accent:disabled{opacity:.5}
-.login-guest{color:var(--muted);font-size:13px;text-align:center;margin-top:14px}
+.login-guest{color:#666666;font-size:13px;text-align:center;margin-top:14px}
 .login-guest a{color:var(--accent);font-weight:600}
 
 /* ── Payment Tabs ── */
@@ -2434,7 +2433,7 @@ function initializeApp() {
   console.log('🚀 [INIT_APP] MENU length:', MENU.length);
   
   try {
-    // Show splash screen for 1 second
+    // Show splash screen for 2 seconds
     console.log('🎨 [SPLASH] Showing splash screen...');
     setTimeout(() => {
       console.log('🎨 [SPLASH] Hiding splash screen after delay');
@@ -2446,7 +2445,7 @@ function initializeApp() {
       
       // Now show appropriate screen
       initMainApp();
-    }, 1000);
+    }, 2000);
     
   } catch(e) {
     console.error('🔴 [INIT_APP] Error:', e);
@@ -5806,6 +5805,21 @@ function showOrderDetail(id) {
     </div>
   ` : '';
   
+  // Live Location Map (only for out_for_delivery status)
+  const showLiveMap = order.status === 'out_for_delivery' && riderAssigned;
+  const liveMapHtml = showLiveMap ? `
+    <div id="riderMapContainer-${order.id}" style="background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;border:1px solid var(--border)">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+        📍 Live Tracking
+        <span id="trackingStatus-${order.id}" style="font-size:11px;color:var(--muted);font-weight:400"></span>
+      </div>
+      <div id="riderMap-${order.id}" style="width:100%;height:300px;border-radius:10px;background:var(--bg);position:relative;overflow:hidden"></div>
+      <div id="mapError-${order.id}" style="display:none;padding:20px;text-align:center;color:var(--muted);font-size:12px">
+        📡 Waiting for rider location...
+      </div>
+    </div>
+  ` : '';
+  
   // Action Buttons (only for active orders with assigned rider)
   const actionButtonsHtml = isActive && deliveryBoy && riderAssigned ? `
     <div class="tracking-actions">
@@ -5878,6 +5892,7 @@ function showOrderDetail(id) {
     ${etaHtml}
     ${otpHtml}
     ${deliveryBoyHtml}
+    ${liveMapHtml}
     ${actionButtonsHtml}
     
     <!-- Order summary -->
@@ -8775,18 +8790,22 @@ function confirmMapLocation() { mapConfirmStep1(); }
 //  Location & Saved Addresses
 // ═══════════════════════════════════════════
 
-// --- Saved Addresses (localStorage) ---
+// --- Saved Addresses (localStorage) - User-specific ---
 function getSavedAddresses() {
-  try { return JSON.parse(localStorage.getItem('now_addresses') || '[]'); } catch { return []; }
+  const userKey = USER && USER.phone ? `now_addresses_${USER.phone}` : 'now_addresses_guest';
+  try { return JSON.parse(localStorage.getItem(userKey) || '[]'); } catch { return []; }
 }
 function saveAddresses(arr) {
-  localStorage.setItem('now_addresses', JSON.stringify(arr));
+  const userKey = USER && USER.phone ? `now_addresses_${USER.phone}` : 'now_addresses_guest';
+  localStorage.setItem(userKey, JSON.stringify(arr));
 }
 function getSelectedAddr() {
-  try { return JSON.parse(localStorage.getItem('now_location')); } catch { return null; }
+  const userKey = USER && USER.phone ? `now_location_${USER.phone}` : 'now_location_guest';
+  try { return JSON.parse(localStorage.getItem(userKey)); } catch { return null; }
 }
 function setSelectedAddr(addr) {
-  localStorage.setItem('now_location', JSON.stringify(addr));
+  const userKey = USER && USER.phone ? `now_location_${USER.phone}` : 'now_location_guest';
+  localStorage.setItem(userKey, JSON.stringify(addr));
   // Trigger zone detection if user is logged in
   if (USER) {
     detectDeliveryZone();
@@ -9609,6 +9628,152 @@ function handleAppBack() {
     goBack();
   }
   // On home screen — do nothing (Java will exit)
+}
+
+// ============ RIDER LOCATION TRACKING MAP ============
+let riderTrackingMaps = {};
+let riderTrackingIntervals = {};
+
+function initRiderTrackingMap(orderId) {
+  const mapContainer = document.getElementById('riderMap-' + orderId);
+  const mapError = document.getElementById('mapError-' + orderId);
+  const statusEl = document.getElementById('trackingStatus-' + orderId);
+  if (!mapContainer || riderTrackingMaps[orderId]) return;
+
+  try {
+    const map = L.map('riderMap-' + orderId, {
+      zoomControl: true,
+      attributionControl: false
+    }).setView([27.1767, 78.0081], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19
+    }).addTo(map);
+
+    riderTrackingMaps[orderId] = {
+      map: map,
+      riderMarker: null,
+      deliveryMarker: null,
+      routeLine: null
+    };
+
+    fetchRiderLocation(orderId);
+    riderTrackingIntervals[orderId] = setInterval(() => fetchRiderLocation(orderId), 5000);
+    if (statusEl) statusEl.textContent = '🔄 Connecting...';
+  } catch (err) {
+    console.error('Map init error:', err);
+    if (mapContainer) mapContainer.style.display = 'none';
+    if (mapError) { mapError.style.display = 'block'; mapError.textContent = '⚠️ Map unavailable'; }
+  }
+}
+
+async function fetchRiderLocation(orderId) {
+  if (!USER || !USER.phone) return;
+  const statusEl = document.getElementById('trackingStatus-' + orderId);
+  const mapContainer = document.getElementById('riderMap-' + orderId);
+  const mapError = document.getElementById('mapError-' + orderId);
+
+  try {
+    const res = await fetch('/api/customer/rider/location/' + orderId + '?phone=' + encodeURIComponent(USER.phone));
+    const data = await res.json();
+    if (!data.ok) { if (statusEl) statusEl.textContent = '❌ Error'; return; }
+
+    if (!data.hasLocation) {
+      if (mapContainer) mapContainer.style.display = 'none';
+      if (mapError) { mapError.style.display = 'block'; mapError.textContent = '📡 Waiting for rider location...'; }
+      if (statusEl) statusEl.textContent = '⏳ Waiting...';
+      return;
+    }
+
+    if (mapContainer) mapContainer.style.display = 'block';
+    if (mapError) mapError.style.display = 'none';
+
+    const mapData = riderTrackingMaps[orderId];
+    if (!mapData) return;
+    const { map } = mapData;
+    const rdr = data.rider;
+    const delivery = data.delivery;
+
+    // Status freshness
+    const timeSince = Math.floor((Date.now() - new Date(rdr.updated_at)) / 1000);
+    if (statusEl) {
+      if (timeSince < 10) statusEl.textContent = '🟢 Live';
+      else if (timeSince < 60) statusEl.textContent = '🟡 ' + timeSince + 's ago';
+      else statusEl.textContent = '🟠 ' + Math.floor(timeSince / 60) + 'm ago';
+    }
+
+    // Rider marker
+    const riderIcon = L.divIcon({
+      html: '<div style="background:#E8450A;color:#fff;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)">🛵</div>',
+      className: '', iconSize: [40, 40], iconAnchor: [20, 20]
+    });
+    if (mapData.riderMarker) {
+      mapData.riderMarker.setLatLng([rdr.latitude, rdr.longitude]);
+    } else {
+      mapData.riderMarker = L.marker([rdr.latitude, rdr.longitude], { icon: riderIcon })
+        .addTo(map).bindPopup('<b>🛵 ' + rdr.name + '</b><br>On the way!');
+    }
+
+    // Delivery marker
+    if (delivery && delivery.lat && delivery.lng) {
+      const delIcon = L.divIcon({
+        html: '<div style="background:#16A34A;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)">📍</div>',
+        className: '', iconSize: [36, 36], iconAnchor: [18, 18]
+      });
+      if (!mapData.deliveryMarker) {
+        mapData.deliveryMarker = L.marker([delivery.lat, delivery.lng], { icon: delIcon })
+          .addTo(map).bindPopup('<b>📍 Your Location</b><br>' + (delivery.label || 'Delivery Address'));
+      }
+      if (mapData.routeLine) map.removeLayer(mapData.routeLine);
+      mapData.routeLine = L.polyline([
+        [rdr.latitude, rdr.longitude],
+        [delivery.lat, delivery.lng]
+      ], { color: '#E8450A', weight: 3, opacity: 0.7, dashArray: '10,10' }).addTo(map);
+
+      map.fitBounds(L.latLngBounds(
+        [rdr.latitude, rdr.longitude],
+        [delivery.lat, delivery.lng]
+      ), { padding: [50, 50] });
+    } else {
+      map.setView([rdr.latitude, rdr.longitude], 15);
+    }
+  } catch (err) {
+    console.error('fetchRiderLocation error:', err);
+    if (statusEl) statusEl.textContent = '❌ Error';
+  }
+}
+
+function stopRiderTracking(orderId) {
+  if (riderTrackingIntervals[orderId]) {
+    clearInterval(riderTrackingIntervals[orderId]);
+    delete riderTrackingIntervals[orderId];
+  }
+  if (riderTrackingMaps[orderId]) {
+    try { riderTrackingMaps[orderId].map.remove(); } catch(e) {}
+    delete riderTrackingMaps[orderId];
+  }
+}
+
+// Patch viewOrderDetails to init map
+const _origViewOrderDetails = typeof viewOrderDetails === 'function' ? viewOrderDetails : null;
+if (_origViewOrderDetails) {
+  viewOrderDetails = function(orderId) {
+    _origViewOrderDetails(orderId);
+    setTimeout(() => {
+      if (document.getElementById('riderMap-' + orderId)) {
+        initRiderTrackingMap(orderId);
+      }
+    }, 400);
+  };
+}
+
+// Patch closeModal to stop tracking
+const _origCloseModal = typeof closeModal === 'function' ? closeModal : null;
+if (_origCloseModal) {
+  closeModal = function() {
+    Object.keys(riderTrackingIntervals).forEach(id => stopRiderTracking(id));
+    _origCloseModal();
+  };
 }
 
 </script>

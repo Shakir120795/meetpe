@@ -4114,3 +4114,152 @@ app.listen(PORT, () => {
     }
   }, 14 * 60 * 1000); // every 14 minutes
 });
+
+
+// ===== LOCATION TRACKING ENDPOINTS =====
+
+// POST /api/rider/location/update - Rider updates their location
+app.post('/api/rider/location/update', (req, res) => {
+  const { orderId, riderId, riderName, riderPhone, latitude, longitude, accuracy, heading, speed } = req.body || {};
+  
+  if (!orderId || !latitude || !longitude) {
+    return res.status(400).json({ ok: false, error: 'Missing required fields: orderId, latitude, longitude' });
+  }
+  
+  try {
+    // Verify order exists and belongs to rider
+    const order = db.prepare('SELECT * FROM orders WHERE id = ? AND (rider_id = ? OR delivery_boy = ?)').get(orderId, riderId, riderId);
+    if (!order) {
+      return res.status(404).json({ ok: false, error: 'Order not found or not assigned to you' });
+    }
+    
+    // Insert or update location
+    db.prepare(`
+      INSERT INTO rider_locations (order_id, rider_name, rider_phone, latitude, longitude, accuracy, heading, speed, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(order_id) DO UPDATE SET
+        latitude = excluded.latitude,
+        longitude = excluded.longitude,
+        accuracy = excluded.accuracy,
+        heading = excluded.heading,
+        speed = excluded.speed,
+        updated_at = datetime('now')
+    `).run(orderId, riderName || 'Rider', riderPhone || '', latitude, longitude, accuracy || 0, heading || 0, speed || 0);
+    
+    res.json({ ok: true, message: 'Location updated' });
+  } catch (err) {
+    console.error('❌ Location update error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+// GET /api/customer/rider/location/:orderId - Customer gets rider location
+app.get('/api/customer/rider/location/:orderId', (req, res) => {
+  const { orderId } = req.params;
+  const { phone } = req.query;
+  
+  if (!orderId || !phone) {
+    return res.status(400).json({ ok: false, error: 'Missing orderId or phone' });
+  }
+  
+  try {
+    // Verify customer owns this order
+    const order = db.prepare('SELECT * FROM orders WHERE id = ? AND phone = ?').get(orderId, phone);
+    if (!order) {
+      return res.status(404).json({ ok: false, error: 'Order not found' });
+    }
+    
+    // Get rider location
+    const location = db.prepare('SELECT * FROM rider_locations WHERE order_id = ?').get(orderId);
+    
+    if (!location) {
+      return res.json({ ok: true, hasLocation: false, message: 'Rider location not available yet' });
+    }
+    
+    // Parse delivery address to get customer location
+    let deliveryAddress = null;
+    try {
+      const parsed = JSON.parse(order.address);
+      if (parsed && parsed.lat && parsed.lng) {
+        deliveryAddress = {
+          lat: parsed.lat,
+          lng: parsed.lng,
+          label: parsed.label || parsed.address || 'Delivery Location'
+        };
+      }
+    } catch (e) {
+      // address might be plain string
+    }
+    
+    res.json({
+      ok: true,
+      hasLocation: true,
+      rider: {
+        name: location.rider_name,
+        phone: location.rider_phone,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        accuracy: location.accuracy,
+        heading: location.heading,
+        speed: location.speed,
+        updated_at: location.updated_at
+      },
+      delivery: deliveryAddress,
+      orderStatus: order.status
+    });
+  } catch (err) {
+    console.error('❌ Get location error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});
+
+// GET /api/rider/order/:orderId/delivery-location - Rider gets delivery location
+app.get('/api/rider/order/:orderId/delivery-location', (req, res) => {
+  const { orderId } = req.params;
+  const { riderId } = req.query;
+  
+  if (!orderId || !riderId) {
+    return res.status(400).json({ ok: false, error: 'Missing orderId or riderId' });
+  }
+  
+  try {
+    // Verify order belongs to rider
+    const order = db.prepare('SELECT * FROM orders WHERE id = ? AND (rider_id = ? OR delivery_boy = ?)').get(orderId, riderId, riderId);
+    if (!order) {
+      return res.status(404).json({ ok: false, error: 'Order not found or not assigned to you' });
+    }
+    
+    // Parse delivery address
+    let deliveryLocation = null;
+    try {
+      const parsed = JSON.parse(order.address);
+      if (parsed && parsed.lat && parsed.lng) {
+        deliveryLocation = {
+          lat: parsed.lat,
+          lng: parsed.lng,
+          label: parsed.label || parsed.address || 'Delivery Address',
+          address: parsed.address || 'N/A'
+        };
+      }
+    } catch (e) {
+      // If plain string, send as is
+      deliveryLocation = {
+        address: order.address,
+        label: 'Delivery Address'
+      };
+    }
+    
+    res.json({
+      ok: true,
+      delivery: deliveryLocation,
+      customer: {
+        name: order.customer_name || 'Customer',
+        phone: order.phone
+      },
+      orderStatus: order.status
+    });
+  } catch (err) {
+    console.error('❌ Get delivery location error:', err);
+    res.status(500).json({ ok: false, error: 'Server error' });
+  }
+});

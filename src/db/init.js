@@ -83,6 +83,19 @@ db.exec(`
     status       TEXT DEFAULT 'pending',
     created_at   TEXT DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS rider_locations (
+    order_id     INTEGER PRIMARY KEY,
+    rider_name   TEXT,
+    rider_phone  TEXT,
+    latitude     REAL NOT NULL,
+    longitude    REAL NOT NULL,
+    accuracy     REAL,
+    heading      REAL,
+    speed        REAL,
+    updated_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (order_id) REFERENCES orders(id)
+  );
 `);
 
 // Safe column migrations for existing databases
