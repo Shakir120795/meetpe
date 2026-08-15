@@ -4903,6 +4903,15 @@ async function submitOrder(e) {
   // Save last used delivery address for next time
   localStorage.setItem('now_last_delivery_address', address);
 
+  // Build address object with lat/lng for live tracking
+  const selectedLoc = getSelectedAddr();
+  const addressObj = JSON.stringify({
+    address: address,
+    label: selectedLoc?.label || address,
+    lat: selectedLoc?.lat || null,
+    lng: selectedLoc?.lon || null
+  });
+
   const btn = document.getElementById('submitOrderBtn');
   btn.disabled = true; btn.textContent = '⏳ Placing order...';
 
@@ -4920,7 +4929,7 @@ async function submitOrder(e) {
     const res = await fetch('/api/order', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        name, phone, address, payment: PAYMENT, notes,
+        name, phone, address: addressObj, payment: PAYMENT, notes,
         items, couponCode: COUPON ? COUPON.code : null,
         walletAmount: walletAmt,
         tip: DELIVERY_TIP || 0
@@ -5767,6 +5776,10 @@ function showOrderDetail(id) {
   // Live Tracking Section (only for active orders)
   const liveTrackingHtml = isActive && settings.enableLiveTracking ? `
     <div class="tracking-map">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 4px 6px">
+        <span style="font-size:12px;font-weight:700;color:var(--muted)">📍 LIVE TRACKING</span>
+        <span id="liveTrackingStatus" style="font-size:11px">${order.status === 'out_for_delivery' ? '<span style="color:#16A34A">🟢 Live</span>' : '<span style="color:#888">📡 Locating...</span>'}</span>
+      </div>
       <div id="liveTrackMap" style="height:220px;width:100%;border-radius:14px;z-index:1"></div>
     </div>
   ` : '';
@@ -5806,21 +5819,6 @@ function showOrderDetail(id) {
         <div class="db-name">${order.delivery_boy_name || deliveryBoy.name}</div>
         <div class="db-rating">⭐ ${deliveryBoy.rating} • ${deliveryBoy.totalDeliveries} deliveries</div>
         <div class="db-vehicle">🛵 ${deliveryBoy.vehicleType} • ${deliveryBoy.vehicleNumber}</div>
-      </div>
-    </div>
-  ` : '';
-  
-  // Live Location Map (only for out_for_delivery status)
-  const showLiveMap = order.status === 'out_for_delivery' && riderAssigned;
-  const liveMapHtml = showLiveMap ? `
-    <div id="riderMapContainer-${order.id}" style="background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;border:1px solid var(--border)">
-      <div style="font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px">
-        📍 Live Tracking
-        <span id="trackingStatus-${order.id}" style="font-size:11px;color:var(--muted);font-weight:400"></span>
-      </div>
-      <div id="riderMap-${order.id}" style="width:100%;height:300px;border-radius:10px;background:var(--bg);position:relative;overflow:hidden"></div>
-      <div id="mapError-${order.id}" style="display:none;padding:20px;text-align:center;color:var(--muted);font-size:12px">
-        📡 Waiting for rider location...
       </div>
     </div>
   ` : '';
@@ -5897,7 +5895,6 @@ function showOrderDetail(id) {
     ${etaHtml}
     ${otpHtml}
     ${deliveryBoyHtml}
-    ${liveMapHtml}
     ${actionButtonsHtml}
     
     <!-- Order summary -->
@@ -5945,63 +5942,90 @@ function initLiveTrackMap(order) {
   const vendorLat = APP_SETTINGS?.vendorLocation?.lat || 27.1767;
   const vendorLon = APP_SETTINGS?.vendorLocation?.lon || 78.0081;
   
-  // Get user location
-  const userLat = USER?.lat || vendorLat + 0.02;
-  const userLon = USER?.lon || vendorLon + 0.01;
+  // Get user delivery location from order address
+  let userLat = vendorLat + 0.02;
+  let userLon = vendorLon + 0.01;
+  try {
+    const addr = typeof order.address === 'string' ? JSON.parse(order.address) : order.address;
+    if (addr && addr.lat && addr.lng) {
+      userLat = addr.lat;
+      userLon = addr.lng;
+    }
+  } catch(e) {}
   
-  // Center map between vendor and user
+  // Center map
   const centerLat = (vendorLat + userLat) / 2;
   const centerLon = (vendorLon + userLon) / 2;
   
   _trackMap = L.map('liveTrackMap', { zoomControl: false, attributionControl: false }).setView([centerLat, centerLon], 14);
-  
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(_trackMap);
   
-  // Vendor marker (store)
+  // Store marker
   const storeIcon = L.divIcon({ html: '<div style="font-size:24px;text-align:center">🏪</div>', iconSize: [30, 30], className: '' });
   L.marker([vendorLat, vendorLon], { icon: storeIcon }).addTo(_trackMap).bindPopup('Store');
   
-  // User marker (delivery location)
+  // Home marker
   const homeIcon = L.divIcon({ html: '<div style="font-size:24px;text-align:center">🏠</div>', iconSize: [30, 30], className: '' });
   L.marker([userLat, userLon], { icon: homeIcon }).addTo(_trackMap).bindPopup('Your Location');
   
-  // Delivery boy marker (animated)
+  // Rider marker
   const bikeIcon = L.divIcon({ html: '<div style="font-size:28px;text-align:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))">🛵</div>', iconSize: [34, 34], className: '' });
   
-  // Position delivery boy based on status
-  let bikeLat, bikeLon;
-  if (order.status === 'placed') {
-    bikeLat = vendorLat;
-    bikeLon = vendorLon;
-  } else if (order.status === 'preparing') {
-    bikeLat = vendorLat;
-    bikeLon = vendorLon;
-  } else {
-    // out_for_delivery - somewhere between
-    bikeLat = vendorLat + (userLat - vendorLat) * 0.4;
-    bikeLon = vendorLon + (userLon - vendorLon) * 0.4;
-  }
+  // Initial rider position
+  let bikeLat = vendorLat + (userLat - vendorLat) * 0.3;
+  let bikeLon = vendorLon + (userLon - vendorLon) * 0.3;
   
   _trackMarker = L.marker([bikeLat, bikeLon], { icon: bikeIcon }).addTo(_trackMap);
   
-  // Draw route line
-  L.polyline([[vendorLat, vendorLon], [bikeLat, bikeLon], [userLat, userLon]], {
+  // Route line
+  const routeLine = L.polyline([[vendorLat, vendorLon], [bikeLat, bikeLon], [userLat, userLon]], {
     color: '#E8450A', weight: 3, opacity: 0.6, dashArray: '10, 10'
   }).addTo(_trackMap);
   
-  // Fit bounds to show all markers
   _trackMap.fitBounds([[vendorLat, vendorLon], [userLat, userLon]], { padding: [30, 30] });
   
-  // Simulate movement for out_for_delivery
-  if (order.status === 'out_for_delivery') {
-    let progress = 0.4;
-    _trackInterval = setInterval(() => {
-      progress += 0.02;
-      if (progress >= 0.95) { clearInterval(_trackInterval); _trackInterval = null; return; }
-      const newLat = vendorLat + (userLat - vendorLat) * progress;
-      const newLon = vendorLon + (userLon - vendorLon) * progress;
-      _trackMarker.setLatLng([newLat, newLon]);
-    }, 3000);
+  // Live tracking status indicator
+  const trackingStatusEl = document.getElementById('liveTrackingStatus');
+  
+  // Fetch real rider GPS location if out_for_delivery
+  if (order.status === 'out_for_delivery' && USER && USER.phone) {
+    const fetchAndUpdate = async () => {
+      try {
+        const res = await fetch('/api/customer/rider/location/' + order.id + '?phone=' + encodeURIComponent(USER.phone));
+        const data = await res.json();
+        
+        if (data.ok && data.hasLocation && data.rider) {
+          const r = data.rider;
+          _trackMarker.setLatLng([r.latitude, r.longitude]);
+          
+          // Update route line
+          routeLine.setLatLngs([[vendorLat, vendorLon], [r.latitude, r.longitude], [userLat, userLon]]);
+          
+          // Update status
+          const timeSince = Math.floor((Date.now() - new Date(r.updated_at)) / 1000);
+          if (trackingStatusEl) {
+            if (timeSince < 15) trackingStatusEl.innerHTML = '<span style="color:#16A34A">🟢 Live</span>';
+            else if (timeSince < 60) trackingStatusEl.innerHTML = '<span style="color:#F59E0B">🟡 ' + timeSince + 's ago</span>';
+            else trackingStatusEl.innerHTML = '<span style="color:#888">🔴 Offline</span>';
+          }
+        } else {
+          // No real GPS - simulate movement
+          if (trackingStatusEl) trackingStatusEl.innerHTML = '<span style="color:#888">📡 Locating rider...</span>';
+          bikeLat += (userLat - vendorLat) * 0.015;
+          bikeLon += (userLon - vendorLon) * 0.015;
+          if (bikeLat < userLat) _trackMarker.setLatLng([bikeLat, bikeLon]);
+        }
+      } catch(e) {
+        // Simulate on error
+        bikeLat += (userLat - vendorLat) * 0.015;
+        bikeLon += (userLon - vendorLon) * 0.015;
+        if (bikeLat < userLat) _trackMarker.setLatLng([bikeLat, bikeLon]);
+      }
+    };
+    
+    // Fetch immediately then every 5 seconds
+    fetchAndUpdate();
+    _trackInterval = setInterval(fetchAndUpdate, 5000);
   }
 }
 

@@ -33,7 +33,18 @@ const upload = multer({
   },
 });
 
-const { handleMessage } = require('./whatsapp/bot');
+// Helper: parse address (supports both plain string and JSON with lat/lng)
+function parseAddress(addr) {
+  if (!addr) return '';
+  try {
+    const parsed = JSON.parse(addr);
+    return parsed.address || parsed.label || addr;
+  } catch(e) {
+    return addr;
+  }
+}
+
+
 const { twimlReply, sendMessage } = require('./whatsapp/twilio');
 const { handleInstagramWebhook } = require('./instagram/replies');
 const { postRandomSample } = require('./instagram/post');
@@ -101,7 +112,7 @@ Total: ₹${order.total}
 ETA: ~30 minutes 🛵
 
 📍 Delivery to:
-${order.address}
+${parseAddress(order.address)}
 
 We'll keep you posted on each step.
 Pay on delivery (Cash / UPI).
@@ -351,7 +362,7 @@ app.post('/api/order', (req, res) => {
 
 👤 ${name}
 📞 +91${cleanPhone}
-📍 ${address}
+📍 ${parseAddress(address)}
 💳 ${paymentLabel}
 ${notes ? '📝 ' + notes + '\n' : ''}
 ${cleanItems.map(i => `• ${i.name} × ${i.qty} = ₹${i.price * i.qty}`).join('\n')}
