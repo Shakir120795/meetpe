@@ -2884,7 +2884,7 @@ async function sendOTP() {
         '91' + phone,
         (data) => {
           console.log('✅ MSG91 Widget OTP sent:', data);
-          SESSION_INFO = { reqId: data.reqId || data.data?.reqId || '', phone };
+          SESSION_INFO = { reqId: data.reqId || data.data?.reqId || data.message || '', phone };
           showScreen('screen-otp');
           const maskedPhone = phone.slice(0,2) + 'XXXXXX' + phone.slice(-2);
           document.getElementById('otpPhoneDisplay').textContent = '+91 ' + maskedPhone;
