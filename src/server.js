@@ -3977,12 +3977,35 @@ function requireRiderAuth(req, res, next) {
   next();
 }
 
-// POST /api/rider/login - Rider login (uses phone from deliveryBoys)
-app.post('/api/rider/login', (req, res) => {
+// POST /api/rider/send-otp - Send OTP to rider phone
+app.post('/api/rider/send-otp', otpLimiter, async (req, res) => {
   const { phone } = req.body || {};
   const cleanPhone = String(phone || '').replace(/\D/g, '').slice(-10);
+  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'Invalid phone' });
+
+  // Check if registered rider
+  const settings = require('./data/settings').get();
+  const riders = settings.orderTracking?.deliveryBoys || [];
+  const rider = riders.find(r => {
+    if (!r.phone) return false;
+    return r.phone.replace(/\D/g, '').slice(-10) === cleanPhone;
+  });
+  if (!rider) return res.status(403).json({ ok: false, error: 'Not a registered rider. Contact admin.' });
+
+  // Send OTP via MSG91
+  const result = await authService.sendOTP(cleanPhone, 'sms');
+  if (!result.ok) return res.status(400).json({ ok: false, error: result.error });
+
+  res.json({ ok: true, message: 'OTP sent', sessionInfo: result.sessionInfo });
+});
+
+// POST /api/rider/login - Rider login with OTP verification
+app.post('/api/rider/login', async (req, res) => {
+  const { phone, otp, sessionInfo } = req.body || {};
+  const cleanPhone = String(phone || '').replace(/\D/g, '').slice(-10);
   if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
-  
+  if (!otp || String(otp).length !== 6) return res.status(400).json({ ok: false, error: 'OTP required' });
+
   // Check if this phone is a registered rider
   const settings = require('./data/settings').get();
   const riders = settings.orderTracking?.deliveryBoys || [];
@@ -3991,12 +4014,14 @@ app.post('/api/rider/login', (req, res) => {
     const riderPhone = r.phone.replace(/\D/g, '').slice(-10);
     return riderPhone === cleanPhone;
   });
-  
   if (!rider) return res.status(403).json({ ok: false, error: 'Not a registered rider. Contact admin.' });
-  
-  // Generate rider session token
+
+  // Verify OTP via MSG91
+  const result = await authService.verifyOTP(cleanPhone, otp, sessionInfo || {});
+  if (!result.ok) return res.status(400).json({ ok: false, error: result.error || 'Invalid OTP' });
+
+  // OTP verified — generate rider session token
   const riderToken = createRiderSession(rider.id);
-  
   res.json({ ok: true, token: riderToken, rider: { id: rider.id, name: rider.name, phone: rider.phone, vehicleType: rider.vehicleType, vehicleNumber: rider.vehicleNumber, rating: rider.rating, totalDeliveries: rider.totalDeliveries, status: rider.status, bankDetails: rider.bankDetails, upiId: rider.upiId } });
 });
 

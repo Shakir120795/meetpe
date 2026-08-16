@@ -991,7 +991,8 @@ function init() {
     initRiderTheme();
     
     const stored = localStorage.getItem('rider_session');
-    if (stored) {
+    const token = localStorage.getItem('rider_token');
+    if (stored && token) {
         try {
             rider = JSON.parse(stored);
             isOnline = rider.status === 'available';
@@ -1001,6 +1002,7 @@ function init() {
             showApp();
         } catch (e) {
             localStorage.removeItem('rider_session');
+            localStorage.removeItem('rider_token');
         }
     }
 }
@@ -1058,6 +1060,7 @@ function updateTopbar() {
 
 // ============ LOGIN (OTP Based) ============
 let loginPhoneNumber = '';
+let riderSessionInfo = null;
 
 async function handleSendOtp() {
     const phone = document.getElementById('loginPhone').value.trim();
@@ -1073,9 +1076,8 @@ async function handleSendOtp() {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>';
 
-    // First check if this phone is a registered rider
     try {
-        const response = await fetch('/api/rider/login', {
+        const response = await fetch('/api/rider/send-otp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ phone })
@@ -1089,9 +1091,9 @@ async function handleSendOtp() {
             return;
         }
         
-        // Phone is valid rider - show OTP step
+        // OTP sent — show OTP step
         loginPhoneNumber = phone;
-        window._tempRiderData = data.rider;
+        riderSessionInfo = data.sessionInfo || null;
         document.getElementById('otpPhoneDisplay').textContent = '+91 ' + phone;
         document.getElementById('loginStep1').style.display = 'none';
         document.getElementById('loginStep2').style.display = 'block';
@@ -1115,18 +1117,37 @@ async function handleVerifyOtp() {
         return;
     }
 
-    // Demo OTP: 123456
-    if (otp !== '123456') {
-        errorEl.textContent = 'Invalid OTP. Demo OTP is 123456';
-        return;
-    }
+    const btn = document.getElementById('verifyOtpBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
 
-    // OTP verified - login successful
-    rider = window._tempRiderData;
-    isOnline = rider.status === 'available';
-    localStorage.setItem('rider_session', JSON.stringify(rider));
-    showApp();
-    showToast('Welcome, ' + rider.name + '! 🛵', 'success');
+    try {
+        const response = await fetch('/api/rider/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: loginPhoneNumber, otp, sessionInfo: riderSessionInfo })
+        });
+        const data = await response.json();
+
+        if (!data.ok) {
+            errorEl.textContent = data.error || 'Invalid OTP';
+            btn.disabled = false;
+            btn.textContent = 'Verify OTP';
+            return;
+        }
+
+        // OTP verified - login successful
+        rider = data.rider;
+        localStorage.setItem('rider_token', data.token);
+        localStorage.setItem('rider_session', JSON.stringify(rider));
+        isOnline = rider.status === 'available';
+        showApp();
+        showToast('Welcome, ' + rider.name + '! 🛵', 'success');
+    } catch (err) {
+        errorEl.textContent = 'Network error. Please try again.';
+        btn.disabled = false;
+        btn.textContent = 'Verify OTP';
+    }
 }
 
 function backToPhone() {
@@ -1567,6 +1588,7 @@ function handleLogout() {
     rider = null;
     isOnline = false;
     localStorage.removeItem('rider_session');
+    localStorage.removeItem('rider_token');
 
     // Reset UI
     document.getElementById('bottomNav').style.display = 'none';
