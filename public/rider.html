@@ -1760,7 +1760,7 @@ function showDeliveryMap(orderId) {
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-        window._deliveryMap = { map, orderId, delivLat: null, delivLng: null };
+        window._deliveryMap = { map, orderId, delivLat: null, delivLng: null, delivAddress: null };
 
         // Get delivery location from API
         fetch('/api/rider/order/' + orderId + '/delivery-location?riderId=' + rider.id)
@@ -1777,6 +1777,9 @@ function showDeliveryMap(orderId) {
 
                 const delivery = data.delivery;
                 if (addrEl) addrEl.textContent = '📍 ' + (delivery.label || delivery.address || 'Delivery Address');
+
+                // Store address for navigation fallback
+                window._deliveryMap.delivAddress = delivery.address || delivery.label || '';
 
                 if (delivery.lat && delivery.lng) {
                     window._deliveryMap.delivLat = delivery.lat;
@@ -1819,8 +1822,10 @@ function showDeliveryMap(orderId) {
                         }, () => {}, { enableHighAccuracy: true });
                     }
                 } else {
-                    if (statusEl) statusEl.textContent = '⚠️ No coordinates';
+                    if (statusEl) statusEl.textContent = '⚠️ No GPS - Use Maps';
                     if (addrEl) addrEl.textContent = '📍 ' + (delivery.address || 'Address saved but no map coordinates');
+                    // Still allow navigation via address text
+                    window._deliveryMap.delivAddress = delivery.address || delivery.label || '';
                 }
             })
             .catch(err => {
@@ -1844,9 +1849,13 @@ function closeDeliveryMap() {
 
 function openNavigation() {
     if (!window._deliveryMap) return;
-    const { delivLat, delivLng } = window._deliveryMap;
+    const { delivLat, delivLng, delivAddress } = window._deliveryMap;
     if (delivLat && delivLng) {
+        // Use coordinates if available
         window.open('https://www.google.com/maps/dir/?api=1&destination=' + delivLat + ',' + delivLng, '_blank');
+    } else if (delivAddress) {
+        // Fallback: use address text
+        window.open('https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(delivAddress), '_blank');
     }
 }
 

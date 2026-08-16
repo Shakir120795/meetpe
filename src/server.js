@@ -1617,7 +1617,23 @@ app.get('/api/orders/:phone', (req, res) => {
   
   res.json({ ok: true, orders: orders.map(o => {
     const rider = riders.find(r => r.id === (o.rider_id || o.delivery_boy));
-    return { ...o, items: JSON.parse(o.items_json || '[]'), delivery_boy_name: rider?.name || null };
+    // Parse address: support both plain string and JSON format
+    let parsedAddress = o.address || '';
+    let addressLat = null, addressLng = null;
+    try {
+      const addrObj = JSON.parse(o.address);
+      parsedAddress = addrObj.address || addrObj.label || o.address;
+      addressLat = addrObj.lat || null;
+      addressLng = addrObj.lng || null;
+    } catch(e) {}
+    return { 
+      ...o, 
+      items: JSON.parse(o.items_json || '[]'), 
+      delivery_boy_name: rider?.name || null,
+      address_display: parsedAddress,
+      address_lat: addressLat,
+      address_lng: addressLng
+    };
   }) });
 });
 

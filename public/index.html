@@ -5904,7 +5904,7 @@ function showOrderDetail(id) {
       <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;padding-top:10px;margin-top:4px">
         <span>Total</span><span style="color:var(--accent)">₹${order.total}</span>
       </div>
-      <div style="font-size:12px;color:var(--muted);margin-top:6px">📍 ${order.address||'—'}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">📍 ${order.address_display || (() => { try { const a = JSON.parse(order.address); return a.address || a.label || order.address; } catch(e) { return order.address || '—'; } })()}</div>
     </div>
 
     <!-- Tracking -->
@@ -5945,13 +5945,20 @@ function initLiveTrackMap(order) {
   // Get user delivery location from order address
   let userLat = vendorLat + 0.02;
   let userLon = vendorLon + 0.01;
-  try {
-    const addr = typeof order.address === 'string' ? JSON.parse(order.address) : order.address;
-    if (addr && addr.lat && addr.lng) {
-      userLat = addr.lat;
-      userLon = addr.lng;
-    }
-  } catch(e) {}
+  // First try address_lat/lng from API (new format)
+  if (order.address_lat && order.address_lng) {
+    userLat = order.address_lat;
+    userLon = order.address_lng;
+  } else {
+    // Fallback: try parsing address JSON
+    try {
+      const addr = typeof order.address === 'string' ? JSON.parse(order.address) : order.address;
+      if (addr && addr.lat && addr.lng) {
+        userLat = addr.lat;
+        userLon = addr.lng;
+      }
+    } catch(e) {}
+  }
   
   // Center map
   const centerLat = (vendorLat + userLat) / 2;
@@ -8822,7 +8829,19 @@ function confirmMapLocation() { mapConfirmStep1(); }
 // --- Saved Addresses (localStorage) - User-specific ---
 function getSavedAddresses() {
   const userKey = USER && USER.phone ? `now_addresses_${USER.phone}` : 'now_addresses_guest';
-  try { return JSON.parse(localStorage.getItem(userKey) || '[]'); } catch { return []; }
+  try { 
+    const addresses = JSON.parse(localStorage.getItem(userKey) || '[]');
+    // Migration: if no addresses found, check old global key
+    if (addresses.length === 0) {
+      const oldAddresses = JSON.parse(localStorage.getItem('now_addresses') || '[]');
+      if (oldAddresses.length > 0) {
+        // Migrate old addresses to user-specific key
+        localStorage.setItem(userKey, JSON.stringify(oldAddresses));
+        return oldAddresses;
+      }
+    }
+    return addresses;
+  } catch { return []; }
 }
 function saveAddresses(arr) {
   const userKey = USER && USER.phone ? `now_addresses_${USER.phone}` : 'now_addresses_guest';
