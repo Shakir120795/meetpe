@@ -28,7 +28,8 @@
       window._msg91WidgetSuccess = data;
     },
     failure: (error) => {
-      console.log('MSG91 Widget failure:', error);
+      const errMsg = typeof error === 'string' ? error : (error?.message || 'OTP error');
+      console.log('MSG91 Widget failure:', errMsg);
     }
   };
 </script>
@@ -2894,7 +2895,8 @@ async function sendOTP() {
         },
         (error) => {
           console.error('❌ MSG91 Widget error:', error);
-          showToast(error || 'Failed to send OTP', 'error');
+          const errMsg = typeof error === 'string' ? error : (error?.message || 'Failed to send OTP');
+          showToast(errMsg, 'error');
           btn.disabled = false;
           btn.textContent = 'Send OTP →';
         }
