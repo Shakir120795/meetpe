@@ -107,6 +107,19 @@
 </div>
 
 <script>
+
+// Auto-inject x-admin-key header for all /admin and /api/upload requests
+const _origFetch = window.fetch.bind(window);
+window.fetch = function(url, options = {}) {
+  const urlStr = typeof url === 'string' ? url : (url?.url || '');
+  if (urlStr.startsWith('/admin') || urlStr.startsWith('/api/upload')) {
+    const adminKey = localStorage.getItem('meatpe_admin_key') || '';
+    options = options || {};
+    options.headers = { ...(options.headers || {}), 'x-admin-key': adminKey };
+  }
+  return _origFetch(url, options);
+};
+
 const CATEGORIES = {
   chicken: '🐔 Fresh Chicken',
   mutton: '🐐 Fresh Mutton',
@@ -190,7 +203,7 @@ async function toggleItem(el) {
   el.closest('.row').classList.toggle('oos', !newStock);
 
   try {
-    const res = await fetch(`/admin/stock/${code}?key=${encodeURIComponent(key)}&inStock=${newStock}`, { method: 'POST' });
+    const res = await fetch(`/admin/stock/${code}?inStock=${newStock}`, { method: 'POST' });
     const data = await res.json();
     if (!data.ok) {
       // Revert

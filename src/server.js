@@ -103,10 +103,39 @@ function requireAuth(req, res, next) {
 }
 
 // Middleware: require admin key
+// Accepts key via header 'x-admin-key' (preferred) or query param '?key=' (legacy)
+const adminBruteForce = new Map(); // ip -> { count, resetAt }
 function requireAdmin(req, res, next) {
-  if (req.query.key !== process.env.ADMIN_KEY) {
+  const ip = req.ip || req.connection.remoteAddress || 'unknown';
+  const now = Date.now();
+
+  // Brute force check — max 10 attempts per 15 minutes per IP
+  const bf = adminBruteForce.get(ip);
+  if (bf && now < bf.resetAt && bf.count >= 10) {
+    return res.status(429).json({ ok: false, error: 'Too many attempts. Try again later.' });
+  }
+
+  const provided = req.headers['x-admin-key'] || req.query.key;
+  const expected = process.env.ADMIN_KEY;
+
+  // Timing-safe comparison to prevent timing attacks
+  let valid = false;
+  if (provided && expected && provided.length === expected.length) {
+    valid = crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
+  }
+
+  if (!valid) {
+    // Track failed attempt
+    if (!bf || now > bf.resetAt) {
+      adminBruteForce.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 });
+    } else {
+      bf.count++;
+    }
     return res.status(403).json({ ok: false, error: 'Forbidden' });
   }
+
+  // Reset brute force on success
+  adminBruteForce.delete(ip);
   next();
 }
 
@@ -171,6 +200,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(apiLimiter); // Apply general rate limiting to all routes
 
+// Apply rate limiting + auth to ALL /admin/* routes globally
+app.use('/admin', adminLimiter, requireAdmin);
+
 const PORT = process.env.PORT || 3000;
 
 // ===== Static website (excluding index.html - served dynamically) =====
@@ -231,8 +263,7 @@ app.get('/api/menu', (req, res) => {
 });
 
 // ===== Image upload endpoint =====
-app.post('/api/upload', upload.array('images', 10), (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
+app.post('/api/upload', requireAdmin, upload.array('images', 10), (req, res) => {
   if (!req.files || !req.files.length) return res.status(400).json({ ok: false, error: 'No files uploaded' });
   const urls = req.files.map(f => '/photos/' + f.filename);
   res.json({ ok: true, urls });
@@ -931,7 +962,6 @@ app.get('/api/membership/status', (req, res) => {
 //   POST /admin/stock/C1?key=meatpe_admin_123&inStock=false
 //   POST /admin/stock/C1?key=meatpe_admin_123&inStock=true
 app.post('/admin/stock/:code', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const code = req.params.code;
   const inStock = String(req.query.inStock || 'true').toLowerCase() !== 'false';
   const result = setStock(code, inStock);
@@ -941,7 +971,6 @@ app.post('/admin/stock/:code', (req, res) => {
 
 // ===== Admin: view current stock state =====
 app.get('/admin/stock', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   res.json(loadStock());
 });
 
@@ -949,7 +978,6 @@ app.get('/admin/stock', (req, res) => {
 
 // Toggle item listing (show/hide from app)
 app.post('/admin/items/:code/listing', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const code = req.params.code;
   const listed = String(req.query.listed || 'true').toLowerCase() !== 'false';
   
@@ -973,20 +1001,17 @@ app.post('/admin/items/:code/listing', (req, res) => {
 
 // List all items (with stock state) — admin only
 app.get('/admin/items', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   res.json({ ok: true, items: catalogWithStock(), categories: VALID_CATEGORIES });
 });
 
 // Suggest next code for a category (e.g. 'chicken' -> 'C9')
 app.get('/admin/items/next-code', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const code = suggestNextCode(req.query.cat);
   res.json({ ok: !!code, code: code || null });
 });
 
 // Add new item
 app.post('/admin/items', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const result = addItem(req.body || {});
   if (!result.ok) return res.status(400).json(result);
   res.json(result);
@@ -994,7 +1019,6 @@ app.post('/admin/items', (req, res) => {
 
 // Update existing item (price, name, unit, category, img)
 app.put('/admin/items/:code', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const result = updateItem(req.params.code, req.body || {});
   if (!result.ok) return res.status(400).json(result);
   res.json(result);
@@ -1002,7 +1026,6 @@ app.put('/admin/items/:code', (req, res) => {
 
 // Delete item
 app.delete('/admin/items/:code', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const result = deleteItem(req.params.code);
   if (!result.ok) return res.status(404).json(result);
   res.json(result);
@@ -1010,32 +1033,26 @@ app.delete('/admin/items/:code', (req, res) => {
 
 // ===== Admin: coupons CRUD =====
 app.get('/admin/coupons', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   res.json({ ok: true, coupons: coupons.listAll() });
 });
 app.post('/admin/coupons', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const r = coupons.add(req.body || {});
   res.status(r.ok ? 200 : 400).json(r);
 });
 app.put('/admin/coupons/:code', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const r = coupons.update(req.params.code, req.body || {});
   res.status(r.ok ? 200 : 400).json(r);
 });
 app.delete('/admin/coupons/:code', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const r = coupons.remove(req.params.code);
   res.status(r.ok ? 200 : 404).json(r);
 });
 
 // ===== Admin: site settings =====
 app.get('/admin/settings', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   res.json({ ok: true, settings: settings.get() });
 });
 app.put('/admin/settings', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const result = settings.update(req.body || {});
   res.json(result);
 });
@@ -1046,7 +1063,6 @@ app.get('/api/settings', (req, res) => {
 
 // ===== Admin: list orders =====
 app.get('/admin/orders', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const status = req.query.status; // optional filter
   const source = req.query.source; // 'web' | 'whatsapp' | undefined
   const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
@@ -1101,7 +1117,6 @@ app.get('/admin/orders', (req, res) => {
 
 // ===== Admin: update order status =====
 app.post('/admin/orders/:id/status', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const id = parseInt(req.params.id, 10);
   const status = String(req.query.status || '').toLowerCase();
   const allowed = ['placed', 'preparing', 'out_for_delivery', 'delivered', 'cancelled'];
@@ -1128,7 +1143,6 @@ app.post('/admin/orders/:id/status', (req, res) => {
 
 // ===== Admin: assign delivery boy to order =====
 app.post('/admin/orders/:id/assign', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const id = parseInt(req.params.id, 10);
   const deliveryBoy = req.query.delivery_boy || '';
   
@@ -1149,7 +1163,6 @@ app.post('/admin/orders/:id/assign', (req, res) => {
 
 // ===== Admin: list all users =====
 app.get('/admin/users', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   
   // Get unique users by normalized phone (remove prefixes like web:/whatsapp:)
   // Use clean_phone for grouping but also aggregate data from customers table
@@ -1181,7 +1194,6 @@ app.get('/admin/users', (req, res) => {
 
 // ===== Admin: get user detail =====
 app.get('/admin/users/:phone/detail', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   
   let phone = req.params.phone.replace(/\D/g, '').slice(-10);
   if (phone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
@@ -1314,7 +1326,6 @@ app.get('/admin/users/:phone/detail', (req, res) => {
 
 // ===== Admin: block/unblock user =====
 app.post('/admin/users/:phone/block', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const phone = req.params.phone.replace(/\D/g, '');
   const waPhone = `web:+91${phone}`;
   const block = req.query.block === '1' ? 1 : 0;
@@ -1325,7 +1336,6 @@ app.post('/admin/users/:phone/block', (req, res) => {
 
 // ===== Admin: delete user account =====
 app.post('/admin/users/:phone/delete', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const phone = req.params.phone.replace(/\D/g, '');
   const waPhone = `web:+91${phone}`;
   db.prepare('DELETE FROM customers WHERE phone = ?').run(waPhone);
@@ -1341,7 +1351,6 @@ app.get('/admin/store-status', requireAdmin, (req, res) => {
 });
 
 app.post('/admin/store-status', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const open = req.query.open === '1';
   const settingsMod = require('./data/settings');
   settingsMod.update({ storeOpen: open });
@@ -1359,7 +1368,6 @@ app.get('/api/store-status', (req, res) => {
 
 // ===== Admin: list all reviews =====
 app.get('/admin/reviews', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   
   try {
     const reviews = db.prepare(`
@@ -1397,7 +1405,6 @@ app.get('/admin/reviews', (req, res) => {
 
 // ===== Admin: list all returns/refunds =====
 app.get('/admin/returns', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   
   const returns = db.prepare(`
     SELECT 
@@ -1432,7 +1439,6 @@ app.get('/admin/returns', (req, res) => {
 
 // ===== Admin: update return/refund status =====
 app.post('/admin/returns/:id/status', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   
   const id = parseInt(req.params.id, 10);
   const { status, refund_amount, refund_method, admin_note } = req.body || {};
@@ -1840,8 +1846,7 @@ app.post('/webhook/whatsapp', (req, res) => {
 app.all('/webhook/instagram', handleInstagramWebhook);
 
 // ===== Manual trigger: post to Instagram now =====
-app.post('/admin/ig-post', async (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).send('forbidden');
+app.post('/admin/ig-post', requireAdmin, async (req, res) => {
   try {
     const r = await postRandomSample();
     res.json({ ok: true, result: r });
@@ -1974,7 +1979,6 @@ app.get('/api/location/reverse', async (req, res) => {
 
 // GET /admin/customers?key=X - list all customers with order count + wallet
 app.get('/admin/customers', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
   const search = req.query.search || '';
   let sql = `SELECT c.*, 
@@ -1993,7 +1997,6 @@ app.get('/admin/customers', (req, res) => {
 
 // PUT /admin/customers/:phone/wallet?key=X - add/set wallet balance
 app.put('/admin/customers/:phone/wallet', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const phone = decodeURIComponent(req.params.phone);
   const { amount, action } = req.body || {}; // action: 'add' | 'set'
   const val = parseInt(amount, 10) || 0;
@@ -2008,7 +2011,6 @@ app.put('/admin/customers/:phone/wallet', (req, res) => {
 
 // GET /admin/analytics?key=X - comprehensive analytics
 app.get('/admin/analytics', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   
   // Revenue by day (last 30 days)
   const daily = db.prepare(`
@@ -2031,7 +2033,6 @@ app.get('/admin/analytics', (req, res) => {
 
 // GET /admin/dashboard?key=X - live dashboard data
 app.get('/admin/dashboard', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   
   try {
     // Order counts by status
@@ -2146,7 +2147,6 @@ app.get('/api/returns/:phone', (req, res) => {
 
 // GET /admin/returns?key=X — list all returns
 app.get('/admin/returns', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const status = req.query.status || '';
   const rows = db.prepare(`
     SELECT r.*, c.name as customer_name, o.total as order_total
@@ -2169,7 +2169,6 @@ app.get('/admin/returns', (req, res) => {
 
 // PUT /admin/returns/:id?key=X — update return status
 app.put('/admin/returns/:id', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const { status, refund_amount, refund_method, admin_note } = req.body || {};
   const allowed = ['requested', 'approved', 'rejected', 'refunded', 'processing'];
   if (!allowed.includes(status)) return res.status(400).json({ ok: false, error: 'invalid status' });
@@ -2187,7 +2186,6 @@ app.put('/admin/returns/:id', (req, res) => {
 
 // GET /admin/inventory?key=X — full inventory with stock levels
 app.get('/admin/inventory', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const { outOfStock } = loadStock();
   const catalog = getCatalog();
   const oosUpper = outOfStock.map(c => c.toUpperCase());
@@ -2210,7 +2208,6 @@ app.get('/admin/inventory', (req, res) => {
 
 // POST /admin/inventory/:code?key=X — update stock qty + low stock flag
 app.post('/admin/inventory/:code', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const { inStock, lowStock, stockQty, sku } = req.body || {};
   const code = req.params.code;
   // Update stock state
@@ -2232,7 +2229,6 @@ app.post('/admin/inventory/:code', (req, res) => {
 
 // GET /admin/inventory/alerts?key=X — low stock + out of stock alerts
 app.get('/admin/inventory/alerts', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const { outOfStock } = loadStock();
   const catalog = getCatalog();
   const oosUpper = outOfStock.map(c => c.toUpperCase());
@@ -2327,7 +2323,6 @@ app.get('/api/reviews/check/:phone/:order_id', (req, res) => {
 
 // GET /admin/reviews?key=X — list all reviews (admin)
 app.get('/admin/reviews', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const status = req.query.status || '';
   const rows = db.prepare(`
     SELECT r.*, c.name as customer_name
@@ -2340,7 +2335,6 @@ app.get('/admin/reviews', (req, res) => {
 
 // PUT /admin/reviews/:id?key=X — approve/reject/delete
 app.put('/admin/reviews/:id', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const { status } = req.body || {};
   const allowed = ['approved', 'rejected', 'pending'];
   if (!allowed.includes(status)) return res.status(400).json({ ok: false, error: 'invalid status' });
@@ -2349,14 +2343,12 @@ app.put('/admin/reviews/:id', (req, res) => {
 });
 
 app.delete('/admin/reviews/:id', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   db.prepare('DELETE FROM reviews WHERE id = ?').run(req.params.id);
   res.json({ ok: true });
 });
 
 // ===== Admin: customers list =====
 app.get('/admin/customers', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
   const search = req.query.search || '';
   let sql, params;
@@ -2378,7 +2370,6 @@ app.get('/admin/customers', (req, res) => {
 
 // ===== Admin: update customer wallet =====
 app.put('/admin/customers/:phone/wallet', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const phone = decodeURIComponent(req.params.phone);
   const { amount, action } = req.body || {};
   const val = parseInt(amount, 10) || 0;
@@ -2571,7 +2562,6 @@ app.post('/api/notifications/subscribe', (req, res) => {
 
 // POST /api/notifications/test — test notification (with admin key)
 app.post('/api/notifications/test', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {
     const { phone, message, channel = 'whatsapp' } = req.body || {};
     const cleanPhone = String(phone || '').replace(/\D/g, '');
@@ -2612,7 +2602,6 @@ app.get('/api/notifications/:phone', (req, res) => {
 
 // GET /admin/notifications?key=X — list all notifications (admin)
 app.get('/admin/notifications', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {
     const status = req.query.status || '';
     const type = req.query.type || '';
@@ -2647,7 +2636,6 @@ app.get('/admin/notifications', (req, res) => {
 
 // GET /admin/notification-templates?key=X — list templates
 app.get('/admin/notification-templates', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {
     const templates = db.prepare('SELECT * FROM notification_templates ORDER BY name').all();
     res.json({ ok: true, templates });
@@ -2659,7 +2647,6 @@ app.get('/admin/notification-templates', (req, res) => {
 
 // PUT /admin/notification-templates/:id?key=X — update template
 app.put('/admin/notification-templates/:id', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {
     const { subject, body, channels, active } = req.body || {};
     const id = parseInt(req.params.id, 10);
@@ -2854,7 +2841,6 @@ app.put('/api/vendors/:id', (req, res) => {
 
 // GET /admin/vendors?key=X — list all vendors (admin)
 app.get('/admin/vendors', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {
     const status = req.query.status || '';
     const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
@@ -2890,7 +2876,6 @@ app.get('/admin/vendors', (req, res) => {
 
 // POST /admin/vendors/:id/approve?key=X — approve vendor
 app.post('/admin/vendors/:id/approve', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {
     const id = parseInt(req.params.id, 10);
     db.prepare('UPDATE vendors SET status = ?, verified_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
@@ -2904,7 +2889,6 @@ app.post('/admin/vendors/:id/approve', (req, res) => {
 
 // POST /admin/vendors/:id/reject?key=X — reject vendor
 app.post('/admin/vendors/:id/reject', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {
     const { reason } = req.body || {};
     const id = parseInt(req.params.id, 10);
@@ -2986,7 +2970,6 @@ app.get('/api/vendors/:id/analytics', (req, res) => {
 
 // GET /admin/vendor-payouts?key=X — list all vendor payouts
 app.get('/admin/vendor-payouts', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {
     const status = req.query.status || '';
     let sql = 'SELECT vp.*, v.name as vendor_name FROM vendor_payouts vp LEFT JOIN vendors v ON v.id = vp.vendor_id';
@@ -3018,7 +3001,6 @@ app.get('/admin/vendor-payouts', (req, res) => {
 
 // POST /admin/vendor-payouts/:id/process?key=X — mark payout as processed
 app.post('/admin/vendor-payouts/:id/process', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {
     const id = parseInt(req.params.id, 10);
     db.prepare('UPDATE vendor_payouts SET status = ?, payout_date = CURRENT_TIMESTAMP WHERE id = ?')
@@ -3438,7 +3420,6 @@ app.post('/api/subscriptions/:id/cancel', (req, res) => {
 
 // GET /admin/subscriptions?key=X — list all subscriptions (admin)
 app.get('/admin/subscriptions', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {
     const status = req.query.status || '';
     let sql = `SELECT s.*, c.name as customer_name FROM subscriptions s
@@ -3763,7 +3744,6 @@ app.get('/api/tickets/:phone', (req, res) => {
 
 // GET /admin/tickets — all tickets (admin)
 app.get('/admin/tickets', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const status = req.query.status || '';
   let tickets;
   if (status) {
@@ -3776,7 +3756,6 @@ app.get('/admin/tickets', (req, res) => {
 
 // POST /admin/ticket/reply — admin replies to ticket
 app.post('/admin/ticket/reply', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const { ticketId, reply, status } = req.body || {};
   if (!ticketId) return res.status(400).json({ ok: false, error: 'ticketId required' });
   
@@ -3807,7 +3786,6 @@ try {
 
 // POST /admin/notification/send — admin sends notification to all users
 app.post('/admin/notification/send', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const { type, title, message, icon } = req.body || {};
   if (!title || !message) return res.status(400).json({ ok: false, error: 'title and message required' });
   
@@ -3827,7 +3805,6 @@ app.get('/api/notifications/admin', (req, res) => {
 
 // GET /admin/notifications — list all sent notifications (admin view)
 app.get('/admin/notifications', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   try {
     const notifs = db.prepare('SELECT * FROM admin_notifications ORDER BY created_at DESC LIMIT 50').all();
     res.json({ ok: true, notifications: notifs });
@@ -3879,7 +3856,6 @@ app.get('/api/chat/messages/:phone', (req, res) => {
 
 // GET /admin/chats — get all active chats (admin)
 app.get('/admin/chats', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   
   // Get unique phones with last message
   const chats = db.prepare(`
@@ -3904,7 +3880,6 @@ app.get('/admin/chats', (req, res) => {
 
 // GET /admin/chat/:phone — get messages for a specific user (admin)
 app.get('/admin/chat/:phone', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const cleanPhone = String(req.params.phone).replace(/\D/g, '');
   const webPhone = cleanPhone.startsWith('web:') ? req.params.phone : `web:+91${cleanPhone}`;
   
@@ -3915,7 +3890,6 @@ app.get('/admin/chat/:phone', (req, res) => {
 
 // POST /admin/chat/reply — admin replies to user
 app.post('/admin/chat/reply', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   const { phone, message } = req.body || {};
   if (!phone || !message || !message.trim()) return res.status(400).json({ ok: false, error: 'missing fields' });
   
@@ -4268,7 +4242,6 @@ app.post('/api/rider/rate', (req, res) => {
 
 // GET /admin/rider-analytics - Admin rider analytics data
 app.get('/admin/rider-analytics', (req, res) => {
-  if (req.query.key !== process.env.ADMIN_KEY) return res.status(403).json({ ok: false, error: 'forbidden' });
   
   const settings = require('./data/settings').get();
   const riders = settings.orderTracking?.deliveryBoys || [];

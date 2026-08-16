@@ -74,6 +74,19 @@ h1{font-size:24px;margin-bottom:6px}
 </div>
 
 <script>
+
+// Auto-inject x-admin-key header for all /admin and /api/upload requests
+const _origFetch = window.fetch.bind(window);
+window.fetch = function(url, options = {}) {
+  const urlStr = typeof url === 'string' ? url : (url?.url || '');
+  if (urlStr.startsWith('/admin') || urlStr.startsWith('/api/upload')) {
+    const adminKey = localStorage.getItem('meatpe_admin_key') || '';
+    options = options || {};
+    options.headers = { ...(options.headers || {}), 'x-admin-key': adminKey };
+  }
+  return _origFetch(url, options);
+};
+
 const $ = id => document.getElementById(id);
 let TICKETS = [];
 let CURRENT_TICKET = null;
@@ -95,7 +108,7 @@ async function loadTickets() {
   // Only pass open/resolved as status to API, user/rider is client-side filter
   const apiStatus = (FILTER === 'open' || FILTER === 'resolved') ? '&status=' + FILTER : '';
   try {
-    const res = await fetch('/admin/tickets?key=' + encodeURIComponent(key) + apiStatus);
+    const res = await fetch('/admin/tickets')+apiStatus);
     const data = await res.json();
     if (!data.ok) { $('ticketsList').innerHTML = '<div style="color:red">' + (data.error || 'Failed') + '</div>'; return; }
     TICKETS = data.tickets;
@@ -201,7 +214,7 @@ async function sendReply(status) {
   if (!reply) { alert('Please type a reply'); return; }
   
   try {
-    const res = await fetch('/admin/ticket/reply?key=' + encodeURIComponent(getKey()), {
+    const res = await fetch('/admin/ticket/reply, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ticketId: CURRENT_TICKET, reply, status })

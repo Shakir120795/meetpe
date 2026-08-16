@@ -354,6 +354,19 @@
 <div class="toast" id="toast"></div>
 
 <script>
+
+// Auto-inject x-admin-key header for all /admin and /api/upload requests
+const _origFetch = window.fetch.bind(window);
+window.fetch = function(url, options = {}) {
+  const urlStr = typeof url === 'string' ? url : (url?.url || '');
+  if (urlStr.startsWith('/admin') || urlStr.startsWith('/api/upload')) {
+    const adminKey = localStorage.getItem('meatpe_admin_key') || '';
+    options = options || {};
+    options.headers = { ...(options.headers || {}), 'x-admin-key': adminKey };
+  }
+  return _origFetch(url, options);
+};
+
 const $ = (id) => document.getElementById(id);
 const keyInput = $('key');
 const content  = $('content');
@@ -404,7 +417,7 @@ async function loadItems(showLoad) {
   if (!key) { msg.innerHTML = '<div class="err">Enter admin key first.</div>'; return; }
   localStorage.setItem('meatpe_admin_key', key);
   try {
-    const res = await fetch(`/admin/items?key=${encodeURIComponent(key)}`);
+    const res = await fetch(`/admin/items`);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'load failed');
     ITEMS = data.items;
@@ -570,7 +583,7 @@ $('fileUploadInput').addEventListener('change', async (e) => {
   container.parentElement.appendChild(uploadMsg);
 
   try {
-    const res = await fetch(`/api/upload?key=${encodeURIComponent(key)}`, {
+    const res = await fetch(`/api/upload`, {
       method: 'POST',
       body: formData,
     });
@@ -644,8 +657,8 @@ async function submitItem() {
   $('submitBtn').disabled = true;
   try {
     const url = EDITING
-      ? `/admin/items/${EDITING.code}?key=${encodeURIComponent(key)}`
-      : `/admin/items?key=${encodeURIComponent(key)}`;
+      ? `/admin/items/${EDITING.code}`
+      : `/admin/items`;
     const res = await fetch(url, {
       method: EDITING ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -672,7 +685,7 @@ async function deleteItem(code) {
   if (!confirm(`Delete "${item.name}" (${item.code}) permanently?\n\nThis cannot be undone.`)) return;
   const key = keyInput.value.trim();
   try {
-    const res = await fetch(`/admin/items/${code}?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
+    const res = await fetch(`/admin/items/${code}`, { method: 'DELETE' });
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'delete failed');
     toast(`Deleted: ${item.name}`, 'success');
@@ -703,7 +716,7 @@ async function toggleListing(code) {
   const newListed = item.listed === false ? true : false;
   
   try {
-    const res = await fetch(`/admin/items/${code}/listing?key=${encodeURIComponent(key)}&listed=${newListed}`, { method: 'POST' });
+    const res = await fetch(`/admin/items/${code}/listing?listed=${newListed}`, { method: 'POST' });
     const data = await res.json();
     if (data.ok) {
       item.listed = newListed;

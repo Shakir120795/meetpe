@@ -845,6 +845,19 @@
 <div class="toast" id="toast"></div>
 
 <script>
+
+// Auto-inject x-admin-key header for all /admin and /api/upload requests
+const _origFetch = window.fetch.bind(window);
+window.fetch = function(url, options = {}) {
+  const urlStr = typeof url === 'string' ? url : (url?.url || '');
+  if (urlStr.startsWith('/admin') || urlStr.startsWith('/api/upload')) {
+    const adminKey = localStorage.getItem('meatpe_admin_key') || '';
+    options = options || {};
+    options.headers = { ...(options.headers || {}), 'x-admin-key': adminKey };
+  }
+  return _origFetch(url, options);
+};
+
 const $ = (id) => document.getElementById(id);
 const keyInput = $('key');
 const content = $('content');
@@ -873,7 +886,7 @@ async function loadSettings() {
   if (!key) { msg.innerHTML = '<div class="err">Enter admin key.</div>'; return; }
   localStorage.setItem('meatpe_admin_key', key);
   try {
-    const res = await fetch(`/admin/settings?key=${encodeURIComponent(key)}`);
+    const res = await fetch(`/admin/settings`);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'failed');
     SETTINGS = data.settings;
@@ -1653,7 +1666,7 @@ async function saveSettings() {
   $('saveBtn').disabled = true;
   $('saveBtn').textContent = 'Saving...';
   try {
-    const res = await fetch(`/admin/settings?key=${encodeURIComponent(key)}`, {
+    const res = await fetch(`/admin/settings`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
