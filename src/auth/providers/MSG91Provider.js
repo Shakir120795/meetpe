@@ -74,7 +74,8 @@ class MSG91Provider extends IAuthProvider {
         'https://control.msg91.com/api/v5/widget/initiate',
         {
           identifier: `91${cleanPhone}`,
-          widgetId: this.widgetId
+          widgetId: this.widgetId,
+          tokenAuth: this.authKey
         },
         {
           headers: {
@@ -144,6 +145,7 @@ class MSG91Provider extends IAuthProvider {
           identifier: `91${cleanPhone}`,
           otp: cleanOTP,
           widgetId: this.widgetId,
+          tokenAuth: this.authKey,
           ...(reqId && { reqId })
         },
         {
