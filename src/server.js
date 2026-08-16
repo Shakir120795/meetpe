@@ -194,6 +194,18 @@ app.get('/index.html', (req, res) => {
   res.redirect('/');
 });
 
+// ===== Serve rider.html with MSG91 token injected =====
+app.get('/rider', (req, res) => {
+  const riderPath = path.join(__dirname, '..', 'public', 'rider.html');
+  let html = fs.readFileSync(riderPath, 'utf8');
+  const widgetToken = process.env.MSG91_WIDGET_TOKEN || '';
+  html = html.replace('%%MSG91_TOKEN%%', widgetToken);
+  res.setHeader('Content-Type', 'text/html');
+  res.setHeader('Cache-Control', 'no-store');
+  res.send(html);
+});
+app.get('/rider.html', (req, res) => res.redirect('/rider'));
+
 // ===== Public menu API for the website =====
 app.get('/api/menu', (req, res) => {
   const items = catalogWithStock().filter(i => i.listed !== false); // Only show listed items

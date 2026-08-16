@@ -9,6 +9,17 @@
     <!-- Leaflet Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- MSG91 OTP Widget -->
+    <script>
+      var configuration = {
+        widgetId: "3668706a7131343537383533",
+        tokenAuth: "%%MSG91_TOKEN%%",
+        exposeMethods: true,
+        success: (data) => { console.log('MSG91 Rider Widget success:', data); },
+        failure: (error) => { console.log('MSG91 Rider Widget failure:', error); }
+      };
+    </script>
+    <script type="text/javascript" onload="initSendOTP(configuration)" src="https://verify.msg91.com/otp-provider.js"></script>
     <style>
         :root {
             --bg: #0D0D0D;
@@ -782,8 +793,7 @@
         <label>Enter OTP sent to <span id="otpPhoneDisplay"></span></label>
         <input type="tel" id="loginOtp" placeholder="Enter 6-digit OTP" maxlength="6" inputmode="numeric">
       </div>
-      <button class="btn btn-primary" id="verifyOtpBtn" onclick="handleVerifyOtp()">Verify & Login</button>
-      <p style="text-align:center;margin-top:12px;font-size:13px;color:var(--muted)">Demo OTP: <strong style="color:var(--accent)">123456</strong></p>
+      <button class="btn btn-primary" id="verifyOtpBtn" onclick="handleVerifyOtp()">Verify OTP</button>
       <button class="btn btn-outline" style="margin-top:10px" onclick="backToPhone()">← Change Number</button>
     </div>
     
@@ -1077,31 +1087,53 @@ async function handleSendOtp() {
     btn.innerHTML = '<span class="spinner"></span>';
 
     try {
-        const response = await fetch('/api/rider/send-otp', {
+        // First verify this is a registered rider
+        const checkRes = await fetch('/api/rider/send-otp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ phone })
         });
-        const data = await response.json();
-        
-        if (!data.ok) {
-            errorEl.textContent = data.error || 'Not a registered rider.';
+        const checkData = await checkRes.json();
+        if (!checkData.ok) {
+            errorEl.textContent = checkData.error || 'Not a registered rider.';
             btn.disabled = false;
             btn.textContent = 'Send OTP';
             return;
         }
-        
-        // OTP sent — show OTP step
+
         loginPhoneNumber = phone;
-        riderSessionInfo = data.sessionInfo || null;
-        document.getElementById('otpPhoneDisplay').textContent = '+91 ' + phone;
-        document.getElementById('loginStep1').style.display = 'none';
-        document.getElementById('loginStep2').style.display = 'block';
-        showToast('OTP sent to +91 ' + phone, 'success');
-        
+        riderSessionInfo = checkData.sessionInfo || null;
+
+        // Use MSG91 widget if available
+        if (window.sendOtp) {
+            window.sendOtp(
+                '91' + phone,
+                (data) => {
+                    riderSessionInfo = { reqId: data.reqId || data.data?.reqId || data.message || '', phone };
+                    document.getElementById('otpPhoneDisplay').textContent = '+91 ' + phone;
+                    document.getElementById('loginStep1').style.display = 'none';
+                    document.getElementById('loginStep2').style.display = 'block';
+                    showToast('OTP sent to +91 ' + phone, 'success');
+                    btn.disabled = false;
+                    btn.textContent = 'Send OTP';
+                },
+                (error) => {
+                    errorEl.textContent = typeof error === 'string' ? error : 'Failed to send OTP';
+                    btn.disabled = false;
+                    btn.textContent = 'Send OTP';
+                }
+            );
+        } else {
+            // Fallback: show OTP screen (server already sent OTP)
+            document.getElementById('otpPhoneDisplay').textContent = '+91 ' + phone;
+            document.getElementById('loginStep1').style.display = 'none';
+            document.getElementById('loginStep2').style.display = 'block';
+            showToast('OTP sent to +91 ' + phone, 'success');
+            btn.disabled = false;
+            btn.textContent = 'Send OTP';
+        }
     } catch (err) {
         errorEl.textContent = 'Network error. Please try again.';
-    } finally {
         btn.disabled = false;
         btn.textContent = 'Send OTP';
     }
@@ -1121,32 +1153,69 @@ async function handleVerifyOtp() {
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span>';
 
-    try {
-        const response = await fetch('/api/rider/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: loginPhoneNumber, otp, sessionInfo: riderSessionInfo })
-        });
-        const data = await response.json();
-
-        if (!data.ok) {
-            errorEl.textContent = data.error || 'Invalid OTP';
+    // Use MSG91 widget verify if available and reqId exists
+    if (window.verifyOtp && riderSessionInfo?.reqId) {
+        window.verifyOtp(
+            otp,
+            async (data) => {
+                // Widget verified — now login with server
+                try {
+                    const response = await fetch('/api/rider/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phone: loginPhoneNumber, otp, sessionInfo: riderSessionInfo })
+                    });
+                    const loginData = await response.json();
+                    if (!loginData.ok) {
+                        errorEl.textContent = loginData.error || 'Login failed';
+                        btn.disabled = false;
+                        btn.textContent = 'Verify OTP';
+                        return;
+                    }
+                    rider = loginData.rider;
+                    localStorage.setItem('rider_token', loginData.token);
+                    localStorage.setItem('rider_session', JSON.stringify(rider));
+                    isOnline = rider.status === 'available';
+                    showApp();
+                    showToast('Welcome, ' + rider.name + '! 🛵', 'success');
+                } catch (err) {
+                    errorEl.textContent = 'Network error. Please try again.';
+                    btn.disabled = false;
+                    btn.textContent = 'Verify OTP';
+                }
+            },
+            (error) => {
+                errorEl.textContent = typeof error === 'string' ? error : 'Invalid OTP';
+                btn.disabled = false;
+                btn.textContent = 'Verify OTP';
+            }
+        );
+    } else {
+        // Fallback: server verify
+        try {
+            const response = await fetch('/api/rider/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: loginPhoneNumber, otp, sessionInfo: riderSessionInfo })
+            });
+            const data = await response.json();
+            if (!data.ok) {
+                errorEl.textContent = data.error || 'Invalid OTP';
+                btn.disabled = false;
+                btn.textContent = 'Verify OTP';
+                return;
+            }
+            rider = data.rider;
+            localStorage.setItem('rider_token', data.token);
+            localStorage.setItem('rider_session', JSON.stringify(rider));
+            isOnline = rider.status === 'available';
+            showApp();
+            showToast('Welcome, ' + rider.name + '! 🛵', 'success');
+        } catch (err) {
+            errorEl.textContent = 'Network error. Please try again.';
             btn.disabled = false;
             btn.textContent = 'Verify OTP';
-            return;
         }
-
-        // OTP verified - login successful
-        rider = data.rider;
-        localStorage.setItem('rider_token', data.token);
-        localStorage.setItem('rider_session', JSON.stringify(rider));
-        isOnline = rider.status === 'available';
-        showApp();
-        showToast('Welcome, ' + rider.name + '! 🛵', 'success');
-    } catch (err) {
-        errorEl.textContent = 'Network error. Please try again.';
-        btn.disabled = false;
-        btn.textContent = 'Verify OTP';
     }
 }
 
