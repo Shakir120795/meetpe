@@ -19,6 +19,8 @@ class MSG91Provider extends IAuthProvider {
     super();
     this.authKey = process.env.MSG91_AUTH_KEY;
     this.widgetId = process.env.MSG91_WIDGET_ID || 'SecureOTPWidgetQF9Z';
+    // Widget token is used as tokenAuth in widget API calls (different from authKey)
+    this.widgetToken = process.env.MSG91_WIDGET_TOKEN || this.authKey;
 
     // Rate limiting store
     this.rateLimits = new Map(); // { phone: { count, resetAt } }
@@ -75,7 +77,7 @@ class MSG91Provider extends IAuthProvider {
         {
           identifier: `91${cleanPhone}`,
           widgetId: this.widgetId,
-          tokenAuth: this.authKey
+          tokenAuth: this.widgetToken
         },
         {
           headers: {
@@ -146,7 +148,7 @@ class MSG91Provider extends IAuthProvider {
           identifier: `91${cleanPhone}`,
           otp: cleanOTP,
           widgetId: this.widgetId,
-          tokenAuth: this.authKey,
+          tokenAuth: this.widgetToken,
           ...(reqId && { reqId })
         },
         {
