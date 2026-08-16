@@ -2128,6 +2128,20 @@ let SEARCH_Q = '';
 let SCREEN_HISTORY = ['screen-login'];
 let CURRENT_PRODUCT = null;
 let SELECTED_WEIGHT = null;
+
+// Auto-inject auth token for all /api/* requests
+const _origFetch = window.fetch.bind(window);
+window.fetch = function(url, options = {}) {
+  const urlStr = typeof url === 'string' ? url : (url?.url || '');
+  if (urlStr.startsWith('/api/')) {
+    const token = localStorage.getItem('now_auth_token') || '';
+    if (token) {
+      options = options || {};
+      options.headers = { ...(options.headers || {}), 'Authorization': 'Bearer ' + token };
+    }
+  }
+  return _origFetch(url, options);
+};
 let SELECTED_PRICE = 0;
 let MENU_CUSTOM = {}; // stores custom weight variants added from product detail
 let PAYMENT = 'cod';
