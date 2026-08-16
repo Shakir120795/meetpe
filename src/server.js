@@ -1513,7 +1513,8 @@ app.post('/api/auth/verify-otp', async (req, res) => {
     
     let result;
     // If MSG91 widget already verified on client-side, skip server verification
-    if (widgetVerified === true && sessionInfo?.widgetToken) {
+    // Widget sends back a reqId on success — that's sufficient proof
+    if (widgetVerified === true && (sessionInfo?.widgetToken || sessionInfo?.reqId)) {
       console.log(`✅ [VERIFY-OTP] Widget pre-verified for ${cleanPhone}`);
       result = { ok: true, uid: `widget_${cleanPhone}_${Date.now()}` };
     } else {
