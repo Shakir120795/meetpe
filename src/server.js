@@ -3989,7 +3989,7 @@ app.post('/api/rider/send-otp', otpLimiter, async (req, res) => {
 
 // POST /api/rider/login - Rider login with OTP verification
 app.post('/api/rider/login', async (req, res) => {
-  const { phone, otp, sessionInfo } = req.body || {};
+  const { phone, otp, sessionInfo, widgetVerified } = req.body || {};
   const cleanPhone = String(phone || '').replace(/\D/g, '').slice(-10);
   if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
   if (!otp || String(otp).length !== 6) return res.status(400).json({ ok: false, error: 'OTP required' });
@@ -4004,8 +4004,13 @@ app.post('/api/rider/login', async (req, res) => {
   });
   if (!rider) return res.status(403).json({ ok: false, error: 'Not a registered rider. Contact admin.' });
 
-  // Verify OTP via MSG91
-  const result = await authService.verifyOTP(cleanPhone, otp, sessionInfo || {});
+  // Widget verified client-side — trust reqId as proof
+  let result;
+  if (widgetVerified === true && sessionInfo?.reqId) {
+    result = { ok: true };
+  } else {
+    result = await authService.verifyOTP(cleanPhone, otp, sessionInfo || {});
+  }
   if (!result.ok) return res.status(400).json({ ok: false, error: result.error || 'Invalid OTP' });
 
   // OTP verified — generate rider session token
