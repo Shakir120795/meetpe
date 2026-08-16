@@ -1687,7 +1687,6 @@ app.post('/api/wishlist/sync', requireAuth, (req, res) => {
   if (cleanPhone.length !== 10) return res.status(400).json({ ok: false });
   const waPhone = `web:+91${cleanPhone}`;
   if (req.sessionPhone !== waPhone) return res.status(403).json({ ok: false, error: 'Access denied' });
-  const waPhone = `web:+91${cleanPhone}`;
   try { db.prepare('ALTER TABLE customers ADD COLUMN wishlist_json TEXT DEFAULT "[]"').run(); } catch(e) {}
   db.prepare('UPDATE customers SET wishlist_json = ? WHERE phone = ?').run(JSON.stringify(wishlist || []), waPhone);
   res.json({ ok: true });
@@ -1703,7 +1702,6 @@ app.post('/api/customer/delete', requireAuth, (req, res) => {
     // Only allow deleting own account
     if (req.sessionPhone !== waPhone) return res.status(403).json({ ok: false, error: 'Access denied' });
     
-    const waPhone = `web:+91${cleanPhone}`;
     const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
     if (!customer) return res.status(404).json({ ok: false, error: 'customer not found' });
     
@@ -1725,11 +1723,10 @@ app.post('/api/customer/delete', requireAuth, (req, res) => {
 // ===== Get customer orders - REQUIRES AUTH =====
 app.get('/api/orders/:phone', requireAuth, (req, res) => {
   const cleanPhone = String(req.params.phone).replace(/\D/g, '');
-  const waPhone = `web:+91${cleanPhone}`;
-  // Verify token belongs to this phone
-  if (req.sessionPhone !== waPhone) return res.status(403).json({ ok: false, error: 'Access denied' });
-  // Check both prefixes for backward compatibility
   const webPhone = `web:+91${cleanPhone}`;
+  // Verify token belongs to this phone
+  if (req.sessionPhone !== webPhone) return res.status(403).json({ ok: false, error: 'Access denied' });
+  // Check both prefixes for backward compatibility
   const waPhone = `whatsapp:+91${cleanPhone}`;
   const orders = db.prepare(`
     SELECT * FROM orders WHERE phone IN (?, ?)
@@ -1771,7 +1768,6 @@ app.post('/api/wallet/use', requireAuth, (req, res) => {
   if (req.sessionPhone !== waPhone) return res.status(403).json({ ok: false, error: 'Access denied' });
   const deduct = parseInt(amount, 10) || 0;
   if (deduct <= 0) return res.status(400).json({ ok: false, error: 'invalid amount' });
-  const waPhone = `web:+91${cleanPhone}`;
   const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
   if (!customer) return res.status(404).json({ ok: false, error: 'customer not found' });
   if ((customer.wallet_balance || 0) < deduct) return res.status(400).json({ ok: false, error: 'insufficient wallet balance' });
