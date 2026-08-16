@@ -165,6 +165,7 @@ const settings = require('./data/settings');
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+app.set('trust proxy', 1); // Trust first proxy (nginx/cloudflare)
 app.use(apiLimiter); // Apply general rate limiting to all routes
 
 const PORT = process.env.PORT || 3000;

@@ -69,7 +69,7 @@ class MSG91Provider extends IAuthProvider {
 
       console.log(`📱 [MSG91] Sending OTP to +91${cleanPhone} via Widget...`);
 
-      // MSG91 Widget Send OTP API
+      // MSG91 Widget Send OTP - Server Side API
       const response = await axios.post(
         'https://control.msg91.com/api/v5/widget/initiate',
         {
@@ -80,7 +80,8 @@ class MSG91Provider extends IAuthProvider {
         {
           headers: {
             'authkey': this.authKey,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
           timeout: 10000
         }
