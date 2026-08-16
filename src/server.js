@@ -177,8 +177,9 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 app.get('/', (req, res) => {
   const indexPath = path.join(__dirname, '..', 'public', 'index.html');
   let html = fs.readFileSync(indexPath, 'utf8');
-  // Inject MSG91 auth key safely (only the key, not full secret)
-  html = html.replace('%%MSG91_TOKEN%%', process.env.MSG91_AUTH_KEY || '');
+  // Inject MSG91 widget token (separate from auth key)
+  const widgetToken = process.env.MSG91_WIDGET_TOKEN || process.env.MSG91_AUTH_KEY || '';
+  html = html.replace('%%MSG91_TOKEN%%', widgetToken);
   res.setHeader('Content-Type', 'text/html');
   res.send(html);
 });
