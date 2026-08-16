@@ -7,6 +7,114 @@ const express = require('express');
 const cron = require('node-cron');
 const multer = require('multer');
 const axios = require('axios');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
+
+// ===== SECURITY MIDDLEWARE =====
+
+// Helmet - security headers (XSS, clickjacking, MIME sniffing)
+const app = express();
+
+app.use(helmet({
+  contentSecurityPolicy: false, // Disabled to allow inline scripts in existing HTML
+  crossOriginEmbedderPolicy: false
+}));
+
+// CORS - only allow our own domain
+app.use((req, res, next) => {
+  const allowedOrigins = [
+    'https://nonvegonwheel.in',
+    'https://www.nonvegonwheel.in',
+    'http://localhost:3000'
+  ];
+  const origin = req.headers.origin;
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
+// Rate limiter for OTP endpoints - max 3 requests per 15 minutes per IP
+const otpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  message: { ok: false, error: 'Too many OTP requests. Try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Rate limiter for general API - max 100 requests per minute
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  message: { ok: false, error: 'Too many requests. Please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Rate limiter for admin - max 30 requests per minute
+const adminLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: { ok: false, error: 'Too many admin requests.' }
+});
+
+// ===== SESSION TOKEN SYSTEM =====
+// Simple token-based auth for customer API endpoints
+const activeSessions = new Map(); // token -> { phone, createdAt }
+
+function generateToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+function createSession(phone) {
+  const token = generateToken();
+  activeSessions.set(token, { phone, createdAt: Date.now() });
+  // Clean up old sessions (older than 30 days)
+  for (const [t, s] of activeSessions.entries()) {
+    if (Date.now() - s.createdAt > 30 * 24 * 60 * 60 * 1000) activeSessions.delete(t);
+  }
+  return token;
+}
+
+function getSessionPhone(req) {
+  const auth = req.headers['authorization'] || req.headers['x-auth-token'] || req.query.token;
+  if (!auth) return null;
+  const token = auth.replace('Bearer ', '');
+  const session = activeSessions.get(token);
+  if (!session) return null;
+  return session.phone;
+}
+
+// Middleware: require valid session
+function requireAuth(req, res, next) {
+  const phone = getSessionPhone(req);
+  if (!phone) return res.status(401).json({ ok: false, error: 'Authentication required' });
+  req.sessionPhone = phone;
+  next();
+}
+
+// Middleware: require admin key
+function requireAdmin(req, res, next) {
+  if (req.query.key !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ ok: false, error: 'Forbidden' });
+  }
+  next();
+}
+
+// ===== INPUT SANITIZATION =====
+function sanitizeStr(str, maxLen = 500) {
+  if (!str) return '';
+  return String(str)
+    .replace(/<[^>]*>/g, '') // strip HTML tags
+    .replace(/[<>"']/g, '') // strip dangerous chars
+    .trim()
+    .slice(0, maxLen);
+}
 
 // File upload config — saves to public/photos/
 const uploadDir = path.join(__dirname, '..', 'public', 'photos');
@@ -55,9 +163,9 @@ const {
 const coupons = require('./data/coupons');
 const settings = require('./data/settings');
 
-const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+app.use(apiLimiter); // Apply general rate limiting to all routes
 
 const PORT = process.env.PORT || 3000;
 
@@ -1193,7 +1301,7 @@ app.post('/admin/users/:phone/delete', (req, res) => {
 });
 
 // ===== Admin: Store Open/Closed Toggle =====
-app.get('/admin/store-status', (req, res) => {
+app.get('/admin/store-status', requireAdmin, (req, res) => {
   const settingsData = require('./data/settings').get();
   res.json({ ok: true, open: settingsData.storeOpen !== false });
 });
@@ -1337,7 +1445,7 @@ app.post('/admin/returns/:id/status', (req, res) => {
 const authService = require('./auth/auth.service');
 
 // ===== Send OTP endpoint =====
-app.post('/api/auth/send-otp', async (req, res) => {
+app.post('/api/auth/send-otp', otpLimiter, async (req, res) => {
   try {
     const { phone, otpMethod } = req.body || {};
     const cleanPhone = String(phone || '').replace(/\D/g, '');
@@ -1457,8 +1565,12 @@ app.post('/api/auth/verify-otp', async (req, res) => {
     
     console.log(`✅ [VERIFY-OTP] Success! Returning customer data...`);
     
+    // Create session token for authenticated requests
+    const sessionToken = createSession(`web:+91${cleanPhone}`);
+    
     res.json({ 
-      ok: true, 
+      ok: true,
+      token: sessionToken,
       customer: { 
         phone: cleanPhone, 
         name: customer.name || '', 
@@ -1502,10 +1614,14 @@ app.post('/api/auth/login', (req, res) => {
   res.json({ ok: true, customer: { phone: cleanPhone, name: customer.name || '', wallet: customer.wallet_balance || 0 } });
 });
 
-// ===== Get customer profile =====
-app.get('/api/customer/:phone', (req, res) => {
+// ===== Get customer profile - REQUIRES AUTH =====
+app.get('/api/customer/:phone', requireAuth, (req, res) => {
   const cleanPhone = String(req.params.phone).replace(/\D/g, '');
   const waPhone = `web:+91${cleanPhone}`;
+  // Verify token belongs to this phone
+  if (req.sessionPhone !== waPhone) {
+    return res.status(403).json({ ok: false, error: 'Access denied' });
+  }
   const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
   if (!customer) return res.json({ ok: true, customer: { phone: cleanPhone, name: '', wallet: 0, orders: 0, membership_active: false, referral_earnings: 0, referred_count: 0 } });
   const rewards = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rewards WHERE phone = ? AND used = 0 AND expires_at > datetime('now')`).get(waPhone);
@@ -1553,10 +1669,12 @@ app.get('/api/customer/:phone', (req, res) => {
   });
 });
 
-// ===== Wishlist (server-side sync) =====
-app.get('/api/wishlist/:phone', (req, res) => {
+// ===== Wishlist (server-side sync) - REQUIRES AUTH =====
+app.get('/api/wishlist/:phone', requireAuth, (req, res) => {
   const cleanPhone = String(req.params.phone).replace(/\D/g, '').slice(-10);
   if (cleanPhone.length !== 10) return res.json({ ok: true, wishlist: [] });
+  const waPhone = `web:+91${cleanPhone}`;
+  if (req.sessionPhone !== waPhone) return res.status(403).json({ ok: false, error: 'Access denied' });
   const waPhone = `web:+91${cleanPhone}`;
   try { db.prepare('ALTER TABLE customers ADD COLUMN wishlist_json TEXT DEFAULT "[]"').run(); } catch(e) {}
   const row = db.prepare('SELECT wishlist_json FROM customers WHERE phone = ?').get(waPhone);
@@ -1564,22 +1682,27 @@ app.get('/api/wishlist/:phone', (req, res) => {
   res.json({ ok: true, wishlist });
 });
 
-app.post('/api/wishlist/sync', (req, res) => {
+app.post('/api/wishlist/sync', requireAuth, (req, res) => {
   const { phone, wishlist } = req.body || {};
   const cleanPhone = String(phone || '').replace(/\D/g, '').slice(-10);
   if (cleanPhone.length !== 10) return res.status(400).json({ ok: false });
+  const waPhone = `web:+91${cleanPhone}`;
+  if (req.sessionPhone !== waPhone) return res.status(403).json({ ok: false, error: 'Access denied' });
   const waPhone = `web:+91${cleanPhone}`;
   try { db.prepare('ALTER TABLE customers ADD COLUMN wishlist_json TEXT DEFAULT "[]"').run(); } catch(e) {}
   db.prepare('UPDATE customers SET wishlist_json = ? WHERE phone = ?').run(JSON.stringify(wishlist || []), waPhone);
   res.json({ ok: true });
 });
 
-// ===== Delete customer account =====
-app.post('/api/customer/delete', (req, res) => {
+// ===== Delete customer account - REQUIRES AUTH =====
+app.post('/api/customer/delete', requireAuth, (req, res) => {
   try {
     const { phone } = req.body || {};
     const cleanPhone = String(phone || '').replace(/\D/g, '');
     if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+    const waPhone = `web:+91${cleanPhone}`;
+    // Only allow deleting own account
+    if (req.sessionPhone !== waPhone) return res.status(403).json({ ok: false, error: 'Access denied' });
     
     const waPhone = `web:+91${cleanPhone}`;
     const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
@@ -1600,9 +1723,12 @@ app.post('/api/customer/delete', (req, res) => {
   }
 });
 
-// ===== Get customer orders (last 20) =====
-app.get('/api/orders/:phone', (req, res) => {
+// ===== Get customer orders - REQUIRES AUTH =====
+app.get('/api/orders/:phone', requireAuth, (req, res) => {
   const cleanPhone = String(req.params.phone).replace(/\D/g, '');
+  const waPhone = `web:+91${cleanPhone}`;
+  // Verify token belongs to this phone
+  if (req.sessionPhone !== waPhone) return res.status(403).json({ ok: false, error: 'Access denied' });
   // Check both prefixes for backward compatibility
   const webPhone = `web:+91${cleanPhone}`;
   const waPhone = `whatsapp:+91${cleanPhone}`;
@@ -1637,11 +1763,13 @@ app.get('/api/orders/:phone', (req, res) => {
   }) });
 });
 
-// ===== Use wallet balance =====
-app.post('/api/wallet/use', (req, res) => {
+// ===== Use wallet balance - REQUIRES AUTH =====
+app.post('/api/wallet/use', requireAuth, (req, res) => {
   const { phone, amount } = req.body || {};
   const cleanPhone = String(phone || '').replace(/\D/g, '');
   if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
+  const waPhone = `web:+91${cleanPhone}`;
+  if (req.sessionPhone !== waPhone) return res.status(403).json({ ok: false, error: 'Access denied' });
   const deduct = parseInt(amount, 10) || 0;
   if (deduct <= 0) return res.status(400).json({ ok: false, error: 'invalid amount' });
   const waPhone = `web:+91${cleanPhone}`;
@@ -3815,6 +3943,29 @@ try {
   )`);
 } catch(e) { console.warn('Rider tables:', e.message); }
 
+// Rider session store
+const riderSessions = new Map(); // token -> riderId
+
+function createRiderSession(riderId) {
+  const token = crypto.randomBytes(32).toString('hex');
+  riderSessions.set(token, { riderId, createdAt: Date.now() });
+  return token;
+}
+
+function requireRiderAuth(req, res, next) {
+  const auth = req.headers['authorization'] || req.headers['x-rider-token'] || req.query.riderToken;
+  if (!auth) return res.status(401).json({ ok: false, error: 'Rider authentication required' });
+  const token = auth.replace('Bearer ', '');
+  const session = riderSessions.get(token);
+  if (!session) return res.status(401).json({ ok: false, error: 'Invalid or expired rider token' });
+  // Clean old sessions
+  for (const [t, s] of riderSessions.entries()) {
+    if (Date.now() - s.createdAt > 7 * 24 * 60 * 60 * 1000) riderSessions.delete(t);
+  }
+  req.riderId = session.riderId;
+  next();
+}
+
 // POST /api/rider/login - Rider login (uses phone from deliveryBoys)
 app.post('/api/rider/login', (req, res) => {
   const { phone } = req.body || {};
@@ -3832,13 +3983,17 @@ app.post('/api/rider/login', (req, res) => {
   
   if (!rider) return res.status(403).json({ ok: false, error: 'Not a registered rider. Contact admin.' });
   
-  res.json({ ok: true, rider: { id: rider.id, name: rider.name, phone: rider.phone, vehicleType: rider.vehicleType, vehicleNumber: rider.vehicleNumber, rating: rider.rating, totalDeliveries: rider.totalDeliveries, status: rider.status, bankDetails: rider.bankDetails, upiId: rider.upiId } });
+  // Generate rider session token
+  const riderToken = createRiderSession(rider.id);
+  
+  res.json({ ok: true, token: riderToken, rider: { id: rider.id, name: rider.name, phone: rider.phone, vehicleType: rider.vehicleType, vehicleNumber: rider.vehicleNumber, rating: rider.rating, totalDeliveries: rider.totalDeliveries, status: rider.status, bankDetails: rider.bankDetails, upiId: rider.upiId } });
 });
 
 // POST /api/rider/status - Toggle online/offline
-app.post('/api/rider/status', (req, res) => {
+app.post('/api/rider/status', requireRiderAuth, (req, res) => {
   const { riderId, status } = req.body || {};
   if (!riderId || !['available', 'busy', 'offline'].includes(status)) return res.status(400).json({ ok: false, error: 'invalid' });
+  if (req.riderId !== riderId) return res.status(403).json({ ok: false, error: 'Access denied' });
   
   const settings = require('./data/settings');
   const current = settings.get();
@@ -3852,8 +4007,9 @@ app.post('/api/rider/status', (req, res) => {
 });
 
 // GET /api/rider/dashboard/:riderId - Dashboard stats
-app.get('/api/rider/dashboard/:riderId', (req, res) => {
+app.get('/api/rider/dashboard/:riderId', requireRiderAuth, (req, res) => {
   const riderId = req.params.riderId;
+  if (req.riderId !== riderId) return res.status(403).json({ ok: false, error: 'Access denied' });
   
   // Today's stats
   const todayEarnings = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_earnings WHERE rider_id = ? AND date(created_at, 'localtime') = date('now', 'localtime')`).get(riderId);
@@ -3876,8 +4032,9 @@ app.get('/api/rider/dashboard/:riderId', (req, res) => {
 });
 
 // GET /api/rider/orders/:riderId - Get rider's orders
-app.get('/api/rider/orders/:riderId', (req, res) => {
+app.get('/api/rider/orders/:riderId', requireRiderAuth, (req, res) => {
   const riderId = req.params.riderId;
+  if (req.riderId !== riderId) return res.status(403).json({ ok: false, error: 'Access denied' });
   const status = req.query.status || '';
   
   let orders;
@@ -3903,9 +4060,10 @@ app.get('/api/rider/orders/:riderId', (req, res) => {
 });
 
 // POST /api/rider/order/accept - Accept order
-app.post('/api/rider/order/accept', (req, res) => {
+app.post('/api/rider/order/accept', requireRiderAuth, (req, res) => {
   const { riderId, orderId } = req.body || {};
   if (!riderId || !orderId) return res.status(400).json({ ok: false, error: 'missing fields' });
+  if (req.riderId !== riderId) return res.status(403).json({ ok: false, error: 'Access denied' });
   
   const order = db.prepare('SELECT * FROM orders WHERE id = ? AND (rider_id = ? OR delivery_boy = ? OR rider_id = ?)').get(orderId, riderId, riderId, 'all');
   if (!order) return res.status(404).json({ ok: false, error: 'order not found or not assigned to you' });
@@ -3927,8 +4085,9 @@ app.post('/api/rider/order/accept', (req, res) => {
 });
 
 // POST /api/rider/order/status - Update order status
-app.post('/api/rider/order/status', (req, res) => {
+app.post('/api/rider/order/status', requireRiderAuth, (req, res) => {
   const { riderId, orderId, status } = req.body || {};
+  if (req.riderId !== riderId) return res.status(403).json({ ok: false, error: 'Access denied' });
   const allowed = ['preparing', 'out_for_delivery', 'delivered'];
   if (!allowed.includes(status)) return res.status(400).json({ ok: false, error: 'invalid status' });
   
@@ -4004,8 +4163,9 @@ app.post('/api/rider/order/verify', (req, res) => {
 });
 
 // GET /api/rider/earnings/:riderId - Earnings
-app.get('/api/rider/earnings/:riderId', (req, res) => {
+app.get('/api/rider/earnings/:riderId', requireRiderAuth, (req, res) => {
   const riderId = req.params.riderId;
+  if (req.riderId !== riderId) return res.status(403).json({ ok: false, error: 'Access denied' });
   const today = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_earnings WHERE rider_id = ? AND date(created_at,'localtime')=date('now','localtime')`).get(riderId);
   const week = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_earnings WHERE rider_id = ? AND created_at >= datetime('now','-7 days')`).get(riderId);
   const month = db.prepare(`SELECT COALESCE(SUM(amount),0) as total FROM rider_earnings WHERE rider_id = ? AND created_at >= datetime('now','-30 days')`).get(riderId);
@@ -4173,7 +4333,7 @@ app.listen(PORT, () => {
 // ===== LOCATION TRACKING ENDPOINTS =====
 
 // POST /api/rider/location/update - Rider updates their location
-app.post('/api/rider/location/update', (req, res) => {
+app.post('/api/rider/location/update', requireRiderAuth, (req, res) => {
   const { orderId, riderId, riderName, riderPhone, latitude, longitude, accuracy, heading, speed } = req.body || {};
   
   if (!orderId || !latitude || !longitude) {
@@ -4268,7 +4428,7 @@ app.get('/api/customer/rider/location/:orderId', (req, res) => {
 });
 
 // GET /api/rider/order/:orderId/delivery-location - Rider gets delivery location
-app.get('/api/rider/order/:orderId/delivery-location', (req, res) => {
+app.get('/api/rider/order/:orderId/delivery-location', requireRiderAuth, (req, res) => {
   const { orderId } = req.params;
   const { riderId } = req.query;
   

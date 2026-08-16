@@ -1,17 +1,14 @@
 /**
- * MSG91Provider — Real OTP implementation using MSG91 API
- * 
- * Features:
- * - Send OTP via SMS or WhatsApp
- * - Verify OTP with retry limits
- * - Automatic expiry (10 minutes)
- * - Rate limiting (max 3 OTPs per 15 minutes per phone)
- * - Retry tracking (max 5 attempts per OTP)
- * 
+ * MSG91Provider — Widget-based OTP (no DLT registration needed)
+ *
+ * Uses MSG91 Secure OTP Widget API:
+ * - Send OTP via Widget (SMS auto-handled by MSG91)
+ * - Verify OTP via Widget
+ * - Rate limiting: max 3 OTPs per 15 minutes
+ *
  * Environment Variables Required:
- * - MSG91_AUTH_KEY: Your MSG91 authentication key
- * - MSG91_TEMPLATE_ID: SMS template ID (optional)
- * - MSG91_SENDER_ID: Sender ID for SMS (optional, default: MSGIND)
+ * - MSG91_AUTH_KEY: Your MSG91 Auth Key
+ * - MSG91_WIDGET_ID: Your Widget ID (SecureOTPWidgetQF9Z)
  */
 
 const IAuthProvider = require('../auth.interface');
@@ -21,330 +18,177 @@ class MSG91Provider extends IAuthProvider {
   constructor() {
     super();
     this.authKey = process.env.MSG91_AUTH_KEY;
-    this.templateId = process.env.MSG91_TEMPLATE_ID;
-    this.senderId = process.env.MSG91_SENDER_ID || 'MSGIND';
-    
-    // In-memory session store (use Redis in production)
-    this.sessions = new Map(); // { phone: { otp, expiry, attempts, sessionId } }
+    this.widgetId = process.env.MSG91_WIDGET_ID || 'SecureOTPWidgetQF9Z';
+
+    // Rate limiting store
     this.rateLimits = new Map(); // { phone: { count, resetAt } }
-    
-    if (!this.authKey) {
-      console.warn('⚠️ MSG91_AUTH_KEY not found in environment. Provider will use demo mode.');
+
+    if (!this.authKey || this.authKey === 'your_msg91_auth_key_here') {
+      console.warn('⚠️ MSG91_AUTH_KEY not configured. OTP will not be sent.');
+    } else {
+      console.log(`✅ [MSG91] Widget OTP Provider ready. Widget: ${this.widgetId}`);
     }
   }
 
-  /**
-   * Check rate limit for phone number
-   * Max 3 OTP requests per 15 minutes (disabled in demo mode)
-   */
+  // Rate limit check: max 3 requests per 15 minutes
   _checkRateLimit(phone) {
-    // DEMO MODE: Disable rate limiting for easier testing
-    const isDemoMode = !this.authKey || this.authKey === 'your_msg91_auth_key_here';
-    if (isDemoMode) {
-      console.log(`⚡ [MSG91] Demo mode - Rate limiting disabled for ${phone}`);
+    const limit = this.rateLimits.get(phone);
+    const now = Date.now();
+
+    if (!limit || now > limit.resetAt) {
+      this.rateLimits.set(phone, { count: 1, resetAt: now + 15 * 60 * 1000 });
       return { ok: true };
     }
 
-    const limit = this.rateLimits.get(phone);
-    const now = Date.now();
-    
-    if (!limit) {
-      this.rateLimits.set(phone, { count: 1, resetAt: now + 15 * 60 * 1000 });
-      return { ok: true };
-    }
-    
-    if (now > limit.resetAt) {
-      // Reset the limit
-      this.rateLimits.set(phone, { count: 1, resetAt: now + 15 * 60 * 1000 });
-      return { ok: true };
-    }
-    
     if (limit.count >= 3) {
-      const remainingMinutes = Math.ceil((limit.resetAt - now) / 60000);
-      return { 
-        ok: false, 
-        error: `Too many OTP requests. Please try again in ${remainingMinutes} minutes.` 
-      };
+      const mins = Math.ceil((limit.resetAt - now) / 60000);
+      return { ok: false, error: `Too many OTP requests. Try again in ${mins} minutes.` };
     }
-    
+
     limit.count++;
     return { ok: true };
   }
 
-  /**
-   * Generate 6-digit OTP
-   * DEMO MODE: Always returns 123456 until real API is configured
-   */
-  _generateOTP() {
-    // DEMO MODE: Hard-coded OTP for development
-    if (!this.authKey || this.authKey === 'your_msg91_auth_key_here') {
-      return '123456';
-    }
-    // Production: Random OTP
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  }
-
-  /**
-   * Send OTP via MSG91 API
-   */
+  // Send OTP using MSG91 Widget API
   async sendOTP(phone, method = 'sms') {
     try {
-      // Validate phone
       const cleanPhone = String(phone).replace(/\D/g, '');
       if (cleanPhone.length !== 10) {
         return { ok: false, error: 'Invalid phone number' };
       }
 
       // Check rate limit
-      const rateLimitCheck = this._checkRateLimit(cleanPhone);
-      if (!rateLimitCheck.ok) {
-        return rateLimitCheck;
-      }
+      const rateCheck = this._checkRateLimit(cleanPhone);
+      if (!rateCheck.ok) return rateCheck;
 
-      // Generate OTP
-      const otp = this._generateOTP();
-      const expiry = Date.now() + 10 * 60 * 1000; // 10 minutes
-      const sessionId = `${cleanPhone}_${Date.now()}`;
-
-      // IMPORTANT: Clear existing session for re-login (allow same number multiple times)
-      if (this.sessions.has(cleanPhone)) {
-        console.log(`🔄 [MSG91] Clearing existing session for +91${cleanPhone}`);
-        this.sessions.delete(cleanPhone);
-      }
-
-      // Store NEW session
-      this.sessions.set(cleanPhone, {
-        otp,
-        expiry,
-        attempts: 0,
-        sessionId,
-        method
-      });
-
-      console.log(`🔐 [MSG91] OTP for +91${cleanPhone}: ${otp} (${method})`);
-      console.log(`📦 [MSG91] Session stored for ${cleanPhone}, total sessions: ${this.sessions.size}`);
-
-      // Send OTP via MSG91
+      // Check if configured
       if (!this.authKey || this.authKey === 'your_msg91_auth_key_here') {
-        console.log('📱 [MSG91] Demo mode - OTP: 123456 (always use this OTP)');
-        return { 
-          ok: true, 
-          sessionInfo: { sessionId },
-          message: 'OTP sent (demo mode)',
-          dev_otp: '123456' // Always show in demo
-        };
+        console.warn(`⚠️ [MSG91] Auth key not configured for +91${cleanPhone}`);
+        return { ok: false, error: 'OTP service not configured. Please contact support.' };
       }
 
-      if (method === 'whatsapp') {
-        // MSG91 WhatsApp OTP
-        const response = await axios.post(
-          'https://control.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/',
-          {
-            integrated_number: process.env.MSG91_WHATSAPP_NUMBER || '',
-            content_type: 'template',
-            payload: {
-              to: `91${cleanPhone}`,
-              type: 'template',
-              template: {
-                name: 'otp_template',
-                language: { code: 'en' },
-                components: [
-                  {
-                    type: 'body',
-                    parameters: [{ type: 'text', text: otp }]
-                  }
-                ]
-              }
-            }
+      console.log(`📱 [MSG91] Sending OTP to +91${cleanPhone} via Widget...`);
+
+      // MSG91 Widget Send OTP API
+      const response = await axios.post(
+        'https://control.msg91.com/api/v5/widget/initiate',
+        {
+          identifier: `91${cleanPhone}`,
+          widgetId: this.widgetId
+        },
+        {
+          headers: {
+            'authkey': this.authKey,
+            'Content-Type': 'application/json'
           },
-          {
-            headers: {
-              'authkey': this.authKey,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-
-        if (response.data && response.data.type === 'success') {
-          console.log(`✅ [MSG91] WhatsApp OTP sent to +91${cleanPhone}`);
-          return { ok: true, sessionInfo: { sessionId } };
-        } else {
-          throw new Error(response.data?.message || 'WhatsApp send failed');
+          timeout: 10000
         }
+      );
+
+      console.log(`📡 [MSG91] Send response:`, JSON.stringify(response.data));
+
+      if (response.data && response.data.type === 'success') {
+        const reqId = response.data.data?.reqId || response.data.reqId || '';
+        console.log(`✅ [MSG91] OTP sent to +91${cleanPhone}, reqId: ${reqId}`);
+        return {
+          ok: true,
+          sessionInfo: { reqId, phone: cleanPhone },
+          message: 'OTP sent successfully'
+        };
       } else {
-        // MSG91 SMS OTP
-        const response = await axios.get(
-          `https://control.msg91.com/api/v5/otp`,
-          {
-            params: {
-              authkey: this.authKey,
-              mobile: `91${cleanPhone}`,
-              otp: otp,
-              template_id: this.templateId,
-              sender: this.senderId,
-              otp_expiry: '10' // 10 minutes
-            }
-          }
-        );
-
-        if (response.data && response.data.type === 'success') {
-          console.log(`✅ [MSG91] SMS OTP sent to +91${cleanPhone}`);
-          return { ok: true, sessionInfo: { sessionId } };
-        } else {
-          throw new Error(response.data?.message || 'SMS send failed');
-        }
+        const errMsg = response.data?.message || response.data?.error || 'Failed to send OTP';
+        console.error(`❌ [MSG91] Send failed:`, errMsg);
+        return { ok: false, error: errMsg };
       }
+
     } catch (error) {
-      console.error('❌ [MSG91] Send OTP error:', error.message);
-      
-      // Return generic error to avoid leaking API details
+      console.error('❌ [MSG91] sendOTP error:', error.message);
       if (error.response) {
-        const status = error.response.status;
-        if (status === 401 || status === 403) {
-          return { ok: false, error: 'Authentication failed. Please check API credentials.' };
-        } else if (status === 429) {
+        console.error('Response:', JSON.stringify(error.response.data));
+        if (error.response.status === 401 || error.response.status === 403) {
+          return { ok: false, error: 'OTP service authentication failed.' };
+        }
+        if (error.response.status === 429) {
           return { ok: false, error: 'Too many requests. Please try again later.' };
         }
       }
-      
-      return { 
-        ok: false, 
-        error: 'Failed to send OTP. Please try again.' 
-      };
+      return { ok: false, error: 'Failed to send OTP. Please try again.' };
     }
   }
 
-  /**
-   * Verify OTP entered by user
-   */
+  // Verify OTP using MSG91 Widget API
   async verifyOTP(phone, otp, sessionInfo) {
     try {
       const cleanPhone = String(phone).replace(/\D/g, '');
-      console.log(`🔍 [MSG91] Verifying OTP for +91${cleanPhone}, total sessions: ${this.sessions.size}`);
-      
       if (cleanPhone.length !== 10) {
         return { ok: false, error: 'Invalid phone number' };
       }
 
-      // Ensure OTP is string and clean it
       const cleanOTP = String(otp || '').trim();
-      console.log(`🔍 [MSG91] Entered OTP: "${cleanOTP}"`);
-      
       if (!cleanOTP || cleanOTP.length !== 6) {
         return { ok: false, error: 'Invalid OTP format' };
       }
 
-      // DEMO MODE: Accept 123456 for any phone number
-      const isDemoMode = !this.authKey || this.authKey === 'your_msg91_auth_key_here';
-      if (isDemoMode && cleanOTP === '123456') {
-        console.log(`✅ [MSG91] DEMO MODE - OTP 123456 accepted for +91${cleanPhone}`);
-        // Clear session if exists
-        this.sessions.delete(cleanPhone);
-        return { 
-          ok: true, 
-          uid: `msg91_demo_${cleanPhone}_${Date.now()}`
-        };
+      if (!this.authKey || this.authKey === 'your_msg91_auth_key_here') {
+        return { ok: false, error: 'OTP service not configured.' };
       }
 
-      // Get session
-      const session = this.sessions.get(cleanPhone);
-      
-      if (!session) {
-        console.error(`❌ [MSG91] No session found for ${cleanPhone}. Available sessions:`, Array.from(this.sessions.keys()));
-        
-        // In demo mode, if 123456 was not entered, show helpful message
-        if (isDemoMode) {
-          return { ok: false, error: 'Invalid OTP. Use 123456 for demo mode.' };
+      const reqId = sessionInfo?.reqId || '';
+
+      console.log(`🔍 [MSG91] Verifying OTP for +91${cleanPhone}, reqId: ${reqId}`);
+
+      // MSG91 Widget Verify OTP API
+      const response = await axios.post(
+        'https://control.msg91.com/api/v5/widget/verify',
+        {
+          identifier: `91${cleanPhone}`,
+          otp: cleanOTP,
+          widgetId: this.widgetId,
+          ...(reqId && { reqId })
+        },
+        {
+          headers: {
+            'authkey': this.authKey,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000
         }
-        
-        return { ok: false, error: 'OTP not found. Please request a new one.' };
-      }
+      );
 
-      console.log(`📦 [MSG91] Session found for ${cleanPhone}, stored OTP: "${session.otp}"`);
+      console.log(`📡 [MSG91] Verify response:`, JSON.stringify(response.data));
 
-      // Check expiry
-      if (Date.now() > session.expiry) {
-        this.sessions.delete(cleanPhone);
-        return { ok: false, error: 'OTP expired. Please request a new one.' };
-      }
-
-      // Check attempts
-      if (session.attempts >= 5) {
-        this.sessions.delete(cleanPhone);
-        return { ok: false, error: 'Too many failed attempts. Please request a new OTP.' };
-      }
-
-      // Verify OTP (compare as strings)
-      const storedOTP = String(session.otp).trim();
-      if (storedOTP !== cleanOTP) {
-        session.attempts++;
-        const remaining = 5 - session.attempts;
-        console.log(`❌ [MSG91] OTP mismatch for +91${cleanPhone}: entered="${cleanOTP}", expected="${storedOTP}"`);
-        return { 
-          ok: false, 
-          error: `Invalid OTP. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.` 
+      if (response.data && response.data.type === 'success') {
+        console.log(`✅ [MSG91] OTP verified for +91${cleanPhone}`);
+        return {
+          ok: true,
+          uid: `msg91_${cleanPhone}_${Date.now()}`
         };
+      } else {
+        const errMsg = response.data?.message || 'Invalid OTP';
+        console.error(`❌ [MSG91] Verify failed:`, errMsg);
+        return { ok: false, error: errMsg };
       }
 
-      // OTP verified successfully
-      this.sessions.delete(cleanPhone);
-      
-      console.log(`✅ [MSG91] OTP verified for +91${cleanPhone}`);
-      
-      return { 
-        ok: true, 
-        uid: `msg91_${cleanPhone}_${Date.now()}`
-      };
     } catch (error) {
-      console.error('❌ [MSG91] Verify OTP error:', error.message);
+      console.error('❌ [MSG91] verifyOTP error:', error.message);
+      if (error.response) {
+        console.error('Response:', JSON.stringify(error.response.data));
+        const errMsg = error.response.data?.message || 'OTP verification failed';
+        return { ok: false, error: errMsg };
+      }
       return { ok: false, error: 'Failed to verify OTP. Please try again.' };
     }
   }
 
-  /**
-   * Get current user (stateless - always returns null)
-   * Session management is handled by the application layer
-   */
-  async currentUser() {
-    return null;
-  }
+  async currentUser() { return null; }
+  async logout() { return; }
+  getName() { return 'MSG91'; }
 
-  /**
-   * Logout (no-op for stateless OTP)
-   */
-  async logout() {
-    // No session to clear at provider level
-    return;
-  }
-
-  /**
-   * Get provider name
-   */
-  getName() {
-    return 'MSG91';
-  }
-
-  /**
-   * Clear expired sessions and rate limits (cleanup job)
-   */
   cleanup() {
     const now = Date.now();
-    
-    // Clear expired sessions
-    for (const [phone, session] of this.sessions.entries()) {
-      if (now > session.expiry) {
-        this.sessions.delete(phone);
-      }
-    }
-    
-    // Clear expired rate limits
     for (const [phone, limit] of this.rateLimits.entries()) {
-      if (now > limit.resetAt) {
-        this.rateLimits.delete(phone);
-      }
+      if (now > limit.resetAt) this.rateLimits.delete(phone);
     }
-    
-    console.log(`🧹 [MSG91] Cleanup: ${this.sessions.size} active sessions, ${this.rateLimits.size} rate limits`);
   }
 }
 
