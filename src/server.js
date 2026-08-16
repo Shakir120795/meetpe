@@ -170,18 +170,24 @@ app.use(apiLimiter); // Apply general rate limiting to all routes
 
 const PORT = process.env.PORT || 3000;
 
-// ===== Static website =====
-app.use(express.static(path.join(__dirname, '..', 'public')));
+// ===== Static website (excluding index.html - served dynamically) =====
+app.use(express.static(path.join(__dirname, '..', 'public'), {
+  index: false // Don't auto-serve index.html
+}));
 
 // ===== Serve index.html with MSG91 token injected =====
 app.get('/', (req, res) => {
   const indexPath = path.join(__dirname, '..', 'public', 'index.html');
   let html = fs.readFileSync(indexPath, 'utf8');
-  // Inject MSG91 widget token (separate from auth key)
   const widgetToken = process.env.MSG91_WIDGET_TOKEN || process.env.MSG91_AUTH_KEY || '';
   html = html.replace('%%MSG91_TOKEN%%', widgetToken);
   res.setHeader('Content-Type', 'text/html');
+  res.setHeader('Cache-Control', 'no-store'); // Prevent caching
   res.send(html);
+});
+
+app.get('/index.html', (req, res) => {
+  res.redirect('/');
 });
 
 // ===== Public menu API for the website =====
