@@ -150,6 +150,7 @@ async function loadDashboard() {
     renderRecentOrders(data.recent);
     renderTopProducts(data.topProducts);
     renderAlerts(data, stockData);
+    loadStoreDash(); // load store status after key is set
   } catch(e) { alert('Network error'); }
 }
 
@@ -233,6 +234,7 @@ let _dashStoreOpen = true;
 async function loadStoreDash() {
   try {
     const r = await fetch('/admin/store-status');
+    if (!r.ok) return; // not authenticated yet
     const d = await r.json();
     _dashStoreOpen = d.open;
     const btn = $('storeToggleDash');
@@ -251,7 +253,7 @@ async function toggleStoreDash() {
     if (d.ok) { _dashStoreOpen = d.open; loadStoreDash(); }
   } catch(e) {}
 }
-loadStoreDash();
+// loadStoreDash() called after loadDashboard() sets the key
 </script>
 </body>
 </html>
