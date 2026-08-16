@@ -15,6 +15,7 @@ const crypto = require('crypto');
 
 // Helmet - security headers (XSS, clickjacking, MIME sniffing)
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy (nginx/cloudflare) — must be set before rate limiters
 
 app.use(helmet({
   contentSecurityPolicy: false, // Disabled to allow inline scripts in existing HTML
@@ -44,7 +45,8 @@ const otpLimiter = rateLimit({
   max: 3,
   message: { ok: false, error: 'Too many OTP requests. Try again in 15 minutes.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false }, // trust proxy is set on app; skip redundant check
 });
 
 // Rate limiter for general API - max 100 requests per minute
@@ -53,14 +55,16 @@ const apiLimiter = rateLimit({
   max: 100,
   message: { ok: false, error: 'Too many requests. Please slow down.' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });
 
 // Rate limiter for admin - max 30 requests per minute
 const adminLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 30,
-  message: { ok: false, error: 'Too many admin requests.' }
+  message: { ok: false, error: 'Too many admin requests.' },
+  validate: { xForwardedForHeader: false },
 });
 
 // ===== SESSION TOKEN SYSTEM =====
@@ -165,7 +169,6 @@ const settings = require('./data/settings');
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-app.set('trust proxy', 1); // Trust first proxy (nginx/cloudflare)
 app.use(apiLimiter); // Apply general rate limiting to all routes
 
 const PORT = process.env.PORT || 3000;
