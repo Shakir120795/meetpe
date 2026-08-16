@@ -4864,10 +4864,30 @@ function selectPaymentMethod(methodId) {
 function renderSavedAddresses() {
   const container = document.getElementById('savedAddressesList');
   if (!container) return;
-  
-  // TODO: Implement saved addresses from localStorage or backend
-  // For now, just show empty
-  container.innerHTML = '';
+  const addresses = getSavedAddresses();
+  if (!addresses.length) {
+    container.innerHTML = '<div style="color:#999;font-size:13px;text-align:center;padding:8px 0">No saved addresses yet</div>';
+    return;
+  }
+  container.innerHTML = addresses.map((a, i) => `
+    <div onclick="selectSavedAddressForCheckout(${i})" style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #eee;border-radius:10px;margin-bottom:8px;cursor:pointer;background:${a.selected?'#fff5f0':'#fff'}">
+      <span style="font-size:18px">${a.tag==='Home'?'🏠':a.tag==='Work'?'🏢':'📍'}</span>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px">${a.tag||'Address'}</div>
+        <div style="font-size:12px;color:#666">${typeof a.address==='string'?a.address:(a.address?.full||a.address?.label||'')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectSavedAddressForCheckout(idx) {
+  const addresses = getSavedAddresses();
+  const a = addresses[idx];
+  if (!a) return;
+  const addrStr = typeof a.address === 'string' ? a.address : (a.address?.full || a.address?.label || '');
+  const addrField = document.getElementById('oAddress');
+  if (addrField) addrField.value = addrStr;
+  document.getElementById('checkoutModal').classList.remove('show');
 }
 
 function showCheckoutModal() {
@@ -9147,7 +9167,7 @@ function editAddress(id) {
 
 function showSavedAddresses() {
   // Show saved addresses overlay with management options
-  const addresses = JSON.parse(localStorage.getItem('now_addresses') || '[]');
+  const addresses = getSavedAddresses(); // user-specific key
   
   const overlay = document.createElement('div');
   overlay.id = 'savedAddrOverlay';
@@ -9195,7 +9215,7 @@ function showSavedAddresses() {
 }
 
 function selectSavedAddress(idx) {
-  const addresses = JSON.parse(localStorage.getItem('now_addresses') || '[]');
+  const addresses = getSavedAddresses(); // user-specific key
   const addr = addresses[idx];
   if (!addr) return;
   
@@ -9207,11 +9227,11 @@ function selectSavedAddress(idx) {
 
 function deleteSavedAddr(idx) {
   if (!confirm('Delete this address?')) return;
-  const addresses = JSON.parse(localStorage.getItem('now_addresses') || '[]');
+  const addresses = getSavedAddresses();
   addresses.splice(idx, 1);
-  localStorage.setItem('now_addresses', JSON.stringify(addresses));
+  saveAddresses(addresses);
   document.getElementById('savedAddrOverlay')?.remove();
-  showSavedAddresses(); // Re-open with updated list
+  showSavedAddresses();
   showToast('Address deleted', 'info');
 }
 
