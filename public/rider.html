@@ -995,6 +995,12 @@ let currentScreen = 'login';
 let currentOrderTab = 'new';
 let currentEarningsPeriod = 'today';
 
+// ============ AUTH HEADERS ============
+function riderAuthHeaders() {
+    const token = localStorage.getItem('rider_token') || '';
+    return { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' };
+}
+
 // ============ INIT ============
 function init() {
     // Apply theme
@@ -1088,7 +1094,7 @@ async function handleSendOtp() {
 
     try {
         // First verify this is a registered rider
-        const checkRes = await fetch('/api/rider/send-otp', {
+        const checkRes = await fetch('/api/rider/send-otp', { headers: riderAuthHeaders(),
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ phone })
@@ -1160,7 +1166,7 @@ async function handleVerifyOtp() {
             async (data) => {
                 // Widget verified — now login with server
                 try {
-                    const response = await fetch('/api/rider/login', {
+                    const response = await fetch('/api/rider/login', { headers: riderAuthHeaders(),
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ phone: loginPhoneNumber, otp, sessionInfo: riderSessionInfo, widgetVerified: true })
@@ -1193,7 +1199,7 @@ async function handleVerifyOtp() {
     } else {
         // Fallback: server verify
         try {
-            const response = await fetch('/api/rider/login', {
+            const response = await fetch('/api/rider/login', { headers: riderAuthHeaders(),
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone: loginPhoneNumber, otp, sessionInfo: riderSessionInfo })
@@ -1232,7 +1238,7 @@ async function toggleOnlineStatus() {
     const newStatus = isOnline ? 'offline' : 'available';
 
     try {
-        const response = await fetch('/api/rider/status', {
+        const response = await fetch('/api/rider/status', { headers: riderAuthHeaders(),
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ riderId: rider.id, status: newStatus })
@@ -1258,7 +1264,7 @@ async function loadDashboard() {
     if (!rider) return;
 
     try {
-        const response = await fetch(`/api/rider/dashboard/${rider.id}`);
+        const response = await fetch(`/api/rider/dashboard/${rider.id}`, { headers: riderAuthHeaders(),headers: riderAuthHeaders()});
         const data = await response.json();
         if (data.ok) {
             document.getElementById('statEarnings').textContent = `₹${data.todayEarnings || 0}`;
@@ -1283,7 +1289,7 @@ async function loadOrders(status) {
     const container = document.getElementById('ordersContent');
 
     try {
-        const response = await fetch(`/api/rider/orders/${rider.id}?status=${status}`);
+        const response = await fetch(`/api/rider/orders/${rider.id}?status=${status}`, { headers: riderAuthHeaders(),headers: riderAuthHeaders()});
         const data = await response.json();
         if (data.ok && data.orders && data.orders.length > 0) {
             renderOrderCards(data.orders, 'ordersContent', status);
@@ -1397,7 +1403,7 @@ async function verifyDeliveryOTP(orderId) {
     
     try {
         showLoading();
-        const response = await fetch('/api/rider/order/verify', {
+        const response = await fetch('/api/rider/order/verify', { headers: riderAuthHeaders(),
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ riderId: rider.id, orderId, otp })
@@ -1423,7 +1429,7 @@ async function acceptOrder(orderId) {
     if (!rider) return;
     try {
         showLoading();
-        const response = await fetch('/api/rider/order/accept', {
+        const response = await fetch('/api/rider/order/accept', { headers: riderAuthHeaders(),
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ riderId: rider.id, orderId })
@@ -1450,7 +1456,7 @@ async function updateOrderStatus(orderId, status) {
     if (!rider) return;
     try {
         showLoading();
-        const response = await fetch('/api/rider/order/status', {
+        const response = await fetch('/api/rider/order/status', { headers: riderAuthHeaders(),
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ riderId: rider.id, orderId, status })
@@ -1482,7 +1488,7 @@ async function loadEarnings() {
     if (!rider) return;
 
     try {
-        const response = await fetch(`/api/rider/earnings/${rider.id}`);
+        const response = await fetch(`/api/rider/earnings/${rider.id}`, { headers: riderAuthHeaders(),headers: riderAuthHeaders()});
         const data = await response.json();
         
         if (data.ok) {
@@ -1529,7 +1535,7 @@ async function loadProfile() {
     try {
         const phone = rider.phone?.replace(/\D/g, '').slice(-10);
         if (phone) {
-            const res = await fetch('/api/rider/login', {
+            const res = await fetch('/api/rider/login', { headers: riderAuthHeaders(),
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phone })
@@ -1763,7 +1769,7 @@ function startRiderAutoRefresh() {
   _riderRefreshInterval = setInterval(async () => {
     if (!rider || !isOnline) return;
     try {
-      const res = await fetch(`/api/rider/orders/${rider.id}?status=new`);
+      const res = await fetch(`/api/rider/orders/${rider.id}?status=new`, { headers: riderAuthHeaders(),headers: riderAuthHeaders()});
       const data = await res.json();
       const newCount = (data.ok && data.orders) ? data.orders.length : 0;
       
@@ -1845,7 +1851,7 @@ function showDeliveryMap(orderId) {
         window._deliveryMap = { map, orderId, delivLat: null, delivLng: null, delivAddress: null };
 
         // Get delivery location from API
-        fetch('/api/rider/order/' + orderId + '/delivery-location?riderId=' + rider.id)
+        fetch('/api/rider/order/' + orderId + '/delivery-location?riderId=' + rider.id, {headers: riderAuthHeaders()})
             .then(r => r.json())
             .then(data => {
                 const statusEl = document.getElementById('delivMapStatus');
@@ -2026,7 +2032,7 @@ async function sendLocationUpdate(orderId, position) {
     };
     
     try {
-        await fetch('/api/rider/location/update', {
+        await fetch('/api/rider/location/update', { headers: riderAuthHeaders(),
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(locationData)
@@ -2041,7 +2047,7 @@ async function sendLocationUpdate(orderId, position) {
 function checkAndManageTracking() {
     if (!rider) return;
     
-    fetch(`/api/rider/orders/${rider.id}?status=active`)
+    fetch(`/api/rider/orders/${rider.id}?status=active`, {headers: riderAuthHeaders()})
         .then(res => res.json())
         .then(data => {
             if (data.ok && data.orders && data.orders.length > 0) {

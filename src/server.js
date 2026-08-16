@@ -68,28 +68,40 @@ const adminLimiter = rateLimit({
 });
 
 // ===== SESSION TOKEN SYSTEM =====
-// Simple token-based auth for customer API endpoints
-const activeSessions = new Map(); // token -> { phone, createdAt }
+// DB-backed sessions — initialized after db is loaded below
 
 function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
+let _sessionDbReady = false;
+function ensureSessionTables() {
+  if (_sessionDbReady) return;
+  try {
+    db.exec(`CREATE TABLE IF NOT EXISTS customer_sessions (
+      token TEXT PRIMARY KEY,
+      phone TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    )`);
+    _sessionDbReady = true;
+  } catch(e) {}
+}
+
 function createSession(phone) {
+  ensureSessionTables();
   const token = generateToken();
-  activeSessions.set(token, { phone, createdAt: Date.now() });
-  // Clean up old sessions (older than 30 days)
-  for (const [t, s] of activeSessions.entries()) {
-    if (Date.now() - s.createdAt > 30 * 24 * 60 * 60 * 1000) activeSessions.delete(t);
-  }
+  const now = Date.now();
+  db.prepare('INSERT OR REPLACE INTO customer_sessions (token, phone, created_at) VALUES (?, ?, ?)').run(token, phone, now);
+  db.prepare('DELETE FROM customer_sessions WHERE created_at < ?').run(now - 30 * 24 * 60 * 60 * 1000);
   return token;
 }
 
 function getSessionPhone(req) {
+  ensureSessionTables();
   const auth = req.headers['authorization'] || req.headers['x-auth-token'] || req.query.token;
   if (!auth) return null;
   const token = auth.replace('Bearer ', '');
-  const session = activeSessions.get(token);
+  const session = db.prepare('SELECT phone FROM customer_sessions WHERE token = ?').get(token);
   if (!session) return null;
   return session.phone;
 }
@@ -3942,12 +3954,14 @@ try {
   )`);
 } catch(e) { console.warn('Rider tables:', e.message); }
 
-// Rider session store
-const riderSessions = new Map(); // token -> riderId
-
+// Rider session store — DB backed for persistence across restarts
+// Table created after db is initialized
 function createRiderSession(riderId) {
+  try { db.exec(`CREATE TABLE IF NOT EXISTS rider_sessions (token TEXT PRIMARY KEY, rider_id TEXT NOT NULL, created_at INTEGER NOT NULL)`); } catch(e) {}
   const token = crypto.randomBytes(32).toString('hex');
-  riderSessions.set(token, { riderId, createdAt: Date.now() });
+  const now = Date.now();
+  db.prepare('INSERT INTO rider_sessions (token, rider_id, created_at) VALUES (?, ?, ?)').run(token, riderId, now);
+  db.prepare('DELETE FROM rider_sessions WHERE created_at < ?').run(now - 7 * 24 * 60 * 60 * 1000);
   return token;
 }
 
@@ -3955,13 +3969,10 @@ function requireRiderAuth(req, res, next) {
   const auth = req.headers['authorization'] || req.headers['x-rider-token'] || req.query.riderToken;
   if (!auth) return res.status(401).json({ ok: false, error: 'Rider authentication required' });
   const token = auth.replace('Bearer ', '');
-  const session = riderSessions.get(token);
+  try { db.exec(`CREATE TABLE IF NOT EXISTS rider_sessions (token TEXT PRIMARY KEY, rider_id TEXT NOT NULL, created_at INTEGER NOT NULL)`); } catch(e) {}
+  const session = db.prepare('SELECT * FROM rider_sessions WHERE token = ?').get(token);
   if (!session) return res.status(401).json({ ok: false, error: 'Invalid or expired rider token' });
-  // Clean old sessions
-  for (const [t, s] of riderSessions.entries()) {
-    if (Date.now() - s.createdAt > 7 * 24 * 60 * 60 * 1000) riderSessions.delete(t);
-  }
-  req.riderId = session.riderId;
+  req.riderId = session.rider_id;
   next();
 }
 
