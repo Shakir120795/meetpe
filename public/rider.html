@@ -1662,18 +1662,6 @@ function handleLogout() {
     window.location.reload();
 }
 
-    // Reset UI
-    document.getElementById('bottomNav').style.display = 'none';
-    document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display = 'none'; });
-    document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('loginScreen').classList.add('active');
-    document.getElementById('loginStep1').style.display = 'block';
-    document.getElementById('loginStep2').style.display = 'none';
-    document.getElementById('loginPhone').value = '';
-    document.getElementById('loginOtp').value = '';
-    document.getElementById('loginError').textContent = '';
-}
-
 // ============ API HELPER ============
 async function apiCall(url, method, body) {
     const options = {
