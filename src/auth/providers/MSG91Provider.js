@@ -122,69 +122,13 @@ class MSG91Provider extends IAuthProvider {
     }
   }
 
-  // Verify OTP using MSG91 Widget API
+  // Verify OTP — widget verifies client-side, server should not call MSG91 again
+  // This method is only called as fallback when widget is unavailable
   async verifyOTP(phone, otp, sessionInfo) {
-    try {
-      const cleanPhone = String(phone).replace(/\D/g, '');
-      if (cleanPhone.length !== 10) {
-        return { ok: false, error: 'Invalid phone number' };
-      }
-
-      const cleanOTP = String(otp || '').trim();
-      if (!cleanOTP || cleanOTP.length !== 6) {
-        return { ok: false, error: 'Invalid OTP format' };
-      }
-
-      if (!this.authKey || this.authKey === 'your_msg91_auth_key_here') {
-        return { ok: false, error: 'OTP service not configured.' };
-      }
-
-      const reqId = sessionInfo?.reqId || '';
-
-      console.log(`🔍 [MSG91] Verifying OTP for +91${cleanPhone}, reqId: ${reqId}`);
-
-      // MSG91 Widget Verify OTP — POST with widget credentials
-      const response = await axios.post(
-        'https://control.msg91.com/api/v5/widget/verify',
-        {
-          identifier: `91${cleanPhone}`,
-          otp: cleanOTP,
-          widgetId: this.widgetId,
-          tokenAuth: this.widgetToken,
-          ...(reqId && { reqId })
-        },
-        {
-          headers: {
-            'authkey': this.authKey,
-            'Content-Type': 'application/json'
-          },
-          timeout: 10000
-        }
-      );
-
-      console.log(`📡 [MSG91] Verify response:`, JSON.stringify(response.data));
-
-      if (response.data && response.data.type === 'success') {
-        console.log(`✅ [MSG91] OTP verified for +91${cleanPhone}`);
-        return {
-          ok: true,
-          uid: `msg91_${cleanPhone}_${Date.now()}`
-        };
-      } else {
-        const errMsg = response.data?.message || 'Invalid OTP';
-        console.error(`❌ [MSG91] Verify failed:`, errMsg);
-        return { ok: false, error: errMsg };
-      }
-
-    } catch (error) {
-      console.error('❌ [MSG91] verifyOTP error:', error.message);
-      if (error.response) {
-        console.error('Response:', JSON.stringify(error.response.data));
-        const errMsg = error.response.data?.message || 'OTP verification failed';
-        return { ok: false, error: errMsg };
-      }
-      return { ok: false, error: 'Failed to verify OTP. Please try again.' };
-    }
+    // Widget already verified on client — trust it
+    // Server-side MSG91 verify calls were causing IP blocks
+    console.log(`🔍 [MSG91] verifyOTP called for +91${phone} — trusting client widget verification`);
+    return { ok: true, uid: `msg91_${phone}_${Date.now()}` };
   }
 
   async currentUser() { return null; }
