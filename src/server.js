@@ -1675,7 +1675,6 @@ app.get('/api/wishlist/:phone', requireAuth, (req, res) => {
   if (cleanPhone.length !== 10) return res.json({ ok: true, wishlist: [] });
   const waPhone = `web:+91${cleanPhone}`;
   if (req.sessionPhone !== waPhone) return res.status(403).json({ ok: false, error: 'Access denied' });
-  const waPhone = `web:+91${cleanPhone}`;
   try { db.prepare('ALTER TABLE customers ADD COLUMN wishlist_json TEXT DEFAULT "[]"').run(); } catch(e) {}
   const row = db.prepare('SELECT wishlist_json FROM customers WHERE phone = ?').get(waPhone);
   const wishlist = row?.wishlist_json ? JSON.parse(row.wishlist_json) : [];
