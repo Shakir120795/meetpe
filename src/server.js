@@ -182,8 +182,8 @@ app.use(express.static(path.join(__dirname, '..', 'public'), {
 app.get('/', (req, res) => {
   const indexPath = path.join(__dirname, '..', 'public', 'index.html');
   let html = fs.readFileSync(indexPath, 'utf8');
-  // MSG91 widget tokenAuth must be the Auth Key
-  const widgetToken = process.env.MSG91_AUTH_KEY || process.env.MSG91_WIDGET_TOKEN || '';
+  // MSG91 widget tokenAuth = Widget Token (from MSG91 widget settings, NOT the auth key)
+  const widgetToken = process.env.MSG91_WIDGET_TOKEN || '';
   html = html.replace('%%MSG91_TOKEN%%', widgetToken);
   res.setHeader('Content-Type', 'text/html');
   res.setHeader('Cache-Control', 'no-store'); // Prevent caching
