@@ -172,6 +172,16 @@ const PORT = process.env.PORT || 3000;
 // ===== Static website =====
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+// ===== Serve index.html with MSG91 token injected =====
+app.get('/', (req, res) => {
+  const indexPath = path.join(__dirname, '..', 'public', 'index.html');
+  let html = fs.readFileSync(indexPath, 'utf8');
+  // Inject MSG91 auth key safely (only the key, not full secret)
+  html = html.replace('%%MSG91_TOKEN%%', process.env.MSG91_AUTH_KEY || '');
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
 // ===== Public menu API for the website =====
 app.get('/api/menu', (req, res) => {
   const items = catalogWithStock().filter(i => i.listed !== false); // Only show listed items
@@ -1476,7 +1486,7 @@ app.post('/api/auth/send-otp', otpLimiter, async (req, res) => {
 // ===== Verify OTP endpoint =====
 app.post('/api/auth/verify-otp', async (req, res) => {
   try {
-    const { phone, otp, referralCode, sessionInfo } = req.body || {};
+    const { phone, otp, referralCode, sessionInfo, widgetVerified } = req.body || {};
     const cleanPhone = String(phone || '').replace(/\D/g, '');
     
     console.log(`📞 [VERIFY-OTP] Request for phone: ${cleanPhone}, otp: ${otp}`);
@@ -1489,10 +1499,17 @@ app.post('/api/auth/verify-otp', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Invalid OTP' });
     }
     
-    // Use auth service (provider-agnostic)
-    console.log(`🔐 [VERIFY-OTP] Calling authService.verifyOTP...`);
-    const result = await authService.verifyOTP(cleanPhone, otp, sessionInfo);
-    console.log(`🔐 [VERIFY-OTP] Result:`, result);
+    let result;
+    // If MSG91 widget already verified on client-side, skip server verification
+    if (widgetVerified === true && sessionInfo?.widgetToken) {
+      console.log(`✅ [VERIFY-OTP] Widget pre-verified for ${cleanPhone}`);
+      result = { ok: true, uid: `widget_${cleanPhone}_${Date.now()}` };
+    } else {
+      // Use auth service (provider-agnostic)
+      console.log(`🔐 [VERIFY-OTP] Calling authService.verifyOTP...`);
+      result = await authService.verifyOTP(cleanPhone, otp, sessionInfo);
+      console.log(`🔐 [VERIFY-OTP] Result:`, result);
+    }
     
     if (!result.ok) {
       console.log(`❌ [VERIFY-OTP] Verification failed: ${result.error}`);

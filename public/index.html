@@ -17,6 +17,22 @@
 <!-- Leaflet Map - for location picking -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- MSG91 OTP Widget -->
+<script>
+  var configuration = {
+    widgetId: "3668706a7131343537383533",
+    tokenAuth: "%%MSG91_TOKEN%%",
+    exposeMethods: true,
+    success: (data) => {
+      console.log('MSG91 Widget success:', data);
+      window._msg91WidgetSuccess = data;
+    },
+    failure: (error) => {
+      console.log('MSG91 Widget failure:', error);
+    }
+  };
+</script>
+<script type="text/javascript" onload="initSendOTP(configuration)" src="https://verify.msg91.com/otp-provider.js"></script>
 <style>
 :root{
   --bg:#0D0D0D;--card:#1C1C1E;--accent:#E8450A;--accent2:#c73200;
@@ -2846,7 +2862,7 @@ function selectOTPMethod(method) {
   resendOTP();
 }
 
-// Step 1: Send OTP
+// Step 1: Send OTP - Using MSG91 Widget (client-side)
 async function sendOTP() {
   const phone = document.getElementById('phoneInput').value.replace(/\D/g,'');
   if (phone.length !== 10) { 
@@ -2860,50 +2876,55 @@ async function sendOTP() {
   btn.textContent = 'Sending OTP...';
 
   try {
-    const res = await fetch('/api/auth/send-otp', {
-      method:'POST', 
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ phone, otpMethod: OTP_METHOD })
-    });
-    
-    const data = await res.json();
-    
-    if (data.ok) {
-      // Store session info from provider
-      SESSION_INFO = data.sessionInfo || null;
-      
-      // DEMO MODE: Store OTP in localStorage for cross-restart persistence
-      if (data.dev_otp) {
-        localStorage.setItem('demo_otp_' + phone, data.dev_otp);
-        localStorage.setItem('demo_otp_time_' + phone, Date.now().toString());
-      }
-      
-      // Show OTP screen
-      showScreen('screen-otp');
-      
-      // Update phone display
-      const maskedPhone = phone.slice(0,2) + 'XXXXXX' + phone.slice(-2);
-      document.getElementById('otpPhoneDisplay').textContent = '+91 ' + maskedPhone;
-      
-      // Show success message
-      if (OTP_METHOD === 'whatsapp') {
-        showToast('✅ OTP sent on WhatsApp', 'success');
-      } else {
-        showToast('✅ OTP sent via SMS', 'success');
-      }
-      
-      // Start resend timer
-      startResendTimer();
-      
-      // Demo mode - show OTP clearly
-      if (data.dev_otp) {
-        console.log('🔐 DEMO MODE - Always use OTP:', data.dev_otp);
-        showToast(`🔐 DEMO OTP: ${data.dev_otp} (Always use this)`, 'info', 6000);
-      }
+    // Use MSG91 Widget client-side API
+    if (window.sendOtp) {
+      // MSG91 Widget is loaded - use it directly
+      window.sendOtp(
+        '91' + phone,
+        (data) => {
+          console.log('✅ MSG91 Widget OTP sent:', data);
+          SESSION_INFO = { reqId: data.reqId || data.data?.reqId || '', phone };
+          showScreen('screen-otp');
+          const maskedPhone = phone.slice(0,2) + 'XXXXXX' + phone.slice(-2);
+          document.getElementById('otpPhoneDisplay').textContent = '+91 ' + maskedPhone;
+          showToast('✅ OTP sent via SMS', 'success');
+          startResendTimer();
+          btn.disabled = false;
+          btn.textContent = 'Send OTP →';
+        },
+        (error) => {
+          console.error('❌ MSG91 Widget error:', error);
+          showToast(error || 'Failed to send OTP', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Send OTP →';
+        }
+      );
     } else {
-      showToast(data.error || 'Failed to send OTP','error');
-      btn.disabled = false; 
-      btn.textContent = 'Send OTP →';
+      // Fallback: use backend API
+      const res = await fetch('/api/auth/send-otp', {
+        method:'POST', 
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ phone, otpMethod: OTP_METHOD })
+      });
+      
+      const data = await res.json();
+      
+      if (data.ok) {
+        SESSION_INFO = data.sessionInfo || null;
+        showScreen('screen-otp');
+        const maskedPhone = phone.slice(0,2) + 'XXXXXX' + phone.slice(-2);
+        document.getElementById('otpPhoneDisplay').textContent = '+91 ' + maskedPhone;
+        if (OTP_METHOD === 'whatsapp') {
+          showToast('✅ OTP sent on WhatsApp', 'success');
+        } else {
+          showToast('✅ OTP sent via SMS', 'success');
+        }
+        startResendTimer();
+      } else {
+        showToast(data.error || 'Failed to send OTP','error');
+        btn.disabled = false; 
+        btn.textContent = 'Send OTP →';
+      }
     }
   } catch(e) {
     console.error('Send OTP error:', e);
@@ -2927,21 +2948,48 @@ async function verifyOTP() {
   btn.textContent = 'Verifying...';
 
   try {
-    // Check localStorage for demo OTP (fallback if server restarted)
-    const storedOTP = localStorage.getItem('demo_otp_' + TEMP_PHONE);
-    const storedTime = localStorage.getItem('demo_otp_time_' + TEMP_PHONE);
-    
-    // If demo OTP exists and is valid (within 10 min), verify client-side first
-    if (storedOTP === '123456' && otp === '123456') {
-      const elapsed = Date.now() - parseInt(storedTime || '0');
-      if (elapsed < 10 * 60 * 1000) {
-        console.log('✅ Demo OTP verified client-side (server restart fallback)');
-        // Clear demo OTP
-        localStorage.removeItem('demo_otp_' + TEMP_PHONE);
-        localStorage.removeItem('demo_otp_time_' + TEMP_PHONE);
-      }
+    // Use MSG91 Widget verify if available
+    if (window.verifyOtp && SESSION_INFO?.reqId) {
+      window.verifyOtp(
+        otp,
+        async (data) => {
+          console.log('✅ MSG91 Widget OTP verified:', data);
+          // Now authenticate with our backend
+          const res = await fetch('/api/auth/verify-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: TEMP_PHONE,
+              otp,
+              referralCode: referralCode || null,
+              sessionInfo: SESSION_INFO,
+              widgetVerified: true
+            })
+          });
+          const authData = await res.json();
+          if (authData.ok) {
+            USER = authData.customer;
+            if (authData.token) localStorage.setItem('now_auth_token', authData.token);
+            saveUser();
+            if (authData.referralBonus) showToast(`🎉 ${authData.referralBonus} referral bonus added!`, 'success');
+            loginSuccess();
+          } else {
+            showToast(authData.error || 'Login failed', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Verify OTP';
+          }
+        },
+        (error) => {
+          console.error('❌ MSG91 Widget verify error:', error);
+          showToast(error || 'Invalid OTP', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Verify OTP';
+        }
+      );
+      return;
     }
-    
+
+    // Fallback: backend verify
     const res = await fetch('/api/auth/verify-otp', {
       method:'POST', 
       headers:{'Content-Type':'application/json'},
@@ -2949,7 +2997,7 @@ async function verifyOTP() {
         phone: TEMP_PHONE, 
         otp,
         referralCode: referralCode || null,
-        sessionInfo: SESSION_INFO // Pass session info from provider
+        sessionInfo: SESSION_INFO
       })
     });
     
@@ -2957,6 +3005,7 @@ async function verifyOTP() {
     
     if (data.ok) {
       USER = data.customer;
+      if (data.token) localStorage.setItem('now_auth_token', data.token);
       saveUser();
       
       // Show referral bonus message if applicable
