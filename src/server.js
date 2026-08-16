@@ -1498,7 +1498,7 @@ app.post('/api/auth/send-otp', otpLimiter, async (req, res) => {
 // ===== Verify OTP endpoint =====
 app.post('/api/auth/verify-otp', async (req, res) => {
   try {
-    const { phone, otp, referralCode, sessionInfo, widgetVerified } = req.body || {};
+    const { phone, otp, referralCode, sessionInfo } = req.body || {};
     const cleanPhone = String(phone || '').replace(/\D/g, '');
     
     console.log(`📞 [VERIFY-OTP] Request for phone: ${cleanPhone}, otp: ${otp}`);
@@ -1511,18 +1511,10 @@ app.post('/api/auth/verify-otp', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Invalid OTP' });
     }
     
-    let result;
-    // If MSG91 widget already verified on client-side, skip server verification
-    // Widget sends back a reqId on success — that's sufficient proof
-    if (widgetVerified === true && (sessionInfo?.widgetToken || sessionInfo?.reqId)) {
-      console.log(`✅ [VERIFY-OTP] Widget pre-verified for ${cleanPhone}`);
-      result = { ok: true, uid: `widget_${cleanPhone}_${Date.now()}` };
-    } else {
-      // Use auth service (provider-agnostic)
-      console.log(`🔐 [VERIFY-OTP] Calling authService.verifyOTP...`);
-      result = await authService.verifyOTP(cleanPhone, otp, sessionInfo);
-      console.log(`🔐 [VERIFY-OTP] Result:`, result);
-    }
+    // Always verify via auth service — never trust client-side widgetVerified flag
+    console.log(`🔐 [VERIFY-OTP] Calling authService.verifyOTP...`);
+    const result = await authService.verifyOTP(cleanPhone, otp, sessionInfo);
+    console.log(`🔐 [VERIFY-OTP] Result:`, result);
     
     if (!result.ok) {
       console.log(`❌ [VERIFY-OTP] Verification failed: ${result.error}`);
@@ -1633,15 +1625,9 @@ app.post('/api/auth/verify-otp', async (req, res) => {
   }
 });
 
-// ===== Customer auth (OLD - Keep for backward compatibility) =====
+// ===== Customer auth (DISABLED - use /api/auth/verify-otp instead) =====
 app.post('/api/auth/login', (req, res) => {
-  const { phone, name } = req.body || {};
-  const cleanPhone = String(phone || '').replace(/\D/g, '');
-  if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
-  const waPhone = `web:+91${cleanPhone}`;
-  db.prepare(`INSERT INTO customers (phone, name) VALUES (?, ?) ON CONFLICT(phone) DO UPDATE SET name = COALESCE(excluded.name, name)`).run(waPhone, name || null);
-  const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
-  res.json({ ok: true, customer: { phone: cleanPhone, name: customer.name || '', wallet: customer.wallet_balance || 0 } });
+  return res.status(410).json({ ok: false, error: 'This endpoint is deprecated. Use OTP login.' });
 });
 
 // ===== Get customer profile - REQUIRES AUTH =====

@@ -72,12 +72,14 @@ class MSG91Provider extends IAuthProvider {
       console.log(`📱 [MSG91] Sending OTP to +91${cleanPhone} via Widget...`);
 
       // MSG91 Widget Send OTP - Server Side API
+      // correct endpoint: api/v5/otp (not widget/initiate)
       const response = await axios.post(
-        'https://control.msg91.com/api/v5/widget/initiate',
+        'https://control.msg91.com/api/v5/otp',
         {
-          identifier: `91${cleanPhone}`,
-          widgetId: this.widgetId,
-          tokenAuth: this.widgetToken
+          mobile: `91${cleanPhone}`,
+          template_id: process.env.MSG91_TEMPLATE_ID || '',
+          otp_length: 6,
+          otp_expiry: 15
         },
         {
           headers: {
@@ -141,7 +143,7 @@ class MSG91Provider extends IAuthProvider {
 
       console.log(`🔍 [MSG91] Verifying OTP for +91${cleanPhone}, reqId: ${reqId}`);
 
-      // MSG91 Widget Verify OTP API
+      // MSG91 Widget Verify OTP — POST with widget credentials
       const response = await axios.post(
         'https://control.msg91.com/api/v5/widget/verify',
         {
