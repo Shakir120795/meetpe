@@ -109,9 +109,9 @@ function requireAdmin(req, res, next) {
   const ip = req.ip || req.connection.remoteAddress || 'unknown';
   const now = Date.now();
 
-  // Brute force check — max 10 attempts per 15 minutes per IP
+  // Brute force check — max 20 attempts per 15 minutes per IP
   const bf = adminBruteForce.get(ip);
-  if (bf && now < bf.resetAt && bf.count >= 10) {
+  if (bf && now < bf.resetAt && bf.count >= 20) {
     return res.status(429).json({ ok: false, error: 'Too many attempts. Try again later.' });
   }
 
@@ -125,11 +125,13 @@ function requireAdmin(req, res, next) {
   }
 
   if (!valid) {
-    // Track failed attempt
-    if (!bf || now > bf.resetAt) {
-      adminBruteForce.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 });
-    } else {
-      bf.count++;
+    // Only count as brute force if a key was actually provided (not empty)
+    if (provided) {
+      if (!bf || now > bf.resetAt) {
+        adminBruteForce.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 });
+      } else {
+        bf.count++;
+      }
     }
     return res.status(403).json({ ok: false, error: 'Forbidden' });
   }
