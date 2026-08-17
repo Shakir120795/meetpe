@@ -2180,11 +2180,14 @@ app.get('/admin/customers', requireAdmin, (req, res) => {
   const actualOffset = req.query.page ? (page - 1) * limit : offset;
   const search = req.query.search || '';
   
+  // SECURITY: Escape LIKE wildcards in search term to prevent SQL injection
+  const escapedSearch = search.replace(/[_%]/g, '\\$&');
+  
   // Get total count
   const countSql = search 
-    ? `SELECT COUNT(DISTINCT c.phone) as total FROM customers c WHERE c.phone LIKE ? OR c.name LIKE ?`
+    ? `SELECT COUNT(DISTINCT c.phone) as total FROM customers c WHERE c.phone LIKE ? ESCAPE '\\' OR c.name LIKE ? ESCAPE '\\'`
     : `SELECT COUNT(*) as total FROM customers`;
-  const countParams = search ? [`%${search}%`, `%${search}%`] : [];
+  const countParams = search ? [`%${escapedSearch}%`, `%${escapedSearch}%`] : [];
   const countResult = db.prepare(countSql).get(...countParams);
   const totalCustomers = countResult.total;
   const totalPages = Math.ceil(totalCustomers / limit);
@@ -2196,10 +2199,10 @@ app.get('/admin/customers', requireAdmin, (req, res) => {
     MAX(o.created_at) as last_order
     FROM customers c
     LEFT JOIN orders o ON o.phone = c.phone
-    ${search ? "WHERE c.phone LIKE ? OR c.name LIKE ?" : ""}
+    ${search ? "WHERE c.phone LIKE ? ESCAPE '\\' OR c.name LIKE ? ESCAPE '\\'" : ""}
     GROUP BY c.phone
     ORDER BY last_order DESC LIMIT ? OFFSET ?`;
-  const params = search ? [`%${search}%`, `%${search}%`, limit, actualOffset] : [limit, actualOffset];
+  const params = search ? [`%${escapedSearch}%`, `%${escapedSearch}%`, limit, actualOffset] : [limit, actualOffset];
   const customers = db.prepare(sql).all(...params);
   
   res.json({ 
@@ -2572,27 +2575,6 @@ app.put('/admin/reviews/:id', (req, res) => {
 app.delete('/admin/reviews/:id', (req, res) => {
   db.prepare('DELETE FROM reviews WHERE id = ?').run(req.params.id);
   res.json({ ok: true });
-});
-
-// ===== Admin: customers list =====
-app.get('/admin/customers', (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
-  const search = req.query.search || '';
-  let sql, params;
-  if (search) {
-    sql = `SELECT c.*, COUNT(o.id) as order_count, COALESCE(SUM(o.total),0) as lifetime_value, MAX(o.created_at) as last_order
-      FROM customers c LEFT JOIN orders o ON o.phone = c.phone
-      WHERE c.phone LIKE ? OR c.name LIKE ?
-      GROUP BY c.phone ORDER BY last_order DESC LIMIT ?`;
-    params = [`%${search}%`, `%${search}%`, limit];
-  } else {
-    sql = `SELECT c.*, COUNT(o.id) as order_count, COALESCE(SUM(o.total),0) as lifetime_value, MAX(o.created_at) as last_order
-      FROM customers c LEFT JOIN orders o ON o.phone = c.phone
-      GROUP BY c.phone ORDER BY last_order DESC LIMIT ?`;
-    params = [limit];
-  }
-  const customers = db.prepare(sql).all(...params);
-  res.json({ ok: true, customers });
 });
 
 // ===== SUBSCRIPTIONS (Recurring Orders) =====
