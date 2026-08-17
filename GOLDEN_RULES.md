@@ -509,6 +509,108 @@ pm2 restart meetpe
 
 ---
 
+## 💬 RULE #11: COMMUNICATION STYLE (SHORT & POINT-TO-POINT)
+
+### AI Assistant Communication Rules:
+
+**User Preference:** Short, direct, point-to-point explanations. No long paragraphs.
+
+### Format Rules:
+
+**❌ DON'T DO THIS (Long, rambling):**
+```
+Bhai, so what I think is happening here is that the slider might not be showing 
+because there could be several different reasons like maybe the browser cache 
+hasn't been cleared yet or perhaps the app.js hasn't been reloaded, or it's 
+possible that the images array hasn't been populated correctly from the API...
+```
+
+**✅ DO THIS (Short, point-to-point):**
+```
+🎯 Problem: Slider not showing
+- Reason 1: Browser cache (old app.js)
+- Reason 2: Server not restarted
+- Reason 3: Images array empty
+
+✅ Fix:
+1. Hard refresh browser (Ctrl+Shift+R)
+2. Check server running (pm2 status)
+3. Verify API response (curl http://localhost:3000/api/menu)
+```
+
+### One Action Per Message Rule:
+
+**❌ DON'T DO THIS (Multiple actions in one message):**
+```
+Now do this: npm install, then restart the server with pm2 restart meetpe, 
+then hard refresh the browser, then go to the app and click on the product, 
+then check if the slider is showing...
+```
+
+**✅ DO THIS (One action at a time):**
+```
+**Step 1:** npm install
+(Wait for completion, report back)
+
+After that, we do Step 2...
+```
+
+### Explanation Structure:
+
+**Format:** Problem → Root Cause → Solution → Test
+
+```
+🔴 PROBLEM: [What's wrong]
+🔍 ROOT CAUSE: [Why it's happening]
+✅ SOLUTION: [How to fix]
+- Action 1
+- Action 2
+- Action 3
+📝 TEST: [How to verify it works]
+```
+
+### Key Points:
+
+1. ✅ **Be brief** - Max 5 bullet points per explanation
+2. ✅ **Use emojis** - Helps readability
+3. ✅ **Number steps** - Sequential, clear order
+4. ✅ **One action at a time** - Wait for feedback before next step
+5. ✅ **Ask for confirmation** - "Did it work?" before moving on
+6. ❌ **No walls of text** - Break into smaller chunks
+7. ❌ **No assumptions** - Ask if unsure
+8. ✅ **Copy-paste ready** - Commands user can directly use
+
+### Example Response Format:
+
+```
+**Status:** ✅ Server online
+
+**Current Issue:** Slider not showing (but API working ✓)
+
+**Root Cause:** Browser showing old cached app.js
+
+**Quick Fix - Do This Now:**
+1. Hard refresh: Ctrl+Shift+R (Windows) or Cmd+Shift+R (Mac)
+2. Open app
+3. Go to Chicken category
+4. Click "Premium Fresh Chicken"
+
+**Expected Result:** Should see ● ○ ○ (dots) below image
+
+**Report back:** Did you see the dots?
+```
+
+### When to Use Different Formats:
+
+| Situation | Format |
+|-----------|--------|
+| Problem diagnosis | 🔴 Problem → 🔍 Cause → ✅ Solution |
+| Step-by-step guide | 1️⃣ Action 1 → 2️⃣ Action 2 → 3️⃣ Action 3 |
+| Status update | ✅ What's done / ⏳ What's pending |
+| Error resolution | ❌ Error → 🔧 Fix → ✅ Verify |
+
+---
+
 ## 🔐 FINAL REMINDER
 
 ### The Three Sacred Rules:
