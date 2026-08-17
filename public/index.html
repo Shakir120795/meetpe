@@ -2970,7 +2970,8 @@ async function verifyOTP() {
         },
         (error) => {
           console.error('❌ MSG91 Widget verify error:', error);
-          showToast(error || 'Invalid OTP', 'error');
+          const errMsg = typeof error === 'string' ? error : (error?.message || 'Invalid OTP');
+          showToast(errMsg, 'error');
           btn.disabled = false;
           btn.textContent = 'Verify OTP';
         }
