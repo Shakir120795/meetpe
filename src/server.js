@@ -17,6 +17,24 @@ const crypto = require('crypto');
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy (nginx/cloudflare) — must be set before rate limiters
 
+// HTTPS Enforcement - redirect HTTP to HTTPS in production
+app.use((req, res, next) => {
+  // Skip in development (localhost)
+  if (req.hostname === 'localhost' || req.hostname === '127.0.0.1') {
+    return next();
+  }
+  
+  // Check if request is secure
+  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  
+  if (!isSecure) {
+    // Redirect to HTTPS
+    return res.redirect(301, `https://${req.hostname}${req.url}`);
+  }
+  
+  next();
+});
+
 app.use(helmet({
   contentSecurityPolicy: false, // Disabled to allow inline scripts in existing HTML
   crossOriginEmbedderPolicy: false
