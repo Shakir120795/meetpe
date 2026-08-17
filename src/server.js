@@ -36,7 +36,20 @@ app.use((req, res, next) => {
 });
 
 app.use(helmet({
-  contentSecurityPolicy: false, // Disabled to allow inline scripts in existing HTML
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts for existing HTML
+      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles
+      imgSrc: ["'self'", "data:", "https:", "blob:"], // Allow images from various sources
+      connectSrc: ["'self'", "https://api.cashfree.com"], // API connections
+      fontSrc: ["'self'", "data:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'self'", "https://api.cashfree.com"], // Payment gateway frames
+      upgradeInsecureRequests: []
+    }
+  },
   crossOriginEmbedderPolicy: false
 }));
 
@@ -189,8 +202,10 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
-    // Unique name: timestamp + random + original extension
-    const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+    // Sanitize filename to prevent path traversal
+    const sanitizedOriginal = path.basename(file.originalname).replace(/[^a-zA-Z0-9._-]/g, '');
+    const ext = path.extname(sanitizedOriginal).toLowerCase() || '.jpg';
+    // Unique name: timestamp + random + sanitized extension
     const name = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + ext;
     cb(null, name);
   },
