@@ -417,7 +417,14 @@ app.post('/api/order', (req, res) => {
       return res.status(400).json({ ok: false, error: 'Store is currently closed. Please try again later.' });
     }
     
+    // Extract only trusted fields from client (delivery_fee, subtotal, total are NEVER accepted from client)
     const { name, phone, address, payment, delivery_slot, notes, items, couponCode, walletAmount, tip } = req.body || {};
+    
+    // Log manipulation attempt if client sends server-calculated fields
+    if (req.body.delivery_fee !== undefined || req.body.subtotal !== undefined || req.body.total !== undefined) {
+      console.warn(`⚠️ Order manipulation attempt detected from ${phone} - client sent server-only fields`);
+    }
+    
     if (!name || !phone || !address || !Array.isArray(items) || !items.length) {
       return res.status(400).json({ ok: false, error: 'missing fields' });
     }
@@ -456,6 +463,7 @@ app.post('/api/order', (req, res) => {
       }
     }
 
+    // SERVER-SIDE DELIVERY FEE CALCULATION (client cannot influence)
     const free = Number(process.env.DELIVERY_FREE_ABOVE || 699);
     const lowBelow = Number(process.env.DELIVERY_LOW_BELOW || 399);
     const feeLow = Number(process.env.DELIVERY_FEE_LOW || 29);
@@ -502,9 +510,10 @@ app.post('/api/order', (req, res) => {
       }
     }
 
+    // SERVER-SIDE TOTAL CALCULATION (never trust client-provided total)
     const total = Math.max(0, subtotal - couponDiscount - actualWalletDeducted + delivery);
 
-    // Tip for delivery partner (stored separately, added to total)
+    // Tip for delivery partner (stored separately, added to total) - capped at ₹500
     const tipAmount = Math.max(0, Math.min(500, parseInt(tip || 0, 10)));
     const finalTotal = total + tipAmount;
 
