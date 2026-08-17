@@ -144,6 +144,26 @@ function applyMigrations(db) {
           if (!e.message.includes('duplicate column')) throw e;
         }
       }
+    },
+    {
+      name: '009_add_wallet_transactions_table',
+      up: () => {
+        try {
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS wallet_transactions (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              phone TEXT NOT NULL,
+              payment_id TEXT,
+              amount INTEGER NOT NULL,
+              type TEXT NOT NULL,
+              created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+          `);
+          console.log('  ✅ Created wallet_transactions table');
+        } catch (e) {
+          if (!e.message.includes('already exists')) throw e;
+        }
+      }
     }
   ];
   

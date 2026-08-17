@@ -485,14 +485,20 @@ app.post('/api/order', (req, res) => {
       }
     }
 
-    // Server-side wallet deduction (validated)
-    const walletAmt = parseInt(walletAmount || 0, 10);
+    // Server-side wallet deduction (validated with race condition protection)
+    const walletAmt = Math.max(0, parseInt(walletAmount || 0, 10));
     let actualWalletDeducted = 0;
 
     if (walletAmt > 0) {
       const customerWallet = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(webPhone);
-      if (customerWallet && customerWallet.wallet_balance >= walletAmt) {
-        actualWalletDeducted = walletAmt;
+      const currentBalance = customerWallet?.wallet_balance || 0;
+      
+      // Only deduct what's available (prevent negative balance)
+      actualWalletDeducted = Math.min(walletAmt, currentBalance);
+      
+      // Additional safety: ensure balance won't go negative
+      if (actualWalletDeducted > currentBalance) {
+        actualWalletDeducted = 0;
       }
     }
 
@@ -520,44 +526,71 @@ app.post('/api/order', (req, res) => {
       ON CONFLICT(phone) DO UPDATE SET name = excluded.name, address = excluded.address
     `).run(webPhone, name, address);
 
-    // Insert order
-    // Add tip column if not exists
-    try { db.prepare('ALTER TABLE orders ADD COLUMN tip INTEGER DEFAULT 0').run(); } catch(e) {}
+    // Use transaction for atomic order creation + wallet deduction
+    const transaction = db.transaction(() => {
+      // Insert order
+      // Add tip column if not exists
+      try { db.prepare('ALTER TABLE orders ADD COLUMN tip INTEGER DEFAULT 0').run(); } catch(e) {}
 
-    const cleanSlot = delivery_slot || 'asap';
-    const cleanPayment = payment || 'cod';
-    const cleanNotes = (notes || '').trim();
-    const info = db.prepare(`
-      INSERT INTO orders (phone, items_json, subtotal, delivery_fee, total, address, source, payment_method, delivery_slot, notes, tip)
-      VALUES (?, ?, ?, ?, ?, ?, 'web', ?, ?, ?, ?)
-    `).run(webPhone, JSON.stringify(cleanItems), subtotal, delivery, finalTotal, address, cleanPayment, cleanSlot, cleanNotes, tipAmount);
-    const orderId = info.lastInsertRowid;
+      const cleanSlot = delivery_slot || 'asap';
+      const cleanPayment = payment || 'cod';
+      const cleanNotes = (notes || '').trim();
+      const info = db.prepare(`
+        INSERT INTO orders (phone, items_json, subtotal, delivery_fee, total, address, source, payment_method, delivery_slot, notes, tip)
+        VALUES (?, ?, ?, ?, ?, ?, 'web', ?, ?, ?, ?)
+      `).run(webPhone, JSON.stringify(cleanItems), subtotal, delivery, finalTotal, address, cleanPayment, cleanSlot, cleanNotes, tipAmount);
+      const orderId = info.lastInsertRowid;
 
-    // Deduct wallet server-side
-    if (actualWalletDeducted > 0) {
-      db.prepare('UPDATE customers SET wallet_balance = wallet_balance - ? WHERE phone = ?')
-        .run(actualWalletDeducted, webPhone);
-    }
-    
-    // Deduct membership credit if used
-    if (usedCredit) {
-      db.prepare('UPDATE customers SET delivery_credits = delivery_credits - 1 WHERE phone = ?')
-        .run(webPhone);
+      // Deduct wallet server-side with balance check (prevent negative)
+      if (actualWalletDeducted > 0) {
+        const currentWallet = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(webPhone);
+        const currentBalance = currentWallet?.wallet_balance || 0;
+        
+        // Double-check: only deduct if sufficient balance (race condition protection)
+        if (currentBalance >= actualWalletDeducted) {
+          db.prepare('UPDATE customers SET wallet_balance = wallet_balance - ? WHERE phone = ? AND wallet_balance >= ?')
+            .run(actualWalletDeducted, webPhone, actualWalletDeducted);
+        } else {
+          // Insufficient balance - abort transaction
+          throw new Error('Insufficient wallet balance');
+        }
+      }
+      
+      // Deduct membership credit if used
+      if (usedCredit) {
+        db.prepare('UPDATE customers SET delivery_credits = delivery_credits - 1 WHERE phone = ?')
+          .run(webPhone);
+      }
+
+      return orderId;
+    });
+
+    let orderId;
+    try {
+      orderId = transaction();
+    } catch (e) {
+      if (e.message === 'Insufficient wallet balance') {
+        return res.status(400).json({ ok: false, error: 'Insufficient wallet balance. Please refresh and try again.' });
+      }
+      throw e;
     }
 
     let earnedReward = 0;
+    // Reward calculation based on subtotal (BEFORE wallet/coupon deduction)
     if (enableRewards && subtotal >= rewardThreshold) {
+      const rewardToAdd = Math.max(0, parseInt(rewardAmt, 10)); // Prevent negative rewards
+      
       // Credit reward to wallet_balance
-      db.prepare('UPDATE customers SET wallet_balance = wallet_balance + ? WHERE phone = ?').run(rewardAmt, webPhone);
+      db.prepare('UPDATE customers SET wallet_balance = wallet_balance + ? WHERE phone = ?').run(rewardToAdd, webPhone);
       // Also insert into rewards table so frontend "Reward Points" shows correctly
-      db.prepare(`INSERT INTO rewards (phone, amount, expires_at, used) VALUES (?, ?, datetime('now', '+${rewardExpiry} days'), 0)`).run(webPhone, rewardAmt);
-      earnedReward = rewardAmt;
+      db.prepare(`INSERT INTO rewards (phone, amount, expires_at, used) VALUES (?, ?, datetime('now', '+${rewardExpiry} days'), 0)`).run(webPhone, rewardToAdd);
+      earnedReward = rewardToAdd;
     }
     
-    // Cashback calculation
+    // Cashback calculation (also based on subtotal)
     let cashbackEarned = 0;
     if (enableCashback && subtotal >= cashbackMinOrder) {
-      cashbackEarned = Math.min(Math.round(subtotal * cashbackPercent / 100), cashbackMax);
+      cashbackEarned = Math.max(0, Math.min(Math.round(subtotal * cashbackPercent / 100), cashbackMax));
       if (cashbackEarned > 0) {
         // Credit cashback to wallet
         db.prepare('UPDATE customers SET wallet_balance = wallet_balance + ? WHERE phone = ?')
@@ -940,10 +973,14 @@ app.post('/api/membership/wallet-pay', (req, res) => {
       return res.status(400).json({ ok: false, error: 'Membership only within 7km of hub' });
     }
     
-    // Deduct wallet and activate membership
+    // Deduct wallet and activate membership (with race condition protection)
     const now = new Date().toISOString();
-    db.prepare(`UPDATE customers SET wallet_balance = wallet_balance - ?, membership_zone = ?, membership_price = ?, delivery_credits = 10, membership_start = ?, is_plus = 1 WHERE phone = ?`)
-      .run(plan.price, planId, plan.price, now, waPhone);
+    const result = db.prepare(`UPDATE customers SET wallet_balance = wallet_balance - ?, membership_zone = ?, membership_price = ?, delivery_credits = 10, membership_start = ?, is_plus = 1 WHERE phone = ? AND wallet_balance >= ?`)
+      .run(plan.price, planId, plan.price, now, waPhone, plan.price);
+    
+    if (result.changes === 0) {
+      return res.status(400).json({ ok: false, error: 'Insufficient wallet balance. Please refresh and try again.' });
+    }
     
     const updated = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(waPhone);
     
@@ -1897,12 +1934,20 @@ app.post('/api/wallet/use', requireAuth, (req, res) => {
   if (cleanPhone.length !== 10) return res.status(400).json({ ok: false, error: 'invalid phone' });
   const waPhone = `web:+91${cleanPhone}`;
   if (req.sessionPhone !== waPhone) return res.status(403).json({ ok: false, error: 'Access denied' });
-  const deduct = parseInt(amount, 10) || 0;
+  const deduct = Math.max(0, parseInt(amount, 10) || 0); // Prevent negative
   if (deduct <= 0) return res.status(400).json({ ok: false, error: 'invalid amount' });
   const customer = db.prepare('SELECT * FROM customers WHERE phone = ?').get(waPhone);
   if (!customer) return res.status(404).json({ ok: false, error: 'customer not found' });
   if ((customer.wallet_balance || 0) < deduct) return res.status(400).json({ ok: false, error: 'insufficient wallet balance' });
-  db.prepare('UPDATE customers SET wallet_balance = wallet_balance - ? WHERE phone = ?').run(deduct, waPhone);
+  
+  // Use WHERE clause with balance check to prevent race condition
+  const result = db.prepare('UPDATE customers SET wallet_balance = wallet_balance - ? WHERE phone = ? AND wallet_balance >= ?')
+    .run(deduct, waPhone, deduct);
+  
+  if (result.changes === 0) {
+    return res.status(400).json({ ok: false, error: 'insufficient wallet balance' });
+  }
+  
   const updated = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(waPhone);
   res.json({ ok: true, deducted: deduct, remaining: updated.wallet_balance });
 });
@@ -2106,14 +2151,19 @@ app.get('/admin/customers', (req, res) => {
 });
 
 // PUT /admin/customers/:phone/wallet?key=X - add/set wallet balance
-app.put('/admin/customers/:phone/wallet', (req, res) => {
+app.put('/admin/customers/:phone/wallet', requireAdmin, (req, res) => {
   const phone = decodeURIComponent(req.params.phone);
   const { amount, action } = req.body || {}; // action: 'add' | 'set'
   const val = parseInt(amount, 10) || 0;
+  
   if (action === 'add') {
-    db.prepare('UPDATE customers SET wallet_balance = wallet_balance + ? WHERE phone = ?').run(val, phone);
+    // Prevent adding negative amounts (use 'set' for deduction if needed)
+    const safeVal = Math.max(0, val);
+    db.prepare('UPDATE customers SET wallet_balance = wallet_balance + ? WHERE phone = ?').run(safeVal, phone);
   } else {
-    db.prepare('UPDATE customers SET wallet_balance = ? WHERE phone = ?').run(val, phone);
+    // Set to specific value, but don't allow negative balance
+    const safeVal = Math.max(0, val);
+    db.prepare('UPDATE customers SET wallet_balance = ? WHERE phone = ?').run(safeVal, phone);
   }
   const c = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(phone);
   res.json({ ok: true, wallet: c ? c.wallet_balance : 0 });
@@ -2476,20 +2526,6 @@ app.get('/admin/customers', (req, res) => {
   }
   const customers = db.prepare(sql).all(...params);
   res.json({ ok: true, customers });
-});
-
-// ===== Admin: update customer wallet =====
-app.put('/admin/customers/:phone/wallet', (req, res) => {
-  const phone = decodeURIComponent(req.params.phone);
-  const { amount, action } = req.body || {};
-  const val = parseInt(amount, 10) || 0;
-  if (action === 'add') {
-    db.prepare('UPDATE customers SET wallet_balance = wallet_balance + ? WHERE phone = ?').run(val, phone);
-  } else {
-    db.prepare('UPDATE customers SET wallet_balance = ? WHERE phone = ?').run(Math.max(0, val), phone);
-  }
-  const c = db.prepare('SELECT wallet_balance FROM customers WHERE phone = ?').get(phone);
-  res.json({ ok: true, wallet: c ? c.wallet_balance : 0 });
 });
 
 // ===== SUBSCRIPTIONS (Recurring Orders) =====
