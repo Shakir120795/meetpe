@@ -1196,7 +1196,34 @@ app.post('/admin/orders/:id/assign', (req, res) => {
 // ===== Admin: list all users =====
 app.get('/admin/users', (req, res) => {
   
-  // Get ALL unique users from customers table (not just those with orders)
+  // Pagination parameters
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10; // Default 10, can be 10, 20, 50
+  const offset = (page - 1) * limit;
+  
+  // Search parameter
+  const search = req.query.search || '';
+  const searchPattern = `%${search.replace(/\D/g, '')}%`; // Remove non-digits for phone search
+  
+  // Build WHERE clause for search
+  let whereClause = '';
+  let searchParams = [];
+  if (search) {
+    whereClause = `WHERE REPLACE(REPLACE(c.phone, 'whatsapp:', ''), 'web:', '') LIKE ? OR c.name LIKE ?`;
+    searchParams = [searchPattern, `%${search}%`];
+  }
+  
+  // Get total count (for pagination)
+  const totalQuery = `
+    SELECT COUNT(DISTINCT REPLACE(REPLACE(c.phone, 'whatsapp:', ''), 'web:', '')) as total
+    FROM customers c
+    ${whereClause}
+  `;
+  const totalResult = db.prepare(totalQuery).get(...searchParams);
+  const totalUsers = totalResult.total;
+  const totalPages = Math.ceil(totalUsers / limit);
+  
+  // Get paginated users
   const users = db.prepare(`
     SELECT 
       REPLACE(REPLACE(c.phone, 'whatsapp:', ''), 'web:', '') AS clean_phone,
@@ -1208,12 +1235,14 @@ app.get('/admin/users', (req, res) => {
       MAX(o.created_at) AS last_order_date
     FROM customers c
     LEFT JOIN orders o ON REPLACE(REPLACE(o.phone, 'whatsapp:', ''), 'web:', '') = REPLACE(REPLACE(c.phone, 'whatsapp:', ''), 'web:', '')
+    ${whereClause}
     GROUP BY clean_phone, c.name, c.wallet_balance, c.created_at
     ORDER BY total_orders DESC, last_order_date DESC
-  `).all();
+    LIMIT ? OFFSET ?
+  `).all(...searchParams, limit, offset);
 
   const formatted = users.map(u => ({
-    phone: u.clean_phone, // Return clean phone without prefix
+    phone: u.clean_phone,
     name: u.customer_name || 'Customer',
     wallet_balance: u.wallet_balance || 0,
     total_orders: u.total_orders || 0,
@@ -1222,7 +1251,18 @@ app.get('/admin/users', (req, res) => {
     registration_date: u.registration_date
   }));
 
-  res.json({ ok: true, users: formatted });
+  res.json({ 
+    ok: true, 
+    users: formatted,
+    pagination: {
+      page,
+      limit,
+      total: totalUsers,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1
+    }
+  });
 });
 
 // ===== Admin: get user detail =====
