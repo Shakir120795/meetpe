@@ -1122,6 +1122,23 @@ input,textarea{font:inherit;color:inherit}
       </div>
     </div>
 
+    <!-- ═══ FULL-SCREEN IMAGE VIEWER MODAL ═══ -->
+    <div class="image-viewer-modal" id="imageViewerModal">
+      <div class="image-viewer-container" id="imageViewerContainer">
+        <button class="image-viewer-close" onclick="closeImageViewer()">✕</button>
+        <div class="image-viewer-content" id="imageViewerContent">
+          <img id="imageViewerImg" src="" alt="Product" />
+        </div>
+        <div class="image-viewer-nav">
+          <button class="image-viewer-btn" onclick="viewerPrevImage()">‹</button>
+          <span class="image-viewer-counter">
+            <span id="imageViewerCurrent">1</span>/<span id="imageViewerTotal">1</span>
+          </span>
+          <button class="image-viewer-btn" onclick="viewerNextImage()">›</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ═══ BASKET SCREEN ═══ -->
     <div class="screen" id="screen-basket">
       <div class="screen-header">
@@ -2622,7 +2639,8 @@ function showScreen(id) {
 
   target.style.display = '';
   target.classList.add('active');
-  target.scrollTop = 0;
+  // Only scroll to top for home screen, not other screens
+  if (id === 'screen-home') target.scrollTop = 0;
 
   // Track history (avoid duplicates)
   if (SCREEN_HISTORY[SCREEN_HISTORY.length - 1] !== id) {
@@ -2715,7 +2733,8 @@ function goBack() {
   });
   target.style.display = '';
   target.classList.add('active');
-  target.scrollTop = 0;
+  // Restore scroll position for home screen (where user was browsing)
+  if (prev !== 'screen-home') target.scrollTop = 0;
 
   const hasNav = prev !== 'screen-login';
   document.getElementById('bottomNav').style.display = hasNav ? 'flex' : 'none';
@@ -4410,6 +4429,82 @@ function initProductSlider(container) {
     if (Math.abs(diff) > 50) {
       e.stopPropagation();
       goTo(diff > 0 ? current - 1 : current + 1);
+    }
+  }, { passive: true });
+
+  // Click on slides to open full-screen viewer
+  container.querySelectorAll('.pd-slide img').forEach((img, idx) => {
+    img.style.cursor = 'pointer';
+    img.addEventListener('click', () => openImageViewer(CURRENT_PRODUCT, idx));
+  });
+}
+
+// Global variable for image viewer state
+let VIEWER_IMAGES = [];
+let VIEWER_CURRENT = 0;
+
+function openImageViewer(product, startIdx = 0) {
+  if (!product || !product.images || product.images.length === 0) return;
+  
+  VIEWER_IMAGES = product.images;
+  VIEWER_CURRENT = startIdx;
+  updateViewerImage();
+  
+  document.getElementById('imageViewerModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  
+  // Add keyboard support
+  document.addEventListener('keydown', handleViewerKeyboard);
+  
+  // Add swipe support
+  addViewerSwipeSupport();
+}
+
+function closeImageViewer() {
+  document.getElementById('imageViewerModal').classList.remove('open');
+  document.body.style.overflow = '';
+  document.removeEventListener('keydown', handleViewerKeyboard);
+}
+
+function updateViewerImage() {
+  const img = document.getElementById('imageViewerImg');
+  img.src = VIEWER_IMAGES[VIEWER_CURRENT];
+  
+  document.getElementById('imageViewerCurrent').textContent = VIEWER_CURRENT + 1;
+  document.getElementById('imageViewerTotal').textContent = VIEWER_IMAGES.length;
+}
+
+function viewerNextImage() {
+  VIEWER_CURRENT = (VIEWER_CURRENT + 1) % VIEWER_IMAGES.length;
+  updateViewerImage();
+}
+
+function viewerPrevImage() {
+  VIEWER_CURRENT = (VIEWER_CURRENT - 1 + VIEWER_IMAGES.length) % VIEWER_IMAGES.length;
+  updateViewerImage();
+}
+
+function handleViewerKeyboard(e) {
+  if (!document.getElementById('imageViewerModal').classList.contains('open')) return;
+  
+  if (e.key === 'ArrowRight') viewerNextImage();
+  else if (e.key === 'ArrowLeft') viewerPrevImage();
+  else if (e.key === 'Escape') closeImageViewer();
+}
+
+function addViewerSwipeSupport() {
+  const modal = document.getElementById('imageViewerModal');
+  let touchStartX = 0, touchEndX = 0;
+  
+  modal.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+  
+  modal.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchEndX - touchStartX;
+    if (Math.abs(diff) > 50) {
+      diff > 0 ? viewerPrevImage() : viewerNextImage();
     }
   }, { passive: true });
 }
