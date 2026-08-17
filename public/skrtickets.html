@@ -106,9 +106,9 @@ async function loadTickets() {
   if (!key) return;
   
   // Only pass open/resolved as status to API, user/rider is client-side filter
-  const apiStatus = (FILTER === 'open' || FILTER === 'resolved') ? '&status=' + FILTER : '';
+  const apiStatus = (FILTER === 'open' || FILTER === 'resolved') ? '?status=' + FILTER : '';
   try {
-    const res = await fetch('/admin/tickets')+apiStatus);
+    const res = await fetch('/admin/tickets' + apiStatus);
     const data = await res.json();
     if (!data.ok) { $('ticketsList').innerHTML = '<div style="color:red">' + (data.error || 'Failed') + '</div>'; return; }
     TICKETS = data.tickets;
@@ -214,7 +214,7 @@ async function sendReply(status) {
   if (!reply) { alert('Please type a reply'); return; }
   
   try {
-    const res = await fetch('/admin/ticket/reply, {
+    const res = await fetch('/admin/ticket/reply', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ticketId: CURRENT_TICKET, reply, status })
