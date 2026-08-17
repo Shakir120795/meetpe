@@ -1289,7 +1289,7 @@ app.get('/admin/users/:phone/detail', (req, res) => {
       rating: r.delivery_rating, comment: r.comment, order_id: r.order_id, created_at: r.created_at
     }));
     
-    // Addresses - Get from saved_addresses table first, then fallback to order addresses
+    // Addresses - ONLY show saved addresses (user's actively saved addresses)
     const savedAddresses = db.prepare(`
       SELECT id, tag, address, is_default, created_at 
       FROM saved_addresses 
@@ -1297,44 +1297,16 @@ app.get('/admin/users/:phone/detail', (req, res) => {
       ORDER BY is_default DESC, created_at DESC
     `).all(...phoneVariants);
     
-    // Also show order addresses with usage count
-    const addrMap = {};
-    orders.forEach(o => {
-      if (!o.address) return;
-      if (!addrMap[o.address]) addrMap[o.address] = { address: o.address, order_count: 0, orders: [] };
-      addrMap[o.address].order_count++;
-      addrMap[o.address].orders.push(o);
-    });
-    const orderAddresses = Object.values(addrMap).sort((a,b) => b.order_count - a.order_count);
-    
-    // Combine both - saved addresses first, then order addresses
-    const addresses = [
-      ...savedAddresses.map(a => ({
-        type: 'saved',
-        id: a.id,
-        tag: a.tag,
-        address: a.address,
-        is_default: a.is_default,
-        created_at: a.created_at,
-        order_count: orders.filter(o => o.address === a.address).length
-      })),
-      ...orderAddresses.map(a => ({
-        type: 'order_history',
-        address: a.address,
-        order_count: a.order_count
-      }))
-    ];
-    
-    // Remove duplicate addresses (if saved address also exists in order history)
-    const uniqueAddresses = [];
-    const seen = new Set();
-    addresses.forEach(a => {
-      const key = a.address.toLowerCase().trim();
-      if (!seen.has(key)) {
-        seen.add(key);
-        uniqueAddresses.push(a);
-      }
-    });
+    // Add order count to each saved address
+    const addresses = savedAddresses.map(a => ({
+      type: 'saved',
+      id: a.id,
+      tag: a.tag,
+      address: a.address,
+      is_default: a.is_default,
+      created_at: a.created_at,
+      order_count: orders.filter(o => o.address === a.address).length
+    }));
     
     // Payment methods
     const pmMap = {};
@@ -1376,7 +1348,7 @@ app.get('/admin/users/:phone/detail', (req, res) => {
       top_items: topItems,
       reviews: reviewsWithNames,
       avg_rating: avgRating,
-      addresses: uniqueAddresses,
+      addresses: addresses,
       delivery_ratings: deliveryRatings,
       payment_methods: paymentMethods,
       membership_active: membershipActive,
