@@ -4527,11 +4527,33 @@ function selectWeight(el, w) {
   el.classList.add('active');
   SELECTED_WEIGHT = w;
 
-  // Recalculate price based on weight ratio vs base item unit
-  const baseGrams = parseUnitGrams(CURRENT_PRODUCT.unit);
-  const selectedGrams = parseUnitGrams(w);
-  const multiplier = (baseGrams > 0 && selectedGrams > 0) ? selectedGrams / baseGrams : 1;
-  SELECTED_PRICE = Math.round(CURRENT_PRODUCT.price * multiplier);
+  // Use admin-defined weight option price if available
+  if (CURRENT_PRODUCT.weightOptions && CURRENT_PRODUCT.weightOptions.length > 0) {
+    // Find matching weight option and extract price
+    let found = false;
+    for (const opt of CURRENT_PRODUCT.weightOptions) {
+      const [weight, priceStr] = opt.split('-').map(p => p.trim());
+      if (weight === w) {
+        SELECTED_PRICE = parseInt(priceStr.replace('₹', '').trim(), 10);
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      // Fallback: calculate based on ratio
+      const baseGrams = parseUnitGrams(CURRENT_PRODUCT.unit);
+      const selectedGrams = parseUnitGrams(w);
+      const multiplier = (baseGrams > 0 && selectedGrams > 0) ? selectedGrams / baseGrams : 1;
+      SELECTED_PRICE = Math.round(CURRENT_PRODUCT.price * multiplier);
+    }
+  } else {
+    // No weight options: calculate based on ratio
+    const baseGrams = parseUnitGrams(CURRENT_PRODUCT.unit);
+    const selectedGrams = parseUnitGrams(w);
+    const multiplier = (baseGrams > 0 && selectedGrams > 0) ? selectedGrams / baseGrams : 1;
+    SELECTED_PRICE = Math.round(CURRENT_PRODUCT.price * multiplier);
+  }
+
   const mrp = Math.round(SELECTED_PRICE * 1.1);
   const save = Math.round(((mrp - SELECTED_PRICE) / mrp) * 100);
 
