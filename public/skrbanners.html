@@ -91,7 +91,7 @@ function getKey() { const k = $('key').value.trim(); localStorage.setItem('meatp
 
 async function loadData() {
   try {
-    const res = await fetch('/admin/settings);
+    const res = await fetch('/admin/settings');
     const data = await res.json();
     if (!data.ok) { alert(data.error); return; }
     SETTINGS = data.settings;
@@ -172,7 +172,7 @@ async function saveAll() {
     offerBanners: collectOfferBanners()
   };
   try {
-    const res = await fetch('/admin/settings, {
+    const res = await fetch('/admin/settings', {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ banners })
     });
