@@ -1196,19 +1196,19 @@ app.post('/admin/orders/:id/assign', (req, res) => {
 // ===== Admin: list all users =====
 app.get('/admin/users', (req, res) => {
   
-  // Get unique users by normalized phone (remove prefixes like web:/whatsapp:)
-  // Use clean_phone for grouping but also aggregate data from customers table
+  // Get ALL unique users from customers table (not just those with orders)
   const users = db.prepare(`
     SELECT 
-      REPLACE(REPLACE(o.phone, 'whatsapp:', ''), 'web:', '') AS clean_phone,
+      REPLACE(REPLACE(c.phone, 'whatsapp:', ''), 'web:', '') AS clean_phone,
+      c.name AS customer_name,
+      c.wallet_balance,
+      c.created_at AS registration_date,
       COUNT(DISTINCT o.id) AS total_orders,
       COALESCE(SUM(o.total), 0) AS total_spent,
-      MAX(o.created_at) AS last_order_date,
-      MAX(c.name) AS customer_name,
-      MAX(c.wallet_balance) AS wallet_balance
-    FROM orders o
-    LEFT JOIN customers c ON REPLACE(REPLACE(c.phone, 'whatsapp:', ''), 'web:', '') = REPLACE(REPLACE(o.phone, 'whatsapp:', ''), 'web:', '')
-    GROUP BY clean_phone
+      MAX(o.created_at) AS last_order_date
+    FROM customers c
+    LEFT JOIN orders o ON REPLACE(REPLACE(o.phone, 'whatsapp:', ''), 'web:', '') = REPLACE(REPLACE(c.phone, 'whatsapp:', ''), 'web:', '')
+    GROUP BY clean_phone, c.name, c.wallet_balance, c.created_at
     ORDER BY total_orders DESC, last_order_date DESC
   `).all();
 
@@ -1218,7 +1218,8 @@ app.get('/admin/users', (req, res) => {
     wallet_balance: u.wallet_balance || 0,
     total_orders: u.total_orders || 0,
     total_spent: u.total_spent || 0,
-    last_order_date: u.last_order_date
+    last_order_date: u.last_order_date,
+    registration_date: u.registration_date
   }));
 
   res.json({ ok: true, users: formatted });
@@ -1288,7 +1289,15 @@ app.get('/admin/users/:phone/detail', (req, res) => {
       rating: r.delivery_rating, comment: r.comment, order_id: r.order_id, created_at: r.created_at
     }));
     
-    // Addresses
+    // Addresses - Get from saved_addresses table first, then fallback to order addresses
+    const savedAddresses = db.prepare(`
+      SELECT id, tag, address, is_default, created_at 
+      FROM saved_addresses 
+      WHERE phone IN (?, ?, ?, ?, ?)
+      ORDER BY is_default DESC, created_at DESC
+    `).all(...phoneVariants);
+    
+    // Also show order addresses with usage count
     const addrMap = {};
     orders.forEach(o => {
       if (!o.address) return;
@@ -1296,7 +1305,36 @@ app.get('/admin/users/:phone/detail', (req, res) => {
       addrMap[o.address].order_count++;
       addrMap[o.address].orders.push(o);
     });
-    const addresses = Object.values(addrMap).sort((a,b) => b.order_count - a.order_count);
+    const orderAddresses = Object.values(addrMap).sort((a,b) => b.order_count - a.order_count);
+    
+    // Combine both - saved addresses first, then order addresses
+    const addresses = [
+      ...savedAddresses.map(a => ({
+        type: 'saved',
+        id: a.id,
+        tag: a.tag,
+        address: a.address,
+        is_default: a.is_default,
+        created_at: a.created_at,
+        order_count: orders.filter(o => o.address === a.address).length
+      })),
+      ...orderAddresses.map(a => ({
+        type: 'order_history',
+        address: a.address,
+        order_count: a.order_count
+      }))
+    ];
+    
+    // Remove duplicate addresses (if saved address also exists in order history)
+    const uniqueAddresses = [];
+    const seen = new Set();
+    addresses.forEach(a => {
+      const key = a.address.toLowerCase().trim();
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueAddresses.push(a);
+      }
+    });
     
     // Payment methods
     const pmMap = {};
@@ -1338,7 +1376,7 @@ app.get('/admin/users/:phone/detail', (req, res) => {
       top_items: topItems,
       reviews: reviewsWithNames,
       avg_rating: avgRating,
-      addresses,
+      addresses: uniqueAddresses,
       delivery_ratings: deliveryRatings,
       payment_methods: paymentMethods,
       membership_active: membershipActive,
