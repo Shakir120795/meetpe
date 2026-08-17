@@ -85,11 +85,12 @@ input,textarea{font:inherit;color:inherit}
   box-shadow:0 2px 8px rgba(239,68,68,.5);border:2px solid var(--card);z-index:200}
 
 /* ── Login screen ── */
-#screen-login{background:#FFFFFF}
+#screen-login{background:var(--bg)}
+#screen-otp{background:var(--bg)}
 .login-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;
   justify-content:center;padding:32px 24px;gap:24px}
 .login-logo{width:200px;height:auto;border-radius:16px;object-fit:contain;
-  background:#FFFFFF;padding:12px;box-shadow:0 4px 20px rgba(0,0,0,.1)}
+  background:transparent;padding:0;box-shadow:none}
 .login-brand{font-size:36px;font-weight:900;letter-spacing:-1px;
   background:linear-gradient(135deg,#E8450A,#ff9a3c);-webkit-background-clip:text;
   -webkit-text-fill-color:transparent}
@@ -600,10 +601,7 @@ input,textarea{font:inherit;color:inherit}
     <!-- ═══ LOGIN SCREEN - STEP 1: Phone Number ═══ -->
     <div class="screen" id="screen-login">
       <div class="login-wrap">
-        <img src="/now-logo.png" alt="NOW" class="login-logo" onerror="this.style.display='none'"/>
-        <div class="login-tagline">Fresh. Fast. Trusted.</div>
-        <div class="login-card">
-          <h2>Welcome to <span data-brand-name>NOW</span> 👋</h2>
+        <img src="/now-logo.png" alt="NOW" class="login-logo" style="border:none;box-shadow:none;background:transparent" onerror="this.style.display='none'"/>
           <p>Enter your phone number to continue</p>
           <div class="phone-row">
             <span class="phone-prefix">🇮🇳 +91</span>
@@ -623,37 +621,11 @@ input,textarea{font:inherit;color:inherit}
     <!-- ═══ OTP VERIFICATION SCREEN - STEP 2 ═══ -->
     <div class="screen" id="screen-otp">
       <div class="login-wrap">
-        <img src="/now-logo.png" alt="NOW" class="login-logo" onerror="this.style.display='none'"/>
+        <img src="/now-logo.png" alt="NOW" class="login-logo" style="border:none;box-shadow:none;background:transparent" onerror="this.style.display='none'"/>
         <div class="login-tagline">Fresh. Fast. Trusted.</div>
         <div class="login-card">
           <h2>Verify OTP 🔐</h2>
           <p>Enter the OTP sent to <strong id="otpPhoneDisplay">+91 XXXXXXXXXX</strong></p>
-          
-          <!-- OTP Method Selection -->
-          <div style="margin-top:12px">
-            <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;padding-left:4px">
-              📱 Receive OTP via:
-            </div>
-            <div style="display:flex;gap:8px">
-              <button 
-                id="otpMethodSMS" 
-                onclick="selectOTPMethod('sms')" 
-                class="otp-method-btn active"
-                style="flex:1;padding:12px;background:rgba(232,69,10,.12);border:1.5px solid var(--accent);border-radius:10px;font-size:13px;font-weight:600;color:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s">
-                💬 SMS
-              </button>
-              <button 
-                id="otpMethodWhatsApp" 
-                onclick="selectOTPMethod('whatsapp')" 
-                class="otp-method-btn"
-                style="flex:1;padding:12px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.2s">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                </svg>
-                WhatsApp
-              </button>
-            </div>
-          </div>
           
           <!-- OTP Input -->
           <div style="margin-top:16px">
@@ -668,6 +640,7 @@ input,textarea{font:inherit;color:inherit}
               onfocus="this.style.borderColor='var(--accent)'"
               onblur="this.style.borderColor='var(--border)'"
             />
+            <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:8px">📲 OTP received on WhatsApp</div>
           </div>
           
           <!-- Referral Code Input (Optional) -->
