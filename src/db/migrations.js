@@ -164,6 +164,71 @@ function applyMigrations(db) {
           if (!e.message.includes('already exists')) throw e;
         }
       }
+    },
+    {
+      name: '010_add_coupon_usage_tracking',
+      up: () => {
+        try {
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS coupon_usage (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              phone TEXT NOT NULL,
+              coupon_code TEXT NOT NULL,
+              order_id INTEGER,
+              discount_amount INTEGER NOT NULL,
+              used_at TEXT DEFAULT CURRENT_TIMESTAMP,
+              UNIQUE(phone, coupon_code)
+            )
+          `);
+          console.log('  ✅ Created coupon_usage table for per-user tracking');
+        } catch (e) {
+          if (!e.message.includes('already exists')) throw e;
+        }
+      }
+    },
+    {
+      name: '011_add_session_active_flag',
+      up: () => {
+        try {
+          db.exec(`ALTER TABLE customer_sessions ADD COLUMN is_active INTEGER DEFAULT 1`);
+          console.log('  ✅ Added is_active column to customer_sessions');
+        } catch (e) {
+          if (!e.message.includes('duplicate column')) throw e;
+        }
+      }
+    },
+    {
+      name: '012_add_wallet_version_for_race_condition',
+      up: () => {
+        try {
+          db.exec(`ALTER TABLE customers ADD COLUMN wallet_version INTEGER DEFAULT 0`);
+          console.log('  ✅ Added wallet_version column for optimistic locking');
+        } catch (e) {
+          if (!e.message.includes('duplicate column')) throw e;
+        }
+      }
+    },
+    {
+      name: '013_add_admin_audit_log',
+      up: () => {
+        try {
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS admin_audit_log (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+              ip TEXT NOT NULL,
+              method TEXT NOT NULL,
+              path TEXT NOT NULL,
+              body TEXT,
+              status_code INTEGER,
+              duration_ms INTEGER
+            )
+          `);
+          console.log('  ✅ Created admin_audit_log table');
+        } catch (e) {
+          if (!e.message.includes('already exists')) throw e;
+        }
+      }
     }
   ];
   
