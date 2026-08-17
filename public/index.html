@@ -3423,6 +3423,7 @@ async function confirmDeleteAccount() {
 
 function saveUser() {
   localStorage.setItem('now_user', JSON.stringify(USER));
+  _addrCache = null; // invalidate address cache on user change
 }
 
 // Handle phone input enter key
@@ -4875,34 +4876,7 @@ function selectPaymentMethod(methodId) {
   renderPaymentMethods();
 }
 
-function renderSavedAddresses() {
-  const container = document.getElementById('savedAddressesList');
-  if (!container) return;
-  const addresses = getSavedAddresses();
-  if (!addresses.length) {
-    container.innerHTML = '<div style="color:#999;font-size:13px;text-align:center;padding:8px 0">No saved addresses yet</div>';
-    return;
-  }
-  container.innerHTML = addresses.map((a, i) => `
-    <div onclick="selectSavedAddressForCheckout(${i})" style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #eee;border-radius:10px;margin-bottom:8px;cursor:pointer;background:${a.selected?'#fff5f0':'#fff'}">
-      <span style="font-size:18px">${a.tag==='Home'?'🏠':a.tag==='Work'?'🏢':'📍'}</span>
-      <div style="flex:1">
-        <div style="font-weight:600;font-size:13px">${a.tag||'Address'}</div>
-        <div style="font-size:12px;color:#666">${typeof a.address==='string'?a.address:(a.address?.full||a.address?.label||'')}</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function selectSavedAddressForCheckout(idx) {
-  const addresses = getSavedAddresses();
-  const a = addresses[idx];
-  if (!a) return;
-  const addrStr = typeof a.address === 'string' ? a.address : (a.address?.full || a.address?.label || '');
-  const addrField = document.getElementById('oAddress');
-  if (addrField) addrField.value = addrStr;
-  document.getElementById('checkoutModal').classList.remove('show');
-}
+// renderSavedAddresses and selectSavedAddressForCheckout defined below (async DB versions)
 
 function showCheckoutModal() {
   const modal = document.getElementById('checkoutModal');
@@ -8912,26 +8886,65 @@ function confirmMapLocation() { mapConfirmStep1(); }
 // ═══════════════════════════════════════════
 
 // --- Saved Addresses (localStorage) - User-specific ---
-function getSavedAddresses() {
-  const userKey = USER && USER.phone ? `now_addresses_${USER.phone}` : 'now_addresses_guest';
-  try { 
-    const addresses = JSON.parse(localStorage.getItem(userKey) || '[]');
-    // Migration: if no addresses found, check old global key
-    if (addresses.length === 0) {
-      const oldAddresses = JSON.parse(localStorage.getItem('now_addresses') || '[]');
-      if (oldAddresses.length > 0) {
-        // Migrate old addresses to user-specific key
-        localStorage.setItem(userKey, JSON.stringify(oldAddresses));
-        return oldAddresses;
-      }
+// --- Saved Addresses — DB backed (server /api/addresses) ---
+// In-memory cache so we don't hit DB on every render
+let _addrCache = null;
+
+async function getSavedAddresses() {
+  if (!USER || !USER.phone) return [];
+  if (_addrCache !== null) return _addrCache;
+  try {
+    const res = await fetch('/api/addresses?phone=' + USER.phone);
+    const data = await res.json();
+    if (data.ok) {
+      // Normalize DB format to app format
+      _addrCache = data.addresses.map(a => ({
+        id: a.id,
+        type: a.tag || 'Home',
+        label: a.tag || 'Home',
+        full: a.address,
+        flat: '', street: '', landmark: '',
+        lat: null, lon: null
+      }));
+    } else {
+      _addrCache = [];
     }
-    return addresses;
-  } catch { return []; }
+  } catch { _addrCache = []; }
+  return _addrCache;
 }
+
+async function saveAddressToDb(addrObj) {
+  if (!USER || !USER.phone) return null;
+  try {
+    const res = await fetch('/api/addresses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: USER.phone,
+        tag: addrObj.type || addrObj.label || 'Home',
+        address: addrObj.full,
+        is_default: 0
+      })
+    });
+    const data = await res.json();
+    _addrCache = null; // invalidate cache
+    return data.ok ? data.id : null;
+  } catch { return null; }
+}
+
+async function deleteAddressFromDb(id) {
+  if (!USER || !USER.phone) return;
+  try {
+    await fetch('/api/addresses/' + id + '?phone=' + USER.phone, { method: 'DELETE' });
+    _addrCache = null; // invalidate cache
+  } catch {}
+}
+
+// Legacy sync wrappers — kept for backward compat, now no-ops for localStorage
 function saveAddresses(arr) {
-  const userKey = USER && USER.phone ? `now_addresses_${USER.phone}` : 'now_addresses_guest';
-  localStorage.setItem(userKey, JSON.stringify(arr));
+  _addrCache = null; // just invalidate cache
 }
+
 function getSelectedAddr() {
   const userKey = USER && USER.phone ? `now_location_${USER.phone}` : 'now_location_guest';
   try { return JSON.parse(localStorage.getItem(userKey)); } catch { return null; }
@@ -8939,10 +8952,7 @@ function getSelectedAddr() {
 function setSelectedAddr(addr) {
   const userKey = USER && USER.phone ? `now_location_${USER.phone}` : 'now_location_guest';
   localStorage.setItem(userKey, JSON.stringify(addr));
-  // Trigger zone detection if user is logged in
-  if (USER) {
-    detectDeliveryZone();
-  }
+  if (USER) { detectDeliveryZone(); }
 }
 
 function selectAddrType(type, el) {
@@ -8954,8 +8964,7 @@ function selectAddrType(type, el) {
 
 function showAddAddressForm() { openMapForNewAddr(); }
 
-function saveNewAddress() {
-  // Check if user is logged in
+async function saveNewAddress() {
   if (!USER || !USER.phone) {
     showToast('⚠️ Please login to save address', 'error', 2500);
     closeMapPicker();
@@ -8971,61 +8980,14 @@ function saveNewAddress() {
   if (!flat) { showToast('Please enter house/flat number', 'error'); return; }
 
   const full = [flat, street, landmark].filter(Boolean).join(', ');
-  
-  // EDIT MODE: Update existing address
+
+  // EDIT MODE: Delete old + save new (simplest update via DB)
   if (_mapMode === 'edit_addr' && _editingAddrId) {
-    const addresses = getSavedAddresses();
-    const addrIndex = addresses.findIndex(a => a.id == _editingAddrId);
-    
-    if (addrIndex !== -1) {
-      // Update existing address
-      addresses[addrIndex] = {
-        ...addresses[addrIndex],
-        type: _newAddrType,
-        label: _newAddrType,
-        flat, 
-        street, 
-        landmark,
-        full,
-        lat: _mapLat || addresses[addrIndex].lat || null,
-        lon: _mapLon || addresses[addrIndex].lon || null
-      };
-      
-      saveAddresses(addresses);
-      
-      // Update selection if edited address was selected
-      const selected = getSelectedAddr();
-      if (selected && selected.full === addresses[addrIndex].full) {
-        setSelectedAddr({ 
-          label: _newAddrType, 
-          full, 
-          lat: addresses[addrIndex].lat, 
-          lon: addresses[addrIndex].lon 
-        });
-        updateLocTopbar(_newAddrType + ' - ' + flat);
-      }
-      
-      // Clear form
-      document.getElementById('newAddrFlat').value = '';
-      document.getElementById('newAddrStreet').value = '';
-      document.getElementById('newAddrLandmark').value = '';
-      
-      // Reset edit mode
-      _mapMode = 'select';
-      _editingAddrId = null;
-      
-      closeMapPicker();
-      closeLocMap();
-      renderSavedAddresses();
-      
-      showToast('✅ Address updated!', 'success');
-      return;
-    }
+    await deleteAddressFromDb(_editingAddrId);
   }
-  
-  // NEW ADDRESS MODE: Create new address
+
+  // Save to DB
   const addr = {
-    id: Date.now(),
     type: _newAddrType,
     label: _newAddrType,
     flat, street, landmark,
@@ -9033,10 +8995,7 @@ function saveNewAddress() {
     lat: _mapLat || null,
     lon: _mapLon || null
   };
-
-  const addresses = getSavedAddresses();
-  addresses.push(addr);
-  saveAddresses(addresses);
+  await saveAddressToDb(addr);
 
   // Auto-select new address
   setSelectedAddr({ label: _newAddrType, full, lat: addr.lat, lon: addr.lon });
@@ -9047,6 +9006,10 @@ function saveNewAddress() {
   document.getElementById('newAddrStreet').value = '';
   document.getElementById('newAddrLandmark').value = '';
 
+  // Reset edit mode
+  _mapMode = 'select';
+  _editingAddrId = null;
+
   // Close map and location screens
   closeMapPicker();
   closeLocMap();
@@ -9055,9 +9018,9 @@ function saveNewAddress() {
   showToast('✅ Address saved!', 'success');
 }
 
-function renderSavedAddresses() {
+async function renderSavedAddresses() {
   const list = document.getElementById('savedAddrList');
-  const addresses = getSavedAddresses();
+  const addresses = await getSavedAddresses();
   const selected = getSelectedAddr();
 
   if (!addresses.length) {
@@ -9094,42 +9057,29 @@ function renderSavedAddresses() {
   }).join('');
 }
 
-function selectAddress(id) {
-  const addresses = getSavedAddresses();
-  const addr = addresses.find(a => a.id == id); // Use == for loose comparison
+async function selectAddress(id) {
+  const addresses = await getSavedAddresses();
+  const addr = addresses.find(a => a.id == id);
   if (!addr) return;
-  
-  // Display format: "Type - flat"
   const displayLabel = addr.flat ? `${addr.label} - ${addr.flat}` : addr.label;
-  
-  setSelectedAddr({ 
-    label: displayLabel, 
-    full: addr.full, 
-    lat: addr.lat || null, 
-    lon: addr.lon || null 
-  });
-  
+  setSelectedAddr({ label: displayLabel, full: addr.full, lat: addr.lat || null, lon: addr.lon || null });
   updateLocTopbar(displayLabel);
   renderSavedAddresses();
   showToast('📍 ' + displayLabel + ' selected', 'success', 1500);
   setTimeout(() => closeLocMap(), 600);
 }
 
-function deleteAddress(id) {
+async function deleteAddress(id) {
   if (!confirm('Delete this address?')) return;
-  
-  const addresses = getSavedAddresses();
-  const toDelete = addresses.find(a => a.id == id);
-  const newAddresses = addresses.filter(a => a.id != id);
-  saveAddresses(newAddresses);
-  
-  // If deleted was selected, clear selection
   const selected = getSelectedAddr();
+  const addresses = await getSavedAddresses();
+  const toDelete = addresses.find(a => a.id == id);
+  await deleteAddressFromDb(id);
   if (selected && toDelete && selected.full === toDelete.full) {
-    localStorage.removeItem('now_location');
+    const userKey = USER && USER.phone ? `now_location_${USER.phone}` : 'now_location_guest';
+    localStorage.removeItem(userKey);
     updateLocTopbar('Set Location');
   }
-  
   renderSavedAddresses();
   showToast('🗑️ Address removed', '', 1500);
 }
@@ -9179,9 +9129,8 @@ function editAddress(id) {
   showToast('✏️ Editing address', 'info', 1500);
 }
 
-function showSavedAddresses() {
-  // Show saved addresses overlay with management options
-  const addresses = getSavedAddresses(); // user-specific key
+async function showSavedAddresses() {
+  const addresses = await getSavedAddresses();
   
   const overlay = document.createElement('div');
   overlay.id = 'savedAddrOverlay';
@@ -9228,8 +9177,8 @@ function showSavedAddresses() {
   document.body.appendChild(overlay);
 }
 
-function selectSavedAddress(idx) {
-  const addresses = getSavedAddresses(); // user-specific key
+async function selectSavedAddress(idx) {
+  const addresses = await getSavedAddresses();
   const addr = addresses[idx];
   if (!addr) return;
   
@@ -9239,11 +9188,9 @@ function selectSavedAddress(idx) {
   showToast('Address selected ✅', 'success');
 }
 
-function deleteSavedAddr(idx) {
+async function deleteSavedAddr(id) {
   if (!confirm('Delete this address?')) return;
-  const addresses = getSavedAddresses();
-  addresses.splice(idx, 1);
-  saveAddresses(addresses);
+  await deleteAddressFromDb(id);
   document.getElementById('savedAddrOverlay')?.remove();
   showSavedAddresses();
   showToast('Address deleted', 'info');
