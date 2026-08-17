@@ -85,7 +85,7 @@ function getKey() { const k = $('key').value.trim(); localStorage.setItem('meatp
 
 async function loadReports() {
   try {
-    const res = await fetch('/admin/analytics);
+    const res = await fetch('/admin/analytics');
     const data = await res.json();
     if (!data.ok) { alert(data.error || 'Failed'); return; }
     $('content').style.display = 'block';
