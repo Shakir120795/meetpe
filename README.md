@@ -1,189 +1,435 @@
-# 🥩 MeatPe — WhatsApp Order Bot + Instagram Auto-Post
+# 🥩 MeatPe - Fresh Meat Delivery Platform
 
-**Tagline:** _Fresh Meat in 30 Minutes — Taaza, Tezz, Trusted_
+## ⚠️ CRITICAL: READ FIRST
 
-A free-tier ready system for **MeatPe** (Agra, UP) that:
+**Before making ANY changes to this project, you MUST read:**
 
-- Takes orders on **WhatsApp** via Twilio (free Sandbox to start)
-- Auto-replies to **Instagram comments** with smart keyword routing
-- **Auto-posts** to Instagram on a daily schedule
-- Tracks customers, cart, orders, and **MeatPe Cash** rewards in SQLite
-- Calculates delivery charges + reward eligibility per your rules
+1. 📖 **[GOLDEN_RULES.md](./GOLDEN_RULES.md)** ← **START HERE** (Mandatory)
+2. 🛡️ **[DATABASE_SAFETY.md](./DATABASE_SAFETY.md)** ← Backup & Safety System
+3. 📋 **[DATA_PROTECTION_SUMMARY.md](./DATA_PROTECTION_SUMMARY.md)** ← Complete Protection Guide
+
+**These documents contain CRITICAL rules that prevent data loss.**
 
 ---
 
-## 1. Local setup
+## 🚀 Quick Start
+
+### First Time Setup
 
 ```bash
-# inside project folder
+# Clone repository
+git clone https://github.com/Shakir120795/meetpe.git
+cd meetpe
+
+# Install dependencies
 npm install
-copy .env.example .env       # Windows  (use 'cp' on mac/linux)
-# fill in TWILIO_* and IG_* values in .env
-npm run init-db
-npm run dev
+
+# Setup environment
+cp .env.example .env
+# Edit .env with your configuration
+
+# Initialize database (creates tables + backups)
+node src/db/init.js
+
+# Start server
+npm start
 ```
 
-Server starts on `http://localhost:3000`.
-
----
-
-## 2. WhatsApp setup (Twilio Sandbox — FREE)
-
-1. Sign up at <https://www.twilio.com/try-twilio> (no card for sandbox).
-2. Console → **Messaging → Try it out → Send a WhatsApp Message**.
-3. Copy the **Sandbox number** (e.g. `+1 415 523 8886`) and the **join code**.
-4. From your phone, send `join <code>` on WhatsApp to that number.
-5. Expose your local server publicly while testing:
-   ```bash
-   npx ngrok http 3000
-   ```
-6. In Twilio Sandbox settings, set:
-   - **When a message comes in** → `https://<ngrok-id>.ngrok-free.app/webhook/whatsapp`
-   - Method: `POST`
-7. Send `hi` to the Sandbox number from your phone — bot replies with menu.
-
-For production (real branded number) you need a Twilio approved WhatsApp Business sender. Sandbox is fine until you get traction.
-
----
-
-## 3. Instagram setup (Business / Creator account)
-
-You need a **Facebook Page** linked to an **Instagram Business** account.
-
-1. Convert your Instagram to a **Business / Creator** account (Instagram → Settings → Account type).
-2. Link it to a Facebook Page (`facebook.com/<page>` → Settings → Linked accounts → Instagram).
-3. Go to <https://developers.facebook.com> → Create App → type **Business**.
-4. Add product: **Instagram Graph API**.
-5. In Graph API Explorer, generate a **long-lived Page Access Token** with these scopes:
-   - `instagram_basic`
-   - `instagram_content_publish`
-   - `instagram_manage_comments`
-   - `pages_show_list`, `pages_read_engagement`
-6. Get your **IG User ID**:
-   ```
-   GET https://graph.facebook.com/v20.0/me/accounts?access_token=PAGE_TOKEN
-   GET https://graph.facebook.com/v20.0/<PAGE_ID>?fields=instagram_business_account&access_token=PAGE_TOKEN
-   ```
-7. Put values in `.env`:
-   - `IG_USER_ID`
-   - `IG_ACCESS_TOKEN`
-   - `IG_VERIFY_TOKEN=meatpe_verify` (any string you choose)
-8. **Webhook for comments**: App Dashboard → Webhooks → Instagram → subscribe to `comments`. Callback URL: `https://<your-domain>/webhook/instagram`. Verify token: same as `IG_VERIFY_TOKEN`.
-9. **Auto-post** runs daily at 11:00 AM IST. Trigger manually:
-   ```
-   POST https://<your-domain>/admin/ig-post?key=<ADMIN_KEY>
-   ```
-
-> Note: Image posts need a **publicly accessible HTTPS image URL**. Use Cloudinary free, ImgBB, or a public GitHub raw URL.
-
----
-
-## 4. Free deployment — Render
-
-1. Push this folder to a GitHub repo.
-2. <https://render.com> → **New → Web Service** → connect repo.
-3. It auto-detects `render.yaml`. Click **Apply**.
-4. In **Environment** tab, paste:
-   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM`
-   - `IG_USER_ID`, `IG_ACCESS_TOKEN`, `IG_VERIFY_TOKEN`
-   - `ADMIN_WHATSAPP` (e.g. `whatsapp:+919876543210`)
-   - `ADMIN_KEY` (any random string for the manual post endpoint)
-5. Once live (`https://meatpe-bot.onrender.com`), update:
-   - Twilio Sandbox webhook → `/webhook/whatsapp`
-   - Instagram webhook → `/webhook/instagram`
-
-> ⚠️ Render free tier sleeps after 15 min idle. First message after sleep takes ~30 sec. For always-on, upgrade or use Railway / Fly.io.
-
-### Free deployment — Railway (alternative)
+### Development
 
 ```bash
-npm i -g @railway/cli
-railway login
-railway init
-railway up
-railway variables set TWILIO_ACCOUNT_SID=... TWILIO_AUTH_TOKEN=... ...
+# Start development server
+npm run dev
+
+# Check database integrity
+node -e "const {verifyIntegrity} = require('./src/db/migrations'); const db = require('./src/db/init'); console.log(verifyIntegrity(db));"
+
+# Create manual backup
+node src/db/scheduled-backup.js
 ```
 
-Railway gives you a public domain automatically.
+### Production Deployment
+
+```bash
+# On VPS
+cd ~/meetpe
+git pull origin main
+npm install
+pm2 restart meetpe
+
+# Verify deployment
+pm2 logs meetpe --lines 30
+node -e "const db = require('./src/db/init'); console.log('Data:', db.prepare('SELECT COUNT(*) FROM customers').get());"
+```
 
 ---
 
-## 5. Bot conversation flow
+## 📂 Project Structure
 
 ```
-Customer  →  hi
-Bot       →  Welcome menu (1 Menu / 2 Cart / 3 Order / 4 Rewards / 5 Plus / 6 Human)
-Customer  →  1
-Bot       →  Categories A–E
-Customer  →  A          (chicken)
-Bot       →  Lists items with codes (C1, C2, ...)
-Customer  →  add C1 2
-Bot       →  Added; subtotal shown
-Customer  →  order
-Bot       →  Asks address (if missing) → shows order summary
-Customer  →  confirm
-Bot       →  Order placed, ETA 30 min, MeatPe Cash earned
-```
-
-All commands: `menu`, `cart`, `order`, `confirm`, `add C1 2`, `remove 1`, `clear`, `address <text>`, `rewards`, `plus`, `human`, `hi`.
-
----
-
-## 6. Suggestions & gaps in your current plan (advice you asked for)
-
-Pricing & business
-1. **Boneless chicken band ₹320–350** is a range — pick a single SKU price for predictability. I used ₹335 default. Use a daily message if rate changes.
-2. **Mutton boneless ₹900–950** same — pinned at ₹925.
-3. **Ready-to-cook margin** is highest. Push these in IG posts. I added 14 SKUs (kebabs, tikka, nuggets, sausages, salami) — all sourceable in Agra.
-4. **Fish in Agra UP** — Rohu, Katla, Singhara, Tilapia easily available locally; Pomfret, Basa, Prawns from frozen suppliers (Licious/Captain Fresh distributors operate in Agra).
-5. **Add minimum order value** display on every cart message (you have ₹399 implicit via delivery rule, but state it).
-
-Trust & retention
-6. **Halal / Jhatka tag** — display clearly per item. Big trust signal.
-7. **Cleaning + cutting "free"** — say it explicitly in welcome message.
-8. **First-order discount** — no current incentive. Suggest ₹50 off first order code `WELCOME50` to convert IG followers.
-9. **Refer & earn** — ₹50 to each side after referee's first order. Easy to bolt on later.
-10. **MeatPe Cash expiry of 15 days is short** — consider 30 days, more usage. Free tier psychologically.
-
-Operations
-11. **Slot-based delivery** — instead of "30 minutes", offer slots (e.g. 9–11 AM, 11–1 PM). Helps planning, reduces failed deliveries.
-12. **Cash on delivery + UPI link** in confirmation — currently included as `meatpe@upi` placeholder.
-13. **Out-of-stock handling** — bot does not yet check stock. Add a `stock` flag in `catalog.js` later.
-14. **Admin dashboard** — start with WhatsApp notification (already added). Add a simple `/admin/orders` HTML view next.
-
-Marketing (Instagram)
-15. **Reels > Photos** — Graph API can publish Reels too. Add when ready.
-16. **Story mentions** — auto-thank tagged stories. Phase 2.
-17. **Hashtag strategy** — I added local-flavored tags. Add `#AgraFood #AgraEats #ShahganjAgra #SikandraAgra` to target hyperlocal.
-18. **Posting time** — 11 AM IST is set. Better times for food: **11 AM** (lunch buy) and **6 PM** (dinner buy). Consider two daily posts.
-
----
-
-## 7. File map
-
-```
-meatpe/
-├── package.json
-├── .env.example
-├── render.yaml
-├── Procfile
+meetpe/
+├── 📖 GOLDEN_RULES.md              ⚠️  CRITICAL - Read first
+├── 📖 DATABASE_SAFETY.md           ⚠️  Backup system docs
+├── 📖 DATA_PROTECTION_SUMMARY.md   📋 Protection guide
+├── 📖 README.md                    📄 This file
+│
 ├── src/
-│   ├── server.js                 # Express + cron
-│   ├── data/catalog.js           # Menu (chicken, mutton, fish, RTC, packs)
-│   ├── db/init.js                # SQLite schema
-│   ├── services/
-│   │   ├── pricing.js            # Delivery + reward calc
-│   │   └── session.js            # Cart + customer persistence
-│   ├── whatsapp/
-│   │   ├── bot.js                # Conversation logic
-│   │   └── twilio.js             # Twilio client + TwiML
-│   └── instagram/
-│       ├── post.js               # Auto-post via Graph API
-│       └── replies.js            # Comment auto-reply
-└── data/
-    └── meatpe.db                 # Created on first run
+│   ├── server.js                   🚀 Main server
+│   ├── db/
+│   │   ├── init.js                 ⚠️  Database initialization
+│   │   ├── backup.js               ⚠️  Backup system (DO NOT DISABLE)
+│   │   ├── migrations.js           ⚠️  Safe migrations (ADD ONLY)
+│   │   └── scheduled-backup.js     📦 Backup runner
+│   ├── whatsapp/                   💬 WhatsApp integration
+│   ├── instagram/                  📸 Instagram automation
+│   └── data/                       📊 Data management
+│
+├── data/
+│   ├── meatpe.db                   ⚠️  Main database (DO NOT EDIT DIRECTLY)
+│   ├── meatpe.db-wal              ⚠️  WAL file (DO NOT DELETE)
+│   └── backups/                    📦 Automatic backups (30-day retention)
+│
+├── public/                         🌐 Static files
+├── mobile-app/                     📱 Mobile app (Capacitor + Vue)
+└── mobile-app-rider/               🛵 Rider app
+
+⚠️  = Critical file - modify with extreme caution
+📦 = Auto-managed - do not manually edit
+🚀 = Main application files
 ```
 
 ---
 
-Made for **MeatPe Agra** 🐔🐐🐟  •  Free-tier deployable.
+## 🛡️ Data Protection System
+
+### Automatic Features
+
+✅ **Backup every 6 hours** - Automatic  
+✅ **Daily backup on startup** - Automatic  
+✅ **Pre-migration backup** - Automatic  
+✅ **30-day retention** - Automatic cleanup  
+✅ **Integrity verification** - On every startup  
+
+### What's Protected
+
+- 👥 Customer data
+- 📦 Orders
+- 📍 Saved addresses
+- ⭐ Reviews
+- 🎁 Rewards
+- 🛵 Rider locations
+
+### Golden Rules (Non-Negotiable)
+
+1. ❌ **NEVER** use DROP/TRUNCATE/DELETE-ALL
+2. ✅ **ONLY ADD** columns (never remove)
+3. 📦 **ALWAYS BACKUP** before schema changes
+4. 🔒 **HTTPS ENFORCED** in production
+
+**For complete rules, see [GOLDEN_RULES.md](./GOLDEN_RULES.md)**
+
+---
+
+## 🔧 Common Tasks
+
+### Adding New Database Column
+
+**Step 1:** Create migration in `src/db/migrations.js`:
+
+```javascript
+{
+  name: '009_add_new_field',
+  up: () => {
+    try {
+      db.exec(`ALTER TABLE customers ADD COLUMN new_field TEXT`);
+      console.log('  ✅ Added new_field column');
+    } catch (e) {
+      if (!e.message.includes('duplicate column')) throw e;
+    }
+  }
+}
+```
+
+**Step 2:** Deploy:
+
+```bash
+git add src/db/migrations.js
+git commit -m "feat: Add new_field column"
+git push origin main
+
+# On VPS
+cd ~/meetpe && git pull && pm2 restart meetpe
+```
+
+### Checking Backup Status
+
+```bash
+# List recent backups
+ls -lt data/backups/ | head -10
+
+# Check backup size
+du -sh data/backups/
+
+# View backup logs
+pm2 logs meetpe | grep -i backup | tail -20
+```
+
+### Verifying Data Integrity
+
+```bash
+cd ~/meetpe
+node -e "const db = require('./src/db/init'); const {verifyIntegrity} = require('./src/db/migrations'); console.log(JSON.stringify(verifyIntegrity(db), null, 2));"
+```
+
+---
+
+## 🚨 Emergency Recovery
+
+**IF data is accidentally lost:**
+
+```bash
+# 1. Stop server
+pm2 stop meetpe
+
+# 2. List available backups
+node -e "const {listBackups} = require('./src/db/backup'); console.log(listBackups());"
+
+# 3. Restore latest backup
+node -e "const {restoreBackup} = require('./src/db/backup'); restoreBackup('meatpe-YYYY-MM-DDTHH-MM-SS.db')"
+
+# 4. Verify restored data
+node -e "const db = require('better-sqlite3')('data/meatpe.db'); console.log('Customers:', db.prepare('SELECT COUNT(*) FROM customers').get()); db.close();"
+
+# 5. Restart server
+pm2 restart meetpe
+```
+
+**For detailed recovery steps, see [DATABASE_SAFETY.md](./DATABASE_SAFETY.md)**
+
+---
+
+## 🔐 Environment Configuration
+
+### Required Environment Variables
+
+```env
+# Database
+DB_PATH=./data/meatpe.db
+
+# Server
+PORT=3000
+NODE_ENV=production
+
+# Security
+ADMIN_KEY=your-secure-admin-key
+HTTPS_ENFORCE=true
+
+# API Keys
+MSG91_WIDGET_TOKEN=your-token
+MSG91_AUTH_KEY=your-auth-key
+GOOGLE_MAPS_KEY=your-maps-key
+RAZORPAY_KEY_ID=your-key-id
+RAZORPAY_KEY_SECRET=your-secret
+
+# WhatsApp (Twilio)
+TWILIO_ACCOUNT_SID=your-sid
+TWILIO_AUTH_TOKEN=your-token
+TWILIO_WHATSAPP_NUMBER=whatsapp:+14155238886
+ADMIN_WHATSAPP=+919876543210
+```
+
+---
+
+## 📊 Monitoring
+
+### Health Checks
+
+```bash
+# Server status
+pm2 status
+
+# Recent logs
+pm2 logs meetpe --lines 50
+
+# Error logs only
+pm2 logs meetpe --err --lines 20
+
+# Backup verification
+ls -lt ~/meetpe/data/backups/ | head -5
+
+# Database stats
+node -e "const db = require('./src/db/init'); console.log('Customers:', db.prepare('SELECT COUNT(*) FROM customers').get()); console.log('Orders:', db.prepare('SELECT COUNT(*) FROM orders').get()); console.log('Addresses:', db.prepare('SELECT COUNT(*) FROM saved_addresses').get());"
+```
+
+### Performance Monitoring
+
+```bash
+# PM2 monitoring
+pm2 monit
+
+# Resource usage
+pm2 status meetpe
+```
+
+---
+
+## 🤝 Contributing
+
+### Before Contributing
+
+1. ✅ Read [GOLDEN_RULES.md](./GOLDEN_RULES.md) completely
+2. ✅ Understand backup system
+3. ✅ Test changes locally
+4. ✅ Never commit database files
+5. ✅ Follow migration patterns
+
+### Code Review Checklist
+
+- [ ] No DROP/TRUNCATE/DELETE-ALL commands
+- [ ] Migrations follow add-only pattern
+- [ ] Backup system not disabled
+- [ ] HTTPS enforcement intact
+- [ ] Tested locally
+- [ ] No sensitive data in code
+
+---
+
+## 📱 Mobile Apps
+
+### Customer App
+
+**Location:** `mobile-app/`  
+**Tech Stack:** Vue 3 + Capacitor  
+**Build:**
+
+```bash
+cd mobile-app
+npm install
+npm run build
+npx cap sync android
+```
+
+### Rider App
+
+**Location:** `mobile-app-rider/`  
+**Features:** GPS tracking, order management  
+**Build:** Same as customer app
+
+---
+
+## 🔗 API Documentation
+
+**Main endpoint:** `https://nonvegonwheel.in`
+
+### Key APIs
+
+- `GET /api/menu` - Product catalog
+- `POST /api/order` - Place order
+- `GET /api/addresses?phone=XXX` - Saved addresses
+- `POST /api/addresses` - Save new address
+- `POST /api/auth/send-otp` - Send OTP
+- `POST /api/auth/verify-otp` - Verify OTP
+
+**For complete API docs, see [API_DOCUMENTATION.md](./API_DOCUMENTATION.md)**
+
+---
+
+## 🛠️ Troubleshooting
+
+### Server Won't Start
+
+```bash
+# Check logs
+pm2 logs meetpe --err --lines 50
+
+# Verify database
+node -e "const db = require('./src/db/init')"
+
+# Check dependencies
+npm install
+```
+
+### Data Missing
+
+```bash
+# DON'T PANIC - Check backup first
+ls -lt data/backups/ | head -10
+
+# Verify data exists
+node -e "const db = require('better-sqlite3')('data/meatpe.db'); console.log(db.prepare('SELECT COUNT(*) FROM saved_addresses').get()); db.close();"
+
+# If data truly lost, restore backup (see Emergency Recovery section)
+```
+
+### Migration Failed
+
+```bash
+# Check which migrations applied
+node -e "const db = require('better-sqlite3')('data/meatpe.db'); console.log(db.prepare('SELECT * FROM migrations').all()); db.close();"
+
+# View migration logs
+pm2 logs meetpe | grep -i migration
+
+# If stuck, restore backup and investigate
+```
+
+---
+
+## 📞 Support
+
+### Documentation
+
+- 📖 [GOLDEN_RULES.md](./GOLDEN_RULES.md) - **Must read first**
+- 🛡️ [DATABASE_SAFETY.md](./DATABASE_SAFETY.md) - Backup system
+- 📋 [DATA_PROTECTION_SUMMARY.md](./DATA_PROTECTION_SUMMARY.md) - Protection guide
+- 🔧 [IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md) - Feature history
+
+### Quick Links
+
+- 🌐 Website: https://nonvegonwheel.in
+- 📦 Repository: https://github.com/Shakir120795/meetpe
+- 📱 Customer App: [App Store / Play Store links]
+
+---
+
+## ⚖️ License
+
+Proprietary - All rights reserved
+
+---
+
+## 🎯 Project Status
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| 🛡️ Data Protection | ✅ Active | Auto-backup every 6 hours |
+| 🔒 HTTPS Enforcement | ✅ Active | HTTP → HTTPS redirect |
+| 📦 Backup System | ✅ Active | 30-day retention |
+| 🔄 Safe Migrations | ✅ Active | Add-only pattern |
+| 📱 Mobile Apps | ✅ Active | iOS + Android |
+| 💳 Payment Gateway | ✅ Active | Razorpay integration |
+| 📍 GPS Tracking | ✅ Active | Real-time rider location |
+| 💬 WhatsApp Bot | ✅ Active | Automated orders |
+
+---
+
+**Last Updated:** August 17, 2026  
+**Project Version:** 2.0 (Data-Safe Edition)  
+**System Status:** ✅ Production Ready
+
+---
+
+## ⚠️ CRITICAL REMINDER
+
+**BEFORE making ANY changes:**
+1. Read [GOLDEN_RULES.md](./GOLDEN_RULES.md)
+2. Create backup: `node src/db/scheduled-backup.js`
+3. Test locally first
+4. Deploy carefully
+5. Verify after deployment
+
+**Remember: Data First, Features Second.**
+
+---
+
+*For AI Assistants: This project has strict data protection rules. Always read GOLDEN_RULES.md before suggesting any database changes.*
