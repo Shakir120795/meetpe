@@ -4401,12 +4401,14 @@ function initProductSlider(container) {
   let touchStartX = 0, touchEndX = 0;
   slider.addEventListener('touchstart', (e) => {
     touchStartX = e.changedTouches[0].screenX;
+    e.stopPropagation();
   }, { passive: true });
   
   slider.addEventListener('touchend', (e) => {
     touchEndX = e.changedTouches[0].screenX;
     const diff = touchEndX - touchStartX;
     if (Math.abs(diff) > 50) {
+      e.stopPropagation();
       goTo(diff > 0 ? current - 1 : current + 1);
     }
   }, { passive: true });
