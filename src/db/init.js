@@ -1,4 +1,5 @@
 // SQLite init — creates tables if not exist
+// SAFE MODE: Never drops tables or deletes data
 const path = require('path');
 const fs = require('fs');
 const Database = require('better-sqlite3');
@@ -9,8 +10,29 @@ const dir = path.dirname(dbPath);
 if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
 const db = new Database(dbPath);
-db.pragma('journal_mode = WAL');
+db.pragma('journal_mode = WAL'); // Write-Ahead Logging for better concurrency
+db.pragma('synchronous = NORMAL'); // Balance between safety and performance
+db.pragma('foreign_keys = ON'); // Enable foreign key constraints
 
+// Import backup and migration utilities
+const { createBackup } = require('./backup');
+const { applyMigrations, verifyIntegrity } = require('./migrations');
+
+// Create initial backup on startup (if not already done today)
+const backupDir = path.join(dir, 'backups');
+if (fs.existsSync(backupDir)) {
+  const today = new Date().toISOString().split('T')[0];
+  const todayBackups = fs.readdirSync(backupDir).filter(f => f.includes(today));
+  if (todayBackups.length === 0) {
+    console.log('📦 Creating daily backup...');
+    createBackup();
+  }
+} else {
+  console.log('📦 First-time backup...');
+  createBackup();
+}
+
+// Create base tables (NEVER use DROP TABLE)
 db.exec(`
   CREATE TABLE IF NOT EXISTS customers (
     phone        TEXT PRIMARY KEY,
@@ -20,16 +42,8 @@ db.exec(`
     wallet_balance INTEGER DEFAULT 0,
     is_plus      INTEGER DEFAULT 0,
     plus_until   TEXT,
-    referred_by  TEXT,
-    referral_code TEXT,
     created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at   TEXT DEFAULT CURRENT_TIMESTAMP,
-    delivery_zone TEXT DEFAULT 'zone_a',
-    delivery_zone_distance REAL DEFAULT 0,
-    membership_zone TEXT,
-    membership_price INTEGER DEFAULT 0,
-    delivery_credits INTEGER DEFAULT 0,
-    membership_start TEXT
+    updated_at   TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS sessions (
@@ -49,9 +63,6 @@ db.exec(`
     address        TEXT,
     status         TEXT DEFAULT 'placed',
     source         TEXT DEFAULT 'web',
-    payment_method TEXT DEFAULT 'cod',
-    delivery_slot  TEXT DEFAULT 'asap',
-    notes          TEXT DEFAULT '',
     created_at     TEXT DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -98,19 +109,18 @@ db.exec(`
   );
 `);
 
-// Safe column migrations for existing databases
-try {
-  db.exec(`ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT 'cod'`);
-} catch(e) {}
-try {
-  db.exec(`ALTER TABLE orders ADD COLUMN delivery_slot TEXT DEFAULT 'asap'`);
-} catch(e) {}
-try {
-  db.exec(`ALTER TABLE orders ADD COLUMN notes TEXT DEFAULT ''`);
-} catch(e) {}
-try {
-  db.exec(`ALTER TABLE customers ADD COLUMN is_blocked INTEGER DEFAULT 0`);
-} catch(e) {}
+// Apply all safe migrations (adds missing columns)
+applyMigrations(db);
+
+// Verify database integrity
+const integrity = verifyIntegrity(db);
+if (!integrity.ok) {
+  console.error('❌ DATABASE INTEGRITY CHECK FAILED!');
+  console.error('Errors:', integrity.errors);
+  process.exit(1);
+}
 
 console.log(`✅ DB ready at ${dbPath}`);
+console.log(`📊 Stats: ${Object.keys(integrity.tables).length} tables verified`);
+
 module.exports = db;

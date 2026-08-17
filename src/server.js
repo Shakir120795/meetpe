@@ -1901,6 +1901,19 @@ if (process.env.IG_ACCESS_TOKEN && process.env.IG_USER_ID) {
   console.log('📅 IG auto-post scheduled (11:00 AM IST daily)');
 }
 
+// ===== Database Backup Schedule =====
+// Automatic backups every 6 hours
+const { createBackup } = require('./db/backup');
+cron.schedule('0 */6 * * *', () => {
+  console.log('🔄 Running scheduled backup...');
+  try {
+    createBackup();
+  } catch (error) {
+    console.error('❌ Scheduled backup failed:', error.message);
+  }
+});
+console.log('📦 Auto-backup scheduled (every 6 hours)');
+
 // ===== Location debug (temp) =====
 app.get('/api/location/debug', async (req, res) => {
   const gKey = process.env.GOOGLE_MAPS_KEY;
