@@ -22,8 +22,9 @@ class MSG91Provider extends IAuthProvider {
     // Widget token is used as tokenAuth in widget API calls (different from authKey)
     this.widgetToken = process.env.MSG91_WIDGET_TOKEN || this.authKey;
 
-    // Rate limiting store
-    this.rateLimits = new Map(); // { phone: { count, resetAt } }
+    // Rate limiting — DB backed so restart doesn't bypass it
+    // Table created lazily via ensureRateLimitTable()
+    this._rateLimitTableReady = false;
 
     if (!this.authKey || this.authKey === 'your_msg91_auth_key_here') {
       console.warn('⚠️ MSG91_AUTH_KEY not configured. OTP will not be sent.');
@@ -32,23 +33,54 @@ class MSG91Provider extends IAuthProvider {
     }
   }
 
-  // Rate limit check: max 3 requests per 15 minutes
+  // Ensure otp_rate_limits table exists
+  _ensureTable() {
+    if (this._rateLimitTableReady) return;
+    try {
+      const db = require('../../db/init');
+      db.exec(`CREATE TABLE IF NOT EXISTS otp_rate_limits (
+        phone TEXT PRIMARY KEY,
+        count INTEGER NOT NULL DEFAULT 1,
+        reset_at INTEGER NOT NULL
+      )`);
+      this._rateLimitTableReady = true;
+    } catch(e) {}
+  }
+
+  // Rate limit check: max 3 OTP requests per 15 minutes per phone
   _checkRateLimit(phone) {
-    const limit = this.rateLimits.get(phone);
-    const now = Date.now();
+    try {
+      this._ensureTable();
+      const db = require('../../db/init');
+      const now = Date.now();
+      const resetAt = now + 15 * 60 * 1000;
 
-    if (!limit || now > limit.resetAt) {
-      this.rateLimits.set(phone, { count: 1, resetAt: now + 15 * 60 * 1000 });
+      const row = db.prepare('SELECT count, reset_at FROM otp_rate_limits WHERE phone = ?').get(phone);
+
+      if (!row || now > row.reset_at) {
+        // First request or window expired
+        db.prepare('INSERT OR REPLACE INTO otp_rate_limits (phone, count, reset_at) VALUES (?, 1, ?)').run(phone, resetAt);
+        return { ok: true };
+      }
+
+      if (row.count >= 3) {
+        const mins = Math.ceil((row.reset_at - now) / 60000);
+        return { ok: false, error: `Too many OTP requests. Try again in ${mins} minutes.` };
+      }
+
+      db.prepare('UPDATE otp_rate_limits SET count = count + 1 WHERE phone = ?').run(phone);
       return { ok: true };
+    } catch(e) {
+      return { ok: true }; // fail open — don't block user if DB error
     }
+  }
 
-    if (limit.count >= 3) {
-      const mins = Math.ceil((limit.resetAt - now) / 60000);
-      return { ok: false, error: `Too many OTP requests. Try again in ${mins} minutes.` };
-    }
-
-    limit.count++;
-    return { ok: true };
+  cleanup() {
+    try {
+      this._ensureTable();
+      const db = require('../../db/init');
+      db.prepare('DELETE FROM otp_rate_limits WHERE reset_at < ?').run(Date.now());
+    } catch(e) {}
   }
 
   // Send OTP using MSG91 Widget API
@@ -134,13 +166,6 @@ class MSG91Provider extends IAuthProvider {
   async currentUser() { return null; }
   async logout() { return; }
   getName() { return 'MSG91'; }
-
-  cleanup() {
-    const now = Date.now();
-    for (const [phone, limit] of this.rateLimits.entries()) {
-      if (now > limit.resetAt) this.rateLimits.delete(phone);
-    }
-  }
 }
 
 module.exports = MSG91Provider;
