@@ -20,6 +20,7 @@ h1{font-size:24px;margin-bottom:6px}
 .field{margin-bottom:12px}
 .field label{display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:#6b7280}
 .field input,.field select{width:100%;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px}
+.field input[type="color"]{padding:4px;cursor:pointer;height:40px}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:10px}
 .btn-save{padding:12px 24px;background:#16a34a;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:16px}
@@ -56,7 +57,15 @@ h1{font-size:24px;margin-bottom:6px}
 <div class="field"><label>Title</label><input id="heroTitle" placeholder="Premium Fresh Meat"/></div>
 <div class="field"><label>Subtitle</label><input id="heroSubtitle" placeholder="Delivered in 25-35 min"/></div>
 <div class="field"><label>Pill Text</label><input id="heroPill" placeholder="Free cleaning + cutting"/></div>
-<div class="field"><label>Background Gradient</label><input id="heroGradient" placeholder="linear-gradient(120deg,#1a0500,#2d0a00)"/></div>
+<div class="field"><label>Background Style</label>
+<select id="heroGradient">
+  <option value="linear-gradient(120deg,#1a0500,#2d0a00)">Dark Orange</option>
+  <option value="linear-gradient(120deg,#0a1a2d,#1a3a5a)">Dark Blue</option>
+  <option value="linear-gradient(120deg,#1a0800,#3d1a00)">Brown Orange</option>
+  <option value="linear-gradient(120deg,#2d0a0a,#5a1a1a)">Dark Red</option>
+  <option value="linear-gradient(120deg,#004d1a,#00662d)">Dark Green</option>
+</select>
+</div>
 </div>
 
 <!-- Offer Banners -->
@@ -126,8 +135,22 @@ function renderOfferBanners(banners) {
       </div>
       <div class="field"><label>Subtitle</label><input class="ob-subtitle" value="${b.subtitle||''}"/></div>
       <div class="field-row">
-        <div class="field"><label>Gradient</label><input class="ob-gradient" value="${b.gradient||''}"/></div>
-        <div class="field"><label>Label Color</label><input class="ob-color" value="${b.labelColor||''}"/></div>
+        <div class="field">
+          <label>Background Style</label>
+          <select class="ob-gradient-preset">
+            <option value="linear-gradient(135deg,#1a1a1a,#333)">Dark Gray</option>
+            <option value="linear-gradient(135deg,#8B1A1A,#5a0f0f)">Dark Red</option>
+            <option value="linear-gradient(135deg,#1a0800,#3d1a00)">Orange Brown</option>
+            <option value="linear-gradient(135deg,#1a1a0a,#2d2d00)">Dark Yellow</option>
+            <option value="linear-gradient(135deg,#004d1a,#00662d)">Dark Green</option>
+            <option value="linear-gradient(135deg,#0a1a2d,#1a3a5a)">Dark Blue</option>
+            <option value="linear-gradient(135deg,#2d0a5a,#4d1a7a)">Dark Purple</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Label Color</label>
+          <input type="color" class="ob-color" value="${b.labelColor||'#ffffff'}"/>
+        </div>
       </div>
     </div>
   `).join('');
@@ -135,7 +158,7 @@ function renderOfferBanners(banners) {
 
 function addOfferBanner() {
   const banners = collectOfferBanners();
-  banners.push({ id: 'b'+Date.now(), label: 'NEW', title: 'Banner Title', subtitle: 'Description', gradient: 'linear-gradient(135deg,#1a1a1a,#333)', labelColor: '#fff', enabled: true });
+  banners.push({ id: 'b'+Date.now(), label: 'NEW', title: 'Banner Title', subtitle: 'Description', gradient: 'linear-gradient(135deg,#1a1a1a,#333)', labelColor: '#ffffff', enabled: true });
   renderOfferBanners(banners);
 }
 
@@ -152,7 +175,7 @@ function collectOfferBanners() {
     label: c.querySelector('.ob-label').value.trim(),
     title: c.querySelector('.ob-title').value.trim(),
     subtitle: c.querySelector('.ob-subtitle').value.trim(),
-    gradient: c.querySelector('.ob-gradient').value.trim(),
+    gradient: c.querySelector('.ob-gradient-preset').value.trim(),
     labelColor: c.querySelector('.ob-color').value.trim(),
     enabled: c.querySelector('.ob-enabled').checked
   }));
