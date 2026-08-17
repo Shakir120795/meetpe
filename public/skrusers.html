@@ -222,9 +222,45 @@
     <button id="loadBtn">Load users</button>
   </div>
 
+  <!-- Search and Pagination Controls -->
+  <div style="display:flex;gap:12px;margin:16px 0;flex-wrap:wrap;align-items:center;background:white;padding:16px;border-radius:8px;border:1px solid #e5e7eb">
+    <input id="searchInput" type="text" placeholder="Search by phone or name..." style="flex:1;min-width:200px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px" />
+    <button onclick="searchUsers()" style="padding:8px 16px;background:#d62828;color:white;border:none;border-radius:6px;font-weight:600;cursor:pointer">🔍 Search</button>
+    <button onclick="clearSearch()" style="padding:8px 16px;background:#6b7280;color:white;border:none;border-radius:6px;font-weight:600;cursor:pointer">✖️ Clear</button>
+    
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+      <span style="font-size:13px;color:#6b7280;font-weight:600">Show:</span>
+      <select id="limitSelect" onchange="changeLimit()" style="padding:6px 10px;border:1px solid #e5e7eb;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">
+        <option value="10" selected>10</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Pagination Info and Controls -->
+  <div id="paginationTop" style="display:none;background:white;padding:12px 16px;border-radius:8px;border:1px solid #e5e7eb;margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div id="paginationInfo" style="font-size:13px;color:#6b7280;font-weight:600"></div>
+      <div style="display:flex;gap:8px">
+        <button id="prevBtn" onclick="prevPage()" style="padding:6px 12px;background:white;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer" disabled>⬅️ Previous</button>
+        <button id="nextBtn" onclick="nextPage()" style="padding:6px 12px;background:white;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer" disabled>Next ➡️</button>
+      </div>
+    </div>
+  </div>
+
   <div id="msg"></div>
   <div id="stats" class="stats" style="display:none"></div>
   <div id="content"></div>
+  
+  <!-- Pagination Bottom -->
+  <div id="paginationBottom" style="display:none;background:white;padding:12px 16px;border-radius:8px;border:1px solid #e5e7eb;margin-top:16px">
+    <div style="display:flex;justify-content:center;align-items:center;gap:8px">
+      <button onclick="prevPage()" style="padding:6px 12px;background:white;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer" id="prevBtn2" disabled>⬅️ Previous</button>
+      <span id="pageInfo" style="font-size:13px;color:#6b7280;font-weight:600"></span>
+      <button onclick="nextPage()" style="padding:6px 12px;background:white;border:1px solid #e5e7eb;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer" id="nextBtn2" disabled>Next ➡️</button>
+    </div>
+  </div>
   
   <!-- User Detail Modal -->
   <div id="userModal" class="modal" onclick="if(event.target===this) closeUserModal()">
@@ -259,17 +295,24 @@ const keyInput = $('key');
 const content = $('content');
 const msg = $('msg');
 const statsEl = $('stats');
+const searchInput = $('searchInput');
+const limitSelect = $('limitSelect');
 
 let ALL_USERS = [];
+let CURRENT_PAGE = 1;
+let CURRENT_LIMIT = 10;
+let CURRENT_SEARCH = '';
+let PAGINATION_DATA = null;
 
 const saved = localStorage.getItem('meatpe_admin_key');
 if (saved) keyInput.value = saved;
 
 $('loadBtn').addEventListener('click', loadUsers);
 keyInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadUsers(); });
+searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') searchUsers(); });
 if (saved) loadUsers();
 
-async function loadUsers() {
+async function loadUsers(page = 1, limit = null, search = null) {
   msg.innerHTML = '';
   const key = keyInput.value.trim();
   if (!key) {
@@ -277,20 +320,104 @@ async function loadUsers() {
     return;
   }
   localStorage.setItem('meatpe_admin_key', key);
+  
+  if (limit === null) limit = CURRENT_LIMIT;
+  if (search === null) search = CURRENT_SEARCH;
+  
   try {
-    const res = await fetch(`/admin/users`);
+    const params = new URLSearchParams({ page, limit });
+    if (search) params.append('search', search);
+    
+    const res = await fetch(`/admin/users?${params}`);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'load failed');
+    
     ALL_USERS = data.users;
+    PAGINATION_DATA = data.pagination;
+    CURRENT_PAGE = page;
+    CURRENT_LIMIT = limit;
+    CURRENT_SEARCH = search;
+    
     render();
+    updatePagination();
   } catch (e) {
     msg.innerHTML = `<div class="err">Failed: ${escapeHtml(e.message || 'unknown')}. Check the admin key.</div>`;
   }
 }
 
+function searchUsers() {
+  const search = searchInput.value.trim();
+  CURRENT_SEARCH = search;
+  loadUsers(1, CURRENT_LIMIT, search);
+}
+
+function clearSearch() {
+  searchInput.value = '';
+  CURRENT_SEARCH = '';
+  loadUsers(1, CURRENT_LIMIT, '');
+}
+
+function changeLimit() {
+  const limit = parseInt(limitSelect.value);
+  CURRENT_LIMIT = limit;
+  loadUsers(1, limit, CURRENT_SEARCH);
+}
+
+function prevPage() {
+  if (PAGINATION_DATA && PAGINATION_DATA.hasPrev) {
+    loadUsers(CURRENT_PAGE - 1, CURRENT_LIMIT, CURRENT_SEARCH);
+  }
+}
+
+function nextPage() {
+  if (PAGINATION_DATA && PAGINATION_DATA.hasNext) {
+    loadUsers(CURRENT_PAGE + 1, CURRENT_LIMIT, CURRENT_SEARCH);
+  }
+}
+
+function updatePagination() {
+  if (!PAGINATION_DATA) return;
+  
+  const { page, total, totalPages, hasNext, hasPrev } = PAGINATION_DATA;
+  
+  // Show/hide pagination
+  const topPag = $('paginationTop');
+  const bottomPag = $('paginationBottom');
+  if (totalPages > 1) {
+    topPag.style.display = 'block';
+    bottomPag.style.display = 'block';
+  } else {
+    topPag.style.display = 'none';
+    bottomPag.style.display = 'none';
+  }
+  
+  // Update info text
+  const start = (page - 1) * CURRENT_LIMIT + 1;
+  const end = Math.min(page * CURRENT_LIMIT, total);
+  const infoText = `Showing ${start}-${end} of ${total} users (Page ${page} of ${totalPages})`;
+  $('paginationInfo').textContent = infoText;
+  $('pageInfo').textContent = `Page ${page} / ${totalPages}`;
+  
+  // Update button states
+  $('prevBtn').disabled = !hasPrev;
+  $('nextBtn').disabled = !hasNext;
+  $('prevBtn2').disabled = !hasPrev;
+  $('nextBtn2').disabled = !hasNext;
+  
+  // Update button styles
+  [$('prevBtn'), $('prevBtn2')].forEach(btn => {
+    btn.style.opacity = hasPrev ? '1' : '0.5';
+    btn.style.cursor = hasPrev ? 'pointer' : 'not-allowed';
+  });
+  [$('nextBtn'), $('nextBtn2')].forEach(btn => {
+    btn.style.opacity = hasNext ? '1' : '0.5';
+    btn.style.cursor = hasNext ? 'pointer' : 'not-allowed';
+  });
+}
+
 function render() {
-  // Stats
-  const totalUsers = ALL_USERS.length;
+  // Stats - show total from pagination data
+  const totalUsers = PAGINATION_DATA ? PAGINATION_DATA.total : ALL_USERS.length;
   const totalOrders = ALL_USERS.reduce((sum, u) => sum + (u.total_orders || 0), 0);
   const totalSpent = ALL_USERS.reduce((sum, u) => sum + (u.total_spent || 0), 0);
   
@@ -303,7 +430,7 @@ function render() {
 
   // Users
   if (!ALL_USERS.length) {
-    content.innerHTML = `<div class="empty"><div class="big">👥</div><p>No users yet.</p></div>`;
+    content.innerHTML = `<div class="empty"><div class="big">👥</div><p>No users ${CURRENT_SEARCH ? 'found for search' : 'yet'}.</p></div>`;
     return;
   }
 
