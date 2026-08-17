@@ -592,7 +592,7 @@ $('fileUploadInput').addEventListener('change', async (e) => {
   container.parentElement.appendChild(uploadMsg);
 
   try {
-    const res = await fetch(`/api/upload`, {
+    const res = await fetch(`/api/upload?key=${encodeURIComponent(key)}`, {
       method: 'POST',
       body: formData,
     });
