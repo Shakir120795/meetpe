@@ -1158,18 +1158,33 @@ app.get('/api/settings', (req, res) => {
 app.get('/admin/orders', (req, res) => {
   const status = req.query.status; // optional filter
   const source = req.query.source; // 'web' | 'whatsapp' | undefined
-  const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
+  const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500); // max 500 per page
+  const offset = Math.max(0, parseInt(req.query.offset, 10) || 0); // pagination offset
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1); // page number (alternative to offset)
+  
+  // Calculate offset from page if provided
+  const actualOffset = req.query.page ? (page - 1) * limit : offset;
+  
   const where = [];
   const params = [];
   if (status) { where.push('o.status = ?'); params.push(status); }
   if (source) { where.push('o.source = ?'); params.push(source); }
   const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
+  
+  // Get total count for pagination
+  const countResult = db.prepare(`
+    SELECT COUNT(*) as total FROM orders o ${whereSql}
+  `).get(...params);
+  const totalOrders = countResult.total;
+  const totalPages = Math.ceil(totalOrders / limit);
+  
+  // Get paginated orders
   const rows = db.prepare(`
     SELECT o.*, c.name AS customer_name
     FROM orders o LEFT JOIN customers c ON c.phone = o.phone
     ${whereSql}
-    ORDER BY o.id DESC LIMIT ?
-  `).all(...params, limit);
+    ORDER BY o.id DESC LIMIT ? OFFSET ?
+  `).all(...params, limit, actualOffset);
 
   const stats = db.prepare(`
     SELECT
@@ -1205,7 +1220,22 @@ app.get('/admin/orders', (req, res) => {
     notes: r.notes || '',
     created_at: r.created_at,
   }));
-  res.json({ ok: true, orders, stats, today });
+  
+  res.json({ 
+    ok: true, 
+    orders, 
+    stats, 
+    today,
+    pagination: {
+      total: totalOrders,
+      limit,
+      offset: actualOffset,
+      page: req.query.page ? page : Math.floor(actualOffset / limit) + 1,
+      totalPages,
+      hasNext: actualOffset + limit < totalOrders,
+      hasPrev: actualOffset > 0
+    }
+  });
 });
 
 // ===== Admin: update order status =====
@@ -2141,10 +2171,24 @@ app.get('/api/location/reverse', async (req, res) => {
   }
 });
 
-// GET /admin/customers?key=X - list all customers with order count + wallet
-app.get('/admin/customers', (req, res) => {
+// GET /admin/customers?key=X - list all customers with order count + wallet (with pagination)
+app.get('/admin/customers', requireAdmin, (req, res) => {
   const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
+  const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const actualOffset = req.query.page ? (page - 1) * limit : offset;
   const search = req.query.search || '';
+  
+  // Get total count
+  const countSql = search 
+    ? `SELECT COUNT(DISTINCT c.phone) as total FROM customers c WHERE c.phone LIKE ? OR c.name LIKE ?`
+    : `SELECT COUNT(*) as total FROM customers`;
+  const countParams = search ? [`%${search}%`, `%${search}%`] : [];
+  const countResult = db.prepare(countSql).get(...countParams);
+  const totalCustomers = countResult.total;
+  const totalPages = Math.ceil(totalCustomers / limit);
+  
+  // Get paginated customers
   let sql = `SELECT c.*, 
     COUNT(o.id) as order_count,
     COALESCE(SUM(o.total),0) as lifetime_value,
@@ -2153,10 +2197,23 @@ app.get('/admin/customers', (req, res) => {
     LEFT JOIN orders o ON o.phone = c.phone
     ${search ? "WHERE c.phone LIKE ? OR c.name LIKE ?" : ""}
     GROUP BY c.phone
-    ORDER BY last_order DESC LIMIT ?`;
-  const params = search ? [`%${search}%`, `%${search}%`, limit] : [limit];
+    ORDER BY last_order DESC LIMIT ? OFFSET ?`;
+  const params = search ? [`%${search}%`, `%${search}%`, limit, actualOffset] : [limit, actualOffset];
   const customers = db.prepare(sql).all(...params);
-  res.json({ ok: true, customers });
+  
+  res.json({ 
+    ok: true, 
+    customers,
+    pagination: {
+      total: totalCustomers,
+      limit,
+      offset: actualOffset,
+      page: req.query.page ? page : Math.floor(actualOffset / limit) + 1,
+      totalPages,
+      hasNext: actualOffset + limit < totalCustomers,
+      hasPrev: actualOffset > 0
+    }
+  });
 });
 
 // PUT /admin/customers/:phone/wallet?key=X - add/set wallet balance
