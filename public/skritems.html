@@ -312,8 +312,17 @@
         </label>
       </div>
 
-      <label style="margin-top:16px">Weight Options <small style="color:var(--gray);font-weight:400">(one per line: "500g - ₹135")</small></label>
-      <textarea id="weightOptionsInput" rows="3" placeholder="500g - ₹135&#10;1kg - ₹260&#10;2kg - ₹510" style="resize:vertical;font-family:monospace;font-size:13px"></textarea>
+      <label style="margin-top:16px">Weight Options <small style="color:var(--gray);font-weight:400">(Add weight & price pairs)</small></label>
+      <div id="weightOptionsContainer" style="border:1px solid #ddd;border-radius:8px;padding:12px;background:#f9f9f9;margin-bottom:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center">
+          <div style="font-weight:600;font-size:12px;color:#666">Weight</div>
+          <div style="font-weight:600;font-size:12px;color:#666">Price (₹)</div>
+          <div></div>
+        </div>
+        <div id="weightRows" style="display:grid;gap:8px"></div>
+      </div>
+      <button type="button" id="addWeightBtn" style="padding:8px 12px;background:#007bff;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:12px">+ Add Weight</button>
+      <textarea id="weightOptionsInput" rows="3" placeholder="500g - ₹135&#10;1kg - ₹260&#10;2kg - ₹510" style="resize:vertical;font-family:monospace;font-size:13px;display:none"></textarea>
 
       <label>Cut Type Options <small style="color:var(--gray);font-weight:400">(comma-separated)</small></label>
       <input id="cutTypesInput" placeholder="Whole, Curry Cut, Boneless, Drumsticks, Wings" />
@@ -521,6 +530,7 @@ async function openModal(item) {
     $('isHalalCheck').checked = item.isHalal || false;
     $('isBestsellerCheck').checked = item.isBestseller || false;
     $('weightOptionsInput').value = (item.weightOptions || []).join('\n');
+    renderWeightRows();
     $('cutTypesInput').value = (item.cutTypes || []).join(', ');
     $('boneOptionsInput').value = (item.boneOptions || []).join(', ');
     $('nutritionInfoInput').value = item.nutritionInfo ? JSON.stringify(item.nutritionInfo) : '';
@@ -549,6 +559,7 @@ async function openModal(item) {
     $('isHalalCheck').checked = false;
     $('isBestsellerCheck').checked = false;
     $('weightOptionsInput').value = '';
+    renderWeightRows();
     $('cutTypesInput').value = '';
     $('boneOptionsInput').value = '';
     $('nutritionInfoInput').value = '';
@@ -574,6 +585,61 @@ function addImageRow(url) {
 }
 
 $('addImageBtn').addEventListener('click', () => addImageRow(''));
+
+// Weight Options Management
+function renderWeightRows() {
+  const textarea = $('weightOptionsInput');
+  const container = $('weightRows');
+  const lines = textarea.value.split('\n').map(l => l.trim()).filter(l => l);
+  
+  container.innerHTML = lines.map((line, idx) => {
+    const [weight, price] = line.split('-').map(p => p.trim());
+    const priceNum = price?.replace('₹', '').trim() || '';
+    return `
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center">
+        <input type="text" value="${escapeHtml(weight)}" placeholder="500g" style="padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px" data-weight-idx="${idx}" class="weight-input" />
+        <input type="number" value="${priceNum}" placeholder="₹135" style="padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px" data-price-idx="${idx}" class="price-input" />
+        <button type="button" class="remove-weight" data-idx="${idx}" style="padding:6px 10px;background:#dc3545;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px">×</button>
+      </div>
+    `;
+  }).join('');
+  
+  // Bind events
+  document.querySelectorAll('.weight-input, .price-input').forEach(input => {
+    input.addEventListener('change', updateWeightTextarea);
+  });
+  
+  document.querySelectorAll('.remove-weight').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      const lines = textarea.value.split('\n').filter((_, i) => i !== idx);
+      textarea.value = lines.join('\n');
+      renderWeightRows();
+    });
+  });
+}
+
+function updateWeightTextarea() {
+  const weights = [];
+  document.querySelectorAll('.weight-input').forEach((input, idx) => {
+    const weight = input.value.trim();
+    const priceInput = document.querySelector(`.price-input[data-price-idx="${idx}"]`);
+    const price = priceInput?.value.trim();
+    if (weight && price) {
+      weights.push(`${weight} - ₹${price}`);
+    }
+  });
+  $('weightOptionsInput').value = weights.join('\n');
+}
+
+$('addWeightBtn').addEventListener('click', () => {
+  const textarea = $('weightOptionsInput');
+  if (textarea.value.trim()) {
+    textarea.value += '\n';
+  }
+  textarea.value += '500g - ₹250';
+  renderWeightRows();
+});
 
 // File upload handler
 $('fileUploadInput').addEventListener('change', async (e) => {
