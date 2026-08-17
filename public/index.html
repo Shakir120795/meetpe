@@ -2872,6 +2872,7 @@ async function sendOTP() {
         (data) => {
           console.log('✅ MSG91 Widget OTP sent:', data);
           SESSION_INFO = { reqId: data.reqId || data.data?.reqId || data.message || '', phone };
+          window._otpAttempts = 0; // reset attempt counter on new OTP
           showScreen('screen-otp');
           const maskedPhone = phone.slice(0,2) + 'XXXXXX' + phone.slice(-2);
           document.getElementById('otpPhoneDisplay').textContent = '+91 ' + maskedPhone;
@@ -2938,7 +2939,7 @@ async function verifyOTP() {
 
   try {
     // Use MSG91 Widget verify if available
-    if (window.verifyOtp && SESSION_INFO?.reqId) {
+    if (window.verifyOtp) {
       window.verifyOtp(
         otp,
         async (data) => {
@@ -2971,7 +2972,21 @@ async function verifyOTP() {
         (error) => {
           console.error('❌ MSG91 Widget verify error:', error);
           const errMsg = typeof error === 'string' ? error : (error?.message || 'Invalid OTP');
-          showToast(errMsg, 'error');
+          // Track attempts
+          window._otpAttempts = (window._otpAttempts || 0) + 1;
+          if (window._otpAttempts >= 3 || errMsg.toLowerCase().includes('limit') || errMsg.toLowerCase().includes('exceeded')) {
+            showToast('Too many wrong attempts. Please resend OTP.', 'error');
+            window._otpAttempts = 0;
+            document.getElementById('otpInput').value = '';
+            // Auto-trigger resend after 1.5s
+            setTimeout(() => {
+              document.getElementById('resendOtpBtn')?.click();
+            }, 1500);
+          } else {
+            showToast(`${errMsg} (attempt ${window._otpAttempts}/3)`, 'error');
+            document.getElementById('otpInput').value = '';
+            document.getElementById('otpInput').focus();
+          }
           btn.disabled = false;
           btn.textContent = 'Verify OTP';
         }
