@@ -359,6 +359,43 @@ src/server.js          ⚠️ CRITICAL - Main server (lines 20-38: HTTPS)
 6. ❌ **NEVER** suggest DROP/TRUNCATE/DELETE-ALL
 7. ✅ **WARN** user before any risky operations
 8. ✅ **SUGGEST** backup before major changes
+9. ✅ **ALWAYS GIT PUSH** after making changes - User will pull on VPS
+
+### 🔄 AI Git Workflow (MANDATORY):
+
+**When AI makes ANY code changes:**
+
+```bash
+# 1. Make changes to code files
+# 2. Add all changes
+git add .
+
+# 3. Commit with descriptive message
+git commit -m "type: description of changes"
+
+# 4. ALWAYS PUSH TO GITHUB (User pulls on VPS)
+git push origin main
+```
+
+**⚠️ IMPORTANT:** 
+- AI MUST push changes to GitHub after every modification
+- User will manually pull on VPS: `cd ~/meetpe && git pull origin main`
+- This ensures version control and safe deployment
+- Never leave uncommitted/unpushed changes
+
+**Commit Message Format:**
+- `fix:` - Bug fixes, security patches
+- `feat:` - New features
+- `refactor:` - Code improvements without changing functionality
+- `docs:` - Documentation updates
+- `chore:` - Maintenance tasks
+
+**Example:**
+```bash
+git add .
+git commit -m "fix: SQL injection in admin search endpoint"
+git push origin main
+```
 
 ### AI Response Template:
 
@@ -370,6 +407,7 @@ When asked to modify database:
 - Does this remove data? → [YES/NO]  
 - Is backup required? → [YES/NO]
 - Does migration follow add-only rule? → [YES/NO]
+- Will AI push to GitHub after changes? → [YES - MANDATORY]
 
 [If all checks pass, proceed with implementation]
 [If any check fails, explain why it's forbidden]
