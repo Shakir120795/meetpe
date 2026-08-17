@@ -567,7 +567,7 @@ function addImageRow(url) {
   if (container.querySelectorAll('.img-row').length >= 10) return;
   const row = document.createElement('div');
   row.className = 'img-row';
-  row.innerHTML = `<input type="url" placeholder="/photos/c1.jpg or https://..." value="${escapeHtml(url || '')}" class="img-url-input" /><img class="preview" src="${url || ''}" onerror="this.style.display='none'" onload="this.style.display='block'" style="${url ? '' : 'display:none'}" /><button type="button" class="remove-img" title="Remove">×</button>`;
+  row.innerHTML = `<input type="text" placeholder="/photos/c1.jpg or https://..." value="${escapeHtml(url || '')}" class="img-url-input" /><img class="preview" src="${url || ''}" onerror="this.style.display='none'" onload="this.style.display='block'" style="${url ? '' : 'display:none'}" /><button type="button" class="remove-img" title="Remove">×</button>`;
   row.querySelector('.remove-img').addEventListener('click', () => { row.remove(); if (container.querySelectorAll('.img-row').length === 0) addImageRow(''); });
   row.querySelector('.img-url-input').addEventListener('input', (e) => { row.querySelector('.preview').src = e.target.value; });
   container.appendChild(row);
