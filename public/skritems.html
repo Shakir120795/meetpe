@@ -387,6 +387,15 @@ let CURRENT_CAT = '';
 let SEARCH = '';
 let EDITING = null; // null = adding; otherwise the item being edited
 
+// Track if form has unsaved changes
+let IS_DIRTY = false;
+function markDirty() {
+  IS_DIRTY = true;
+}
+function clearDirty() {
+  IS_DIRTY = false;
+}
+
 const saved = localStorage.getItem('meatpe_admin_key');
 if (saved) keyInput.value = saved;
 
