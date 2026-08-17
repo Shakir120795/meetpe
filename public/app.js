@@ -91,9 +91,12 @@ function renderCategory(cat) {
 
 // ===== Image Slider logic =====
 function initSliders() {
-  document.querySelectorAll('.card-slider').forEach(slider => {
+  const sliders = document.querySelectorAll('.card-slider');
+  console.log(`🎬 initSliders: Found ${sliders.length} sliders`);
+  sliders.forEach(slider => {
     if (slider.dataset.init) return;
     slider.dataset.init = '1';
+    console.log(`🎬 Initializing slider with ${slider.dataset.total} images`);
     const total = parseInt(slider.dataset.total, 10);
     let current = 0;
     
