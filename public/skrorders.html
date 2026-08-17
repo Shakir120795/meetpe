@@ -330,8 +330,10 @@ async function loadOrders(showLoad) {
   localStorage.setItem('meatpe_admin_key', key);
   try {
     let url = `/admin/orders`;
-    if (CURRENT_FILTER) url += `&status=${CURRENT_FILTER}`;
-    if (CURRENT_SOURCE) url += `&source=${CURRENT_SOURCE}`;
+    const params = [];
+    if (CURRENT_FILTER) params.push(`status=${CURRENT_FILTER}`);
+    if (CURRENT_SOURCE) params.push(`source=${CURRENT_SOURCE}`);
+    if (params.length > 0) url += `?${params.join('&')}`;
     const res = await fetch(url);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'load failed');
