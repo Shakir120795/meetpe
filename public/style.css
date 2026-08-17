@@ -232,6 +232,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; }
 .card-slider {
   position: relative; width: 100%; height: 180px;
   overflow: hidden; background: #f3f4f6;
+  touch-action: pan-y pinch-zoom; /* Allow vertical scroll, enable horizontal swipe */
+  user-select: none; /* Prevent text selection during swipe */
+  -webkit-user-select: none;
 }
 .card-slider .slide {
   position: absolute; inset: 0;

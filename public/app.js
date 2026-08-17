@@ -96,6 +96,7 @@ function initSliders() {
     slider.dataset.init = '1';
     const total = parseInt(slider.dataset.total, 10);
     let current = 0;
+    
     function goTo(idx) {
       if (idx < 0) idx = total - 1;
       if (idx >= total) idx = 0;
@@ -103,14 +104,57 @@ function initSliders() {
       slider.querySelectorAll('.slide').forEach(s => s.classList.toggle('active', parseInt(s.dataset.idx) === idx));
       slider.querySelectorAll('.dot').forEach(d => d.classList.toggle('active', parseInt(d.dataset.idx) === idx));
     }
+    
+    // Button navigation
     slider.querySelector('.next').addEventListener('click', (e) => { e.stopPropagation(); goTo(current + 1); });
     slider.querySelector('.prev').addEventListener('click', (e) => { e.stopPropagation(); goTo(current - 1); });
+    
+    // Dot navigation
     slider.querySelectorAll('.dot').forEach(d => {
       d.addEventListener('click', (e) => { e.stopPropagation(); goTo(parseInt(d.dataset.idx)); });
     });
+    
+    // Auto-play (pause on hover)
     let autoTimer = setInterval(() => goTo(current + 1), 3500);
     slider.addEventListener('mouseenter', () => clearInterval(autoTimer));
     slider.addEventListener('mouseleave', () => { autoTimer = setInterval(() => goTo(current + 1), 3500); });
+    
+    // ===== SWIPE GESTURE SUPPORT =====
+    let touchStartX = 0;
+    let touchEndX = 0;
+    let touchStartY = 0;
+    let touchEndY = 0;
+    const minSwipeDistance = 50; // Minimum swipe distance in pixels
+    
+    slider.addEventListener('touchstart', (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+      clearInterval(autoTimer); // Pause auto-play during touch
+    }, { passive: true });
+    
+    slider.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      touchEndY = e.changedTouches[0].screenY;
+      handleSwipe();
+      // Resume auto-play after swipe
+      autoTimer = setInterval(() => goTo(current + 1), 3500);
+    }, { passive: true });
+    
+    function handleSwipe() {
+      const diffX = touchEndX - touchStartX;
+      const diffY = touchEndY - touchStartY;
+      
+      // Only trigger if horizontal swipe is dominant (not vertical scroll)
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > minSwipeDistance) {
+        if (diffX > 0) {
+          // Swipe right - go to previous slide
+          goTo(current - 1);
+        } else {
+          // Swipe left - go to next slide
+          goTo(current + 1);
+        }
+      }
+    }
   });
 }
 
