@@ -1,5 +1,6 @@
 // NOW App — Service Worker
-const CACHE_NAME = 'now-app-ui-preview-v3';
+// v4: force-load the responsive website UI directly into every HTML navigation.
+const CACHE_NAME = 'now-app-ui-v4';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -8,69 +9,84 @@ const STATIC_ASSETS = [
   '/ui-responsive-preview.css'
 ];
 
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS).catch(() => {}))
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(STATIC_ASSETS).catch(() => {}))
   );
   self.skipWaiting();
 });
 
-self.addEventListener('activate', e => {
-  e.waitUntil(
+self.addEventListener('activate', event => {
+  event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(
+        keys
+          .filter(key => key !== CACHE_NAME)
+          .map(key => caches.delete(key))
+      )
     )
   );
   self.clients.claim();
 });
 
-self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
 
-  if (e.request.method !== 'GET' || url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin/')) {
+  if (
+    event.request.method !== 'GET' ||
+    url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/admin/')
+  ) {
     return;
   }
 
-  e.respondWith(
-    fetch(e.request)
-      .then(res => {
-        if (res && res.status === 200) {
-          const resClone = res.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(e.request, resClone));
-        }
+  event.respondWith(
+    fetch(event.request)
+      .then(async response => {
+        if (!response || response.status !== 200) return response;
 
-        if (e.request.mode === 'navigate' && res && res.status === 200) {
-          const type = res.headers.get('content-type') || '';
-          if (type.includes('text/html')) {
-            return res.text().then(html => {
-              if (html.includes('/ui-responsive-preview.css')) return new Response(html, {
-                status: res.status,
-                statusText: res.statusText,
-                headers: res.headers
-              });
+        if (event.request.mode === 'navigate') {
+          const contentType = response.headers.get('content-type') || '';
+          if (contentType.includes('text/html')) {
+            const html = await response.text();
+            const cssLink = '<link rel="stylesheet" href="/ui-responsive-preview.css?v=4">';
 
-              const injected = html.replace(
-                '</head>',
-                '<link rel="stylesheet" href="/ui-responsive-preview.css">\n</head>'
+            let updatedHtml = html;
+            if (!updatedHtml.includes('/ui-responsive-preview.css')) {
+              updatedHtml = updatedHtml.replace('</head>', cssLink + '</head>');
+            } else {
+              updatedHtml = updatedHtml.replace(
+                /<link[^>]+href=["'][^"']*ui-responsive-preview\.css[^"']*["'][^>]*>/i,
+                cssLink
               );
+            }
 
-              const headers = new Headers(res.headers);
-              headers.delete('content-length');
-              return new Response(injected, {
-                status: res.status,
-                statusText: res.statusText,
-                headers
-              });
+            const headers = new Headers(response.headers);
+            headers.delete('content-length');
+
+            const htmlResponse = new Response(updatedHtml, {
+              status: response.status,
+              statusText: response.statusText,
+              headers
             });
+
+            const clone = htmlResponse.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone)).catch(() => {});
+            return htmlResponse;
           }
         }
 
-        return res;
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone)).catch(() => {});
+        return response;
       })
-      .catch(() => caches.match(e.request).then(cached => {
-        if (cached) return cached;
-        if (e.request.mode === 'navigate') return caches.match('/');
-        return undefined;
-      }))
+      .catch(() =>
+        caches.match(event.request).then(cached => {
+          if (cached) return cached;
+          if (event.request.mode === 'navigate') return caches.match('/');
+          return undefined;
+        })
+      )
   );
 });
