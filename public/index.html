@@ -3641,14 +3641,35 @@ async function renderNewArrivals() {
   }
 }
 
+// Get category-based placeholder image
+function getCategoryPlaceholder(category) {
+  const placeholders = {
+    'chicken': 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=400&h=400&fit=crop',
+    'mutton': 'https://images.unsplash.com/photo-1603048588665-791ca8ffe39e?w=400&h=400&fit=crop',
+    'fish': 'https://images.unsplash.com/photo-1544943910-4c1dc44aab44?w=400&h=400&fit=crop',
+    'ready_to_cook': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=400&fit=crop',
+    'family_pack': 'https://images.unsplash.com/photo-1529042410759-befb1204b468?w=400&h=400&fit=crop',
+    'seafood': 'https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=400&h=400&fit=crop',
+    'prawns': 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=400&h=400&fit=crop'
+  };
+  return placeholders[category] || placeholders['chicken'];
+}
+
 // Reusable product card HTML generator
 function renderProductCardHTML(item, isBestSeller = false) {
   const mrp = Math.round(item.price * 1.1);
   const save = Math.round(((mrp - item.price) / mrp) * 100);
   const qty = CART[item.code] || 0;
   const oos = !item.inStock;
-  const img = (item.images && item.images[0]) 
-    ? `<img src="${item.images[0]}" alt="${item.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span class="emoji-bg" style="display:none">${catEmoji(item.cat)}</span>` 
+  // Support both new format (images array) and old format (img string)
+  const imageUrl = (item.images && item.images[0]) ? item.images[0] : (item.img && item.img.trim() !== '' ? item.img : null);
+  
+  // If no image, use category-based placeholder from Unsplash
+  const fallbackImage = !imageUrl ? getCategoryPlaceholder(item.cat) : null;
+  const finalImageUrl = imageUrl || fallbackImage;
+  
+  const img = finalImageUrl
+    ? `<img src="${finalImageUrl}" alt="${item.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span class="emoji-bg" style="display:none">${catEmoji(item.cat)}</span>` 
     : `<span class="emoji-bg">${catEmoji(item.cat)}</span>`;
   
   // Check if in wishlist
@@ -3672,7 +3693,7 @@ function renderProductCardHTML(item, isBestSeller = false) {
       ${item.isHalal ? '<div class="badge-halal" style="position:absolute;top:42px;left:6px;background:rgba(34,197,94,.9);color:#fff;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;z-index:2">حلال Halal</div>' : ''}
       ${item.isBestseller || isBestSeller ? '<div class="badge-best">BESTSELLER</div>' : ''}
       ${oos ? '<div class="badge-oos">Out of Stock</div>' : ''}
-      <button class="wishlist-btn ${inWishlist ? 'active' : ''}" onclick="event.stopPropagation();toggleWishlist('${item.code}','${item.name.replace(/'/g,"\\'")}','${item.unit || ''}',${item.price},'${(item.images && item.images[0]) ? item.images[0].replace(/'/g,"\\'") : '/logo.png'}');" title="Add to wishlist">
+      <button class="wishlist-btn ${inWishlist ? 'active' : ''}" onclick="event.stopPropagation();toggleWishlist('${item.code}','${item.name.replace(/'/g,"\\'")}','${item.unit || ''}',${item.price},'${finalImageUrl ? finalImageUrl.replace(/'/g,"\\'") : '/logo.png'}');" title="Add to wishlist">
         ${inWishlist ? '❤️' : '🤍'}
       </button>
     </div>
@@ -4252,17 +4273,25 @@ function openProduct(code) {
 
   // Image - with slider support for multiple images
   const imgEl = document.getElementById('pdImg');
-  if (item.images && item.images.length > 0) {
-    if (item.images.length === 1) {
+  // Support both new format (images array) and old format (img string)
+  let productImages = (item.images && item.images.length > 0) ? item.images : (item.img && item.img.trim() !== '' ? [item.img] : []);
+  
+  // If no images, use category-based placeholder
+  if (productImages.length === 0) {
+    productImages = [getCategoryPlaceholder(item.cat)];
+  }
+  
+  if (productImages.length > 0) {
+    if (productImages.length === 1) {
       // Single image - just show it
-      imgEl.innerHTML = `<img src="${item.images[0]}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover"/>
+      imgEl.innerHTML = `<img src="${productImages[0]}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover"/>
         <div class="pd-temp">❄️ Temp Locked at -4°C</div>`;
     } else {
       // Multiple images - create slider
-      const slides = item.images.map((url, idx) =>
+      const slides = productImages.map((url, idx) =>
         `<div class="pd-slide${idx === 0 ? ' active' : ''}" data-idx="${idx}"><img src="${url}" alt="${item.name} ${idx+1}" style="width:100%;height:100%;object-fit:cover"/></div>`
       ).join('');
-      const dots = item.images.map((_, idx) =>
+      const dots = productImages.map((_, idx) =>
         `<span class="pd-dot${idx === 0 ? ' active' : ''}" data-idx="${idx}"></span>`
       ).join('');
       imgEl.innerHTML = `<div class="pd-slider">${slides}<div class="pd-slider-dots">${dots}</div><button class="pd-slider-btn prev">‹</button><button class="pd-slider-btn next">›</button></div>
