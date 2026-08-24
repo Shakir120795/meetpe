@@ -3648,16 +3648,25 @@ async function renderNewArrivals() {
 
 // Get category-based placeholder image
 function getCategoryPlaceholder(category) {
-  const placeholders = {
-    'chicken': '/photos/1779606918730-j4gsg1.png',
-    'mutton': '/photos/1779606918730-j4gsg1.png',
-    'fish': '/photos/1779606918730-j4gsg1.png',
-    'ready_to_cook': '/photos/1779606918730-j4gsg1.png',
-    'family_pack': '/photos/1779606918730-j4gsg1.png',
-    'seafood': '/photos/1779606918730-j4gsg1.png',
-    'prawns': '/photos/1779606918730-j4gsg1.png'
-  };
-  return placeholders[category] || placeholders['chicken'];
+  // Keep product images local. The current catalog contains legacy Unsplash
+  // URLs and the /photos/ PNG is not a product photo.
+  return '/istockphoto-981040212-612x612.jpg';
+}
+
+function getUsableProductImages(item) {
+  const candidates = [];
+  if (Array.isArray(item?.images)) candidates.push(...item.images);
+  if (typeof item?.img === 'string' && item.img.trim()) candidates.push(item.img.trim());
+
+  // Prefer local/same-origin assets. Ignore legacy Unsplash catalog URLs.
+  const localImages = candidates.filter(url =>
+    typeof url === 'string' &&
+    url.trim() &&
+    !/^https?:\/\/images\.unsplash\.com\//i.test(url) &&
+    !/^https?:\/\/source\.unsplash\.com\//i.test(url)
+  );
+
+  return localImages.length ? localImages : [getCategoryPlaceholder(item?.cat)];
 }
 
 // Reusable product card HTML generator
@@ -3666,12 +3675,9 @@ function renderProductCardHTML(item, isBestSeller = false) {
   const save = Math.round(((mrp - item.price) / mrp) * 100);
   const qty = CART[item.code] || 0;
   const oos = !item.inStock;
-  // Support both new format (images array) and old format (img string)
-  const imageUrl = (item.images && item.images[0]) ? item.images[0] : (item.img && item.img.trim() !== '' ? item.img : null);
-  
-  // If no image, use category-based placeholder from Unsplash
-  const fallbackImage = !imageUrl ? getCategoryPlaceholder(item.cat) : null;
-  const finalImageUrl = imageUrl || fallbackImage;
+  // Use reliable/local product images; legacy Unsplash URLs are ignored.
+  const usableImages = getUsableProductImages(item);
+  const finalImageUrl = usableImages[0] || getCategoryPlaceholder(item.cat);
   
   const img = finalImageUrl
     ? `<img src="${finalImageUrl}" alt="${item.name}" loading="eager" style="width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;opacity:1!important;visibility:visible!important" onerror="if(this.dataset.fallbackApplied!=='1'){this.dataset.fallbackApplied='1';this.src='${getCategoryPlaceholder(item.cat)}';}else{this.style.display='none';this.nextElementSibling.style.display='block';}"/><span class="emoji-bg" style="display:none">${catEmoji(item.cat)}</span>`
@@ -4276,15 +4282,10 @@ function openProduct(code) {
     ratingEl.style.display = 'block';
   }
 
-  // Image - with slider support for multiple images
+  // Image - with slider support for multiple images.
+  // Use reliable/local images; legacy Unsplash catalog URLs are ignored.
   const imgEl = document.getElementById('pdImg');
-  // Support both new format (images array) and old format (img string)
-  let productImages = (item.images && item.images.length > 0) ? item.images : (item.img && item.img.trim() !== '' ? [item.img] : []);
-  
-  // If no images, use category-based placeholder
-  if (productImages.length === 0) {
-    productImages = [getCategoryPlaceholder(item.cat)];
-  }
+  let productImages = getUsableProductImages(item);
   
   if (productImages.length > 0) {
     if (productImages.length === 1) {
