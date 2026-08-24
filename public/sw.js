@@ -1,12 +1,12 @@
 // NOW App — Service Worker
-// v5: clean rollback of the broken UI preview layer.
-// Keep normal asset caching only; do not inject or rewrite HTML.
-const CACHE_NAME = 'now-app-ui-v5';
+// v6: inject the unified reference-matched UI stylesheet after the legacy inline styles.
+const CACHE_NAME = 'now-app-ui-v6';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
   '/logo.png',
-  '/style.css'
+  '/style.css',
+  '/ui-v4.css'
 ];
 
 self.addEventListener('install', e => {
@@ -32,6 +32,24 @@ self.addEventListener('fetch', e => {
     return;
   }
 
+  // Inject v4 after the page's legacy inline stylesheet so the reference design wins.
+  if (e.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('/index.html')) {
+    e.respondWith(
+      fetch(e.request).then(async res => {
+        if (!res || !res.ok) return res;
+        const html = await res.text();
+        const tag = '<link rel="stylesheet" href="/ui-v4.css?v=4">';
+        const rewritten = html.includes('ui-v4.css') ? html : html.replace('</head>', `${tag}</head>`);
+        return new Response(rewritten, {
+          status: res.status,
+          statusText: res.statusText,
+          headers: {'Content-Type':'text/html; charset=utf-8', 'Cache-Control':'no-store'}
+        });
+      }).catch(() => caches.match(e.request).then(cached => cached || caches.match('/')))
+    );
+    return;
+  }
+
   e.respondWith(
     fetch(e.request)
       .then(res => {
@@ -41,10 +59,6 @@ self.addEventListener('fetch', e => {
         }
         return res;
       })
-      .catch(() => caches.match(e.request).then(cached => {
-        if (cached) return cached;
-        if (e.request.mode === 'navigate') return caches.match('/');
-        return undefined;
-      }))
+      .catch(() => caches.match(e.request).then(cached => cached || undefined))
   );
 });
