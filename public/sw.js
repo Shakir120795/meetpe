@@ -1,23 +1,20 @@
 // NOW App — Service Worker
-const CACHE_NAME = 'now-app-v1';
+const CACHE_NAME = 'now-app-ui-preview-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
   '/logo.png',
-  '/style.css'
+  '/style.css',
+  '/ui-responsive-preview.css'
 ];
 
-// Install — cache static assets
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(STATIC_ASSETS).catch(() => {});
-    })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS).catch(() => {}))
   );
   self.skipWaiting();
 });
 
-// Activate — clean old caches
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -27,11 +24,9 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Fetch — network first, fallback to cache
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Skip non-GET and API calls — always go to network
   if (e.request.method !== 'GET' || url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin/')) {
     return;
   }
@@ -39,20 +34,45 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     fetch(e.request)
       .then(res => {
-        // Cache successful responses for static files
         if (res && res.status === 200) {
           const resClone = res.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(e.request, resClone));
         }
+
+        // Inject the preview stylesheet into HTML responses without touching
+        // the existing application markup or business logic.
+        if (e.request.mode === 'navigate' && res && res.status === 200) {
+          const type = res.headers.get('content-type') || '';
+          if (type.includes('text/html')) {
+            return res.text().then(html => {
+              if (html.includes('/ui-responsive-preview.css')) return new Response(html, {
+                status: res.status,
+                statusText: res.statusText,
+                headers: res.headers
+              });
+
+              const injected = html.replace(
+                '</head>',
+                '<link rel="stylesheet" href="/ui-responsive-preview.css">\\n</head>'
+              );
+
+              const headers = new Headers(res.headers);
+              headers.delete('content-length');
+              return new Response(injected, {
+                status: res.status,
+                statusText: res.statusText,
+                headers
+              });
+            });
+          }
+        }
+
         return res;
       })
-      .catch(() => {
-        // Network failed — try cache
-        return caches.match(e.request).then(cached => {
-          if (cached) return cached;
-          // Offline fallback for navigation
-          if (e.request.mode === 'navigate') return caches.match('/');
-        });
-      })
+      .catch(() => caches.match(e.request).then(cached => {
+        if (cached) return cached;
+        if (e.request.mode === 'navigate') return caches.match('/');
+        return undefined;
+      }))
   );
 });
