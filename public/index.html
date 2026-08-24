@@ -81,18 +81,16 @@ body {
   --gradient-card:linear-gradient(145deg, #1A1A1C 0%, #242426 100%);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{min-height:100% !important;background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;padding-top:env(safe-area-inset-top, 0px);letter-spacing:-0.01em;-webkit-font-smoothing:antialiased;overflow-y:auto !important;height:auto !important}
+html,body{min-height:100% !important;background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;padding-top:env(safe-area-inset-top, 0px);letter-spacing:-0.01em;-webkit-font-smoothing:antialiased;overflow:hidden !important;height:100% !important}
 a{color:inherit;text-decoration:none}
 button{cursor:pointer;border:none;background:none;color:inherit;font:inherit}
 input,textarea{font:inherit;color:inherit}
 
 /* ── App shell ── */
-#app{min-height:100vh !important;display:flex !important;flex-direction:column !important;position:relative !important;width:100% !important}
-.screens{flex:1 !important;position:relative !important;width:100% !important;overflow-y:auto !important}
-.screen{width:100% !important;background:var(--bg);
-  display:none;
-  padding-bottom:calc(var(--nav-h) + 8px);overflow-y:auto !important;overflow-x:hidden !important;position:relative !important;-webkit-overflow-scrolling:touch !important}
-.screen.active{display:block !important;overflow-y:auto !important;overflow-x:hidden !important}
+#app{height:100vh !important;min-height:100vh !important;display:flex !important;flex-direction:column !important;position:relative !important;width:100% !important;overflow:hidden !important}
+.screens{flex:1 1 auto !important;min-height:0 !important;position:relative !important;width:100% !important;overflow-y:auto !important;overflow-x:hidden !important;-webkit-overflow-scrolling:touch !important;overscroll-behavior-y:contain !important}
+.screen{width:100% !important;background:var(--bg);display:none;padding-bottom:calc(var(--nav-h) + 8px);overflow:visible !important;position:relative !important;min-height:100% !important}
+.screen.active{display:block !important;overflow:visible !important}
 #screen-login{padding-bottom:0}
 
 /* ── Bottom nav ── */
@@ -3677,7 +3675,7 @@ function renderProductCardHTML(item, isBestSeller = false) {
   const finalImageUrl = imageUrl || fallbackImage;
   
   const img = finalImageUrl
-    ? `<img src="${finalImageUrl}" alt="${item.name}" loading="eager" style="width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;opacity:1!important;visibility:visible!important" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/><span class="emoji-bg" style="display:none">${catEmoji(item.cat)}</span>` 
+    ? `<img src="${finalImageUrl}" alt="${item.name}" loading="eager" style="width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;opacity:1!important;visibility:visible!important" onerror="if(this.dataset.fallbackApplied!=='1'){this.dataset.fallbackApplied='1';this.src='${getCategoryPlaceholder(item.cat)}';}else{this.style.display='none';this.nextElementSibling.style.display='block';}"/><span class="emoji-bg" style="display:none">${catEmoji(item.cat)}</span>`
     : `<span class="emoji-bg">${catEmoji(item.cat)}</span>`;
   
   // Check if in wishlist
@@ -4292,12 +4290,12 @@ function openProduct(code) {
   if (productImages.length > 0) {
     if (productImages.length === 1) {
       // Single image - just show it
-      imgEl.innerHTML = `<img src="${productImages[0]}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover"/>
+      imgEl.innerHTML = `<img src="${productImages[0]}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="if(this.dataset.fallbackApplied!=='1'){this.dataset.fallbackApplied='1';this.src='${getCategoryPlaceholder(item.cat)}';}else{this.style.display='none';}"/>
         <div class="pd-temp">❄️ Temp Locked at -4°C</div>`;
     } else {
       // Multiple images - create slider
       const slides = productImages.map((url, idx) =>
-        `<div class="pd-slide${idx === 0 ? ' active' : ''}" data-idx="${idx}"><img src="${url}" alt="${item.name} ${idx+1}" style="width:100%;height:100%;object-fit:cover"/></div>`
+        `<div class="pd-slide${idx === 0 ? ' active' : ''}" data-idx="${idx}"><img src="${url}" alt="${item.name} ${idx+1}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="if(this.dataset.fallbackApplied!=='1'){this.dataset.fallbackApplied='1';this.src='${getCategoryPlaceholder(item.cat)}';}else{this.style.display='none';}"/></div>`
       ).join('');
       const dots = productImages.map((_, idx) =>
         `<span class="pd-dot${idx === 0 ? ' active' : ''}" data-idx="${idx}"></span>`
@@ -8709,43 +8707,36 @@ document.addEventListener('keydown', e => {
 });
 
 // ═══════════════════════════════════════════
-//  Swipe-back gesture (basic)
+//  Swipe handling
 // ═══════════════════════════════════════════
-// Disable pull-to-refresh in WebView
+// Keep normal vertical scrolling native. Only handle a horizontal swipe-back
+// when it starts very close to the left edge, so normal content swipes do not
+// navigate away from the current screen.
 let lastTouchY = 0;
 let touchStartX = 0;
+let touchStartY = 0;
 document.addEventListener('touchstart', e => {
-  touchStartX = e.touches[0].clientX;
-  lastTouchY = e.touches[0].clientY;
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  touchStartY = t.clientY;
+  lastTouchY = t.clientY;
 }, { passive: true });
 
-document.addEventListener('touchmove', e => {
-  // Find the scrollable parent of the touched element
-  let el = e.target;
-  let scrollable = false;
-  while (el && el !== document.body) {
-    const style = window.getComputedStyle(el);
-    const overflow = style.overflow + style.overflowY;
-    if (overflow.includes('scroll') || overflow.includes('auto')) {
-      if (el.scrollTop > 0) { scrollable = true; break; }
-    }
-    el = el.parentElement;
-  }
-  const dy = e.touches[0].clientY - lastTouchY;
-  // Block pull down when not scrolled
-  if (dy > 0 && !scrollable) {
-    e.preventDefault();
-  }
-}, { passive: false });
 document.addEventListener('touchend', e => {
-  const dx = e.changedTouches[0].clientX - touchStartX;
-  if (dx > 80 && SCREEN_HISTORY.length > 1) {
+  if (!e.changedTouches || !e.changedTouches.length) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
+  const isHorizontal = Math.abs(dx) > Math.abs(dy) * 1.35;
+  const startedAtLeftEdge = touchStartX <= 24;
+
+  if (dx > 80 && isHorizontal && startedAtLeftEdge && SCREEN_HISTORY.length > 1) {
     const cur = SCREEN_HISTORY[SCREEN_HISTORY.length - 1];
     if (['screen-product','screen-basket','screen-orders','screen-profile'].includes(cur)) {
       goBack();
     }
   }
-}, {passive:true});
+}, { passive: true });
 
 // ═══════════════════════════════════════════
 //  Side Drawer
