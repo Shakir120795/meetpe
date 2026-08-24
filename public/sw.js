@@ -1,5 +1,5 @@
 // NOW App — Service Worker
-const CACHE_NAME = 'now-app-ui-preview-v2';
+const CACHE_NAME = 'now-app-ui-preview-v3';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -39,8 +39,6 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE_NAME).then(cache => cache.put(e.request, resClone));
         }
 
-        // Inject the preview stylesheet into HTML responses without touching
-        // the existing application markup or business logic.
         if (e.request.mode === 'navigate' && res && res.status === 200) {
           const type = res.headers.get('content-type') || '';
           if (type.includes('text/html')) {
@@ -53,7 +51,7 @@ self.addEventListener('fetch', e => {
 
               const injected = html.replace(
                 '</head>',
-                '<link rel="stylesheet" href="/ui-responsive-preview.css">\\n</head>'
+                '<link rel="stylesheet" href="/ui-responsive-preview.css">\n</head>'
               );
 
               const headers = new Headers(res.headers);
