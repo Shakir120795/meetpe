@@ -1,0 +1,110 @@
+/* MeatPe responsive UI preview layer
+   Loaded after the existing styles so functionality and markup stay untouched.
+*/
+
+:root{
+  --ui-accent:#E8450A;
+  --ui-accent-dark:#c93600;
+  --ui-bg:#f8faf7;
+  --ui-surface:#ffffff;
+  --ui-text:#171717;
+  --ui-muted:#737373;
+  --ui-border:#e7e7e7;
+  --ui-radius:18px;
+  --ui-shadow:0 8px 30px rgba(0,0,0,.07);
+}
+
+/* App shell: keep the PWA behavior on phones, give desktop a real website canvas. */
+@media (min-width: 900px){
+  html,body{overflow:auto;height:auto;position:static;padding-top:0;background:var(--ui-bg)}
+  #app{position:relative;inset:auto;min-height:100vh;height:auto;overflow:visible;display:block;background:var(--ui-bg)}
+  .screens{position:relative;overflow:visible;min-height:100vh}
+  .screen{position:relative;inset:auto;min-height:100vh;height:auto;overflow:visible;padding-bottom:40px}
+  .screen:not(.active){display:none}
+  .bottom-nav{height:68px;max-width:760px;left:50%;right:auto;transform:translateX(-50%);bottom:18px;border:1px solid var(--ui-border);border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.12);padding:4px 8px;background:rgba(255,255,255,.96)}
+  .nav-btn{border-radius:16px;min-width:110px;font-size:12px}
+  .nav-btn.active{background:#fff2ed;color:var(--ui-accent)}
+  .nav-btn .nav-icon{font-size:21px}
+
+  /* Desktop home header */
+  .home-topbar{position:sticky;top:0;padding:14px max(24px,calc((100vw - 1240px)/2));gap:18px;min-height:72px;background:rgba(255,255,255,.96);box-shadow:0 1px 0 var(--ui-border);}
+  .topbar-logo{order:1;flex:0 0 auto;font-size:28px;text-align:left}
+  .topbar-loc-center{order:2;flex:0 1 260px;border-left:1px solid var(--ui-border);padding-left:18px}
+  .topbar-right{order:4}
+  .home-topbar:after{content:'Fresh chicken • mutton • fish delivered fast';order:3;flex:1;color:var(--ui-muted);font-size:12px;text-align:center}
+  .search-bar{max-width:760px;margin:14px auto;border-radius:16px;padding:12px 16px;background:#fff;box-shadow:var(--ui-shadow)}
+  .hero-banner{max-width:1240px;margin:18px auto 22px;border-radius:26px;min-height:210px;padding:30px 34px;background:linear-gradient(115deg,#1a0500,#351005 62%,#4d1708)}
+  .hero-txt h3{font-size:26px}
+  .hero-txt p{font-size:14px}
+  .hero-pill{padding:7px 14px}
+  .hero-emoji-big{font-size:76px}
+  .cat-strip{max-width:1240px;margin:0 auto 16px;padding:0 24px 12px;gap:12px}
+
+  /* Product grid becomes a true desktop catalog. */
+  #menuGrid,.menu-grid{max-width:1240px;margin:0 auto;padding:0 24px;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
+  .menu-card{border-radius:20px;box-shadow:0 7px 24px rgba(0,0,0,.06)}
+  .menu-card:hover{transform:translateY(-5px);box-shadow:0 18px 42px rgba(0,0,0,.11)}
+  .card-img,.card-slider,.card-slider .slide img,.card-img-fallback{height:230px}
+  .card-body{padding:18px 18px 20px}
+  .card-name{font-size:16px}
+  .card-price{font-size:23px}
+
+  /* Generic cards/drawers/modals get the same visual language. */
+  .cart-drawer{width:430px;max-width:calc(100vw - 32px);border-radius:24px 0 0 24px;box-shadow:-20px 0 60px rgba(0,0,0,.18)}
+  .modal{max-width:620px;border-radius:24px}
+}
+
+@media (min-width:1200px){
+  #menuGrid,.menu-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+
+/* Phone polish */
+@media (max-width:899px){
+  .home-topbar{padding-left:12px;padding-right:12px}
+  .topbar-logo{font-size:21px}
+  .search-bar{margin:10px 12px;border-radius:14px}
+  .hero-banner{margin-left:12px;margin-right:12px;border-radius:20px;padding:17px 16px}
+  .hero-txt h3{font-size:16px}
+  .hero-emoji-big{font-size:45px}
+  .cat-strip{padding-left:12px;padding-right:12px}
+  #menuGrid,.menu-grid{padding:0 12px;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .menu-card{border-radius:16px}
+  .card-img,.card-slider,.card-slider .slide img,.card-img-fallback{height:150px}
+  .card-body{padding:12px 12px 14px}
+  .card-name{font-size:12px}
+  .card-unit{font-size:10px}
+  .card-desc{font-size:10px}
+  .card-price{font-size:18px}
+  .card-add{font-size:11px;padding:7px 10px;border-radius:9px}
+}
+
+/* Shared surface treatment for common app cards. */
+.product-card,.info-card,.offer-card,.order-card,.profile-card,.category-card,
+.cart-summary,.checkout-card,.membership-card{
+  border-radius:var(--ui-radius)!important;
+  border-color:var(--ui-border)!important;
+  box-shadow:var(--ui-shadow)!important;
+}
+
+/* Keep primary actions visually consistent with the existing MeatPe orange brand. */
+.btn-accent,.btn-primary,.card-add,.checkout-btn,.primary-btn{
+  background:var(--ui-accent)!important;
+}
+.btn-accent:hover,.btn-primary:hover,.card-add:hover,.checkout-btn:hover,.primary-btn:hover{
+  background:var(--ui-accent-dark)!important;
+}
+
+/* Better focus states and touch targets. */
+button,input,textarea,select{outline-color:var(--ui-accent)}
+button{touch-action:manipulation}
+
+/* Avoid desktop overflow from long product/location text. */
+.topbar-loc-text,.topbar-loc-addr,.card-name,.cart-item-name{overflow-wrap:anywhere}
+
+/* Slightly calmer mobile typography. */
+@media (max-width:480px){
+  .topbar-loc-text{font-size:12px;max-width:145px}
+  .icon-btn{width:35px;height:35px}
+  .nav-btn{font-size:10px}
+  .nav-btn .nav-icon{font-size:20px}
+}
