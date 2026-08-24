@@ -1,6 +1,6 @@
 // NOW App — Service Worker
-// v7: final UI override; inject v5 after the legacy inline stylesheet.
-const CACHE_NAME = 'now-app-ui-v7';
+// v8: unified UI for home, product, basket, orders, profile and all secondary screens.
+const CACHE_NAME = 'now-app-ui-v8';
 const STATIC_ASSETS = ['/', '/manifest.json', '/logo.png', '/style.css', '/ui-v5.css'];
 
 self.addEventListener('install', e => {
@@ -23,7 +23,7 @@ self.addEventListener('fetch', e => {
     e.respondWith(fetch(e.request).then(async res => {
       if (!res || !res.ok) return res;
       const html = await res.text();
-      const tag = '<link rel="stylesheet" href="/ui-v5.css?v=5">';
+      const tag = '<link rel="stylesheet" href="/ui-v5.css?v=6">';
       const rewritten = html.includes('ui-v5.css') ? html : html.replace('</head>', `${tag}</head>`);
       const headers = new Headers(res.headers);
       headers.set('Content-Type', 'text/html; charset=utf-8');
