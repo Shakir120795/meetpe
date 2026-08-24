@@ -1,7 +1,7 @@
 // NOW App — Service Worker
-// v10: existing application; ui-v5 remains the base and ui-v7 is the secondary-screen visual layer.
-const CACHE_NAME = 'now-app-ui-v10';
-const STATIC_ASSETS = ['/', '/manifest.json', '/logo.png', '/style.css', '/ui-v5.css', '/ui-v6.css', '/ui-v7.css'];
+// v11: existing application; v7 secondary-screen layer + v8 Home visual layer.
+const CACHE_NAME = 'now-app-ui-v11';
+const STATIC_ASSETS = ['/', '/manifest.json', '/logo.png', '/style.css', '/ui-v5.css', '/ui-v6.css', '/ui-v7.css', '/ui-v8.css'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS).catch(() => {})));
@@ -9,9 +9,7 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(
-    keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-  )));
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))));
   self.clients.claim();
 });
 
@@ -24,9 +22,10 @@ self.addEventListener('fetch', e => {
       if (!res || !res.ok) return res;
       const html = await res.text();
       let rewritten = html;
-      if (!rewritten.includes('ui-v5.css')) rewritten = rewritten.replace('</head>', '<link rel="stylesheet" href="/ui-v5.css?v=10"></head>');
-      if (!rewritten.includes('ui-v6.css')) rewritten = rewritten.replace('</head>', '<link rel="stylesheet" href="/ui-v6.css?v=10"></head>');
+      if (!rewritten.includes('ui-v5.css')) rewritten = rewritten.replace('</head>', '<link rel="stylesheet" href="/ui-v5.css?v=11"></head>');
+      if (!rewritten.includes('ui-v6.css')) rewritten = rewritten.replace('</head>', '<link rel="stylesheet" href="/ui-v6.css?v=11"></head>');
       if (!rewritten.includes('ui-v7.css')) rewritten = rewritten.replace('</head>', '<link rel="stylesheet" href="/ui-v7.css?v=1"></head>');
+      if (!rewritten.includes('ui-v8.css')) rewritten = rewritten.replace('</head>', '<link rel="stylesheet" href="/ui-v8.css?v=1"></head>');
       const headers = new Headers(res.headers);
       headers.set('Content-Type', 'text/html; charset=utf-8');
       headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
