@@ -1,39 +1,26 @@
-name: Apply UI v5
+name: Validate Customer UI
 
 on:
   push:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  apply-ui:
-    if: ${{ !contains(github.event.head_commit.message, 'Apply UI v5') }}
+  validate-ui:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Inject UI v5 stylesheet
+      - name: Verify legacy UI stylesheet injection is absent
         run: |
           python - <<'PY'
           from pathlib import Path
-          p = Path('public/index.html')
-          s = p.read_text(encoding='utf-8')
-          tag = '<link rel="stylesheet" href="/ui-v5.css?v=5">'
-          if 'href="/ui-v5.css?v=5"' not in s:
-              marker = '</style>'
-              if marker not in s:
-                  raise SystemExit('index.html: closing style tag not found')
-              s = s.replace(marker, marker + '\n' + tag, 1)
-              p.write_text(s, encoding='utf-8')
+          p = Path("public/index.html")
+          s = p.read_text(encoding="utf-8")
+          if '/ui-v5.css?v=5' in s:
+              raise SystemExit("Legacy /ui-v5.css link is still present in public/index.html")
+          print("OK: public/index.html does not reference /ui-v5.css?v=5")
           PY
-
-      - name: Commit UI v5 injection
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/index.html
-          git diff --cached --quiet || git commit -m "Apply UI v5 stylesheet"
-          git push
