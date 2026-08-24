@@ -3648,9 +3648,19 @@ async function renderNewArrivals() {
 
 // Get category-based placeholder image
 function getCategoryPlaceholder(category) {
-  // Keep product images local. The current catalog contains legacy Unsplash
-  // URLs and the /photos/ PNG is not a product photo.
-  return '/istockphoto-981040212-612x612.jpg';
+  // Restore the original category image mapping used by the customer UI.
+  // These are the existing catalog fallbacks; do not replace them with a
+  // single generic/local image because that changes the original product UI.
+  const placeholders = {
+    'chicken': 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=400&h=400&fit=crop',
+    'mutton': 'https://images.unsplash.com/photo-1603048588665-791ca8ffe39e?w=400&h=400&fit=crop',
+    'fish': 'https://images.unsplash.com/photo-1544943910-4c1dc44aab44?w=400&h=400&fit=crop',
+    'ready_to_cook': 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=400&fit=crop',
+    'family_pack': 'https://images.unsplash.com/photo-1529042410759-befb1204b468?w=400&h=400&fit=crop',
+    'seafood': 'https://images.unsplash.com/photo-1559181567-c3190ca9959b?w=400&h=400&fit=crop',
+    'prawns': 'https://images.unsplash.com/photo-1565680018434-b513d5e5fd47?w=400&h=400&fit=crop'
+  };
+  return placeholders[category] || placeholders['chicken'];
 }
 
 function getUsableProductImages(item) {
@@ -3658,15 +3668,10 @@ function getUsableProductImages(item) {
   if (Array.isArray(item?.images)) candidates.push(...item.images);
   if (typeof item?.img === 'string' && item.img.trim()) candidates.push(item.img.trim());
 
-  // Prefer local/same-origin assets. Ignore legacy Unsplash catalog URLs.
-  const localImages = candidates.filter(url =>
-    typeof url === 'string' &&
-    url.trim() &&
-    !/^https?:\/\/images\.unsplash\.com\//i.test(url) &&
-    !/^https?:\/\/source\.unsplash\.com\//i.test(url)
-  );
-
-  return localImages.length ? localImages : [getCategoryPlaceholder(item?.cat)];
+  // Keep product-specific images from the catalog first. If a product has no
+  // stored image, use the original category fallback used by the app.
+  const validImages = candidates.filter(url => typeof url === 'string' && url.trim());
+  return validImages.length ? validImages : [getCategoryPlaceholder(item?.cat)];
 }
 
 // Reusable product card HTML generator
@@ -3675,7 +3680,7 @@ function renderProductCardHTML(item, isBestSeller = false) {
   const save = Math.round(((mrp - item.price) / mrp) * 100);
   const qty = CART[item.code] || 0;
   const oos = !item.inStock;
-  // Use reliable/local product images; legacy Unsplash URLs are ignored.
+  // Preserve the original catalog image behavior.
   const usableImages = getUsableProductImages(item);
   const finalImageUrl = usableImages[0] || getCategoryPlaceholder(item.cat);
   
