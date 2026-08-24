@@ -1,0 +1,272 @@
+/* MeatPe UI v6 — non-home screens only
+   Home screen is intentionally untouched. This layer brings all secondary screens
+   (location, orders, profile, product, basket, wallet, settings, etc.) into one
+   modern mobile-app design system. */
+:root{
+  --v6-green:#18a66a;
+  --v6-green-dark:#0f8b57;
+  --v6-green-soft:#eaf9f2;
+  --v6-bg:#f6f8f7;
+  --v6-card:#ffffff;
+  --v6-text:#111827;
+  --v6-muted:#718078;
+  --v6-border:#e1e8e4;
+  --v6-danger:#ef4444;
+  --v6-shadow:0 5px 18px rgba(17,24,39,.07);
+}
+
+/* Only secondary screens — never touch Home */
+.screen:not(#screen-home){
+  background:var(--v6-bg)!important;
+  color:var(--v6-text)!important;
+  font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif!important;
+}
+.screen:not(#screen-home) *{font-family:inherit}
+.screen:not(#screen-home) button{font-weight:650}
+
+/* Shared page header */
+.screen:not(#screen-home) .screen-header{
+  position:sticky!important;
+  top:0!important;
+  z-index:100!important;
+  min-height:64px!important;
+  padding:10px 14px!important;
+  background:rgba(255,255,255,.97)!important;
+  border-bottom:1px solid var(--v6-border)!important;
+  box-shadow:0 2px 12px rgba(17,24,39,.05)!important;
+  backdrop-filter:blur(12px)!important;
+  display:flex!important;
+  align-items:center!important;
+}
+.screen:not(#screen-home) .screen-title{
+  color:var(--v6-text)!important;
+  font-size:18px!important;
+  font-weight:850!important;
+  letter-spacing:-.2px!important;
+}
+.screen:not(#screen-home) .back-btn{
+  width:40px!important;height:40px!important;
+  border:1px solid var(--v6-border)!important;
+  background:#fff!important;
+  color:var(--v6-text)!important;
+  border-radius:13px!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  font-size:20px!important;
+  box-shadow:0 2px 8px rgba(17,24,39,.05)!important;
+  margin-right:10px!important;
+}
+
+/* Generic content blocks */
+.screen:not(#screen-home) .card,
+.screen:not(#screen-home) .section-card,
+.screen:not(#screen-home) .settings-card,
+.screen:not(#screen-home) .menu-card,
+.screen:not(#screen-home) .wallet-card,
+.screen:not(#screen-home) .order-card,
+.screen:not(#screen-home) .address-card{
+  background:var(--v6-card)!important;
+  border:1px solid var(--v6-border)!important;
+  border-radius:18px!important;
+  box-shadow:var(--v6-shadow)!important;
+}
+
+/* Address/location screen */
+#screen-location,
+#screen-address,
+#screen-location-picker,
+#locationScreen,
+.location-screen{
+  background:var(--v6-bg)!important;
+}
+
+/* Catch common dynamically-created location containers without touching Home */
+.screen:not(#screen-home) [class*="location-header"],
+.screen:not(#screen-home) [class*="address-header"]{
+  background:#fff!important;
+  color:var(--v6-text)!important;
+  border-bottom:1px solid var(--v6-border)!important;
+}
+
+.screen:not(#screen-home) [class*="location"] input,
+.screen:not(#screen-home) [class*="address"] input,
+.screen:not(#screen-home) [class*="search"] input{
+  background:#fff!important;
+  color:var(--v6-text)!important;
+  border:1px solid var(--v6-border)!important;
+  border-radius:15px!important;
+  min-height:48px!important;
+  outline:none!important;
+}
+.screen:not(#screen-home) [class*="location"] input:focus,
+.screen:not(#screen-home) [class*="address"] input:focus,
+.screen:not(#screen-home) [class*="search"] input:focus{
+  border-color:#55c995!important;
+  box-shadow:0 0 0 3px rgba(24,166,106,.10)!important;
+}
+
+/* Location/action buttons */
+.screen:not(#screen-home) [class*="current-location"],
+.screen:not(#screen-home) [class*="use-location"],
+.screen:not(#screen-home) [class*="detect-location"]{
+  background:#fff!important;
+  color:var(--v6-green)!important;
+  border:1.5px solid var(--v6-green)!important;
+  border-radius:15px!important;
+  box-shadow:none!important;
+}
+.screen:not(#screen-home) [class*="location"] button,
+.screen:not(#screen-home) [class*="address"] button{
+  border-radius:13px!important;
+}
+
+/* Saved-address rows: make them look like a modern delivery app */
+.screen:not(#screen-home) [class*="saved-address"],
+.screen:not(#screen-home) [class*="address-item"],
+.screen:not(#screen-home) [class*="saved-item"],
+.screen:not(#screen-home) [class*="address-row"]{
+  background:#fff!important;
+  border:1px solid var(--v6-border)!important;
+  border-radius:17px!important;
+  box-shadow:0 3px 12px rgba(17,24,39,.055)!important;
+  margin-bottom:10px!important;
+}
+
+/* Generic green primary actions */
+.screen:not(#screen-home) .btn-accent,
+.screen:not(#screen-home) .checkout-btn,
+.screen:not(#screen-home) .coupon-apply-btn,
+.screen:not(#screen-home) .filter-apply-btn,
+.screen:not(#screen-home) .pd-add-btn button,
+.screen:not(#screen-home) [class*="primary-btn"],
+.screen:not(#screen-home) [class*="primary-button"],
+.screen:not(#screen-home) [class*="confirm-btn"],
+.screen:not(#screen-home) [class*="save-btn"],
+.screen:not(#screen-home) [class*="continue-btn"]{
+  background:linear-gradient(135deg,var(--v6-green),var(--v6-green-dark))!important;
+  color:#fff!important;
+  border:0!important;
+  border-radius:13px!important;
+  min-height:46px!important;
+  box-shadow:0 5px 14px rgba(24,166,106,.18)!important;
+}
+
+/* Secondary buttons */
+.screen:not(#screen-home) [class*="secondary-btn"],
+.screen:not(#screen-home) [class*="outline-btn"],
+.screen:not(#screen-home) [class*="cancel-btn"]{
+  background:#fff!important;
+  color:var(--v6-text)!important;
+  border:1px solid var(--v6-border)!important;
+  border-radius:13px!important;
+  min-height:44px!important;
+}
+
+/* Orders */
+.screen:not(#screen-home) .order-card{
+  padding:15px!important;
+  margin:0 12px 10px!important;
+  border-radius:18px!important;
+}
+.screen:not(#screen-home) .order-card-top{margin-bottom:10px!important}
+.screen:not(#screen-home) .order-id{font-weight:850!important;color:var(--v6-text)!important}
+
+/* Profile */
+.screen:not(#screen-home) .profile-top{
+  background:#fff!important;
+  margin:12px!important;
+  padding:22px 14px!important;
+  border:1px solid var(--v6-border)!important;
+  border-radius:20px!important;
+  box-shadow:var(--v6-shadow)!important;
+}
+.screen:not(#screen-home) .avatar{
+  width:76px!important;height:76px!important;
+  background:linear-gradient(135deg,var(--v6-green),var(--v6-green-dark))!important;
+  box-shadow:0 0 0 5px var(--v6-green-soft)!important;
+}
+.screen:not(#screen-home) .profile-name{font-size:19px!important;font-weight:850!important}
+.screen:not(#screen-home) .profile-phone{color:var(--v6-muted)!important}
+
+/* Wallet */
+.screen:not(#screen-home) .wallet-card{
+  margin:12px!important;
+  background:linear-gradient(145deg,#123f2d,#18a66a)!important;
+  border:0!important;
+  color:#fff!important;
+  border-radius:20px!important;
+  box-shadow:0 10px 24px rgba(15,139,87,.20)!important;
+}
+
+/* Product details / basket */
+.screen:not(#screen-home) .pd-add-btn button,
+.screen:not(#screen-home) .add-to-cart,
+.screen:not(#screen-home) .add-btn{
+  background:var(--v6-green)!important;
+  color:#fff!important;
+  border:0!important;
+  border-radius:13px!important;
+}
+.screen:not(#screen-home) .stepper{
+  border-color:var(--v6-green)!important;
+  border-radius:12px!important;
+  overflow:hidden!important;
+}
+.screen:not(#screen-home) .step-btn{background:var(--v6-green)!important;color:#fff!important}
+
+/* Forms */
+.screen:not(#screen-home) input,
+.screen:not(#screen-home) textarea,
+.screen:not(#screen-home) select{
+  background:#fff!important;
+  color:var(--v6-text)!important;
+  border:1px solid var(--v6-border)!important;
+  border-radius:13px!important;
+  min-height:46px;
+}
+.screen:not(#screen-home) textarea{padding:12px!important}
+.screen:not(#screen-home) label{color:#52605a!important;font-weight:700!important}
+
+/* Chips / tabs */
+.screen:not(#screen-home) .payment-tab,
+.screen:not(#screen-home) [class*="tab-btn"],
+.screen:not(#screen-home) [class*="filter-chip"]{
+  background:#fff!important;
+  color:#52605a!important;
+  border:1px solid var(--v6-border)!important;
+  border-radius:12px!important;
+}
+.screen:not(#screen-home) .payment-tab.active,
+.screen:not(#screen-home) [class*="tab-btn"].active,
+.screen:not(#screen-home) [class*="filter-chip"].active{
+  background:var(--v6-green-soft)!important;
+  color:var(--v6-green-dark)!important;
+  border-color:#65d2a3!important;
+}
+
+/* Modals / overlays used by secondary flows */
+.screen:not(#screen-home) [class*="modal"],
+.screen:not(#screen-home) [class*="dialog"],
+.screen:not(#screen-home) [class*="sheet"]{
+  border-radius:22px!important;
+}
+
+/* Shared bottom nav remains identical to Home */
+.bottom-nav{
+  background:rgba(255,255,255,.98)!important;
+  border-top:1px solid var(--v6-border)!important;
+  box-shadow:0 -5px 18px rgba(17,24,39,.06)!important;
+}
+.nav-btn{color:#87918d!important;font-weight:650!important}
+.nav-btn.active{color:var(--v6-green)!important}
+.nav-btn.active .nav-icon{background:var(--v6-green-soft)!important;color:var(--v6-green)!important}
+
+/* Active-order strip */
+#activeOrderStrip{
+  background:#fff!important;
+  border-top:1px solid var(--v6-border)!important;
+  box-shadow:0 -5px 18px rgba(17,24,39,.06)!important;
+}
+
+@media(min-width:768px){
+  .screen:not(#screen-home) .screen-header{padding-left:22px!important;padding-right:22px!important}
+}
