@@ -175,6 +175,27 @@ input,textarea{font:inherit;color:inherit}
 .nav-btn:not(.active) .nav-icon svg {
   stroke: var(--muted);
 }
+
+/* 3D Cart Button */
+.nav-cart-3d {
+  background: linear-gradient(135deg, rgba(230,57,70,0.1) 0%, rgba(255,107,107,0.05) 100%);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 12px rgba(230,57,70,0.15), inset 0 1px 0 rgba(255,255,255,0.2);
+  border: 1px solid rgba(230,57,70,0.1);
+  border-bottom: none;
+  margin-top: -4px;
+  transform: translateY(-2px);
+}
+
+.nav-cart-3d .nav-icon svg {
+  stroke: var(--accent);
+  filter: drop-shadow(0 1px 2px rgba(230,57,70,0.3));
+}
+
+.nav-cart-3d:active {
+  transform: translateY(0px) scale(0.95);
+  box-shadow: 0 -2px 6px rgba(230,57,70,0.1), inset 0 1px 0 rgba(255,255,255,0.1);
+}
 .nav-badge{
   position:absolute;
   top:8px;
@@ -1327,13 +1348,13 @@ input,textarea{font:inherit;color:inherit}
           </div>
         </button>
         <div style="display:flex;align-items:center;gap:6px">
-          <!-- Wallet balance - wallet icon SVG -->
+          <!-- Wallet balance - modern wallet icon SVG -->
           <button onclick="showScreen('screen-wallet')" title="Wallet"
             style="display:flex;align-items:center;gap:4px;background:none;border:none;padding:6px;cursor:pointer;color:var(--text)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-              <path d="M1 10h22"></path>
-              <circle cx="17" cy="15" r="3"></circle>
+              <path d="M19 7V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1"/>
+              <path d="M22 12v4h-4a2 2 0 0 1 0-4h4Z"/>
+              <circle cx="18" cy="14" r="1"/>
             </svg>
             <span id="topWalletBal" style="font-size:12px;font-weight:700">₹0</span>
           </button>
@@ -1345,10 +1366,10 @@ input,textarea{font:inherit;color:inherit}
             </svg>
             <span id="notifBadge" style="display:none;position:absolute;top:2px;right:2px;width:8px;height:8px;background:#ef4444;border-radius:50%"></span>
           </button>
-          <!-- Profile - user icon SVG -->
+          <!-- Profile - user icon in rounded box -->
           <button onclick="navTo('screen-profile','nav-profile')" title="Profile"
-            style="width:36px;height:36px;background:var(--accent);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;cursor:pointer" id="topProfileBtn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            style="width:36px;height:36px;background:var(--bg-alt);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s ease" id="topProfileBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
@@ -1367,9 +1388,13 @@ input,textarea{font:inherit;color:inherit}
           onblur="hideSearchSuggestionsDelayed()"
           autocomplete="off"/>
         <button class="voice-search-btn" id="voiceSearchBtn" onclick="startVoiceSearch()" title="Voice search" style="border:none;background:none;cursor:pointer;padding:4px;color:var(--muted);display:flex;align-items:center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="1" width="6" height="12" rx="3"></rect><path d="M5 10a7 7 0 0 0 14 0"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2c1.1 0 2 .9 2 2v6c0 1.1-.9 2-2 2s-2-.9-2-2V4c0-1.1.9-2 2-2Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" x2="12" y1="19" y2="22"/>
+            <line x1="8" x2="16" y1="22" y2="22"/>
+          </svg>
         </button>
-        <span style="font-size:16px;cursor:pointer" onclick="clearSearch()">✕</span>
       </div>
       
       <!-- Search Suggestions Dropdown -->
@@ -2376,7 +2401,7 @@ input,textarea{font:inherit;color:inherit}
       </span>
       <span>Home</span>
     </button>
-    <button class="nav-btn" id="nav-profile" onclick="showScreen('screen-basket')" style="position:relative">
+    <button class="nav-btn nav-cart-3d" id="nav-profile" onclick="showScreen('screen-basket')" style="position:relative">
       <span class="nav-icon">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
