@@ -437,6 +437,107 @@ input,textarea{font:inherit;color:inherit}
   font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;padding:0 4px;
   box-shadow:0 2px 8px rgba(230,57,70,0.35);border:2px solid var(--card)}
+/* ── Hero Banner Slideshow ── */
+.hero-banner-container{
+  margin:16px 14px 20px;
+  position:relative;
+  height:160px;
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+  box-shadow:var(--shadow-md);
+}
+.hero-banner-slider{
+  position:relative;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+}
+.hero-slide{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:20px 24px;
+  opacity:0;
+  transform:translateX(100%);
+  transition:all .5s cubic-bezier(.4,0,.2,1);
+}
+.hero-slide.active{
+  opacity:1;
+  transform:translateX(0);
+}
+.hero-slide.prev{
+  transform:translateX(-100%);
+}
+.hero-content{
+  flex:1;
+  z-index:2;
+}
+.hero-text h2{
+  font-size:20px;
+  font-weight:800;
+  line-height:1.2;
+  color:#fff;
+  margin-bottom:4px;
+  text-shadow:0 2px 8px rgba(0,0,0,0.3);
+}
+.hero-offer{
+  display:flex;
+  align-items:baseline;
+  gap:6px;
+  margin-top:8px;
+}
+.offer-label{
+  font-size:12px;
+  font-weight:600;
+  color:rgba(255,255,255,0.9);
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+.offer-value{
+  font-size:24px;
+  font-weight:900;
+  color:#fff;
+  text-shadow:0 2px 8px rgba(0,0,0,0.3);
+}
+.hero-image{
+  width:80px;
+  height:80px;
+  position:relative;
+  z-index:1;
+  border-radius:12px;
+  overflow:hidden;
+  background:rgba(255,255,255,0.15);
+  backdrop-filter:blur(10px);
+}
+.hero-image img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.hero-dots{
+  position:absolute;
+  bottom:12px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:8px;
+  z-index:3;
+}
+.hero-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:rgba(255,255,255,0.5);
+  cursor:pointer;
+  transition:all .3s ease;
+}
+.hero-dot.active{
+  background:#fff;
+  transform:scale(1.25);
+}
+
 .search-bar{
   margin:20px 20px 24px;
   display:flex;
@@ -476,74 +577,110 @@ input,textarea{font:inherit;color:inherit}
   border-radius:50%;
 }
 .voice-search-btn:active{transform:scale(.9);background:var(--accent-light)}
-.hero-banner{
-  margin:0 20px 28px;
-  background:linear-gradient(135deg, #E63946 0%, #FF6B6B 85%, #FFB3BA 100%);
-  border-radius:28px;
-  padding:32px 24px;
-  border:none;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  overflow:hidden;
-  position:relative;
-  box-shadow:0 8px 32px rgba(230,57,70,0.25);
+/* Hero Banner Slideshow */
+.hero-banner-container {
+  margin: 0 20px 28px;
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(230,57,70,0.25);
 }
-.hero-banner::before{
-  content:'';
-  position:absolute;
-  top:-50%;
-  right:-30%;
-  width:200px;
-  height:200px;
-  background:radial-gradient(circle,rgba(255,255,255,.15) 0%,transparent 70%);
-  border-radius:50%;
+
+.hero-banner-slider {
+  position: relative;
+  height: 160px;
+  overflow: hidden;
 }
-.hero-banner::after{
-  content:'';
-  position:absolute;
-  bottom:-40%;
-  left:-20%;
-  width:150px;
-  height:150px;
-  background:radial-gradient(circle,rgba(255,255,255,.1) 0%,transparent 70%);
-  border-radius:50%;
+
+.hero-slide {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+  border-radius: 24px;
 }
-.hero-txt{z-index:1;position:relative}
-.hero-txt h3{
-  font-size:22px;
-  font-weight:700;
-  line-height:1.2;
-  margin-bottom:8px;
-  letter-spacing:-0.02em;
-  color:#fff;
+
+.hero-slide.active {
+  opacity: 1;
 }
-.hero-txt p{
-  color:rgba(255,255,255,0.9);
-  font-size:14px;
-  font-weight:500;
-  line-height:1.4;
+
+.hero-content {
+  flex: 1;
+  z-index: 2;
 }
-.hero-pill{
-  background:rgba(255,255,255,0.2);
-  color:#fff;
-  font-size:11px;
-  font-weight:700;
-  padding:6px 12px;
-  border-radius:20px;
-  margin-bottom:12px;
-  display:inline-block;
-  backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,0.3);
-  letter-spacing:0.5px;
-  text-transform:uppercase;
+
+.hero-text h2 {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #fff;
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
 }
-.hero-emoji-big{
-  font-size:64px;
-  line-height:1;
-  filter:drop-shadow(0 4px 16px rgba(0,0,0,0.2));
-  z-index:1;
-  position:relative;
+
+.hero-offer {
+  margin-top: 12px;
+}
+
+.offer-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.9);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.offer-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.hero-image {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 120px;
+  height: 120px;
+  z-index: 1;
+}
+
+.hero-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+}
+
+.hero-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 3;
+}
+
+.hero-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.hero-dot.active {
+  background: #fff;
+  transform: scale(1.2);
 }
 .cat-strip{display:flex;gap:16px;overflow-x:auto;padding:0 20px 24px;scrollbar-width:none}
 .cat-strip::-webkit-scrollbar{display:none}
@@ -1441,17 +1578,65 @@ input,textarea{font:inherit;color:inherit}
       <!-- Store Closed Banner -->
       <div id="storeClosedBanner" style="display:none;margin:0 14px 12px;background:linear-gradient(135deg,#991b1b,#7f1d1d);border-radius:14px;padding:14px 16px;color:#fff;border:1px solid #dc2626"></div>
 
-      <div class="hero-banner" id="heroBannerEl">
-        <div class="hero-txt">
-          <div class="chip-badge">⚡ NOW OPEN</div>
-          <h3>Premium Fresh Meat</h3>
-          <p>Delivered in 25-35 min · Free cleaning</p>
-          <div class="hero-pill">Free cleaning + cutting</div>
+      <!-- Hero Banner Slideshow -->
+      <div class="hero-banner-container">
+        <div class="hero-banner-slider" id="heroBannerSlider">
+          <div class="hero-slide active" style="background: linear-gradient(135deg, #E63946 0%, #FF6B6B 85%, #FFB3BA 100%);">
+            <div class="hero-content">
+              <div class="hero-text">
+                <h2>Crazy offer</h2>
+                <h2>just for you!</h2>
+                <div class="hero-offer">
+                  <span class="offer-label">Flat</span>
+                  <span class="offer-value">40% OFF!</span>
+                </div>
+              </div>
+            </div>
+            <div class="hero-image">
+              <img src="/photos/meat-stack.jpg" alt="Fresh Meat" onerror="this.style.display='none'">
+            </div>
+          </div>
+          
+          <div class="hero-slide" style="background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 85%, #C4B5FD 100%);">
+            <div class="hero-content">
+              <div class="hero-text">
+                <h2>Fresh Daily</h2>
+                <h2>Premium Quality!</h2>
+                <div class="hero-offer">
+                  <span class="offer-label">Up to</span>
+                  <span class="offer-value">30% OFF!</span>
+                </div>
+              </div>
+            </div>
+            <div class="hero-image">
+              <img src="/photos/fresh-meat.jpg" alt="Fresh Meat" onerror="this.style.display='none'">
+            </div>
+          </div>
+          
+          <div class="hero-slide" style="background: linear-gradient(135deg, #F59E0B 0%, #FBD38D 85%, #FEF3C7 100%);">
+            <div class="hero-content">
+              <div class="hero-text">
+                <h2>Free Delivery</h2>
+                <h2>on orders ₹499+</h2>
+                <div class="hero-offer">
+                  <span class="offer-label">Save</span>
+                  <span class="offer-value">₹50!</span>
+                </div>
+              </div>
+            </div>
+            <div class="hero-image">
+              <img src="/photos/delivery.jpg" alt="Fast Delivery" onerror="this.style.display='none'">
+            </div>
+          </div>
         </div>
-        <div class="hero-emoji-big">🥩</div>
+        
+        <!-- Banner Dots -->
+        <div class="hero-dots">
+          <span class="hero-dot active" data-slide="0"></span>
+          <span class="hero-dot" data-slide="1"></span>
+          <span class="hero-dot" data-slide="2"></span>
+        </div>
       </div>
-
-      <div style="overflow-x:auto;display:flex;gap:10px;padding:0 14px 12px;scrollbar-width:none" id="offerBannersEl"></div>
 
       <div class="cat-strip" id="catStrip">
         <div class="cat-chip active" data-cat="all" onclick="filterCat('all',this)">
@@ -11279,3 +11464,100 @@ body {
 </body>
 </html>
 
+
+<script>
+// ═══ Hero Banner Slideshow ═══
+let currentSlide = 0;
+let heroSlideInterval;
+
+function initHeroBanner() {
+  const slides = document.querySelectorAll('.hero-slide');
+  const dots = document.querySelectorAll('.hero-dot');
+  
+  if (slides.length === 0) return;
+  
+  // Auto-advance slides every 4 seconds
+  heroSlideInterval = setInterval(() => {
+    nextHeroSlide();
+  }, 4000);
+  
+  // Add click handlers to dots
+  dots.forEach((dot, index) => {
+    dot.addEventListener('click', () => {
+      goToHeroSlide(index);
+    });
+  });
+  
+  // Touch/swipe support
+  let startX = 0;
+  let endX = 0;
+  const slider = document.getElementById('heroBannerSlider');
+  
+  slider.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+  });
+  
+  slider.addEventListener('touchend', (e) => {
+    endX = e.changedTouches[0].clientX;
+    handleSwipe();
+  });
+  
+  function handleSwipe() {
+    const threshold = 50;
+    if (startX - endX > threshold) {
+      nextHeroSlide(); // Swipe left - next slide
+    } else if (endX - startX > threshold) {
+      prevHeroSlide(); // Swipe right - previous slide  
+    }
+  }
+}
+
+function goToHeroSlide(index) {
+  const slides = document.querySelectorAll('.hero-slide');
+  const dots = document.querySelectorAll('.hero-dot');
+  
+  if (index < 0 || index >= slides.length) return;
+  
+  // Reset interval
+  clearInterval(heroSlideInterval);
+  heroSlideInterval = setInterval(() => {
+    nextHeroSlide();
+  }, 4000);
+  
+  // Update slides
+  slides.forEach((slide, i) => {
+    slide.classList.remove('active', 'prev');
+    if (i === index) {
+      slide.classList.add('active');
+    } else if (i < index) {
+      slide.classList.add('prev');
+    }
+  });
+  
+  // Update dots
+  dots.forEach((dot, i) => {
+    dot.classList.toggle('active', i === index);
+  });
+  
+  currentSlide = index;
+}
+
+function nextHeroSlide() {
+  const slides = document.querySelectorAll('.hero-slide');
+  const nextIndex = (currentSlide + 1) % slides.length;
+  goToHeroSlide(nextIndex);
+}
+
+function prevHeroSlide() {
+  const slides = document.querySelectorAll('.hero-slide');
+  const prevIndex = (currentSlide - 1 + slides.length) % slides.length;
+  goToHeroSlide(prevIndex);
+}
+
+// Initialize hero banner when DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initHeroBanner);
+} else {
+  initHeroBanner();
+}
+</script>
