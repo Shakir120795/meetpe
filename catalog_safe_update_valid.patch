@@ -1,0 +1,131 @@
+--- a/src/data/catalog.js
++++ b/src/data/catalog.js
+@@ -1,11 +1,121 @@
+-function updateItem(code, patch) {
++function isMeaningfullyEmpty(value) {
++  if (value === undefined || value === null) return true;
++  if (typeof value === 'string') return value.trim() === '';
++  if (Array.isArray(value)) return value.length === 0;
++  if (typeof value === 'object') return Object.keys(value).length === 0;
++  return false;
++}
++
++/**
++ * Safe partial update.
++ * Only intentionally changed values replace existing values.
++ * Empty values from a redesigned/admin UI do not erase saved data.
++ * Unknown/future fields are preserved.
++ * Use patch.__clearFields when a field must intentionally be cleared.
++ */
++function updateItem(code, patch = {}) {
+   const items = readCatalog();
+-  const idx = items.findIndex(i => i.code.toUpperCase() === String(code).toUpperCase());
+-  if (idx === -1) return { ok: false, error: 'Item not found' };
+-  const merged = { ...items[idx], ...patch, code: items[idx].code }; // code is immutable
++  const idx = items.findIndex(
++    i => i.code.toUpperCase() === String(code).toUpperCase()
++  );
++
++  if (idx === -1) {
++    return { ok: false, error: 'Item not found' };
++  }
++
++  const existing = items[idx];
++  const incoming =
++    patch && typeof patch === 'object' ? { ...patch } : {};
++
++  const clearFields = new Set(
++    Array.isArray(incoming.__clearFields)
++      ? incoming.__clearFields.map(String)
++      : []
++  );
++
++  delete incoming.__clearFields;
++
++  const protectedFields = [
++    'description',
++    'images',
++    'img',
++    'weightOptions',
++    'nutritionInfo',
++    'storageTips',
++    'cutTypes',
++    'boneOptions',
++    'freshnessGuarantee',
++    'returnPolicy'
++  ];
++
++  for (const field of protectedFields) {
++    if (!Object.prototype.hasOwnProperty.call(incoming, field)) continue;
++    if (clearFields.has(field)) continue;
++
++    if (
++      isMeaningfullyEmpty(incoming[field]) &&
++      !isMeaningfullyEmpty(existing[field])
++    ) {
++      delete incoming[field];
++    }
++  }
++
++  for (const field of ['name', 'unit', 'cat']) {
++    if (
++      Object.prototype.hasOwnProperty.call(incoming, field) &&
++      typeof incoming[field] === 'string' &&
++      incoming[field].trim() === '' &&
++      existing[field] !== undefined
++    ) {
++      delete incoming[field];
++    }
++  }
++
++  if (
++    Object.prototype.hasOwnProperty.call(incoming, 'price') &&
++    (incoming.price === '' ||
++      incoming.price === null ||
++      incoming.price === undefined)
++  ) {
++    delete incoming.price;
++  }
++
++  const merged = {
++    ...existing,
++    ...incoming,
++    code: existing.code
++  };
++
+   const v = validateItem(merged);
+-  if (!v.ok) return { ok: false, error: v.errors.join('; ') };
+-  items[idx] = v.item;
++
++  if (!v.ok) {
++    return {
++      ok: false,
++      error: v.errors.join('; ')
++    };
++  }
++
++  const updated = {
++    ...existing
++  };
++
++  for (const [key, value] of Object.entries(v.item)) {
++    updated[key] = value;
++  }
++
++  for (const [key, value] of Object.entries(incoming)) {
++    if (key !== 'code') {
++      updated[key] = value;
++    }
++  }
++
++  updated.code = existing.code;
++
++  items[idx] = updated;
+   writeCatalog(items);
+-  return { ok: true, item: v.item };
++
++  return {
++    ok: true,
++    item: updated
++  };
+ }

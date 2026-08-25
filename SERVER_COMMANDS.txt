@@ -1,0 +1,46 @@
+=================================================
+🚀 COPY-PASTE YE COMMANDS SERVER PE
+=================================================
+
+# Step 1: Make script executable and run
+chmod +x fix-server.sh && ./fix-server.sh
+
+=================================================
+AGAR SCRIPT FAIL HO TO YE MANUAL COMMANDS:
+=================================================
+
+# 1. Backup
+cp public/index.html public/index.html.backup.$(date +%Y%m%d_%H%M%S)
+
+# 2. Delete all CSS files
+find public -name "*.css" -type f -delete
+
+# 3. Force pull latest code
+git stash
+git pull origin main --force
+
+# 4. Restart PM2
+pm2 flush
+pm2 restart all
+pm2 status
+
+# 5. Clear Nginx cache (if applicable)
+sudo systemctl reload nginx
+
+=================================================
+PHONE/BROWSER PE YE KARO (IMPORTANT!):
+=================================================
+
+MOBILE APP:
+1. Force close app (swipe from recent apps)
+2. Go to Settings → Apps → NOW → Storage
+3. Click "Clear Cache" 
+4. Reopen app
+
+BROWSER:
+1. Press Ctrl+Shift+Delete (Cmd+Shift+Delete on Mac)
+2. Select "Cached images and files"
+3. Click Clear
+4. Hard refresh: Ctrl+Shift+R (Cmd+Shift+R on Mac)
+
+=================================================

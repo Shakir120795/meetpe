@@ -203,6 +203,9 @@ function addToCart(code) {
   saveCart();
   refreshCardActions();
   toast(`Added: ${item.name}`, 'success');
+  
+  // Animate cart button
+  animateCartButton();
 }
 function changeQty(code, delta) {
   const item = CART.find(c => c.code === code);
@@ -237,6 +240,22 @@ function updateCartBadge() {
     el.textContent = n;
     el.style.display = show ? 'flex' : 'none';
   });
+}
+
+// Animate cart button when item is added
+function animateCartButton() {
+  const cartBtn = document.getElementById('nav-profile');
+  if (cartBtn) {
+    cartBtn.classList.remove('animate');
+    // Force reflow
+    cartBtn.offsetHeight;
+    cartBtn.classList.add('animate');
+    
+    // Remove animation class after animation completes
+    setTimeout(() => {
+      cartBtn.classList.remove('animate');
+    }, 400);
+  }
 }
 
 // ===== Drawer rendering =====
