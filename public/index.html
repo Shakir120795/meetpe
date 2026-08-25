@@ -437,14 +437,15 @@ input,textarea{font:inherit;color:inherit}
   font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;padding:0 4px;
   box-shadow:0 2px 8px rgba(230,57,70,0.35);border:2px solid var(--card)}
-/* ── Hero Banner Slideshow (New Design Like Offer Banner) ── */
+/* ── Hero Banner (Exact Screenshot Match) ── */
 .hero-banner-container{
   margin:16px 14px 20px;
   position:relative;
-  height:200px; /* Increased height from 160px */
-  border-radius:var(--radius-lg);
+  height:220px;
+  border-radius:20px;
   overflow:hidden;
-  box-shadow:var(--shadow-md);
+  box-shadow:0 4px 20px rgba(0,0,0,0.12);
+  background:#FFFFFF;
 }
 .hero-banner-slider{
   position:relative;
@@ -457,12 +458,11 @@ input,textarea{font:inherit;color:inherit}
   inset:0;
   display:flex;
   align-items:center;
-  padding:20px;
+  padding:24px 20px;
   opacity:0;
   transform:translateX(100%);
   transition:all .5s cubic-bezier(.4,0,.2,1);
-  background:#fff;
-  border:1px solid var(--border);
+  background:#FFFFFF;
 }
 .hero-slide.active{
   opacity:1;
@@ -473,88 +473,110 @@ input,textarea{font:inherit;color:inherit}
 }
 .hero-content{
   flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  position:relative;
   z-index:2;
   padding-right:16px;
 }
 .hero-badge{
   display:inline-block;
-  background:var(--accent);
-  color:#fff;
-  font-size:10px;
-  font-weight:700;
+  background:#10B981;
+  color:#FFFFFF;
+  font-size:11px;
+  font-weight:800;
   text-transform:uppercase;
-  letter-spacing:0.5px;
-  padding:4px 8px;
-  border-radius:4px;
-  margin-bottom:8px;
+  letter-spacing:0.8px;
+  padding:6px 12px;
+  border-radius:8px;
+  margin-bottom:12px;
+  width:fit-content;
+  box-shadow:0 2px 8px rgba(16,185,129,0.3);
 }
 .hero-text h2{
-  font-size:22px;
+  font-size:24px;
   font-weight:800;
   line-height:1.2;
-  color:var(--text);
-  margin-bottom:4px;
+  color:#1A1A1A;
+  margin-bottom:2px;
+  letter-spacing:-0.02em;
+  font-family:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',system-ui,sans-serif;
 }
 .hero-text p{
   font-size:14px;
-  color:var(--muted);
-  margin-bottom:12px;
+  color:#6B7280;
+  margin-bottom:16px;
   line-height:1.4;
+  font-weight:500;
 }
 .hero-features{
   display:flex;
   flex-wrap:wrap;
-  gap:4px;
-  margin-bottom:12px;
+  gap:8px;
+  margin-bottom:16px;
 }
 .hero-feature{
-  font-size:10px;
-  background:var(--bg-alt);
-  color:var(--muted);
+  font-size:11px;
+  font-weight:600;
+  color:#374151;
+  background:#F3F4F6;
   padding:4px 8px;
   border-radius:6px;
-  font-weight:600;
+  border:1px solid #E5E7EB;
 }
 .hero-btn{
-  background:var(--accent);
-  color:#fff;
+  background:#10B981;
+  color:#FFFFFF;
   border:none;
-  padding:10px 20px;
-  border-radius:8px;
-  font-size:14px;
+  padding:14px 20px;
+  border-radius:12px;
+  font-size:15px;
   font-weight:700;
   cursor:pointer;
   transition:all .2s ease;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  width:fit-content;
+  box-shadow:0 4px 12px rgba(16,185,129,0.3);
+  letter-spacing:0.02em;
 }
 .hero-btn:active{
   transform:scale(0.96);
 }
 .hero-image-container{
-  width:140px;
-  height:140px;
+  width:180px;
+  height:180px;
   position:relative;
   z-index:1;
-  border-radius:12px;
-  overflow:hidden;
-  background:var(--bg-alt);
   flex-shrink:0;
+  background:transparent;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:visible;
 }
 .hero-image-container img{
-  width:100%;
-  height:100%;
+  width:160px;
+  height:160px;
   object-fit:cover;
+  border-radius:16px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.1);
 }
 .hero-quality-badge{
   position:absolute;
   top:8px;
   right:8px;
   background:#10B981;
-  color:#fff;
+  color:#FFFFFF;
   font-size:10px;
-  font-weight:700;
-  padding:4px 8px;
-  border-radius:6px;
-  z-index:2;
+  font-weight:800;
+  padding:6px 10px;
+  border-radius:8px;
+  z-index:3;
+  box-shadow:0 2px 8px rgba(16,185,129,0.4);
+  border:2px solid #FFFFFF;
 }
 .hero-dots{
   position:absolute;
@@ -571,11 +593,12 @@ input,textarea{font:inherit;color:inherit}
   border-radius:50%;
   background:rgba(0,0,0,0.3);
   cursor:pointer;
-  transition:all .3s ease;
+  transition:all 0.3s ease;
 }
 .hero-dot.active{
-  background:var(--accent);
-  transform:scale(1.25);
+  background:#10B981;
+  transform:scale(1.2);
+  box-shadow:0 2px 6px rgba(16,185,129,0.4);
 }
 
 /* ── Offer Banners ── */
@@ -638,16 +661,6 @@ input,textarea{font:inherit;color:inherit}
   justify-content:center;
   font-size:28px;
   z-index:2;
-}
-
-/* ── Category Chips (Round Design) ── */
-.cat-strip{
-  display:flex;
-  gap:12px;
-  padding:0 14px 20px;
-  overflow-x:auto;
-  scroll-behavior:smooth;
-  -webkit-overflow-scrolling:touch;
 }
 
 /* ── Category Chips (Round Circles Only) ── */
@@ -757,18 +770,19 @@ input,textarea{font:inherit;color:inherit}
   border-radius:50%;
 }
 .voice-search-btn:active{transform:scale(.9);background:var(--accent-light)}
-/* Hero Banner Slideshow */
+/* Hero Banner Slideshow - Updated Design */
 .hero-banner-container {
-  margin: 0 20px 28px;
+  margin: 16px 14px 20px;
   position: relative;
-  border-radius: 24px;
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(230,57,70,0.25);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  height: 220px;
 }
 
 .hero-banner-slider {
   position: relative;
-  height: 160px;
+  height: 100%;
   overflow: hidden;
 }
 
@@ -779,10 +793,11 @@ input,textarea{font:inherit;color:inherit}
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px;
+  padding: 24px 20px;
   opacity: 0;
   transition: opacity 0.5s ease-in-out;
-  border-radius: 24px;
+  border-radius: 20px;
+  background: #FFFFFF;
 }
 
 .hero-slide.active {
@@ -792,14 +807,15 @@ input,textarea{font:inherit;color:inherit}
 .hero-content {
   flex: 1;
   z-index: 2;
+  padding-right: 16px;
 }
 
 .hero-text h2 {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 800;
   line-height: 1.2;
-  color: #fff;
-  margin-bottom: 4px;
+  color: #1A1A1A;
+  margin-bottom: 2px;
   letter-spacing: -0.02em;
 }
 
@@ -810,7 +826,7 @@ input,textarea{font:inherit;color:inherit}
 .offer-label {
   font-size: 12px;
   font-weight: 500;
-  color: rgba(255,255,255,0.9);
+  color: #6B7280;
   display: block;
   margin-bottom: 2px;
 }
@@ -818,17 +834,17 @@ input,textarea{font:inherit;color:inherit}
 .offer-value {
   font-size: 24px;
   font-weight: 800;
-  color: #fff;
+  color: #10B981;
   letter-spacing: -0.02em;
 }
 
 .hero-image {
   position: absolute;
-  right: 16px;
+  right: 20px;
   top: 50%;
   transform: translateY(-50%);
-  width: 120px;
-  height: 120px;
+  width: 160px;
+  height: 160px;
   z-index: 1;
 }
 
@@ -837,6 +853,7 @@ input,textarea{font:inherit;color:inherit}
   height: 100%;
   object-fit: cover;
   border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
 }
 
 .hero-dots {
@@ -853,52 +870,17 @@ input,textarea{font:inherit;color:inherit}
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.4);
+  background: rgba(0,0,0,0.3);
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .hero-dot.active {
-  background: #fff;
+  background: #10B981;
   transform: scale(1.2);
+  box-shadow: 0 2px 6px rgba(16,185,129,0.4);
 }
-.cat-strip{display:flex;gap:16px;overflow-x:auto;padding:0 20px 24px;scrollbar-width:none}
-.cat-strip::-webkit-scrollbar{display:none}
-.cat-chip{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:8px;
-  padding:16px 20px;
-  background:var(--card);
-  border:2px solid var(--border);
-  border-radius:20px;
-  font-size:13px;
-  font-weight:600;
-  white-space:nowrap;
-  transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor:pointer;
-  min-width:80px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.04);
-}
-.cat-chip .chip-icon{
-  font-size:28px;
-  filter:drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-  transition:transform .2s ease;
-}
-.cat-chip:hover{
-  transform:translateY(-4px);
-  box-shadow:0 8px 24px rgba(0,0,0,0.08);
-}
-.cat-chip.active{
-  border-color:var(--accent);
-  background:var(--accent-light);
-  color:var(--accent);
-  box-shadow:0 4px 20px rgba(230,57,70,0.2);
-  transform:translateY(-2px);
-}
-.cat-chip.active .chip-icon{transform:scale(1.1)}
-.cat-chip:active{transform:scale(0.95)}
+
 .section-title{
   font-size:22px;
   font-weight:700;
@@ -1759,136 +1741,26 @@ input,textarea{font:inherit;color:inherit}
       <!-- Store Closed Banner -->
       <div id="storeClosedBanner" style="display:none;margin:0 14px 12px;background:linear-gradient(135deg,#991b1b,#7f1d1d);border-radius:14px;padding:14px 16px;color:#fff;border:1px solid #dc2626"></div>
 
-      <!-- Hero Banner Slideshow -->
-      <div class="hero-banner-container">
+      <!-- Hero Banner Slideshow (Dynamic) -->
+      <div class="hero-banner-container" id="heroBannerContainer">
         <div class="hero-banner-slider" id="heroBannerSlider">
-          <div class="hero-slide active">
-            <div class="hero-content">
-              <div class="hero-badge">100% GUARANTEED</div>
-              <div class="hero-text">
-                <h2>Farm Fresh Meat,</h2>
-                <h2>Delivered to You</h2>
-                <p>Halal • Hygienic • Trusted<br>AI ensures best quality</p>
-              </div>
-              <div class="hero-features">
-                <span class="hero-feature">⚡ 15 Min Delivery</span>
-                <span class="hero-feature">❄️ Sub-Zero Cold Chain</span>
-                <span class="hero-feature">✅ 100% Halal Certified</span>
-                <span class="hero-feature">🚫 No Added Hormones</span>
-              </div>
-              <button class="hero-btn">Order Now →</button>
-            </div>
-            <div class="hero-image-container">
-              <img src="/photos/meat-stack.jpg" alt="Fresh Meat" onerror="this.style.display='none'">
-              <div class="hero-quality-badge">99.4% Excellent</div>
-            </div>
-          </div>
-          
-          <div class="hero-slide">
-            <div class="hero-content">
-              <div class="hero-badge">FRESH DAILY</div>
-              <div class="hero-text">
-                <h2>Premium Quality</h2>
-                <h2>Just for You!</h2>
-                <p>Farm-fresh • Temperature controlled<br>Delivered in 30 minutes</p>
-              </div>
-              <div class="hero-features">
-                <span class="hero-feature">🌿 Farm Fresh</span>
-                <span class="hero-feature">🔪 Expert Cut</span>
-                <span class="hero-feature">📦 Safe Packaging</span>
-                <span class="hero-feature">⭐ Premium Grade</span>
-              </div>
-              <button class="hero-btn">Shop Now →</button>
-            </div>
-            <div class="hero-image-container">
-              <img src="/photos/fresh-meat.jpg" alt="Premium Meat" onerror="this.style.display='none'">
-              <div class="hero-quality-badge">Grade A+</div>
-            </div>
-          </div>
-          
-          <div class="hero-slide">
-            <div class="hero-content">
-              <div class="hero-badge">LIMITED OFFER</div>
-              <div class="hero-text">
-                <h2>Free Delivery</h2>
-                <h2>on orders ₹499+</h2>
-                <p>Save delivery charges<br>Fresh meat at your doorstep</p>
-              </div>
-              <div class="hero-features">
-                <span class="hero-feature">🚚 Free Delivery</span>
-                <span class="hero-feature">💰 Save ₹50</span>
-                <span class="hero-feature">⏰ 30 Min Delivery</span>
-                <span class="hero-feature">🎯 No Extra Cost</span>
-              </div>
-              <button class="hero-btn">Order Now →</button>
-            </div>
-            <div class="hero-image-container">
-              <img src="/photos/delivery.jpg" alt="Fast Delivery" onerror="this.style.display='none'">
-              <div class="hero-quality-badge">FREE</div>
-            </div>
-          </div>
+          <!-- Dynamic content will be loaded here by renderDynamicHeroBanners() -->
         </div>
         
-        <!-- Banner Dots -->
-        <div class="hero-dots">
-          <span class="hero-dot active" data-slide="0"></span>
-          <span class="hero-dot" data-slide="1"></span>
-          <span class="hero-dot" data-slide="2"></span>
+        <!-- Banner Dots (Dynamic) -->
+        <div class="hero-dots" id="heroBannerDots">
+          <!-- Dynamic dots will be loaded here -->
         </div>
       </div>
 
-      <!-- Offer Banners -->
+      <!-- Offer Banners (Dynamic) -->
       <div class="offer-banners-container" id="offerBannersContainer">
-        <div class="offer-banner" style="background: linear-gradient(135deg, #10B981 0%, #34D399 100%);">
-          <div class="offer-banner-content">
-            <div class="offer-banner-label">Free Delivery</div>
-            <div class="offer-banner-title">On orders above</div>
-            <div class="offer-banner-subtitle">₹499</div>
-          </div>
-          <div class="offer-banner-icon">🛵</div>
-        </div>
-        
-        <div class="offer-banner" style="background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);">
-          <div class="offer-banner-content">
-            <div class="offer-banner-label">First Order Offer</div>
-            <div class="offer-banner-title">Flat 20% OFF</div>
-            <div class="offer-banner-subtitle">Use Code: NOW20</div>
-          </div>
-          <div class="offer-banner-icon">🥩</div>
-        </div>
+        <!-- Dynamic content will be loaded here by renderDynamicOfferBanners() -->
       </div>
 
+      <!-- Categories (Dynamic Round Circles Only) -->
       <div class="cat-strip" id="catStrip">
-        <div class="cat-chip active" data-cat="all" onclick="filterCat('all',this)">
-          <div class="cat-chip-icon">
-            <span class="emoji">🍖</span>
-          </div>
-          <div class="cat-chip-label">All</div>
-        </div>
-        <div class="cat-chip" data-cat="chicken" onclick="filterCat('chicken',this)">
-          <div class="cat-chip-icon">
-            <span class="emoji">🐔</span>
-          </div>
-          <div class="cat-chip-label">Chicken</div>
-        </div>
-        <div class="cat-chip" data-cat="mutton" onclick="filterCat('mutton',this)">
-          <div class="cat-chip-icon">
-            <span class="emoji">🐐</span>
-          </div>
-          <div class="cat-chip-label">Mutton</div>
-        </div>
-        <div class="cat-chip" data-cat="fish" onclick="filterCat('fish',this)">
-          <div class="cat-chip-icon">
-            <span class="emoji">🐟</span>
-          </div>
-          <div class="cat-chip-label">Fish</div>
-        </div>
-        <div class="cat-chip" data-cat="ready_to_cook" onclick="filterCat('ready_to_cook',this)">
-          <div class="cat-chip-icon">
-            <span class="emoji">🔥</span>
-          </div>
-          <div class="cat-chip-label">Ready to Cook</div>
-        </div>
+        <!-- Dynamic content will be loaded here by renderDynamicCategories() -->
       </div>
 
       <!-- Best Sellers Section -->
@@ -11803,24 +11675,140 @@ async function loadBannersAndCategories() {
         renderDynamicHeroBanners(data.settings.banners?.heroSlideshow);
         renderDynamicOfferBanners(data.settings.banners?.offerBanners);
         renderDynamicCategories(data.settings.categories);
+      } else {
+        console.warn('API returned invalid data, using fallback');
+        loadFallbackData();
       }
+    } else {
+      console.warn('API request failed, using fallback');
+      loadFallbackData();
     }
   } catch(e) {
-    console.log('Using default banners and categories');
+    console.log('API not available, using fallback banners and categories');
+    loadFallbackData();
   }
+}
+
+// Fallback data for testing without backend
+function loadFallbackData() {
+  const fallbackData = {
+    banners: {
+      heroSlideshow: {
+        enabled: true,
+        autoplaySpeed: 4,
+        height: 220,
+        slides: [
+          {
+            title1: 'Farm Fresh Meat,',
+            title2: 'Delivered to You',
+            badge: '100% GUARANTEED',
+            buttonText: 'Order Now →',
+            subtitle: 'Halal • Hygienic • Trusted',
+            subtitle2: 'AI ensures best quality',
+            features: ['⚡ 15 Min Delivery', '❄️ Sub-Zero Cold Chain', '✅ 100% Halal Certified', '🚫 No Added Hormones'],
+            backgroundColor: '#FFFFFF',
+            textColor: '#1A1A1A',
+            badgeColor: '#E63946',
+            buttonColor: '#E63946',
+            subtitleColor: '#6B7280',
+            qualityBadgeColor: '#10B981',
+            height: 220,
+            titleSize: 24,
+            subtitleSize: 14,
+            buttonSize: 15,
+            imageWidth: 180,
+            imageHeight: 180,
+            image: '/photos/meat-stack.jpg',
+            qualityBadgeText: '99.4% Excellent',
+            enabled: true
+          },
+          {
+            title1: 'Premium Quality',
+            title2: 'Just for You!',
+            badge: 'FRESH DAILY',
+            buttonText: 'Shop Now →',
+            subtitle: 'Farm-fresh • Temperature controlled',
+            subtitle2: 'Delivered in 30 minutes',
+            features: ['🌿 Farm Fresh', '🔪 Expert Cut', '📦 Safe Packaging', '⭐ Premium Grade'],
+            backgroundColor: '#FFFFFF',
+            textColor: '#1A1A1A',
+            badgeColor: '#8B5CF6',
+            buttonColor: '#8B5CF6',
+            subtitleColor: '#6B7280',
+            qualityBadgeColor: '#10B981',
+            height: 220,
+            titleSize: 24,
+            subtitleSize: 14,
+            buttonSize: 15,
+            imageWidth: 180,
+            imageHeight: 180,
+            image: '/photos/fresh-meat.jpg',
+            qualityBadgeText: 'Grade A+',
+            enabled: true
+          }
+        ]
+      },
+      offerBanners: {
+        enabled: true,
+        banners: [
+          {
+            label: 'Free Delivery',
+            title: 'On orders above',
+            subtitle: '₹499',
+            backgroundColor: '#10B981',
+            textColor: '#FFFFFF',
+            icon: '🛵',
+            width: 280,
+            height: 100,
+            iconSize: 28,
+            labelSize: 10,
+            titleSize: 16,
+            subtitleSize: 12,
+            enabled: true
+          },
+          {
+            label: 'First Order Offer',
+            title: 'Flat 20% OFF',
+            subtitle: 'Use Code: NOW20',
+            backgroundColor: '#F59E0B',
+            textColor: '#FFFFFF',
+            icon: '🥩',
+            width: 280,
+            height: 100,
+            iconSize: 28,
+            labelSize: 10,
+            titleSize: 16,
+            subtitleSize: 12,
+            enabled: true
+          }
+        ]
+      }
+    },
+    categories: [
+      { id: 'all', name: 'All', icon: '🍖', image: '', size: 48, labelSize: 12, activeColor: '#E63946', order: 0, enabled: true },
+      { id: 'chicken', name: 'Chicken', icon: '🐔', image: '', size: 48, labelSize: 12, activeColor: '#E63946', order: 1, enabled: true },
+      { id: 'mutton', name: 'Mutton', icon: '🐐', image: '', size: 48, labelSize: 12, activeColor: '#E63946', order: 2, enabled: true },
+      { id: 'fish', name: 'Fish', icon: '🐟', image: '', size: 48, labelSize: 12, activeColor: '#E63946', order: 3, enabled: true },
+      { id: 'ready_to_cook', name: 'Ready to Cook', icon: '🔥', image: '', size: 48, labelSize: 12, activeColor: '#E63946', order: 4, enabled: true }
+    ]
+  };
+  
+  renderDynamicHeroBanners(fallbackData.banners.heroSlideshow);
+  renderDynamicOfferBanners(fallbackData.banners.offerBanners);
+  renderDynamicCategories(fallbackData.categories);
 }
 
 function renderDynamicHeroBanners(heroSlideshow) {
   if (!heroSlideshow || heroSlideshow.enabled === false) return;
   
   const slider = document.getElementById('heroBannerSlider');
-  const dotsContainer = document.querySelector('.hero-dots');
+  const dotsContainer = document.getElementById('heroBannerDots');
   
   if (!slider || !heroSlideshow.slides || heroSlideshow.slides.length === 0) return;
   
   // Update height if specified
   if (heroSlideshow.height) {
-    document.querySelector('.hero-banner-container').style.height = heroSlideshow.height + 'px';
+    document.getElementById('heroBannerContainer').style.height = heroSlideshow.height + 'px';
   }
   
   const enabledSlides = heroSlideshow.slides.filter(slide => slide.enabled !== false);
@@ -11830,23 +11818,23 @@ function renderDynamicHeroBanners(heroSlideshow) {
   slider.innerHTML = '';
   dotsContainer.innerHTML = '';
   
-  // Render slides with new design
+  // Render slides with new design matching screenshot
   slider.innerHTML = enabledSlides.map((slide, index) => `
-    <div class="hero-slide ${index === 0 ? 'active' : ''}" style="background: ${slide.backgroundColor || '#ffffff'};">
+    <div class="hero-slide ${index === 0 ? 'active' : ''}" style="background: ${slide.backgroundColor || '#FFFFFF'};">
       <div class="hero-content">
-        <div class="hero-badge" style="background: ${slide.badgeColor || '#E63946'};">${slide.badge || '100% GUARANTEED'}</div>
+        <div class="hero-badge" style="background: ${slide.badgeColor || '#10B981'};">${slide.badge || '100% GUARANTEED'}</div>
         <div class="hero-text" style="color: ${slide.textColor || '#1A1A1A'};">
-          <h2 style="font-size: ${slide.titleSize || 22}px;">${slide.title1 || ''}</h2>
-          <h2 style="font-size: ${slide.titleSize || 22}px;">${slide.title2 || ''}</h2>
+          <h2 style="font-size: ${slide.titleSize || 24}px;">${slide.title1 || ''}</h2>
+          <h2 style="font-size: ${slide.titleSize || 24}px;">${slide.title2 || ''}</h2>
           <p style="font-size: ${slide.subtitleSize || 14}px; color: ${slide.subtitleColor || '#6B7280'};">${slide.subtitle || ''}<br>${slide.subtitle2 || ''}</p>
         </div>
         <div class="hero-features">
           ${(slide.features || []).map(feature => `<span class="hero-feature">${feature}</span>`).join('')}
         </div>
-        <button class="hero-btn" style="background: ${slide.buttonColor || '#E63946'}; font-size: ${slide.buttonSize || 14}px;">${slide.buttonText || 'Order Now →'}</button>
+        <button class="hero-btn" style="background: ${slide.buttonColor || '#10B981'}; font-size: ${slide.buttonSize || 15}px;">${slide.buttonText || 'Order Now →'}</button>
       </div>
-      <div class="hero-image-container" style="width: ${slide.imageWidth || 140}px; height: ${slide.imageHeight || 140}px;">
-        ${slide.image ? `<img src="${slide.image}" alt="Hero Image">` : ''}
+      <div class="hero-image-container" style="width: ${slide.imageWidth || 180}px; height: ${slide.imageHeight || 180}px;">
+        ${slide.image ? `<img src="${slide.image}" alt="Hero Image" onerror="this.style.display='none'">` : ''}
         <div class="hero-quality-badge" style="background: ${slide.qualityBadgeColor || '#10B981'};">${slide.qualityBadgeText || '99.4%'}</div>
       </div>
     </div>
@@ -11891,11 +11879,11 @@ function renderDynamicOfferBanners(offerBanners) {
   
   container.style.display = 'flex';
   container.innerHTML = enabledBanners.map(banner => `
-    <div class="offer-banner" style="background: ${banner.gradient || banner.backgroundColor || 'linear-gradient(135deg, #10B981 0%, #34D399 100%)'}; flex: 0 0 ${banner.width || 280}px; height: ${banner.height || 100}px;">
+    <div class="offer-banner" style="background: ${banner.backgroundColor || '#10B981'}; flex: 0 0 ${banner.width || 280}px; height: ${banner.height || 100}px; color: ${banner.textColor || '#FFFFFF'};">
       <div class="offer-banner-content">
-        <div class="offer-banner-label" style="font-size: ${banner.labelSize || 10}px;">${banner.label || ''}</div>
-        <div class="offer-banner-title" style="font-size: ${banner.titleSize || 16}px;">${banner.title || ''}</div>
-        <div class="offer-banner-subtitle" style="font-size: ${banner.subtitleSize || 12}px;">${banner.subtitle || ''}</div>
+        <div class="offer-banner-label" style="font-size: ${banner.labelSize || 10}px; color: ${banner.textColor || '#FFFFFF'};">${banner.label || ''}</div>
+        <div class="offer-banner-title" style="font-size: ${banner.titleSize || 16}px; color: ${banner.textColor || '#FFFFFF'};">${banner.title || ''}</div>
+        <div class="offer-banner-subtitle" style="font-size: ${banner.subtitleSize || 12}px; color: ${banner.textColor || '#FFFFFF'};">${banner.subtitle || ''}</div>
       </div>
       <div class="offer-banner-icon" style="font-size: ${banner.iconSize || 28}px;">${banner.icon || '🎯'}</div>
     </div>
@@ -11915,10 +11903,10 @@ function renderDynamicCategories(categories) {
   
   catStrip.innerHTML = enabledCategories.map((cat, index) => `
     <div class="cat-chip ${index === 0 ? 'active' : ''}" data-cat="${cat.id}" onclick="filterCat('${cat.id}',this)">
-      <div class="cat-chip-icon" style="width: ${cat.size || 48}px; height: ${cat.size || 48}px;">
-        ${cat.image ? `<img src="${cat.image}" alt="${cat.name}" style="width: ${(cat.size || 48) - 8}px; height: ${(cat.size || 48) - 8}px;">` : `<span class="emoji" style="font-size: ${(cat.size || 48) * 0.5}px;">${cat.icon || '🥘'}</span>`}
+      <div class="cat-chip-icon" style="width: ${cat.size || 48}px; height: ${cat.size || 48}px; border-color: ${index === 0 ? (cat.activeColor || '#E63946') : '#E5E7EB'}; background: ${index === 0 ? (cat.activeColor || '#E63946') : '#F3F4F6'};">
+        ${cat.image ? `<img src="${cat.image}" alt="${cat.name}" style="width: ${(cat.size || 48) - 8}px; height: ${(cat.size || 48) - 8}px; border-radius: 50%;">` : `<span class="emoji" style="font-size: ${(cat.size || 48) * 0.5}px; color: ${index === 0 ? '#FFFFFF' : '#374151'};">${cat.icon || '🥘'}</span>`}
       </div>
-      <div class="cat-chip-label" style="font-size: ${cat.labelSize || 12}px;">${cat.name || 'Category'}</div>
+      <div class="cat-chip-label" style="font-size: ${cat.labelSize || 12}px; color: ${index === 0 ? (cat.activeColor || '#E63946') : 'var(--text)'};">${cat.name || 'Category'}</div>
     </div>
   `).join('');
 }
