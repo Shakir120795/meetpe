@@ -437,7 +437,7 @@ input,textarea{font:inherit;color:inherit}
   font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;padding:0 4px;
   box-shadow:0 2px 8px rgba(230,57,70,0.35);border:2px solid var(--card)}
-/* ── Hero Banner Slideshow ── */
+/* ── Hero Banner Slideshow (New Design Like Offer Banner) ── */
 .hero-banner-container{
   margin:16px 14px 20px;
   position:relative;
@@ -457,11 +457,12 @@ input,textarea{font:inherit;color:inherit}
   inset:0;
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  padding:20px 24px;
+  padding:20px;
   opacity:0;
   transform:translateX(100%);
   transition:all .5s cubic-bezier(.4,0,.2,1);
+  background:#fff;
+  border:1px solid var(--border);
 }
 .hero-slide.active{
   opacity:1;
@@ -473,48 +474,87 @@ input,textarea{font:inherit;color:inherit}
 .hero-content{
   flex:1;
   z-index:2;
+  padding-right:16px;
 }
-.hero-text h2{
-  font-size:20px;
-  font-weight:800;
-  line-height:1.2;
+.hero-badge{
+  display:inline-block;
+  background:var(--accent);
   color:#fff;
-  margin-bottom:4px;
-  text-shadow:0 2px 8px rgba(0,0,0,0.3);
-}
-.hero-offer{
-  display:flex;
-  align-items:baseline;
-  gap:6px;
-  margin-top:8px;
-}
-.offer-label{
-  font-size:12px;
-  font-weight:600;
-  color:rgba(255,255,255,0.9);
+  font-size:10px;
+  font-weight:700;
   text-transform:uppercase;
   letter-spacing:0.5px;
+  padding:4px 8px;
+  border-radius:4px;
+  margin-bottom:8px;
 }
-.offer-value{
-  font-size:24px;
-  font-weight:900;
+.hero-text h2{
+  font-size:22px;
+  font-weight:800;
+  line-height:1.2;
+  color:var(--text);
+  margin-bottom:4px;
+}
+.hero-text p{
+  font-size:14px;
+  color:var(--muted);
+  margin-bottom:12px;
+  line-height:1.4;
+}
+.hero-features{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  margin-bottom:12px;
+}
+.hero-feature{
+  font-size:10px;
+  background:var(--bg-alt);
+  color:var(--muted);
+  padding:4px 8px;
+  border-radius:6px;
+  font-weight:600;
+}
+.hero-btn{
+  background:var(--accent);
   color:#fff;
-  text-shadow:0 2px 8px rgba(0,0,0,0.3);
+  border:none;
+  padding:10px 20px;
+  border-radius:8px;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  transition:all .2s ease;
 }
-.hero-image{
-  width:80px;
-  height:80px;
+.hero-btn:active{
+  transform:scale(0.96);
+}
+.hero-image-container{
+  width:140px;
+  height:140px;
   position:relative;
   z-index:1;
   border-radius:12px;
   overflow:hidden;
-  background:rgba(255,255,255,0.15);
-  backdrop-filter:blur(10px);
+  background:var(--bg-alt);
+  flex-shrink:0;
 }
-.hero-image img{
+.hero-image-container img{
   width:100%;
   height:100%;
   object-fit:cover;
+}
+.hero-quality-badge{
+  position:absolute;
+  top:8px;
+  right:8px;
+  background:#10B981;
+  color:#fff;
+  font-size:10px;
+  font-weight:700;
+  padding:4px 8px;
+  border-radius:6px;
+  z-index:2;
 }
 .hero-dots{
   position:absolute;
@@ -529,12 +569,12 @@ input,textarea{font:inherit;color:inherit}
   width:8px;
   height:8px;
   border-radius:50%;
-  background:rgba(255,255,255,0.5);
+  background:rgba(0,0,0,0.3);
   cursor:pointer;
   transition:all .3s ease;
 }
 .hero-dot.active{
-  background:#fff;
+  background:var(--accent);
   transform:scale(1.25);
 }
 
@@ -1722,51 +1762,69 @@ input,textarea{font:inherit;color:inherit}
       <!-- Hero Banner Slideshow -->
       <div class="hero-banner-container">
         <div class="hero-banner-slider" id="heroBannerSlider">
-          <div class="hero-slide active" style="background: linear-gradient(135deg, #E63946 0%, #FF6B6B 85%, #FFB3BA 100%);">
+          <div class="hero-slide active">
             <div class="hero-content">
+              <div class="hero-badge">100% GUARANTEED</div>
               <div class="hero-text">
-                <h2>Crazy offer</h2>
-                <h2>just for you!</h2>
-                <div class="hero-offer">
-                  <span class="offer-label">Flat</span>
-                  <span class="offer-value">40% OFF!</span>
-                </div>
+                <h2>Farm Fresh Meat,</h2>
+                <h2>Delivered to You</h2>
+                <p>Halal • Hygienic • Trusted<br>AI ensures best quality</p>
               </div>
+              <div class="hero-features">
+                <span class="hero-feature">⚡ 15 Min Delivery</span>
+                <span class="hero-feature">❄️ Sub-Zero Cold Chain</span>
+                <span class="hero-feature">✅ 100% Halal Certified</span>
+                <span class="hero-feature">🚫 No Added Hormones</span>
+              </div>
+              <button class="hero-btn">Order Now →</button>
             </div>
-            <div class="hero-image">
+            <div class="hero-image-container">
               <img src="/photos/meat-stack.jpg" alt="Fresh Meat" onerror="this.style.display='none'">
+              <div class="hero-quality-badge">99.4% Excellent</div>
             </div>
           </div>
           
-          <div class="hero-slide" style="background: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 85%, #C4B5FD 100%);">
+          <div class="hero-slide">
             <div class="hero-content">
+              <div class="hero-badge">FRESH DAILY</div>
               <div class="hero-text">
-                <h2>Fresh Daily</h2>
-                <h2>Premium Quality!</h2>
-                <div class="hero-offer">
-                  <span class="offer-label">Up to</span>
-                  <span class="offer-value">30% OFF!</span>
-                </div>
+                <h2>Premium Quality</h2>
+                <h2>Just for You!</h2>
+                <p>Farm-fresh • Temperature controlled<br>Delivered in 30 minutes</p>
               </div>
+              <div class="hero-features">
+                <span class="hero-feature">🌿 Farm Fresh</span>
+                <span class="hero-feature">🔪 Expert Cut</span>
+                <span class="hero-feature">📦 Safe Packaging</span>
+                <span class="hero-feature">⭐ Premium Grade</span>
+              </div>
+              <button class="hero-btn">Shop Now →</button>
             </div>
-            <div class="hero-image">
-              <img src="/photos/fresh-meat.jpg" alt="Fresh Meat" onerror="this.style.display='none'">
+            <div class="hero-image-container">
+              <img src="/photos/fresh-meat.jpg" alt="Premium Meat" onerror="this.style.display='none'">
+              <div class="hero-quality-badge">Grade A+</div>
             </div>
           </div>
           
-          <div class="hero-slide" style="background: linear-gradient(135deg, #F59E0B 0%, #FBD38D 85%, #FEF3C7 100%);">
+          <div class="hero-slide">
             <div class="hero-content">
+              <div class="hero-badge">LIMITED OFFER</div>
               <div class="hero-text">
                 <h2>Free Delivery</h2>
                 <h2>on orders ₹499+</h2>
-                <div class="hero-offer">
-                  <span class="offer-label">Save</span>
-                  <span class="offer-value">₹50!</span>
-                </div>
+                <p>Save delivery charges<br>Fresh meat at your doorstep</p>
               </div>
+              <div class="hero-features">
+                <span class="hero-feature">🚚 Free Delivery</span>
+                <span class="hero-feature">💰 Save ₹50</span>
+                <span class="hero-feature">⏰ 30 Min Delivery</span>
+                <span class="hero-feature">🎯 No Extra Cost</span>
+              </div>
+              <button class="hero-btn">Order Now →</button>
             </div>
-            <div class="hero-image">
+            <div class="hero-image-container">
               <img src="/photos/delivery.jpg" alt="Fast Delivery" onerror="this.style.display='none'">
+              <div class="hero-quality-badge">FREE</div>
             </div>
           </div>
         </div>
@@ -11772,21 +11830,24 @@ function renderDynamicHeroBanners(heroSlideshow) {
   slider.innerHTML = '';
   dotsContainer.innerHTML = '';
   
-  // Render slides
+  // Render slides with new design
   slider.innerHTML = enabledSlides.map((slide, index) => `
-    <div class="hero-slide ${index === 0 ? 'active' : ''}" style="background: ${slide.gradient || slide.backgroundColor || 'linear-gradient(135deg, #E63946 0%, #FF6B6B 85%, #FFB3BA 100%)'};">
+    <div class="hero-slide ${index === 0 ? 'active' : ''}" style="background: ${slide.backgroundColor || '#ffffff'};">
       <div class="hero-content">
-        <div class="hero-text">
-          <h2>${slide.title1 || ''}</h2>
-          <h2>${slide.title2 || ''}</h2>
-          <div class="hero-offer">
-            <span class="offer-label">${slide.offerLabel || ''}</span>
-            <span class="offer-value">${slide.offerValue || ''}</span>
-          </div>
+        <div class="hero-badge" style="background: ${slide.badgeColor || '#E63946'};">${slide.badge || '100% GUARANTEED'}</div>
+        <div class="hero-text" style="color: ${slide.textColor || '#1A1A1A'};">
+          <h2 style="font-size: ${slide.titleSize || 22}px;">${slide.title1 || ''}</h2>
+          <h2 style="font-size: ${slide.titleSize || 22}px;">${slide.title2 || ''}</h2>
+          <p style="font-size: ${slide.subtitleSize || 14}px; color: ${slide.subtitleColor || '#6B7280'};">${slide.subtitle || ''}<br>${slide.subtitle2 || ''}</p>
         </div>
+        <div class="hero-features">
+          ${(slide.features || []).map(feature => `<span class="hero-feature">${feature}</span>`).join('')}
+        </div>
+        <button class="hero-btn" style="background: ${slide.buttonColor || '#E63946'}; font-size: ${slide.buttonSize || 14}px;">${slide.buttonText || 'Order Now →'}</button>
       </div>
-      <div class="hero-image">
-        ${slide.image ? `<img src="${slide.image}" alt="Hero Image" onerror="this.style.display='none'">` : ''}
+      <div class="hero-image-container" style="width: ${slide.imageWidth || 140}px; height: ${slide.imageHeight || 140}px;">
+        ${slide.image ? `<img src="${slide.image}" alt="Hero Image">` : ''}
+        <div class="hero-quality-badge" style="background: ${slide.qualityBadgeColor || '#10B981'};">${slide.qualityBadgeText || '99.4%'}</div>
       </div>
     </div>
   `).join('');

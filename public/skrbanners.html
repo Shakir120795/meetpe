@@ -145,14 +145,28 @@ if (saved) { $('key').value = saved; loadData(); }
 function getKey() { const k = $('key').value.trim(); localStorage.setItem('meatpe_admin_key', k); return k; }
 
 async function loadData() {
+  const key = getKey();
+  if (!key) {
+    alert('Please enter admin key first');
+    return;
+  }
+  
   try {
-    const res = await fetch('/admin/settings');
+    const res = await fetch('/admin/settings', {
+      headers: { 'x-admin-key': key }
+    });
     const data = await res.json();
-    if (!data.ok) { alert(data.error); return; }
+    if (!data.ok) { 
+      alert(data.error || 'Failed to load settings'); 
+      return; 
+    }
     SETTINGS = data.settings;
     $('content').style.display = 'block';
     render();
-  } catch(e) { alert('Network error'); }
+  } catch(e) { 
+    console.error('Load error:', e);
+    alert('Network error - check console'); 
+  }
 }
 
 function render() {
@@ -190,38 +204,63 @@ function renderHeroSlides(slides) {
         </div>
       </div>
       <div class="field-row">
-        <div class="field"><label>Title Line 1</label><input class="hs-title1" value="${slide.title1||''}" placeholder="Crazy offer"/></div>
-        <div class="field"><label>Title Line 2</label><input class="hs-title2" value="${slide.title2||''}" placeholder="just for you!"/></div>
+        <div class="field"><label>Title Line 1</label><input class="hs-title1" value="${slide.title1||''}" placeholder="Farm Fresh Meat,"/></div>
+        <div class="field"><label>Title Line 2</label><input class="hs-title2" value="${slide.title2||''}" placeholder="Delivered to You"/></div>
       </div>
       <div class="field-row">
-        <div class="field"><label>Offer Label</label><input class="hs-offer-label" value="${slide.offerLabel||''}" placeholder="Flat"/></div>
-        <div class="field"><label>Offer Value</label><input class="hs-offer-value" value="${slide.offerValue||''}" placeholder="40% OFF!"/></div>
+        <div class="field"><label>Badge Text</label><input class="hs-badge" value="${slide.badge||''}" placeholder="100% GUARANTEED"/></div>
+        <div class="field"><label>Button Text</label><input class="hs-button-text" value="${slide.buttonText||''}" placeholder="Order Now →"/></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Subtitle Line 1</label><input class="hs-subtitle" value="${slide.subtitle||''}" placeholder="Halal • Hygienic • Trusted"/></div>
+        <div class="field"><label>Subtitle Line 2</label><input class="hs-subtitle2" value="${slide.subtitle2||''}" placeholder="AI ensures best quality"/></div>
+      </div>
+      <div class="field">
+        <label>Features (comma separated)</label>
+        <input class="hs-features" value="${(slide.features||[]).join(', ')}" placeholder="⚡ 15 Min Delivery, ❄️ Sub-Zero Cold Chain, ✅ 100% Halal Certified">
       </div>
       <div class="field-row-3">
         <div class="field">
           <label>Background Color</label>
-          <input type="color" class="hs-background-color" value="${slide.backgroundColor||'#E63946'}" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
+          <input type="color" class="hs-background-color" value="${slide.backgroundColor||'#FFFFFF'}" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
         </div>
         <div class="field">
           <label>Text Color</label>
-          <input type="color" class="hs-text-color" value="${slide.textColor||'#FFFFFF'}" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
+          <input type="color" class="hs-text-color" value="${slide.textColor||'#1A1A1A'}" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
         </div>
         <div class="field">
-          <label>Height (px)</label>
-          <input type="number" class="hs-height" value="${slide.height||200}" min="120" max="400">
+          <label>Badge Color</label>
+          <input type="color" class="hs-badge-color" value="${slide.badgeColor||'#E63946'}" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
         </div>
+      </div>
+      <div class="field-row-3">
+        <div class="field">
+          <label>Button Color</label>
+          <input type="color" class="hs-button-color" value="${slide.buttonColor||'#E63946'}" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
+        </div>
+        <div class="field">
+          <label>Subtitle Color</label>
+          <input type="color" class="hs-subtitle-color" value="${slide.subtitleColor||'#6B7280'}" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
+        </div>
+        <div class="field">
+          <label>Quality Badge Color</label>
+          <input type="color" class="hs-quality-badge-color" value="${slide.qualityBadgeColor||'#10B981'}" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
+        </div>
+      </div>
+      <div class="field-row-3">
+        <div class="field"><label>Height (px)</label><input type="number" class="hs-height" value="${slide.height||200}" min="150" max="400"></div>
+        <div class="field"><label>Title Size (px)</label><input type="number" class="hs-title-size" value="${slide.titleSize||22}" min="16" max="36"></div>
+        <div class="field"><label>Subtitle Size (px)</label><input type="number" class="hs-subtitle-size" value="${slide.subtitleSize||14}" min="12" max="20"></div>
+      </div>
+      <div class="field-row-3">
+        <div class="field"><label>Button Size (px)</label><input type="number" class="hs-button-size" value="${slide.buttonSize||14}" min="12" max="18"></div>
+        <div class="field"><label>Image Width (px)</label><input type="number" class="hs-image-width" value="${slide.imageWidth||140}" min="100" max="200"></div>
+        <div class="field"><label>Image Height (px)</label><input type="number" class="hs-image-height" value="${slide.imageHeight||140}" min="100" max="200"></div>
       </div>
       <div class="field-row">
-        <div class="field">
-          <label>Title Size (px)</label>
-          <input type="number" class="hs-title-size" value="${slide.titleSize||20}" min="12" max="36">
-        </div>
-        <div class="field">
-          <label>Offer Size (px)</label>
-          <input type="number" class="hs-offer-size" value="${slide.offerSize||24}" min="12" max="48">
-        </div>
+        <div class="field"><label>Image URL</label><input class="hs-image" value="${slide.image||''}" placeholder="/photos/meat-stack.jpg or https://..."/></div>
+        <div class="field"><label>Quality Badge Text</label><input class="hs-quality-badge-text" value="${slide.qualityBadgeText||''}" placeholder="99.4% Excellent"/></div>
       </div>
-      <div class="field"><label>Image URL</label><input class="hs-image" value="${slide.image||''}" placeholder="/photos/meat-stack.jpg or https://..."/></div>
     </div>
   `).join('');
 }
@@ -306,16 +345,27 @@ function renderCategories(categories) {
 function addHeroSlide() {
   const slides = collectHeroSlides();
   slides.push({
-    title1: 'New Offer',
-    title2: 'Just for you!',
-    offerLabel: 'Flat',
-    offerValue: '25% OFF!',
-    backgroundColor: '#E63946',
-    textColor: '#FFFFFF',
+    title1: 'Farm Fresh Meat,',
+    title2: 'Delivered to You',
+    badge: '100% GUARANTEED',
+    buttonText: 'Order Now →',
+    subtitle: 'Halal • Hygienic • Trusted',
+    subtitle2: 'AI ensures best quality',
+    features: ['⚡ 15 Min Delivery', '❄️ Sub-Zero Cold Chain', '✅ 100% Halal Certified', '🚫 No Added Hormones'],
+    backgroundColor: '#FFFFFF',
+    textColor: '#1A1A1A',
+    badgeColor: '#E63946',
+    buttonColor: '#E63946',
+    subtitleColor: '#6B7280',
+    qualityBadgeColor: '#10B981',
     height: 200,
-    titleSize: 20,
-    offerSize: 24,
+    titleSize: 22,
+    subtitleSize: 14,
+    buttonSize: 14,
+    imageWidth: 140,
+    imageHeight: 140,
     image: '/photos/meat-stack.jpg',
+    qualityBadgeText: '99.4% Excellent',
     enabled: true
   });
   renderHeroSlides(slides);
@@ -386,14 +436,25 @@ function collectHeroSlides() {
   return Array.from(cards).map(c => ({
     title1: c.querySelector('.hs-title1').value.trim(),
     title2: c.querySelector('.hs-title2').value.trim(),
-    offerLabel: c.querySelector('.hs-offer-label').value.trim(),
-    offerValue: c.querySelector('.hs-offer-value').value.trim(),
+    badge: c.querySelector('.hs-badge').value.trim(),
+    buttonText: c.querySelector('.hs-button-text').value.trim(),
+    subtitle: c.querySelector('.hs-subtitle').value.trim(),
+    subtitle2: c.querySelector('.hs-subtitle2').value.trim(),
+    features: c.querySelector('.hs-features').value.split(',').map(f => f.trim()).filter(f => f),
     backgroundColor: c.querySelector('.hs-background-color').value.trim(),
     textColor: c.querySelector('.hs-text-color').value.trim(),
+    badgeColor: c.querySelector('.hs-badge-color').value.trim(),
+    buttonColor: c.querySelector('.hs-button-color').value.trim(),
+    subtitleColor: c.querySelector('.hs-subtitle-color').value.trim(),
+    qualityBadgeColor: c.querySelector('.hs-quality-badge-color').value.trim(),
     height: parseInt(c.querySelector('.hs-height').value) || 200,
-    titleSize: parseInt(c.querySelector('.hs-title-size').value) || 20,
-    offerSize: parseInt(c.querySelector('.hs-offer-size').value) || 24,
+    titleSize: parseInt(c.querySelector('.hs-title-size').value) || 22,
+    subtitleSize: parseInt(c.querySelector('.hs-subtitle-size').value) || 14,
+    buttonSize: parseInt(c.querySelector('.hs-button-size').value) || 14,
+    imageWidth: parseInt(c.querySelector('.hs-image-width').value) || 140,
+    imageHeight: parseInt(c.querySelector('.hs-image-height').value) || 140,
     image: c.querySelector('.hs-image').value.trim(),
+    qualityBadgeText: c.querySelector('.hs-quality-badge-text').value.trim(),
     enabled: c.querySelector('.hs-enabled').checked
   }));
 }
