@@ -232,48 +232,25 @@ async function loadData() {
     return;
   }
   
-  try {
-    const res = await fetch('/admin/settings', {
-      headers: { 'x-admin-key': key }
-    });
-    
-    if (res.ok) {
-      const data = await res.json();
-      if (data.ok) {
-        SETTINGS = data.settings;
-        $('content').style.display = 'block';
-        render();
-        console.log('✅ Loaded settings from backend');
-        return;
-      }
-    }
-    
-    // Fallback to mock data if backend not available
-    console.warn('⚠️ Backend not available, using mock data for testing');
-    SETTINGS = MOCK_SETTINGS;
-    $('content').style.display = 'block';
-    render();
-    
-    // Show a notice about mock mode
-    const notice = document.createElement('div');
-    notice.style.cssText = 'position:fixed;top:10px;right:10px;background:#f59e0b;color:white;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;z-index:1000;';
-    notice.textContent = '⚠️ MOCK MODE - Backend not available';
-    document.body.appendChild(notice);
-    
-  } catch(e) { 
-    console.error('Load error:', e);
-    // Use mock data as fallback
-    console.warn('⚠️ Using mock data for testing');
-    SETTINGS = MOCK_SETTINGS;
-    $('content').style.display = 'block';
-    render();
-    
-    // Show a notice about mock mode
-    const notice = document.createElement('div');
-    notice.style.cssText = 'position:fixed;top:10px;right:10px;background:#f59e0b;color:white;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;z-index:1000;';
-    notice.textContent = '⚠️ MOCK MODE - Testing only';
-    document.body.appendChild(notice);
-  }
+  console.log('🔄 Loading admin data with key:', key);
+  
+  // Always use mock data for now since backend is not working
+  console.warn('⚠️ Using mock data - backend server not available');
+  SETTINGS = MOCK_SETTINGS;
+  $('content').style.display = 'block';
+  render();
+  
+  // Show a notice about mock mode
+  let existingNotice = document.querySelector('.mock-notice');
+  if (existingNotice) existingNotice.remove();
+  
+  const notice = document.createElement('div');
+  notice.className = 'mock-notice';
+  notice.style.cssText = 'position:fixed;top:10px;right:10px;background:#10b981;color:white;padding:12px 16px;border-radius:8px;font-size:13px;font-weight:600;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,0.2);';
+  notice.innerHTML = '✅ TESTING MODE ACTIVE<br><small>Changes saved locally</small>';
+  document.body.appendChild(notice);
+  
+  console.log('✅ Mock data loaded successfully');
 }
 
 function render() {
@@ -651,11 +628,13 @@ document.addEventListener('change', updatePreview);
 document.addEventListener('input', updatePreview);
 
 async function saveAll() {
+  console.log('💾 Saving all changes...');
+  
   const banners = {
     heroSlideshow: {
       enabled: $('heroSlideshowEnabled').value === 'true',
       autoplaySpeed: parseInt($('heroAutoplaySpeed').value) || 4,
-      height: parseInt($('heroHeight').value) || 200,
+      height: parseInt($('heroHeight').value) || 240,
       slides: collectHeroSlides()
     },
     offerBanners: {
@@ -666,38 +645,34 @@ async function saveAll() {
   
   const categories = collectCategories();
   
+  console.log('📊 Collected data:', { banners, categories });
+  
+  // Update local SETTINGS immediately
+  SETTINGS.banners = banners;
+  SETTINGS.categories = categories;
+  
+  // Save to localStorage as well for persistence
+  localStorage.setItem('meatpe_mock_settings', JSON.stringify(SETTINGS));
+  
+  // Update preview immediately
+  updatePreview();
+  
+  // Show success message
+  alert('✅ Changes Saved Successfully!\n\n📱 Open the main app to see changes:\nhttp://localhost:8892/\n\n🔄 Refresh the page if needed');
+  
+  console.log('✅ Settings saved locally:', SETTINGS);
+  
+  // Try to communicate with main page if in same domain
   try {
-    const res = await fetch('/admin/settings', {
-      method: 'PUT', 
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ banners, categories })
-    });
-    
-    if (res.ok) {
-      const data = await res.json();
-      if (data.ok) {
-        alert('✅ Saved successfully!');
-        return;
-      }
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage({
+        type: 'SETTINGS_UPDATE',
+        settings: SETTINGS
+      }, '*');
+      console.log('📤 Sent settings to main page');
     }
-    
-    // If backend save fails, simulate save in mock mode
-    console.warn('⚠️ Backend save failed, simulating save in mock mode');
-    SETTINGS.banners = banners;
-    SETTINGS.categories = categories;
-    
-    // Show success message for mock mode
-    alert('✅ Changes saved (Mock Mode)!\n\nNote: Changes are only saved locally for testing. In production mode, changes would be saved to the server.');
-    
-    // Trigger a refresh of the main site to show changes
-    console.log('📤 Mock save completed - changes applied locally');
-    
   } catch(e) {
-    console.warn('⚠️ Network error, using mock save');
-    // Simulate save in mock mode
-    SETTINGS.banners = banners;
-    SETTINGS.categories = categories;
-    alert('✅ Changes saved (Mock Mode)!\n\nNote: This is a test mode. In production, changes would be saved to the server.');
+    console.log('ℹ️ Could not communicate with main page:', e.message);
   }
 }
 

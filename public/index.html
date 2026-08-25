@@ -11684,187 +11684,212 @@ if (document.readyState === 'loading') {
 
 // ═══ Load Dynamic Content from Admin Settings ═══
 async function loadBannersAndCategories() {
+  console.log('🔄 Loading banners and categories...');
+  
+  // First try localStorage (from admin panel saves)
   try {
-    const res = await fetch('/api/settings');  // Changed from /admin/settings
+    const localSettings = localStorage.getItem('meatpe_mock_settings');
+    if (localSettings) {
+      const settings = JSON.parse(localSettings);
+      console.log('✅ Found localStorage settings:', settings);
+      if (settings.banners || settings.categories) {
+        renderDynamicHeroBanners(settings.banners?.heroSlideshow);
+        renderDynamicOfferBanners(settings.banners?.offerBanners);
+        renderDynamicCategories(settings.categories);
+        console.log('✅ Loaded settings from localStorage');
+        return;
+      }
+    }
+  } catch(e) {
+    console.warn('localStorage settings invalid:', e);
+  }
+  
+  // Try API
+  try {
+    const res = await fetch('/api/settings');
     if (res.ok) {
       const data = await res.json();
+      console.log('✅ API Response:', data);
       if (data.ok && data.settings) {
         renderDynamicHeroBanners(data.settings.banners?.heroSlideshow);
         renderDynamicOfferBanners(data.settings.banners?.offerBanners);
         renderDynamicCategories(data.settings.categories);
-      } else {
-        console.warn('API returned invalid data, using fallback');
-        loadFallbackData();
+        return;
       }
-    } else {
-      console.warn('API request failed, using fallback');
-      loadFallbackData();
     }
+    throw new Error('API failed');
   } catch(e) {
-    console.log('API not available, using fallback banners and categories');
-    loadFallbackData();
+    console.warn('⚠️ API not available, using fallback data');
+    
+    // Force immediate fallback rendering
+    const fallbackData = {
+      banners: {
+        heroSlideshow: {
+          enabled: true,
+          autoplaySpeed: 4,
+          height: 240,
+          slides: [
+            {
+              title1: 'Premium Quality',
+              title2: 'Just for You!',
+              badge: '100% GUARANTEED',
+              buttonText: 'Order Now →',
+              subtitle: 'Farm-fresh • Temperature controlled',
+              subtitle2: 'Delivered in 30 minutes',
+              features: ['⚡ Farm Fresh', '🔪 Expert Cut', '📦 Safe Packaging', '⭐ Premium Grade'],
+              backgroundColor: '#FFFFFF',
+              textColor: '#1A1A1A',
+              badgeColor: '#E63946',
+              buttonColor: '#10B981',
+              subtitleColor: '#6B7280',
+              qualityBadgeColor: '#10B981',
+              height: 240,
+              titleSize: 20,
+              subtitleSize: 12,
+              buttonSize: 13,
+              imageWidth: 160,
+              imageHeight: 160,
+              image: '/photos/1779606918730-j4gsg1.png',
+              qualityBadgeText: 'Grade A+',
+              enabled: true
+            }
+          ]
+        },
+        offerBanners: {
+          enabled: true,
+          banners: [
+            {
+              label: 'FREE DELIVERY',
+              title: 'On orders above',
+              subtitle: '₹499',
+              backgroundColor: '#10B981',
+              textColor: '#FFFFFF',
+              icon: '🛵',
+              image: '',
+              imageSize: 60,
+              width: 280,
+              height: 100,
+              iconSize: 28,
+              labelSize: 10,
+              titleSize: 16,
+              subtitleSize: 12,
+              enabled: true
+            },
+            {
+              label: 'FIRST ORDER OFFER',
+              title: 'Flat 20% OFF',
+              subtitle: 'Use Code NOW20',
+              backgroundColor: '#F59E0B',
+              textColor: '#FFFFFF',
+              icon: '🥩',
+              image: '',
+              imageSize: 60,
+              width: 280,
+              height: 100,
+              iconSize: 28,
+              labelSize: 10,
+              titleSize: 16,
+              subtitleSize: 12,
+              enabled: true
+            }
+          ]
+        }
+      },
+      categories: [
+        { id: 'chicken', name: 'Chicken', icon: '🐔', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 1, enabled: true },
+        { id: 'mutton', name: 'Mutton', icon: '🐐', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 2, enabled: true },
+        { id: 'fish', name: 'Fish', icon: '🐟', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 3, enabled: true },
+        { id: 'ready_to_cook', name: 'Ready to Cook', icon: '🔥', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 4, enabled: true }
+      ]
+    };
+    
+    // Immediate render
+    renderDynamicHeroBanners(fallbackData.banners.heroSlideshow);
+    renderDynamicOfferBanners(fallbackData.banners.offerBanners);  
+    renderDynamicCategories(fallbackData.categories);
+    
+    console.log('✅ Fallback data loaded successfully');
   }
 }
 
-// Fallback data for testing without backend
-function loadFallbackData() {
-  const fallbackData = {
-    banners: {
-      heroSlideshow: {
-        enabled: true,
-        autoplaySpeed: 4,
-        height: 220,
-        slides: [
-          {
-            title1: 'Farm Fresh Meat,',
-            title2: 'Delivered to You',
-            badge: '100% GUARANTEED',
-            buttonText: 'Order Now →',
-            subtitle: 'Halal • Hygienic • Trusted',
-            subtitle2: 'AI ensures best quality',
-            features: ['⚡ 15 Min Delivery', '❄️ Sub-Zero Cold Chain', '✅ 100% Halal Certified', '🚫 No Added Hormones'],
-            backgroundColor: '#FFFFFF',
-            textColor: '#1A1A1A',
-            badgeColor: '#E63946',
-            buttonColor: '#E63946',
-            subtitleColor: '#6B7280',
-            qualityBadgeColor: '#10B981',
-            height: 220,
-            titleSize: 24,
-            subtitleSize: 14,
-            buttonSize: 15,
-            imageWidth: 180,
-            imageHeight: 180,
-            image: '/photos/meat-stack.jpg',
-            qualityBadgeText: '99.4% Excellent',
-            enabled: true
-          },
-          {
-            title1: 'Premium Quality',
-            title2: 'Just for You!',
-            badge: 'FRESH DAILY',
-            buttonText: 'Shop Now →',
-            subtitle: 'Farm-fresh • Temperature controlled',
-            subtitle2: 'Delivered in 30 minutes',
-            features: ['🌿 Farm Fresh', '🔪 Expert Cut', '📦 Safe Packaging', '⭐ Premium Grade'],
-            backgroundColor: '#FFFFFF',
-            textColor: '#1A1A1A',
-            badgeColor: '#8B5CF6',
-            buttonColor: '#8B5CF6',
-            subtitleColor: '#6B7280',
-            qualityBadgeColor: '#10B981',
-            height: 220,
-            titleSize: 24,
-            subtitleSize: 14,
-            buttonSize: 15,
-            imageWidth: 180,
-            imageHeight: 180,
-            image: '/photos/fresh-meat.jpg',
-            qualityBadgeText: 'Grade A+',
-            enabled: true
-          }
-        ]
-      },
-      offerBanners: {
-        enabled: true,
-        banners: [
-          {
-            label: 'Free Delivery',
-            title: 'On orders above',
-            subtitle: '₹499',
-            backgroundColor: '#10B981',
-            textColor: '#FFFFFF',
-            icon: '🛵',
-            width: 280,
-            height: 100,
-            iconSize: 28,
-            labelSize: 10,
-            titleSize: 16,
-            subtitleSize: 12,
-            enabled: true
-          },
-          {
-            label: 'First Order Offer',
-            title: 'Flat 20% OFF',
-            subtitle: 'Use Code: NOW20',
-            backgroundColor: '#F59E0B',
-            textColor: '#FFFFFF',
-            icon: '🥩',
-            width: 280,
-            height: 100,
-            iconSize: 28,
-            labelSize: 10,
-            titleSize: 16,
-            subtitleSize: 12,
-            enabled: true
-          }
-        ]
-      }
-    },
-    categories: [
-      { id: 'chicken', name: 'Chicken', icon: '🐔', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 1, enabled: true },
-      { id: 'mutton', name: 'Mutton', icon: '🐐', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 2, enabled: true },
-      { id: 'fish', name: 'Fish', icon: '🐟', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 3, enabled: true },
-      { id: 'ready_to_cook', name: 'Ready to Cook', icon: '🔥', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 4, enabled: true }
-    ]
-  };
-  
-  renderDynamicHeroBanners(fallbackData.banners.heroSlideshow);
-  renderDynamicOfferBanners(fallbackData.banners.offerBanners);
-  renderDynamicCategories(fallbackData.categories);
-}
+// Listen for settings updates from admin panel
+window.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'SETTINGS_UPDATE') {
+    console.log('📥 Received settings update from admin panel');
+    const settings = event.data.settings;
+    renderDynamicHeroBanners(settings.banners?.heroSlideshow);
+    renderDynamicOfferBanners(settings.banners?.offerBanners);
+    renderDynamicCategories(settings.categories);
+  }
+});
 
 function renderDynamicHeroBanners(heroSlideshow) {
-  if (!heroSlideshow || heroSlideshow.enabled === false) return;
+  console.log('🎨 Rendering hero banners:', heroSlideshow);
+  
+  if (!heroSlideshow || heroSlideshow.enabled === false) {
+    console.log('❌ Hero slideshow disabled or not found');
+    return;
+  }
   
   const slider = document.getElementById('heroBannerSlider');
   const dotsContainer = document.getElementById('heroBannerDots');
   
-  if (!slider || !heroSlideshow.slides || heroSlideshow.slides.length === 0) return;
+  if (!slider || !dotsContainer) {
+    console.error('❌ Hero banner containers not found');
+    return;
+  }
   
-  // Update height if specified
-  if (heroSlideshow.height) {
-    document.getElementById('heroBannerContainer').style.height = heroSlideshow.height + 'px';
+  if (!heroSlideshow.slides || heroSlideshow.slides.length === 0) {
+    console.log('❌ No slides found');
+    return;
+  }
+  
+  // Update container height
+  const container = document.getElementById('heroBannerContainer');
+  if (container && heroSlideshow.height) {
+    container.style.height = heroSlideshow.height + 'px';
   }
   
   const enabledSlides = heroSlideshow.slides.filter(slide => slide.enabled !== false);
-  if (enabledSlides.length === 0) return;
+  if (enabledSlides.length === 0) {
+    console.log('❌ No enabled slides');
+    return;
+  }
   
-  // Clear current content first
+  // Clear current content
   slider.innerHTML = '';
   dotsContainer.innerHTML = '';
   
-  // Render slides with new design matching screenshot
+  console.log('✅ Rendering', enabledSlides.length, 'slides');
+  
+  // Render slides
   slider.innerHTML = enabledSlides.map((slide, index) => `
     <div class="hero-slide ${index === 0 ? 'active' : ''}" style="background: ${slide.backgroundColor || '#FFFFFF'};">
       <div class="hero-content">
-        <div class="hero-badge" style="background: ${slide.badgeColor || '#10B981'};">${slide.badge || '100% GUARANTEED'}</div>
+        ${slide.badge ? `<div class="hero-badge" style="background: ${slide.badgeColor || '#10B981'};">${slide.badge}</div>` : ''}
         <div class="hero-text" style="color: ${slide.textColor || '#1A1A1A'};">
-          <h2 style="font-size: ${slide.titleSize || 24}px;">${slide.title1 || ''}</h2>
-          <h2 style="font-size: ${slide.titleSize || 24}px;">${slide.title2 || ''}</h2>
-          <p style="font-size: ${slide.subtitleSize || 14}px; color: ${slide.subtitleColor || '#6B7280'};">${slide.subtitle || ''}<br>${slide.subtitle2 || ''}</p>
+          ${slide.title1 ? `<h2 style="font-size: ${slide.titleSize || 20}px;">${slide.title1}</h2>` : ''}
+          ${slide.title2 ? `<h2 style="font-size: ${slide.titleSize || 20}px;">${slide.title2}</h2>` : ''}
+          ${slide.subtitle || slide.subtitle2 ? `<p style="font-size: ${slide.subtitleSize || 12}px; color: ${slide.subtitleColor || '#6B7280'};">${slide.subtitle || ''}<br>${slide.subtitle2 || ''}</p>` : ''}
         </div>
-        <div class="hero-features">
-          ${(slide.features || []).map(feature => `<span class="hero-feature">${feature}</span>`).join('')}
-        </div>
-        <button class="hero-btn" style="background: ${slide.buttonColor || '#10B981'}; font-size: ${slide.buttonSize || 15}px;">${slide.buttonText || 'Order Now →'}</button>
+        ${slide.features && slide.features.length ? `<div class="hero-features">${slide.features.map(feature => `<span class="hero-feature">${feature}</span>`).join('')}</div>` : ''}
+        ${slide.buttonText ? `<button class="hero-btn" style="background: ${slide.buttonColor || '#10B981'}; font-size: ${slide.buttonSize || 13}px;">${slide.buttonText}</button>` : ''}
       </div>
-      <div class="hero-image-container" style="width: ${slide.imageWidth || 180}px; height: ${slide.imageHeight || 180}px;">
+      <div class="hero-image-container" style="width: ${slide.imageWidth || 160}px; height: ${slide.imageHeight || 160}px;">
         ${slide.image ? `<img src="${slide.image}" alt="Hero Image" onerror="this.style.display='none'">` : ''}
-        <div class="hero-quality-badge" style="background: ${slide.qualityBadgeColor || '#10B981'};">${slide.qualityBadgeText || '99.4%'}</div>
+        ${slide.qualityBadgeText ? `<div class="hero-quality-badge" style="background: ${slide.qualityBadgeColor || '#10B981'};">${slide.qualityBadgeText}</div>` : ''}
       </div>
     </div>
   `).join('');
   
   // Render dots
   dotsContainer.innerHTML = enabledSlides.map((_, index) => 
-    `<span class="hero-dot ${index === 0 ? 'active' : ''}" data-slide="${index}"></span>`
+    `<span class="hero-dot ${index === 0 ? 'active' : ''}" data-slide="${index}" onclick="goToSlide(${index})"></span>`
   ).join('');
   
-  // Update autoplay speed and restart interval
-  if (heroSlideInterval) {
-    clearInterval(heroSlideInterval);
-  }
+  // Setup autoplay
+  if (heroSlideInterval) clearInterval(heroSlideInterval);
+  
   const speed = (heroSlideshow.autoplaySpeed || 4) * 1000;
   heroSlideInterval = setInterval(() => {
     nextHeroSlide();
@@ -11873,8 +11898,7 @@ function renderDynamicHeroBanners(heroSlideshow) {
   // Reset current slide
   currentSlide = 0;
   
-  // Re-initialize hero banner with new content
-  initHeroBanner();
+  console.log('✅ Hero banner rendered successfully');
 }
 
 function renderDynamicOfferBanners(offerBanners) {
@@ -11931,10 +11955,17 @@ function renderDynamicCategories(categories) {
   `).join('');
 }
 
-// Load dynamic content on page load
+// Load dynamic content on page load - IMMEDIATE
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🚀 DOM loaded, starting immediate banner load...');
+  loadBannersAndCategories();
+});
+
+// Also try loading immediately if DOM is already ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', loadBannersAndCategories);
 } else {
+  console.log('🚀 DOM already ready, loading banners now...');
   loadBannersAndCategories();
 }
 </script>
