@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Admin — Banner Management</title>
+<title>Admin — Banner & Category Management</title>
 <link rel="icon" type="image/png" href="/logo.png"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#f3f4f6;color:#1a1a1a;padding:20px}
-.wrap{max-width:900px;margin:0 auto}
+.wrap{max-width:1000px;margin:0 auto}
 h1{font-size:24px;margin-bottom:6px}
 .sub{color:#6b7280;margin-bottom:18px;font-size:14px}
 .nav-links{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
@@ -16,23 +16,41 @@ h1{font-size:24px;margin-bottom:6px}
 .nav-links a:hover{color:#d62828;border-color:#d62828}
 .nav-links a.active{background:#d62828;color:white;border-color:#d62828}
 .section{background:white;border-radius:12px;padding:22px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.section h2{font-size:18px;margin-bottom:12px}
+.section h2{font-size:18px;margin-bottom:12px;color:#d62828}
 .field{margin-bottom:12px}
-.field label{display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:#6b7280}
-.field input,.field select{width:100%;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px}
+.field label{display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px}
+.field input,.field select,.field textarea{width:100%;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:14px}
 .field input[type="color"]{padding:4px;cursor:pointer;height:40px}
+.field input[type="file"]{padding:6px;cursor:pointer}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:10px}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:10px;position:relative}
+.card-header{display:flex;justify-content:between;align-items:center;margin-bottom:12px}
+.card-title{font-weight:700;color:#374151}
+.card-actions{display:flex;gap:8px;align-items:center}
 .btn-save{padding:12px 24px;background:#16a34a;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;width:100%;margin-top:16px}
 .btn-add{padding:8px 16px;background:#d62828;color:white;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;margin-top:10px}
 .btn-del{padding:4px 10px;background:#fee2e2;color:#ef4444;border:none;border-radius:6px;font-size:12px;cursor:pointer}
+.toggle{position:relative;display:inline-block;width:44px;height:24px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#ccc;border-radius:24px;transition:.3s}
+.toggle .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background-color:white;border-radius:50%;transition:.3s}
+.toggle input:checked + .slider{background-color:#d62828}
+.toggle input:checked + .slider:before{transform:translateX(20px)}
+.preview{margin-top:8px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12px}
+.preview-banner{height:80px;border-radius:8px;padding:12px;color:white;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.preview-hero{height:120px;border-radius:12px;padding:16px;color:white;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.category-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:12px;margin-top:12px}
+.category-preview{display:flex;flex-direction:column;align-items:center;padding:8px;border:1px solid #e5e7eb;border-radius:8px;background:white}
+.cat-icon-preview{width:48px;height:48px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;margin-bottom:4px;font-size:24px;border:2px solid #e5e7eb}
+.cat-name-preview{font-size:11px;font-weight:600;text-align:center}
 #content{display:none}
 </style>
 </head>
 <body>
 <div class="wrap">
-<h1>🎨 Banner Management</h1>
-<p class="sub">Manage home page banners. Changes reflect instantly on app.</p>
+<h1>🎨 Banner & Category Management</h1>
+<p class="sub">Manage hero banners, offer banners, and product categories. Changes reflect instantly on app.</p>
 <div class="nav-links">
 <a href="/skrdashboard.html">📊 Dashboard</a>
 <a href="/skrorders.html">📋 Orders</a>
@@ -46,36 +64,64 @@ h1{font-size:24px;margin-bottom:6px}
 </div>
 <div id="content">
 
-<!-- Hero Banner -->
+<!-- Hero Banner Slideshow -->
 <div class="section">
-<h2>🖼️ Hero Banner (Main)</h2>
-<div class="field"><label>Enabled</label><select id="heroEnabled"><option value="true">Yes</option><option value="false">No - Hide</option></select></div>
-<div class="field-row">
-<div class="field"><label>Badge Text</label><input id="heroBadge" placeholder="⚡ NOW OPEN"/></div>
-<div class="field"><label>Emoji (right side)</label><input id="heroEmoji" placeholder="🥩"/></div>
+<h2>🖼️ Hero Banner Slideshow</h2>
+<div class="field">
+  <label>Slideshow Enabled</label>
+  <select id="heroSlideshowEnabled">
+    <option value="true">Yes - Show Slideshow</option>
+    <option value="false">No - Hide Slideshow</option>
+  </select>
 </div>
-<div class="field"><label>Title</label><input id="heroTitle" placeholder="Premium Fresh Meat"/></div>
-<div class="field"><label>Subtitle</label><input id="heroSubtitle" placeholder="Delivered in 25-35 min"/></div>
-<div class="field"><label>Pill Text</label><input id="heroPill" placeholder="Free cleaning + cutting"/></div>
-<div class="field"><label>Background Style</label>
-<select id="heroGradient">
-  <option value="linear-gradient(120deg,#1a0500,#2d0a00)">Dark Orange</option>
-  <option value="linear-gradient(120deg,#0a1a2d,#1a3a5a)">Dark Blue</option>
-  <option value="linear-gradient(120deg,#1a0800,#3d1a00)">Brown Orange</option>
-  <option value="linear-gradient(120deg,#2d0a0a,#5a1a1a)">Dark Red</option>
-  <option value="linear-gradient(120deg,#004d1a,#00662d)">Dark Green</option>
-</select>
+<div class="field-row">
+  <div class="field">
+    <label>Auto-play Speed (seconds)</label>
+    <input id="heroAutoplaySpeed" type="number" value="4" min="2" max="10"/>
+  </div>
+  <div class="field">
+    <label>Height (px)</label>
+    <input id="heroHeight" type="number" value="200" min="120" max="300"/>
+  </div>
+</div>
+<div id="heroSlidesList"></div>
+<button class="btn-add" onclick="addHeroSlide()">➕ Add Slide</button>
+<div class="preview">
+  <strong>Preview:</strong>
+  <div id="heroPreview"></div>
 </div>
 </div>
 
 <!-- Offer Banners -->
 <div class="section">
-<h2>🏷️ Offer Banners (Scrollable Cards)</h2>
+<h2>🏷️ Offer Banners</h2>
+<div class="field">
+  <label>Offer Banners Enabled</label>
+  <select id="offerBannersEnabled">
+    <option value="true">Yes - Show Banners</option>
+    <option value="false">No - Hide Banners</option>
+  </select>
+</div>
 <div id="offerBannersList"></div>
 <button class="btn-add" onclick="addOfferBanner()">➕ Add Banner</button>
+<div class="preview">
+  <strong>Preview:</strong>
+  <div id="offerPreview"></div>
+</div>
 </div>
 
-<button class="btn-save" onclick="saveAll()">💾 Save Banners</button>
+<!-- Categories -->
+<div class="section">
+<h2>📂 Product Categories</h2>
+<div id="categoriesList"></div>
+<button class="btn-add" onclick="addCategory()">➕ Add Category</button>
+<div class="preview">
+  <strong>Categories Preview:</strong>
+  <div class="category-grid" id="categoryPreview"></div>
+</div>
+</div>
+
+<button class="btn-save" onclick="saveAll()">💾 Save All Changes</button>
 </div>
 </div>
 <script>
@@ -110,100 +156,305 @@ async function loadData() {
 }
 
 function render() {
-  const b = SETTINGS.banners || {};
-  const hero = b.heroBanner || {};
-  $('heroEnabled').value = hero.enabled === false ? 'false' : 'true';
-  $('heroBadge').value = hero.badge || '';
-  $('heroEmoji').value = hero.emoji || '🥩';
-  $('heroTitle').value = hero.title || '';
-  $('heroSubtitle').value = hero.subtitle || '';
-  $('heroPill').value = hero.pill || '';
-  $('heroGradient').value = hero.bgGradient || '';
-  renderOfferBanners(b.offerBanners || []);
+  const banners = SETTINGS.banners || {};
+  
+  // Hero slideshow
+  const heroSlideshow = banners.heroSlideshow || {};
+  $('heroSlideshowEnabled').value = heroSlideshow.enabled !== false ? 'true' : 'false';
+  $('heroAutoplaySpeed').value = heroSlideshow.autoplaySpeed || 4;
+  $('heroHeight').value = heroSlideshow.height || 200;
+  renderHeroSlides(heroSlideshow.slides || []);
+  
+  // Offer banners
+  const offerBanners = banners.offerBanners || {};
+  $('offerBannersEnabled').value = offerBanners.enabled !== false ? 'true' : 'false';
+  renderOfferBanners(offerBanners.banners || []);
+  
+  // Categories
+  renderCategories(SETTINGS.categories || []);
+  
+  updatePreview();
 }
 
-function renderOfferBanners(banners) {
-  $('offerBannersList').innerHTML = banners.map((b, i) => `
+function renderHeroSlides(slides) {
+  $('heroSlidesList').innerHTML = slides.map((slide, i) => `
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <strong>Banner ${i+1}</strong>
-        <div><label style="font-size:12px;margin-right:8px"><input type="checkbox" class="ob-enabled" ${b.enabled!==false?'checked':''}/> Enabled</label><button class="btn-del" onclick="removeOfferBanner(${i})">🗑️</button></div>
+      <div class="card-header">
+        <span class="card-title">Hero Slide ${i+1}</span>
+        <div class="card-actions">
+          <label class="toggle">
+            <input type="checkbox" class="hs-enabled" ${slide.enabled!==false?'checked':''}>
+            <span class="slider"></span>
+          </label>
+          <button class="btn-del" onclick="removeHeroSlide(${i})">🗑️</button>
+        </div>
       </div>
       <div class="field-row">
-        <div class="field"><label>Label</label><input class="ob-label" value="${b.label||''}"/></div>
-        <div class="field"><label>Title</label><input class="ob-title" value="${b.title||''}"/></div>
+        <div class="field"><label>Title Line 1</label><input class="hs-title1" value="${slide.title1||''}"/></div>
+        <div class="field"><label>Title Line 2</label><input class="hs-title2" value="${slide.title2||''}"/></div>
       </div>
-      <div class="field"><label>Subtitle</label><input class="ob-subtitle" value="${b.subtitle||''}"/></div>
+      <div class="field-row">
+        <div class="field"><label>Offer Label</label><input class="hs-offer-label" value="${slide.offerLabel||''}"/></div>
+        <div class="field"><label>Offer Value</label><input class="hs-offer-value" value="${slide.offerValue||''}"/></div>
+      </div>
       <div class="field-row">
         <div class="field">
-          <label>Background Style</label>
-          <select class="ob-gradient-preset">
-            <option value="linear-gradient(135deg,#1a1a1a,#333)">Dark Gray</option>
-            <option value="linear-gradient(135deg,#8B1A1A,#5a0f0f)">Dark Red</option>
-            <option value="linear-gradient(135deg,#1a0800,#3d1a00)">Orange Brown</option>
-            <option value="linear-gradient(135deg,#1a1a0a,#2d2d00)">Dark Yellow</option>
-            <option value="linear-gradient(135deg,#004d1a,#00662d)">Dark Green</option>
-            <option value="linear-gradient(135deg,#0a1a2d,#1a3a5a)">Dark Blue</option>
-            <option value="linear-gradient(135deg,#2d0a5a,#4d1a7a)">Dark Purple</option>
+          <label>Background Gradient</label>
+          <select class="hs-gradient">
+            <option value="linear-gradient(135deg, #E63946 0%, #FF6B6B 85%, #FFB3BA 100%)" ${slide.gradient === 'linear-gradient(135deg, #E63946 0%, #FF6B6B 85%, #FFB3BA 100%)' ? 'selected' : ''}>Red</option>
+            <option value="linear-gradient(135deg, #8B5CF6 0%, #A78BFA 85%, #C4B5FD 100%)" ${slide.gradient === 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 85%, #C4B5FD 100%)' ? 'selected' : ''}>Purple</option>
+            <option value="linear-gradient(135deg, #F59E0B 0%, #FBD38D 85%, #FEF3C7 100%)" ${slide.gradient === 'linear-gradient(135deg, #F59E0B 0%, #FBD38D 85%, #FEF3C7 100%)' ? 'selected' : ''}>Orange</option>
+            <option value="linear-gradient(135deg, #10B981 0%, #34D399 85%, #6EE7B7 100%)" ${slide.gradient === 'linear-gradient(135deg, #10B981 0%, #34D399 85%, #6EE7B7 100%)' ? 'selected' : ''}>Green</option>
+            <option value="linear-gradient(135deg, #3B82F6 0%, #60A5FA 85%, #93C5FD 100%)" ${slide.gradient === 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 85%, #93C5FD 100%)' ? 'selected' : ''}>Blue</option>
           </select>
         </div>
-        <div class="field">
-          <label>Label Color</label>
-          <input type="color" class="ob-color" value="${b.labelColor||'#ffffff'}"/>
-        </div>
+        <div class="field"><label>Image URL</label><input class="hs-image" value="${slide.image||''}" placeholder="/photos/meat-stack.jpg"/></div>
       </div>
     </div>
   `).join('');
 }
 
+function renderOfferBanners(banners) {
+  $('offerBannersList').innerHTML = banners.map((banner, i) => `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Offer Banner ${i+1}</span>
+        <div class="card-actions">
+          <label class="toggle">
+            <input type="checkbox" class="ob-enabled" ${banner.enabled!==false?'checked':''}>
+            <span class="slider"></span>
+          </label>
+          <button class="btn-del" onclick="removeOfferBanner(${i})">🗑️</button>
+        </div>
+      </div>
+      <div class="field-row-3">
+        <div class="field"><label>Label</label><input class="ob-label" value="${banner.label||''}"/></div>
+        <div class="field"><label>Title</label><input class="ob-title" value="${banner.title||''}"/></div>
+        <div class="field"><label>Subtitle</label><input class="ob-subtitle" value="${banner.subtitle||''}"/></div>
+      </div>
+      <div class="field-row-3">
+        <div class="field">
+          <label>Background Gradient</label>
+          <select class="ob-gradient">
+            <option value="linear-gradient(135deg, #10B981 0%, #34D399 100%)" ${banner.gradient === 'linear-gradient(135deg, #10B981 0%, #34D399 100%)' ? 'selected' : ''}>Green</option>
+            <option value="linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%)" ${banner.gradient === 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%)' ? 'selected' : ''}>Orange</option>
+            <option value="linear-gradient(135deg, #E63946 0%, #FF6B6B 100%)" ${banner.gradient === 'linear-gradient(135deg, #E63946 0%, #FF6B6B 100%)' ? 'selected' : ''}>Red</option>
+            <option value="linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)" ${banner.gradient === 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)' ? 'selected' : ''}>Purple</option>
+            <option value="linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)" ${banner.gradient === 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' ? 'selected' : ''}>Blue</option>
+          </select>
+        </div>
+        <div class="field"><label>Icon (Emoji)</label><input class="ob-icon" value="${banner.icon||''}"/></div>
+        <div class="field"><label>Width (px)</label><input class="ob-width" type="number" value="${banner.width||280}" min="200" max="400"/></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderCategories(categories) {
+  $('categoriesList').innerHTML = categories.map((cat, i) => `
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Category: ${cat.name || 'Untitled'}</span>
+        <div class="card-actions">
+          <label class="toggle">
+            <input type="checkbox" class="cat-enabled" ${cat.enabled!==false?'checked':''}>
+            <span class="slider"></span>
+          </label>
+          <button class="btn-del" onclick="removeCategory(${i})">🗑️</button>
+        </div>
+      </div>
+      <div class="field-row-3">
+        <div class="field"><label>Category ID</label><input class="cat-id" value="${cat.id||''}" placeholder="chicken"/></div>
+        <div class="field"><label>Display Name</label><input class="cat-name" value="${cat.name||''}" placeholder="Chicken"/></div>
+        <div class="field"><label>Icon/Emoji</label><input class="cat-icon" value="${cat.icon||''}" placeholder="🐔"/></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Image URL (Optional)</label><input class="cat-image" value="${cat.image||''}" placeholder="Leave empty to use emoji"/></div>
+        <div class="field"><label>Sort Order</label><input class="cat-order" type="number" value="${cat.order||i}" min="0"/></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addHeroSlide() {
+  const slides = collectHeroSlides();
+  slides.push({
+    title1: 'New Offer',
+    title2: 'Just for you!',
+    offerLabel: 'Flat',
+    offerValue: '25% OFF!',
+    gradient: 'linear-gradient(135deg, #E63946 0%, #FF6B6B 85%, #FFB3BA 100%)',
+    image: '/photos/meat-stack.jpg',
+    enabled: true
+  });
+  renderHeroSlides(slides);
+  updatePreview();
+}
+
 function addOfferBanner() {
   const banners = collectOfferBanners();
-  banners.push({ id: 'b'+Date.now(), label: 'NEW', title: 'Banner Title', subtitle: 'Description', gradient: 'linear-gradient(135deg,#1a1a1a,#333)', labelColor: '#ffffff', enabled: true });
+  banners.push({
+    label: 'Special Offer',
+    title: 'Limited Time',
+    subtitle: 'Save Now',
+    gradient: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)',
+    icon: '🎯',
+    width: 280,
+    enabled: true
+  });
   renderOfferBanners(banners);
+  updatePreview();
+}
+
+function addCategory() {
+  const categories = collectCategories();
+  categories.push({
+    id: 'new_category',
+    name: 'New Category',
+    icon: '🥘',
+    image: '',
+    order: categories.length,
+    enabled: true
+  });
+  renderCategories(categories);
+  updatePreview();
+}
+
+function removeHeroSlide(i) {
+  const slides = collectHeroSlides();
+  slides.splice(i, 1);
+  renderHeroSlides(slides);
+  updatePreview();
 }
 
 function removeOfferBanner(i) {
   const banners = collectOfferBanners();
   banners.splice(i, 1);
   renderOfferBanners(banners);
+  updatePreview();
+}
+
+function removeCategory(i) {
+  const categories = collectCategories();
+  categories.splice(i, 1);
+  renderCategories(categories);
+  updatePreview();
+}
+
+function collectHeroSlides() {
+  const cards = $('heroSlidesList').querySelectorAll('.card');
+  return Array.from(cards).map(c => ({
+    title1: c.querySelector('.hs-title1').value.trim(),
+    title2: c.querySelector('.hs-title2').value.trim(),
+    offerLabel: c.querySelector('.hs-offer-label').value.trim(),
+    offerValue: c.querySelector('.hs-offer-value').value.trim(),
+    gradient: c.querySelector('.hs-gradient').value.trim(),
+    image: c.querySelector('.hs-image').value.trim(),
+    enabled: c.querySelector('.hs-enabled').checked
+  }));
 }
 
 function collectOfferBanners() {
   const cards = $('offerBannersList').querySelectorAll('.card');
   return Array.from(cards).map(c => ({
-    id: 'b' + Math.random().toString(36).slice(2,6),
     label: c.querySelector('.ob-label').value.trim(),
     title: c.querySelector('.ob-title').value.trim(),
     subtitle: c.querySelector('.ob-subtitle').value.trim(),
-    gradient: c.querySelector('.ob-gradient-preset').value.trim(),
-    labelColor: c.querySelector('.ob-color').value.trim(),
+    gradient: c.querySelector('.ob-gradient').value.trim(),
+    icon: c.querySelector('.ob-icon').value.trim(),
+    width: parseInt(c.querySelector('.ob-width').value) || 280,
     enabled: c.querySelector('.ob-enabled').checked
   }));
 }
 
+function collectCategories() {
+  const cards = $('categoriesList').querySelectorAll('.card');
+  return Array.from(cards).map(c => ({
+    id: c.querySelector('.cat-id').value.trim(),
+    name: c.querySelector('.cat-name').value.trim(),
+    icon: c.querySelector('.cat-icon').value.trim(),
+    image: c.querySelector('.cat-image').value.trim(),
+    order: parseInt(c.querySelector('.cat-order').value) || 0,
+    enabled: c.querySelector('.cat-enabled').checked
+  })).sort((a, b) => a.order - b.order);
+}
+
+function updatePreview() {
+  // Hero Preview
+  const slides = collectHeroSlides();
+  $('heroPreview').innerHTML = slides.filter(s => s.enabled).slice(0, 1).map(slide => `
+    <div class="preview-hero" style="background: ${slide.gradient}">
+      <div>
+        <div style="font-size: 16px; font-weight: 800; margin-bottom: 2px;">${slide.title1}</div>
+        <div style="font-size: 16px; font-weight: 800; margin-bottom: 4px;">${slide.title2}</div>
+        <div style="font-size: 12px; opacity: 0.9;">${slide.offerLabel} <strong>${slide.offerValue}</strong></div>
+      </div>
+      <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center;">📷</div>
+    </div>
+  `).join('') || '<div style="color: #6b7280; text-align: center; padding: 20px;">No enabled slides</div>';
+  
+  // Offer Preview
+  const offers = collectOfferBanners();
+  $('offerPreview').innerHTML = offers.filter(o => o.enabled).map(offer => `
+    <div class="preview-banner" style="background: ${offer.gradient}; width: ${offer.width}px; display: inline-block; margin-right: 8px;">
+      <div>
+        <div style="font-size: 10px; opacity: 0.9;">${offer.label}</div>
+        <div style="font-size: 14px; font-weight: 800;">${offer.title}</div>
+        <div style="font-size: 11px; opacity: 0.8;">${offer.subtitle}</div>
+      </div>
+      <div style="font-size: 24px;">${offer.icon}</div>
+    </div>
+  `).join('') || '<div style="color: #6b7280; text-align: center; padding: 20px;">No enabled banners</div>';
+  
+  // Category Preview
+  const categories = collectCategories();
+  $('categoryPreview').innerHTML = categories.filter(c => c.enabled).map(cat => `
+    <div class="category-preview">
+      <div class="cat-icon-preview">
+        ${cat.image ? `<img src="${cat.image}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">` : cat.icon}
+      </div>
+      <div class="cat-name-preview">${cat.name}</div>
+    </div>
+  `).join('') || '<div style="color: #6b7280; text-align: center; padding: 20px;">No enabled categories</div>';
+}
+
+// Add event listeners for real-time preview updates
+document.addEventListener('change', updatePreview);
+document.addEventListener('input', updatePreview);
+
 async function saveAll() {
   const banners = {
-    heroBanner: {
-      enabled: $('heroEnabled').value !== 'false',
-      badge: $('heroBadge').value.trim(),
-      emoji: $('heroEmoji').value.trim(),
-      title: $('heroTitle').value.trim(),
-      subtitle: $('heroSubtitle').value.trim(),
-      pill: $('heroPill').value.trim(),
-      bgGradient: $('heroGradient').value.trim()
+    heroSlideshow: {
+      enabled: $('heroSlideshowEnabled').value === 'true',
+      autoplaySpeed: parseInt($('heroAutoplaySpeed').value) || 4,
+      height: parseInt($('heroHeight').value) || 200,
+      slides: collectHeroSlides()
     },
-    offerBanners: collectOfferBanners()
+    offerBanners: {
+      enabled: $('offerBannersEnabled').value === 'true',
+      banners: collectOfferBanners()
+    }
   };
+  
+  const categories = collectCategories();
+  
   try {
     const res = await fetch('/admin/settings', {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ banners })
+      method: 'PUT', 
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ banners, categories })
     });
     const data = await res.json();
-    if (data.ok) { alert('✅ Banners saved!'); SETTINGS = data.settings; }
-    else alert('Error: ' + (data.error||'Failed'));
-  } catch(e) { alert('Network error'); }
+    if (data.ok) {
+      alert('✅ Saved successfully!');
+    } else {
+      alert('❌ Error: ' + (data.error || 'Save failed'));
+    }
+  } catch(e) {
+    alert('❌ Network error');
+  }
 }
+
 </script>
 </body>
 </html>

@@ -441,7 +441,7 @@ input,textarea{font:inherit;color:inherit}
 .hero-banner-container{
   margin:16px 14px 20px;
   position:relative;
-  height:160px;
+  height:200px; /* Increased height from 160px */
   border-radius:var(--radius-lg);
   overflow:hidden;
   box-shadow:var(--shadow-md);
@@ -536,6 +536,144 @@ input,textarea{font:inherit;color:inherit}
 .hero-dot.active{
   background:#fff;
   transform:scale(1.25);
+}
+
+/* ── Offer Banners ── */
+.offer-banners-container{
+  margin:0 14px 20px;
+  display:flex;
+  gap:12px;
+  overflow-x:auto;
+  scroll-behavior:smooth;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:4px;
+}
+.offer-banners-container::-webkit-scrollbar{
+  display:none;
+}
+.offer-banner{
+  flex:0 0 280px;
+  height:100px;
+  border-radius:var(--radius-md);
+  padding:16px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  color:#fff;
+  position:relative;
+  overflow:hidden;
+  box-shadow:var(--shadow-sm);
+}
+.offer-banner-content{
+  flex:1;
+  z-index:2;
+}
+.offer-banner-label{
+  font-size:10px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  opacity:0.9;
+  margin-bottom:2px;
+}
+.offer-banner-title{
+  font-size:16px;
+  font-weight:800;
+  line-height:1.2;
+  margin-bottom:2px;
+}
+.offer-banner-subtitle{
+  font-size:12px;
+  font-weight:500;
+  opacity:0.8;
+}
+.offer-banner-icon{
+  width:60px;
+  height:60px;
+  border-radius:12px;
+  background:rgba(255,255,255,0.15);
+  backdrop-filter:blur(10px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+  z-index:2;
+}
+
+/* ── Category Chips (Round Design) ── */
+.cat-strip{
+  display:flex;
+  gap:12px;
+  padding:0 14px 20px;
+  overflow-x:auto;
+  scroll-behavior:smooth;
+  -webkit-overflow-scrolling:touch;
+}
+
+/* ── Category Chips (Round Design) ── */
+.cat-strip{
+  display:flex;
+  gap:12px;
+  padding:0 14px 20px;
+  overflow-x:auto;
+  scroll-behavior:smooth;
+  -webkit-overflow-scrolling:touch;
+}
+.cat-strip::-webkit-scrollbar{
+  display:none;
+}
+.cat-chip{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-width:70px;
+  padding:8px;
+  cursor:pointer;
+  transition:all .2s ease;
+  flex-shrink:0;
+}
+.cat-chip-icon{
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  background:var(--bg-alt);
+  border:2px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:6px;
+  transition:all .2s ease;
+  overflow:hidden;
+}
+.cat-chip-icon img{
+  width:32px;
+  height:32px;
+  object-fit:cover;
+  border-radius:50%;
+}
+.cat-chip-icon .emoji{
+  font-size:24px;
+}
+.cat-chip-label{
+  font-size:12px;
+  font-weight:600;
+  color:var(--text);
+  text-align:center;
+  line-height:1.2;
+}
+.cat-chip.active .cat-chip-icon{
+  background:var(--accent);
+  border-color:var(--accent);
+  color:#fff;
+  transform:scale(1.1);
+}
+.cat-chip.active .cat-chip-label{
+  color:var(--accent);
+  font-weight:700;
+}
+.cat-chip:active{
+  transform:scale(0.95);
 }
 
 .search-bar{
@@ -1639,24 +1777,57 @@ input,textarea{font:inherit;color:inherit}
         </div>
       </div>
 
+      <!-- Offer Banners -->
+      <div class="offer-banners-container" id="offerBannersContainer">
+        <div class="offer-banner" style="background: linear-gradient(135deg, #10B981 0%, #34D399 100%);">
+          <div class="offer-banner-content">
+            <div class="offer-banner-label">Free Delivery</div>
+            <div class="offer-banner-title">On orders above</div>
+            <div class="offer-banner-subtitle">₹499</div>
+          </div>
+          <div class="offer-banner-icon">🛵</div>
+        </div>
+        
+        <div class="offer-banner" style="background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);">
+          <div class="offer-banner-content">
+            <div class="offer-banner-label">First Order Offer</div>
+            <div class="offer-banner-title">Flat 20% OFF</div>
+            <div class="offer-banner-subtitle">Use Code: NOW20</div>
+          </div>
+          <div class="offer-banner-icon">🥩</div>
+        </div>
+      </div>
+
       <div class="cat-strip" id="catStrip">
         <div class="cat-chip active" data-cat="all" onclick="filterCat('all',this)">
-          <span class="chip-icon">🍖</span><span>All</span>
+          <div class="cat-chip-icon">
+            <span class="emoji">🍖</span>
+          </div>
+          <div class="cat-chip-label">All</div>
         </div>
         <div class="cat-chip" data-cat="chicken" onclick="filterCat('chicken',this)">
-          <span class="chip-icon">🐔</span><span>Chicken</span>
+          <div class="cat-chip-icon">
+            <span class="emoji">🐔</span>
+          </div>
+          <div class="cat-chip-label">Chicken</div>
         </div>
         <div class="cat-chip" data-cat="mutton" onclick="filterCat('mutton',this)">
-          <span class="chip-icon">🐐</span><span>Mutton</span>
+          <div class="cat-chip-icon">
+            <span class="emoji">🐐</span>
+          </div>
+          <div class="cat-chip-label">Mutton</div>
         </div>
         <div class="cat-chip" data-cat="fish" onclick="filterCat('fish',this)">
-          <span class="chip-icon">🐟</span><span>Fish</span>
+          <div class="cat-chip-icon">
+            <span class="emoji">🐟</span>
+          </div>
+          <div class="cat-chip-label">Fish</div>
         </div>
         <div class="cat-chip" data-cat="ready_to_cook" onclick="filterCat('ready_to_cook',this)">
-          <span class="chip-icon">🔥</span><span>Ready</span>
-        </div>
-        <div class="cat-chip" data-cat="family_pack" onclick="filterCat('family_pack',this)">
-          <span class="chip-icon">👨‍👩‍👧</span><span>Combos</span>
+          <div class="cat-chip-icon">
+            <span class="emoji">🔥</span>
+          </div>
+          <div class="cat-chip-label">Ready to Cook</div>
         </div>
       </div>
 
@@ -11560,5 +11731,132 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initHeroBanner);
 } else {
   initHeroBanner();
+}
+
+// ═══ Load Dynamic Content from Admin Settings ═══
+async function loadBannersAndCategories() {
+  try {
+    const res = await fetch('/admin/settings');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.ok && data.settings) {
+        renderDynamicHeroBanners(data.settings.banners?.heroSlideshow);
+        renderDynamicOfferBanners(data.settings.banners?.offerBanners);
+        renderDynamicCategories(data.settings.categories);
+      }
+    }
+  } catch(e) {
+    console.log('Using default banners and categories');
+  }
+}
+
+function renderDynamicHeroBanners(heroSlideshow) {
+  if (!heroSlideshow || heroSlideshow.enabled === false) return;
+  
+  const slider = document.getElementById('heroBannerSlider');
+  const dotsContainer = document.querySelector('.hero-dots');
+  
+  if (!slider || !heroSlideshow.slides || heroSlideshow.slides.length === 0) return;
+  
+  // Update height if specified
+  if (heroSlideshow.height) {
+    document.querySelector('.hero-banner-container').style.height = heroSlideshow.height + 'px';
+  }
+  
+  const enabledSlides = heroSlideshow.slides.filter(slide => slide.enabled !== false);
+  if (enabledSlides.length === 0) return;
+  
+  // Render slides
+  slider.innerHTML = enabledSlides.map((slide, index) => `
+    <div class="hero-slide ${index === 0 ? 'active' : ''}" style="background: ${slide.gradient || 'linear-gradient(135deg, #E63946 0%, #FF6B6B 85%, #FFB3BA 100%)'};">
+      <div class="hero-content">
+        <div class="hero-text">
+          <h2>${slide.title1 || ''}</h2>
+          <h2>${slide.title2 || ''}</h2>
+          <div class="hero-offer">
+            <span class="offer-label">${slide.offerLabel || ''}</span>
+            <span class="offer-value">${slide.offerValue || ''}</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-image">
+        ${slide.image ? `<img src="${slide.image}" alt="Hero Image" onerror="this.style.display='none'">` : ''}
+      </div>
+    </div>
+  `).join('');
+  
+  // Render dots
+  dotsContainer.innerHTML = enabledSlides.map((_, index) => 
+    `<span class="hero-dot ${index === 0 ? 'active' : ''}" data-slide="${index}"></span>`
+  ).join('');
+  
+  // Update autoplay speed
+  if (heroSlideInterval) {
+    clearInterval(heroSlideInterval);
+    const speed = (heroSlideshow.autoplaySpeed || 4) * 1000;
+    heroSlideInterval = setInterval(() => {
+      nextHeroSlide();
+    }, speed);
+  }
+  
+  // Re-initialize hero banner
+  initHeroBanner();
+}
+
+function renderDynamicOfferBanners(offerBanners) {
+  if (!offerBanners || offerBanners.enabled === false) {
+    const container = document.getElementById('offerBannersContainer');
+    if (container) container.style.display = 'none';
+    return;
+  }
+  
+  const container = document.getElementById('offerBannersContainer');
+  if (!container || !offerBanners.banners || offerBanners.banners.length === 0) return;
+  
+  const enabledBanners = offerBanners.banners.filter(banner => banner.enabled !== false);
+  if (enabledBanners.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  container.style.display = 'flex';
+  container.innerHTML = enabledBanners.map(banner => `
+    <div class="offer-banner" style="background: ${banner.gradient || 'linear-gradient(135deg, #10B981 0%, #34D399 100%)'}; flex: 0 0 ${banner.width || 280}px;">
+      <div class="offer-banner-content">
+        <div class="offer-banner-label">${banner.label || ''}</div>
+        <div class="offer-banner-title">${banner.title || ''}</div>
+        <div class="offer-banner-subtitle">${banner.subtitle || ''}</div>
+      </div>
+      <div class="offer-banner-icon">${banner.icon || '🎯'}</div>
+    </div>
+  `).join('');
+}
+
+function renderDynamicCategories(categories) {
+  if (!categories || categories.length === 0) return;
+  
+  const catStrip = document.getElementById('catStrip');
+  if (!catStrip) return;
+  
+  const enabledCategories = categories.filter(cat => cat.enabled !== false)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+  
+  if (enabledCategories.length === 0) return;
+  
+  catStrip.innerHTML = enabledCategories.map((cat, index) => `
+    <div class="cat-chip ${index === 0 ? 'active' : ''}" data-cat="${cat.id}" onclick="filterCat('${cat.id}',this)">
+      <div class="cat-chip-icon">
+        ${cat.image ? `<img src="${cat.image}" alt="${cat.name}">` : `<span class="emoji">${cat.icon || '🥘'}</span>`}
+      </div>
+      <div class="cat-chip-label">${cat.name || 'Category'}</div>
+    </div>
+  `).join('');
+}
+
+// Load dynamic content on page load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadBannersAndCategories);
+} else {
+  loadBannersAndCategories();
 }
 </script>

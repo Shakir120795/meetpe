@@ -162,20 +162,65 @@ const defaults = {
   },
   // NEW: Banners (admin-editable)
   banners: {
-    heroBanner: {
+    // Hero Banner Slideshow
+    heroSlideshow: {
       enabled: true,
-      badge: '⚡ NOW OPEN',
-      title: 'Premium Fresh Meat',
-      subtitle: 'Delivered in 25-35 min · Free cleaning',
-      pill: 'Free cleaning + cutting',
-      emoji: '🥩',
-      bgGradient: 'linear-gradient(120deg,#1a0500,#2d0a00)'
+      autoplaySpeed: 4, // seconds
+      height: 200, // pixels
+      slides: [
+        {
+          title1: 'Crazy offer',
+          title2: 'just for you!',
+          offerLabel: 'Flat',
+          offerValue: '40% OFF!',
+          gradient: 'linear-gradient(135deg, #E63946 0%, #FF6B6B 85%, #FFB3BA 100%)',
+          image: '/photos/meat-stack.jpg',
+          enabled: true
+        },
+        {
+          title1: 'Fresh Daily',
+          title2: 'Premium Quality!',
+          offerLabel: 'Up to',
+          offerValue: '30% OFF!',
+          gradient: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 85%, #C4B5FD 100%)',
+          image: '/photos/fresh-meat.jpg',
+          enabled: true
+        },
+        {
+          title1: 'Free Delivery',
+          title2: 'on orders ₹499+',
+          offerLabel: 'Save',
+          offerValue: '₹50!',
+          gradient: 'linear-gradient(135deg, #F59E0B 0%, #FBD38D 85%, #FEF3C7 100%)',
+          image: '/photos/delivery.jpg',
+          enabled: true
+        }
+      ]
     },
-    offerBanners: [
-      { id: 'b1', label: 'LIMITED TIME', title: 'Free Delivery', subtitle: 'On orders above ₹499', gradient: 'linear-gradient(135deg,#8B1A1A,#E8450A)', labelColor: 'rgba(255,255,255,.7)', enabled: true },
-      { id: 'b2', label: 'FRESH DAILY', title: 'Farm to Table', subtitle: 'Sourced fresh every morning', gradient: 'linear-gradient(135deg,#1a1a00,#2d2500)', labelColor: '#f59e0b', enabled: true },
-      { id: 'b3', label: 'REWARD', title: 'Earn ₹30 Cash', subtitle: 'On every ₹500+ order', gradient: 'linear-gradient(135deg,#001a0d,#002d15)', labelColor: '#22c55e', enabled: true }
-    ]
+    // Offer Banners (horizontal scrollable)
+    offerBanners: {
+      enabled: true,
+      banners: [
+        {
+          label: 'Free Delivery',
+          title: 'On orders above',
+          subtitle: '₹499',
+          gradient: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)',
+          icon: '🛵',
+          width: 280,
+          enabled: true
+        },
+        {
+          label: 'First Order Offer',
+          title: 'Flat 20% OFF',
+          subtitle: 'Use Code: NOW20',
+          gradient: 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%)',
+          icon: '🥩',
+          width: 280,
+          enabled: true
+        }
+      ]
+    }
   },
   // NEW: Help & Support Settings (admin-editable)
   helpSupport: {
@@ -408,8 +453,18 @@ function read() {
       banners: {
         ...defaults.banners,
         ...data.banners,
-        heroBanner: { ...defaults.banners.heroBanner, ...(data.banners?.heroBanner || {}) },
-        offerBanners: Array.isArray(data.banners?.offerBanners) ? data.banners.offerBanners : defaults.banners.offerBanners
+        heroSlideshow: {
+          ...defaults.banners.heroSlideshow,
+          ...(data.banners?.heroSlideshow || {}),
+          slides: Array.isArray(data.banners?.heroSlideshow?.slides) ? 
+            data.banners.heroSlideshow.slides : defaults.banners.heroSlideshow.slides
+        },
+        offerBanners: {
+          ...defaults.banners.offerBanners,
+          ...(data.banners?.offerBanners || {}),
+          banners: Array.isArray(data.banners?.offerBanners?.banners) ? 
+            data.banners.offerBanners.banners : defaults.banners.offerBanners.banners
+        }
       },
       walletRewards: { ...defaults.walletRewards, ...data.walletRewards },
       invoice: { ...defaults.invoice, ...data.invoice },
@@ -479,8 +534,18 @@ function update(patch) {
   if (patch.banners) current.banners = {
     ...current.banners,
     ...patch.banners,
-    heroBanner: { ...current.banners.heroBanner, ...(patch.banners.heroBanner || {}) },
-    offerBanners: Array.isArray(patch.banners?.offerBanners) ? patch.banners.offerBanners : current.banners.offerBanners
+    heroSlideshow: {
+      ...current.banners.heroSlideshow,
+      ...(patch.banners.heroSlideshow || {}),
+      slides: Array.isArray(patch.banners?.heroSlideshow?.slides) ? 
+        patch.banners.heroSlideshow.slides : current.banners.heroSlideshow.slides
+    },
+    offerBanners: {
+      ...current.banners.offerBanners,
+      ...(patch.banners.offerBanners || {}),
+      banners: Array.isArray(patch.banners?.offerBanners?.banners) ? 
+        patch.banners.offerBanners.banners : current.banners.offerBanners.banners
+    }
   };
   if (patch.walletRewards) current.walletRewards = { ...current.walletRewards, ...patch.walletRewards };
   if (patch.invoice) current.invoice = { ...current.invoice, ...patch.invoice };
