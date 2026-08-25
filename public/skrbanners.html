@@ -190,26 +190,38 @@ function renderHeroSlides(slides) {
         </div>
       </div>
       <div class="field-row">
-        <div class="field"><label>Title Line 1</label><input class="hs-title1" value="${slide.title1||''}"/></div>
-        <div class="field"><label>Title Line 2</label><input class="hs-title2" value="${slide.title2||''}"/></div>
+        <div class="field"><label>Title Line 1</label><input class="hs-title1" value="${slide.title1||''}" placeholder="Crazy offer"/></div>
+        <div class="field"><label>Title Line 2</label><input class="hs-title2" value="${slide.title2||''}" placeholder="just for you!"/></div>
       </div>
       <div class="field-row">
-        <div class="field"><label>Offer Label</label><input class="hs-offer-label" value="${slide.offerLabel||''}"/></div>
-        <div class="field"><label>Offer Value</label><input class="hs-offer-value" value="${slide.offerValue||''}"/></div>
+        <div class="field"><label>Offer Label</label><input class="hs-offer-label" value="${slide.offerLabel||''}" placeholder="Flat"/></div>
+        <div class="field"><label>Offer Value</label><input class="hs-offer-value" value="${slide.offerValue||''}" placeholder="40% OFF!"/></div>
+      </div>
+      <div class="field-row-3">
+        <div class="field">
+          <label>Background Color</label>
+          <input type="color" class="hs-background-color" value="${slide.backgroundColor||'#E63946'}" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
+        </div>
+        <div class="field">
+          <label>Text Color</label>
+          <input type="color" class="hs-text-color" value="${slide.textColor||'#FFFFFF'}" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
+        </div>
+        <div class="field">
+          <label>Height (px)</label>
+          <input type="number" class="hs-height" value="${slide.height||200}" min="120" max="400">
+        </div>
       </div>
       <div class="field-row">
         <div class="field">
-          <label>Background Gradient</label>
-          <select class="hs-gradient">
-            <option value="linear-gradient(135deg, #E63946 0%, #FF6B6B 85%, #FFB3BA 100%)" ${slide.gradient === 'linear-gradient(135deg, #E63946 0%, #FF6B6B 85%, #FFB3BA 100%)' ? 'selected' : ''}>Red</option>
-            <option value="linear-gradient(135deg, #8B5CF6 0%, #A78BFA 85%, #C4B5FD 100%)" ${slide.gradient === 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 85%, #C4B5FD 100%)' ? 'selected' : ''}>Purple</option>
-            <option value="linear-gradient(135deg, #F59E0B 0%, #FBD38D 85%, #FEF3C7 100%)" ${slide.gradient === 'linear-gradient(135deg, #F59E0B 0%, #FBD38D 85%, #FEF3C7 100%)' ? 'selected' : ''}>Orange</option>
-            <option value="linear-gradient(135deg, #10B981 0%, #34D399 85%, #6EE7B7 100%)" ${slide.gradient === 'linear-gradient(135deg, #10B981 0%, #34D399 85%, #6EE7B7 100%)' ? 'selected' : ''}>Green</option>
-            <option value="linear-gradient(135deg, #3B82F6 0%, #60A5FA 85%, #93C5FD 100%)" ${slide.gradient === 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 85%, #93C5FD 100%)' ? 'selected' : ''}>Blue</option>
-          </select>
+          <label>Title Size (px)</label>
+          <input type="number" class="hs-title-size" value="${slide.titleSize||20}" min="12" max="36">
         </div>
-        <div class="field"><label>Image URL</label><input class="hs-image" value="${slide.image||''}" placeholder="/photos/meat-stack.jpg"/></div>
+        <div class="field">
+          <label>Offer Size (px)</label>
+          <input type="number" class="hs-offer-size" value="${slide.offerSize||24}" min="12" max="48">
+        </div>
       </div>
+      <div class="field"><label>Image URL</label><input class="hs-image" value="${slide.image||''}" placeholder="/photos/meat-stack.jpg or https://..."/></div>
     </div>
   `).join('');
 }
@@ -228,23 +240,30 @@ function renderOfferBanners(banners) {
         </div>
       </div>
       <div class="field-row-3">
-        <div class="field"><label>Label</label><input class="ob-label" value="${banner.label||''}"/></div>
-        <div class="field"><label>Title</label><input class="ob-title" value="${banner.title||''}"/></div>
-        <div class="field"><label>Subtitle</label><input class="ob-subtitle" value="${banner.subtitle||''}"/></div>
+        <div class="field"><label>Label</label><input class="ob-label" value="${banner.label||''}" placeholder="Special Offer"/></div>
+        <div class="field"><label>Title</label><input class="ob-title" value="${banner.title||''}" placeholder="Limited Time"/></div>
+        <div class="field"><label>Subtitle</label><input class="ob-subtitle" value="${banner.subtitle||''}" placeholder="Save Now"/></div>
       </div>
       <div class="field-row-3">
         <div class="field">
-          <label>Background Gradient</label>
-          <select class="ob-gradient">
-            <option value="linear-gradient(135deg, #10B981 0%, #34D399 100%)" ${banner.gradient === 'linear-gradient(135deg, #10B981 0%, #34D399 100%)' ? 'selected' : ''}>Green</option>
-            <option value="linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%)" ${banner.gradient === 'linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%)' ? 'selected' : ''}>Orange</option>
-            <option value="linear-gradient(135deg, #E63946 0%, #FF6B6B 100%)" ${banner.gradient === 'linear-gradient(135deg, #E63946 0%, #FF6B6B 100%)' ? 'selected' : ''}>Red</option>
-            <option value="linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)" ${banner.gradient === 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)' ? 'selected' : ''}>Purple</option>
-            <option value="linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)" ${banner.gradient === 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' ? 'selected' : ''}>Blue</option>
-          </select>
+          <label>Background Color</label>
+          <input type="color" class="ob-background-color" value="${banner.backgroundColor||'#10B981'}" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
         </div>
-        <div class="field"><label>Icon (Emoji)</label><input class="ob-icon" value="${banner.icon||''}"/></div>
+        <div class="field">
+          <label>Text Color</label>
+          <input type="color" class="ob-text-color" value="${banner.textColor||'#FFFFFF'}" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
+        </div>
+        <div class="field"><label>Icon (Emoji)</label><input class="ob-icon" value="${banner.icon||'🎯'}" maxlength="2"/></div>
+      </div>
+      <div class="field-row-3">
         <div class="field"><label>Width (px)</label><input class="ob-width" type="number" value="${banner.width||280}" min="200" max="400"/></div>
+        <div class="field"><label>Height (px)</label><input class="ob-height" type="number" value="${banner.height||100}" min="80" max="150"/></div>
+        <div class="field"><label>Icon Size (px)</label><input class="ob-icon-size" type="number" value="${banner.iconSize||28}" min="16" max="48"/></div>
+      </div>
+      <div class="field-row-3">
+        <div class="field"><label>Label Size (px)</label><input class="ob-label-size" type="number" value="${banner.labelSize||10}" min="8" max="16"/></div>
+        <div class="field"><label>Title Size (px)</label><input class="ob-title-size" type="number" value="${banner.titleSize||16}" min="12" max="24"/></div>
+        <div class="field"><label>Subtitle Size (px)</label><input class="ob-subtitle-size" type="number" value="${banner.subtitleSize||12}" min="10" max="18"/></div>
       </div>
     </div>
   `).join('');
@@ -266,11 +285,19 @@ function renderCategories(categories) {
       <div class="field-row-3">
         <div class="field"><label>Category ID</label><input class="cat-id" value="${cat.id||''}" placeholder="chicken"/></div>
         <div class="field"><label>Display Name</label><input class="cat-name" value="${cat.name||''}" placeholder="Chicken"/></div>
-        <div class="field"><label>Icon/Emoji</label><input class="cat-icon" value="${cat.icon||''}" placeholder="🐔"/></div>
+        <div class="field"><label>Sort Order</label><input class="cat-order" type="number" value="${cat.order||i}" min="0"/></div>
       </div>
       <div class="field-row">
+        <div class="field"><label>Icon/Emoji</label><input class="cat-icon" value="${cat.icon||''}" placeholder="🐔"/></div>
         <div class="field"><label>Image URL (Optional)</label><input class="cat-image" value="${cat.image||''}" placeholder="Leave empty to use emoji"/></div>
-        <div class="field"><label>Sort Order</label><input class="cat-order" type="number" value="${cat.order||i}" min="0"/></div>
+      </div>
+      <div class="field-row-3">
+        <div class="field"><label>Circle Size (px)</label><input class="cat-size" type="number" value="${cat.size||48}" min="32" max="80"/></div>
+        <div class="field"><label>Label Size (px)</label><input class="cat-label-size" type="number" value="${cat.labelSize||12}" min="8" max="18"/></div>
+        <div class="field">
+          <label>Active Color</label>
+          <input type="color" class="cat-active-color" value="${cat.activeColor||'#E63946'}" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
+        </div>
       </div>
     </div>
   `).join('');
@@ -283,7 +310,11 @@ function addHeroSlide() {
     title2: 'Just for you!',
     offerLabel: 'Flat',
     offerValue: '25% OFF!',
-    gradient: 'linear-gradient(135deg, #E63946 0%, #FF6B6B 85%, #FFB3BA 100%)',
+    backgroundColor: '#E63946',
+    textColor: '#FFFFFF',
+    height: 200,
+    titleSize: 20,
+    offerSize: 24,
     image: '/photos/meat-stack.jpg',
     enabled: true
   });
@@ -297,9 +328,15 @@ function addOfferBanner() {
     label: 'Special Offer',
     title: 'Limited Time',
     subtitle: 'Save Now',
-    gradient: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)',
+    backgroundColor: '#10B981',
+    textColor: '#FFFFFF',
     icon: '🎯',
     width: 280,
+    height: 100,
+    iconSize: 28,
+    labelSize: 10,
+    titleSize: 16,
+    subtitleSize: 12,
     enabled: true
   });
   renderOfferBanners(banners);
@@ -313,6 +350,9 @@ function addCategory() {
     name: 'New Category',
     icon: '🥘',
     image: '',
+    size: 48,
+    labelSize: 12,
+    activeColor: '#E63946',
     order: categories.length,
     enabled: true
   });
@@ -348,7 +388,11 @@ function collectHeroSlides() {
     title2: c.querySelector('.hs-title2').value.trim(),
     offerLabel: c.querySelector('.hs-offer-label').value.trim(),
     offerValue: c.querySelector('.hs-offer-value').value.trim(),
-    gradient: c.querySelector('.hs-gradient').value.trim(),
+    backgroundColor: c.querySelector('.hs-background-color').value.trim(),
+    textColor: c.querySelector('.hs-text-color').value.trim(),
+    height: parseInt(c.querySelector('.hs-height').value) || 200,
+    titleSize: parseInt(c.querySelector('.hs-title-size').value) || 20,
+    offerSize: parseInt(c.querySelector('.hs-offer-size').value) || 24,
     image: c.querySelector('.hs-image').value.trim(),
     enabled: c.querySelector('.hs-enabled').checked
   }));
@@ -360,9 +404,15 @@ function collectOfferBanners() {
     label: c.querySelector('.ob-label').value.trim(),
     title: c.querySelector('.ob-title').value.trim(),
     subtitle: c.querySelector('.ob-subtitle').value.trim(),
-    gradient: c.querySelector('.ob-gradient').value.trim(),
+    backgroundColor: c.querySelector('.ob-background-color').value.trim(),
+    textColor: c.querySelector('.ob-text-color').value.trim(),
     icon: c.querySelector('.ob-icon').value.trim(),
     width: parseInt(c.querySelector('.ob-width').value) || 280,
+    height: parseInt(c.querySelector('.ob-height').value) || 100,
+    iconSize: parseInt(c.querySelector('.ob-icon-size').value) || 28,
+    labelSize: parseInt(c.querySelector('.ob-label-size').value) || 10,
+    titleSize: parseInt(c.querySelector('.ob-title-size').value) || 16,
+    subtitleSize: parseInt(c.querySelector('.ob-subtitle-size').value) || 12,
     enabled: c.querySelector('.ob-enabled').checked
   }));
 }
@@ -374,6 +424,9 @@ function collectCategories() {
     name: c.querySelector('.cat-name').value.trim(),
     icon: c.querySelector('.cat-icon').value.trim(),
     image: c.querySelector('.cat-image').value.trim(),
+    size: parseInt(c.querySelector('.cat-size').value) || 48,
+    labelSize: parseInt(c.querySelector('.cat-label-size').value) || 12,
+    activeColor: c.querySelector('.cat-active-color').value.trim(),
     order: parseInt(c.querySelector('.cat-order').value) || 0,
     enabled: c.querySelector('.cat-enabled').checked
   })).sort((a, b) => a.order - b.order);
@@ -383,11 +436,11 @@ function updatePreview() {
   // Hero Preview
   const slides = collectHeroSlides();
   $('heroPreview').innerHTML = slides.filter(s => s.enabled).slice(0, 1).map(slide => `
-    <div class="preview-hero" style="background: ${slide.gradient}">
+    <div class="preview-hero" style="background: ${slide.backgroundColor}; color: ${slide.textColor}; height: ${slide.height}px;">
       <div>
-        <div style="font-size: 16px; font-weight: 800; margin-bottom: 2px;">${slide.title1}</div>
-        <div style="font-size: 16px; font-weight: 800; margin-bottom: 4px;">${slide.title2}</div>
-        <div style="font-size: 12px; opacity: 0.9;">${slide.offerLabel} <strong>${slide.offerValue}</strong></div>
+        <div style="font-size: ${slide.titleSize}px; font-weight: 800; margin-bottom: 2px;">${slide.title1}</div>
+        <div style="font-size: ${slide.titleSize}px; font-weight: 800; margin-bottom: 4px;">${slide.title2}</div>
+        <div style="font-size: ${slide.offerSize}px; opacity: 0.9;">${slide.offerLabel} <strong>${slide.offerValue}</strong></div>
       </div>
       <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center;">📷</div>
     </div>
@@ -396,13 +449,13 @@ function updatePreview() {
   // Offer Preview
   const offers = collectOfferBanners();
   $('offerPreview').innerHTML = offers.filter(o => o.enabled).map(offer => `
-    <div class="preview-banner" style="background: ${offer.gradient}; width: ${offer.width}px; display: inline-block; margin-right: 8px;">
+    <div class="preview-banner" style="background: ${offer.backgroundColor}; color: ${offer.textColor}; width: ${offer.width}px; height: ${offer.height}px; display: inline-block; margin-right: 8px;">
       <div>
-        <div style="font-size: 10px; opacity: 0.9;">${offer.label}</div>
-        <div style="font-size: 14px; font-weight: 800;">${offer.title}</div>
-        <div style="font-size: 11px; opacity: 0.8;">${offer.subtitle}</div>
+        <div style="font-size: ${offer.labelSize}px; opacity: 0.9;">${offer.label}</div>
+        <div style="font-size: ${offer.titleSize}px; font-weight: 800;">${offer.title}</div>
+        <div style="font-size: ${offer.subtitleSize}px; opacity: 0.8;">${offer.subtitle}</div>
       </div>
-      <div style="font-size: 24px;">${offer.icon}</div>
+      <div style="font-size: ${offer.iconSize}px;">${offer.icon}</div>
     </div>
   `).join('') || '<div style="color: #6b7280; text-align: center; padding: 20px;">No enabled banners</div>';
   
@@ -410,10 +463,10 @@ function updatePreview() {
   const categories = collectCategories();
   $('categoryPreview').innerHTML = categories.filter(c => c.enabled).map(cat => `
     <div class="category-preview">
-      <div class="cat-icon-preview">
-        ${cat.image ? `<img src="${cat.image}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">` : cat.icon}
+      <div class="cat-icon-preview" style="width: ${cat.size}px; height: ${cat.size}px; border-color: ${cat.activeColor};">
+        ${cat.image ? `<img src="${cat.image}" style="width: ${cat.size-8}px; height: ${cat.size-8}px; border-radius: 50%; object-fit: cover;">` : `<span style="font-size: ${cat.size*0.5}px;">${cat.icon}</span>`}
       </div>
-      <div class="cat-name-preview">${cat.name}</div>
+      <div class="cat-name-preview" style="font-size: ${cat.labelSize}px; color: ${cat.activeColor};">${cat.name}</div>
     </div>
   `).join('') || '<div style="color: #6b7280; text-align: center; padding: 20px;">No enabled categories</div>';
 }

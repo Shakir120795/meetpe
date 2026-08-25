@@ -610,10 +610,10 @@ input,textarea{font:inherit;color:inherit}
   -webkit-overflow-scrolling:touch;
 }
 
-/* ── Category Chips (Round Design) ── */
+/* ── Category Chips (Round Circles Only) ── */
 .cat-strip{
   display:flex;
-  gap:12px;
+  gap:16px;
   padding:0 14px 20px;
   overflow-x:auto;
   scroll-behavior:smooth;
@@ -627,8 +627,6 @@ input,textarea{font:inherit;color:inherit}
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  min-width:70px;
-  padding:8px;
   cursor:pointer;
   transition:all .2s ease;
   flex-shrink:0;
@@ -645,10 +643,11 @@ input,textarea{font:inherit;color:inherit}
   margin-bottom:6px;
   transition:all .2s ease;
   overflow:hidden;
+  box-shadow:var(--shadow-sm);
 }
 .cat-chip-icon img{
-  width:32px;
-  height:32px;
+  width:100%;
+  height:100%;
   object-fit:cover;
   border-radius:50%;
 }
@@ -661,12 +660,15 @@ input,textarea{font:inherit;color:inherit}
   color:var(--text);
   text-align:center;
   line-height:1.2;
+  max-width:70px;
+  word-wrap:break-word;
 }
 .cat-chip.active .cat-chip-icon{
   background:var(--accent);
   border-color:var(--accent);
   color:#fff;
   transform:scale(1.1);
+  box-shadow:0 4px 12px rgba(230,57,70,0.3);
 }
 .cat-chip.active .cat-chip-label{
   color:var(--accent);
@@ -11736,7 +11738,7 @@ if (document.readyState === 'loading') {
 // ═══ Load Dynamic Content from Admin Settings ═══
 async function loadBannersAndCategories() {
   try {
-    const res = await fetch('/admin/settings');
+    const res = await fetch('/api/settings');  // Changed from /admin/settings
     if (res.ok) {
       const data = await res.json();
       if (data.ok && data.settings) {
@@ -11766,9 +11768,13 @@ function renderDynamicHeroBanners(heroSlideshow) {
   const enabledSlides = heroSlideshow.slides.filter(slide => slide.enabled !== false);
   if (enabledSlides.length === 0) return;
   
+  // Clear current content first
+  slider.innerHTML = '';
+  dotsContainer.innerHTML = '';
+  
   // Render slides
   slider.innerHTML = enabledSlides.map((slide, index) => `
-    <div class="hero-slide ${index === 0 ? 'active' : ''}" style="background: ${slide.gradient || 'linear-gradient(135deg, #E63946 0%, #FF6B6B 85%, #FFB3BA 100%)'};">
+    <div class="hero-slide ${index === 0 ? 'active' : ''}" style="background: ${slide.gradient || slide.backgroundColor || 'linear-gradient(135deg, #E63946 0%, #FF6B6B 85%, #FFB3BA 100%)'};">
       <div class="hero-content">
         <div class="hero-text">
           <h2>${slide.title1 || ''}</h2>
@@ -11790,16 +11796,19 @@ function renderDynamicHeroBanners(heroSlideshow) {
     `<span class="hero-dot ${index === 0 ? 'active' : ''}" data-slide="${index}"></span>`
   ).join('');
   
-  // Update autoplay speed
+  // Update autoplay speed and restart interval
   if (heroSlideInterval) {
     clearInterval(heroSlideInterval);
-    const speed = (heroSlideshow.autoplaySpeed || 4) * 1000;
-    heroSlideInterval = setInterval(() => {
-      nextHeroSlide();
-    }, speed);
   }
+  const speed = (heroSlideshow.autoplaySpeed || 4) * 1000;
+  heroSlideInterval = setInterval(() => {
+    nextHeroSlide();
+  }, speed);
   
-  // Re-initialize hero banner
+  // Reset current slide
+  currentSlide = 0;
+  
+  // Re-initialize hero banner with new content
   initHeroBanner();
 }
 
@@ -11821,13 +11830,13 @@ function renderDynamicOfferBanners(offerBanners) {
   
   container.style.display = 'flex';
   container.innerHTML = enabledBanners.map(banner => `
-    <div class="offer-banner" style="background: ${banner.gradient || 'linear-gradient(135deg, #10B981 0%, #34D399 100%)'}; flex: 0 0 ${banner.width || 280}px;">
+    <div class="offer-banner" style="background: ${banner.gradient || banner.backgroundColor || 'linear-gradient(135deg, #10B981 0%, #34D399 100%)'}; flex: 0 0 ${banner.width || 280}px; height: ${banner.height || 100}px;">
       <div class="offer-banner-content">
-        <div class="offer-banner-label">${banner.label || ''}</div>
-        <div class="offer-banner-title">${banner.title || ''}</div>
-        <div class="offer-banner-subtitle">${banner.subtitle || ''}</div>
+        <div class="offer-banner-label" style="font-size: ${banner.labelSize || 10}px;">${banner.label || ''}</div>
+        <div class="offer-banner-title" style="font-size: ${banner.titleSize || 16}px;">${banner.title || ''}</div>
+        <div class="offer-banner-subtitle" style="font-size: ${banner.subtitleSize || 12}px;">${banner.subtitle || ''}</div>
       </div>
-      <div class="offer-banner-icon">${banner.icon || '🎯'}</div>
+      <div class="offer-banner-icon" style="font-size: ${banner.iconSize || 28}px;">${banner.icon || '🎯'}</div>
     </div>
   `).join('');
 }
@@ -11845,10 +11854,10 @@ function renderDynamicCategories(categories) {
   
   catStrip.innerHTML = enabledCategories.map((cat, index) => `
     <div class="cat-chip ${index === 0 ? 'active' : ''}" data-cat="${cat.id}" onclick="filterCat('${cat.id}',this)">
-      <div class="cat-chip-icon">
-        ${cat.image ? `<img src="${cat.image}" alt="${cat.name}">` : `<span class="emoji">${cat.icon || '🥘'}</span>`}
+      <div class="cat-chip-icon" style="width: ${cat.size || 48}px; height: ${cat.size || 48}px;">
+        ${cat.image ? `<img src="${cat.image}" alt="${cat.name}" style="width: ${(cat.size || 48) - 8}px; height: ${(cat.size || 48) - 8}px;">` : `<span class="emoji" style="font-size: ${(cat.size || 48) * 0.5}px;">${cat.icon || '🥘'}</span>`}
       </div>
-      <div class="cat-chip-label">${cat.name || 'Category'}</div>
+      <div class="cat-chip-label" style="font-size: ${cat.labelSize || 12}px;">${cat.name || 'Category'}</div>
     </div>
   `).join('');
 }
