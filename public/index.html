@@ -437,11 +437,11 @@ input,textarea{font:inherit;color:inherit}
   font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;padding:0 4px;
   box-shadow:0 2px 8px rgba(230,57,70,0.35);border:2px solid var(--card)}
-/* ── Hero Banner (Exact Screenshot Match) ── */
+/* ── Hero Banner (Fixed Text Overflow) ── */
 .hero-banner-container{
   margin:16px 14px 20px;
   position:relative;
-  height:220px;
+  height:240px;
   border-radius:20px;
   overflow:hidden;
   box-shadow:0 4px 20px rgba(0,0,0,0.12);
@@ -458,7 +458,7 @@ input,textarea{font:inherit;color:inherit}
   inset:0;
   display:flex;
   align-items:center;
-  padding:24px 20px;
+  padding:20px 16px;
   opacity:0;
   transform:translateX(100%);
   transition:all .5s cubic-bezier(.4,0,.2,1);
@@ -478,66 +478,71 @@ input,textarea{font:inherit;color:inherit}
   justify-content:center;
   position:relative;
   z-index:2;
-  padding-right:16px;
+  padding-right:12px;
+  max-width:calc(100% - 200px);
 }
 .hero-badge{
   display:inline-block;
   background:#10B981;
   color:#FFFFFF;
-  font-size:11px;
+  font-size:10px;
   font-weight:800;
   text-transform:uppercase;
   letter-spacing:0.8px;
-  padding:6px 12px;
+  padding:5px 10px;
   border-radius:8px;
-  margin-bottom:12px;
+  margin-bottom:10px;
   width:fit-content;
   box-shadow:0 2px 8px rgba(16,185,129,0.3);
 }
 .hero-text h2{
-  font-size:24px;
+  font-size:20px;
   font-weight:800;
-  line-height:1.2;
+  line-height:1.1;
   color:#1A1A1A;
   margin-bottom:2px;
   letter-spacing:-0.02em;
   font-family:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',system-ui,sans-serif;
+  word-wrap:break-word;
+  overflow-wrap:break-word;
 }
 .hero-text p{
-  font-size:14px;
+  font-size:12px;
   color:#6B7280;
-  margin-bottom:16px;
-  line-height:1.4;
+  margin-bottom:12px;
+  line-height:1.3;
   font-weight:500;
+  word-wrap:break-word;
+  overflow-wrap:break-word;
 }
 .hero-features{
   display:flex;
   flex-wrap:wrap;
-  gap:8px;
-  margin-bottom:16px;
+  gap:6px;
+  margin-bottom:12px;
 }
 .hero-feature{
-  font-size:11px;
+  font-size:9px;
   font-weight:600;
   color:#374151;
   background:#F3F4F6;
-  padding:4px 8px;
-  border-radius:6px;
+  padding:3px 6px;
+  border-radius:4px;
   border:1px solid #E5E7EB;
 }
 .hero-btn{
   background:#10B981;
   color:#FFFFFF;
   border:none;
-  padding:14px 20px;
-  border-radius:12px;
-  font-size:15px;
+  padding:12px 16px;
+  border-radius:10px;
+  font-size:13px;
   font-weight:700;
   cursor:pointer;
   transition:all .2s ease;
   display:flex;
   align-items:center;
-  gap:6px;
+  gap:4px;
   width:fit-content;
   box-shadow:0 4px 12px rgba(16,185,129,0.3);
   letter-spacing:0.02em;
@@ -570,10 +575,10 @@ input,textarea{font:inherit;color:inherit}
   right:8px;
   background:#10B981;
   color:#FFFFFF;
-  font-size:10px;
+  font-size:9px;
   font-weight:800;
-  padding:6px 10px;
-  border-radius:8px;
+  padding:5px 8px;
+  border-radius:6px;
   z-index:3;
   box-shadow:0 2px 8px rgba(16,185,129,0.4);
   border:2px solid #FFFFFF;
@@ -601,7 +606,7 @@ input,textarea{font:inherit;color:inherit}
   box-shadow:0 2px 6px rgba(16,185,129,0.4);
 }
 
-/* ── Offer Banners ── */
+/* ── Offer Banners (Images instead of Icons) ── */
 .offer-banners-container{
   margin:0 14px 20px;
   display:flex;
@@ -650,27 +655,38 @@ input,textarea{font:inherit;color:inherit}
   font-weight:500;
   opacity:0.8;
 }
-.offer-banner-icon{
+.offer-banner-image{
   width:60px;
   height:60px;
-  border-radius:12px;
-  background:rgba(255,255,255,0.15);
+  border-radius:8px;
+  background:rgba(255,255,255,0.1);
   backdrop-filter:blur(10px);
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:28px;
   z-index:2;
+  overflow:hidden;
+}
+.offer-banner-image img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:8px;
+}
+.offer-banner-image .fallback-icon{
+  font-size:28px;
+  color:rgba(255,255,255,0.9);
 }
 
-/* ── Category Chips (Round Circles Only) ── */
+/* ── Category Chips (Bigger Round Circles, No All) ── */
 .cat-strip{
   display:flex;
-  gap:16px;
-  padding:0 14px 20px;
+  gap:20px;
+  padding:0 20px 24px;
   overflow-x:auto;
   scroll-behavior:smooth;
   -webkit-overflow-scrolling:touch;
+  justify-content:space-between;
 }
 .cat-strip::-webkit-scrollbar{
   display:none;
@@ -683,17 +699,18 @@ input,textarea{font:inherit;color:inherit}
   cursor:pointer;
   transition:all .2s ease;
   flex-shrink:0;
+  flex:1;
 }
 .cat-chip-icon{
-  width:48px;
-  height:48px;
+  width:64px;
+  height:64px;
   border-radius:50%;
   background:var(--bg-alt);
   border:2px solid var(--border);
   display:flex;
   align-items:center;
   justify-content:center;
-  margin-bottom:6px;
+  margin-bottom:8px;
   transition:all .2s ease;
   overflow:hidden;
   box-shadow:var(--shadow-sm);
@@ -705,15 +722,15 @@ input,textarea{font:inherit;color:inherit}
   border-radius:50%;
 }
 .cat-chip-icon .emoji{
-  font-size:24px;
+  font-size:32px;
 }
 .cat-chip-label{
-  font-size:12px;
+  font-size:13px;
   font-weight:600;
   color:var(--text);
   text-align:center;
   line-height:1.2;
-  max-width:70px;
+  max-width:80px;
   word-wrap:break-word;
 }
 .cat-chip.active .cat-chip-icon{
@@ -777,7 +794,7 @@ input,textarea{font:inherit;color:inherit}
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-  height: 220px;
+  height: 240px;
 }
 
 .hero-banner-slider {
@@ -11785,11 +11802,10 @@ function loadFallbackData() {
       }
     },
     categories: [
-      { id: 'all', name: 'All', icon: '🍖', image: '', size: 48, labelSize: 12, activeColor: '#E63946', order: 0, enabled: true },
-      { id: 'chicken', name: 'Chicken', icon: '🐔', image: '', size: 48, labelSize: 12, activeColor: '#E63946', order: 1, enabled: true },
-      { id: 'mutton', name: 'Mutton', icon: '🐐', image: '', size: 48, labelSize: 12, activeColor: '#E63946', order: 2, enabled: true },
-      { id: 'fish', name: 'Fish', icon: '🐟', image: '', size: 48, labelSize: 12, activeColor: '#E63946', order: 3, enabled: true },
-      { id: 'ready_to_cook', name: 'Ready to Cook', icon: '🔥', image: '', size: 48, labelSize: 12, activeColor: '#E63946', order: 4, enabled: true }
+      { id: 'chicken', name: 'Chicken', icon: '🐔', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 1, enabled: true },
+      { id: 'mutton', name: 'Mutton', icon: '🐐', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 2, enabled: true },
+      { id: 'fish', name: 'Fish', icon: '🐟', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 3, enabled: true },
+      { id: 'ready_to_cook', name: 'Ready to Cook', icon: '🔥', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 4, enabled: true }
     ]
   };
   
@@ -11885,7 +11901,9 @@ function renderDynamicOfferBanners(offerBanners) {
         <div class="offer-banner-title" style="font-size: ${banner.titleSize || 16}px; color: ${banner.textColor || '#FFFFFF'};">${banner.title || ''}</div>
         <div class="offer-banner-subtitle" style="font-size: ${banner.subtitleSize || 12}px; color: ${banner.textColor || '#FFFFFF'};">${banner.subtitle || ''}</div>
       </div>
-      <div class="offer-banner-icon" style="font-size: ${banner.iconSize || 28}px;">${banner.icon || '🎯'}</div>
+      <div class="offer-banner-image" style="width: ${banner.imageSize || 60}px; height: ${banner.imageSize || 60}px;">
+        ${banner.image ? `<img src="${banner.image}" alt="${banner.title}" onerror="this.style.display='none'; this.parentNode.innerHTML='<span class=\\'fallback-icon\\'>${banner.icon || '🎯'}</span>';">` : `<span class="fallback-icon" style="font-size: ${banner.iconSize || 28}px;">${banner.icon || '🎯'}</span>`}
+      </div>
     </div>
   `).join('');
 }
@@ -11896,17 +11914,19 @@ function renderDynamicCategories(categories) {
   const catStrip = document.getElementById('catStrip');
   if (!catStrip) return;
   
-  const enabledCategories = categories.filter(cat => cat.enabled !== false)
+  // Remove "All" category and filter enabled categories
+  const enabledCategories = categories
+    .filter(cat => cat.enabled !== false && cat.id !== 'all') // Remove "All" category
     .sort((a, b) => (a.order || 0) - (b.order || 0));
   
   if (enabledCategories.length === 0) return;
   
   catStrip.innerHTML = enabledCategories.map((cat, index) => `
     <div class="cat-chip ${index === 0 ? 'active' : ''}" data-cat="${cat.id}" onclick="filterCat('${cat.id}',this)">
-      <div class="cat-chip-icon" style="width: ${cat.size || 48}px; height: ${cat.size || 48}px; border-color: ${index === 0 ? (cat.activeColor || '#E63946') : '#E5E7EB'}; background: ${index === 0 ? (cat.activeColor || '#E63946') : '#F3F4F6'};">
-        ${cat.image ? `<img src="${cat.image}" alt="${cat.name}" style="width: ${(cat.size || 48) - 8}px; height: ${(cat.size || 48) - 8}px; border-radius: 50%;">` : `<span class="emoji" style="font-size: ${(cat.size || 48) * 0.5}px; color: ${index === 0 ? '#FFFFFF' : '#374151'};">${cat.icon || '🥘'}</span>`}
+      <div class="cat-chip-icon" style="width: ${cat.size || 64}px; height: ${cat.size || 64}px; border-color: ${index === 0 ? (cat.activeColor || '#E63946') : '#E5E7EB'}; background: ${index === 0 ? (cat.activeColor || '#E63946') : '#F3F4F6'};">
+        ${cat.image ? `<img src="${cat.image}" alt="${cat.name}" style="border-radius: 50%;">` : `<span class="emoji" style="font-size: ${(cat.size || 64) * 0.5}px; color: ${index === 0 ? '#FFFFFF' : '#374151'};">${cat.icon || '🥘'}</span>`}
       </div>
-      <div class="cat-chip-label" style="font-size: ${cat.labelSize || 12}px; color: ${index === 0 ? (cat.activeColor || '#E63946') : 'var(--text)'};">${cat.name || 'Category'}</div>
+      <div class="cat-chip-label" style="font-size: ${cat.labelSize || 13}px; color: ${index === 0 ? (cat.activeColor || '#E63946') : 'var(--text)'};">${cat.name || 'Category'}</div>
     </div>
   `).join('');
 }

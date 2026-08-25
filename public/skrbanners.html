@@ -188,6 +188,8 @@ const MOCK_SETTINGS = {
           backgroundColor: '#10B981',
           textColor: '#FFFFFF',
           icon: '🛵',
+          image: '',
+          imageSize: 60,
           width: 280,
           height: 100,
           iconSize: 28,
@@ -203,6 +205,8 @@ const MOCK_SETTINGS = {
           backgroundColor: '#F59E0B',
           textColor: '#FFFFFF',
           icon: '🥩',
+          image: '',
+          imageSize: 60,
           width: 280,
           height: 100,
           iconSize: 28,
@@ -215,9 +219,9 @@ const MOCK_SETTINGS = {
     }
   },
   categories: [
-    { id: 'all', name: 'All', icon: '🍖', image: '', size: 48, labelSize: 12, activeColor: '#E63946', order: 0, enabled: true },
-    { id: 'chicken', name: 'Chicken', icon: '🐔', image: '', size: 48, labelSize: 12, activeColor: '#E63946', order: 1, enabled: true },
-    { id: 'mutton', name: 'Mutton', icon: '🐐', image: '', size: 48, labelSize: 12, activeColor: '#E63946', order: 2, enabled: true }
+    { id: 'chicken', name: 'Chicken', icon: '🐔', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 1, enabled: true },
+    { id: 'mutton', name: 'Mutton', icon: '🐐', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 2, enabled: true },
+    { id: 'fish', name: 'Fish', icon: '🐟', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 3, enabled: true }
   ]
 };
 
@@ -395,17 +399,22 @@ function renderOfferBanners(banners) {
           <label>Text Color</label>
           <input type="color" class="ob-text-color" value="${banner.textColor||'#FFFFFF'}" style="width:100%;height:40px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;">
         </div>
-        <div class="field"><label>Icon (Emoji)</label><input class="ob-icon" value="${banner.icon||'🎯'}" maxlength="2"/></div>
+        <div class="field"><label>Icon (Fallback)</label><input class="ob-icon" value="${banner.icon||'🎯'}" maxlength="2"/></div>
+      </div>
+      <div class="field-row-3">
+        <div class="field"><label>Image URL</label><input class="ob-image" value="${banner.image||''}" placeholder="/photos/delivery.jpg or https://..."/></div>
+        <div class="field"><label>Image Size (px)</label><input class="ob-image-size" type="number" value="${banner.imageSize||60}" min="40" max="100"/></div>
+        <div class="field"><label>Icon Size (px)</label><input class="ob-icon-size" type="number" value="${banner.iconSize||28}" min="16" max="48"/></div>
       </div>
       <div class="field-row-3">
         <div class="field"><label>Width (px)</label><input class="ob-width" type="number" value="${banner.width||280}" min="200" max="400"/></div>
         <div class="field"><label>Height (px)</label><input class="ob-height" type="number" value="${banner.height||100}" min="80" max="150"/></div>
-        <div class="field"><label>Icon Size (px)</label><input class="ob-icon-size" type="number" value="${banner.iconSize||28}" min="16" max="48"/></div>
+        <div class="field"><label>Label Size (px)</label><input class="ob-label-size" type="number" value="${banner.labelSize||10}" min="8" max="16"/></div>
       </div>
       <div class="field-row-3">
-        <div class="field"><label>Label Size (px)</label><input class="ob-label-size" type="number" value="${banner.labelSize||10}" min="8" max="16"/></div>
         <div class="field"><label>Title Size (px)</label><input class="ob-title-size" type="number" value="${banner.titleSize||16}" min="12" max="24"/></div>
         <div class="field"><label>Subtitle Size (px)</label><input class="ob-subtitle-size" type="number" value="${banner.subtitleSize||12}" min="10" max="18"/></div>
+        <div class="field"></div>
       </div>
     </div>
   `).join('');
@@ -571,6 +580,8 @@ function collectOfferBanners() {
     backgroundColor: c.querySelector('.ob-background-color').value.trim(),
     textColor: c.querySelector('.ob-text-color').value.trim(),
     icon: c.querySelector('.ob-icon').value.trim(),
+    image: c.querySelector('.ob-image').value.trim(),
+    imageSize: parseInt(c.querySelector('.ob-image-size').value) || 60,
     width: parseInt(c.querySelector('.ob-width').value) || 280,
     height: parseInt(c.querySelector('.ob-height').value) || 100,
     iconSize: parseInt(c.querySelector('.ob-icon-size').value) || 28,
