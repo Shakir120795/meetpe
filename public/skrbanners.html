@@ -150,7 +150,7 @@ const MOCK_SETTINGS = {
     heroSlideshow: {
       enabled: true,
       autoplaySpeed: 4,
-      height: 220,
+      height: 260,
       slides: [
         {
           title1: 'Farm Fresh Meat,',
@@ -166,10 +166,10 @@ const MOCK_SETTINGS = {
           buttonColor: '#E63946',
           subtitleColor: '#6B7280',
           qualityBadgeColor: '#10B981',
-          height: 220,
-          titleSize: 24,
-          subtitleSize: 14,
-          buttonSize: 15,
+          height: 260,
+          titleSize: 18,
+          subtitleSize: 11,
+          buttonSize: 13,
           imageWidth: 180,
           imageHeight: 180,
           image: '/photos/meat-stack.jpg',
@@ -234,23 +234,25 @@ async function loadData() {
   
   console.log('🔄 Loading admin data with key:', key);
   
-  // Always use mock data for now since backend is not working
-  console.warn('⚠️ Using mock data - backend server not available');
-  SETTINGS = MOCK_SETTINGS;
+  // First try to load from localStorage (same key as main app)
+  const savedSettings = localStorage.getItem('meatpe_settings');
+  if (savedSettings) {
+    try {
+      SETTINGS = JSON.parse(savedSettings);
+      console.log('✅ Loaded saved settings from localStorage');
+    } catch (e) {
+      console.warn('⚠️ Failed to parse saved settings, using mock data');
+      SETTINGS = MOCK_SETTINGS;
+    }
+  } else {
+    console.warn('⚠️ No saved settings found, using mock data');
+    SETTINGS = MOCK_SETTINGS;
+  }
+  
   $('content').style.display = 'block';
   render();
   
-  // Show a notice about mock mode
-  let existingNotice = document.querySelector('.mock-notice');
-  if (existingNotice) existingNotice.remove();
-  
-  const notice = document.createElement('div');
-  notice.className = 'mock-notice';
-  notice.style.cssText = 'position:fixed;top:10px;right:10px;background:#10b981;color:white;padding:12px 16px;border-radius:8px;font-size:13px;font-weight:600;z-index:1000;box-shadow:0 4px 12px rgba(0,0,0,0.2);';
-  notice.innerHTML = '✅ TESTING MODE ACTIVE<br><small>Changes saved locally</small>';
-  document.body.appendChild(notice);
-  
-  console.log('✅ Mock data loaded successfully');
+  console.log('✅ Data loaded successfully');
 }
 
 function render() {
@@ -651,8 +653,39 @@ async function saveAll() {
   SETTINGS.banners = banners;
   SETTINGS.categories = categories;
   
-  // Save to localStorage as well for persistence
+  // Save to localStorage with same key as main app for sync
+  localStorage.setItem('meatpe_settings', JSON.stringify(SETTINGS));
   localStorage.setItem('meatpe_mock_settings', JSON.stringify(SETTINGS));
+  
+  // Force refresh main app if available
+  try {
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage({
+        type: 'SETTINGS_UPDATE',
+        settings: SETTINGS
+      }, '*');
+      console.log('📤 Sent settings to main page via postMessage');
+    }
+  } catch(e) {
+    console.log('ℹ️ Could not communicate with main page:', e.message);
+  }
+  
+  // Also trigger a storage event for cross-tab sync
+  window.dispatchEvent(new StorageEvent('storage', {
+    key: 'meatpe_settings',
+    newValue: JSON.stringify(SETTINGS)
+  }));
+  
+  // Force refresh if this is same tab (storage event won't fire in same tab)
+  try {
+    // Try to access main app window or reload current page if it's main app
+    if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
+      // This IS the main app - reload the data directly
+      loadBannersAndCategories();
+    }
+  } catch(e) {
+    console.log('ℹ️ Could not detect main app context:', e.message);
+  }
   
   // Update preview immediately
   updatePreview();
@@ -661,20 +694,7 @@ async function saveAll() {
   alert('✅ Changes Saved Successfully!\n\n📱 Open the main app to see changes:\nhttp://localhost:8892/\n\n🔄 Refresh the page if needed');
   
   console.log('✅ Settings saved locally:', SETTINGS);
-  
-  // Try to communicate with main page if in same domain
-  try {
-    if (window.opener && !window.opener.closed) {
-      window.opener.postMessage({
-        type: 'SETTINGS_UPDATE',
-        settings: SETTINGS
-      }, '*');
-      console.log('📤 Sent settings to main page');
-    }
-  } catch(e) {
-    console.log('ℹ️ Could not communicate with main page:', e.message);
-  }
-}
+
 
 </script>
 </body>

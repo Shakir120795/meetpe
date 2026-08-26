@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
-<title data-brand-name>MeatPe</title>
+<title data-brand-name>NOW</title>
 <meta name="description" content="Fresh chicken & mutton delivered in 30 min across Agra"/>
 <link rel="manifest" href="/manifest.json"/>
 <meta name="theme-color" content="#E63946"/>
@@ -54,6 +54,18 @@
   --danger:#EF4444;
   --bg-alt:#F8F9FA;
   --accent-light:#FFE5E7;
+  --hero-bg:linear-gradient(135deg, #fffaf7 0%, #f7efe8 100%);
+  --hero-text:#111827;
+  --hero-subtitle:#5b6472;
+  --hero-feature-bg:rgba(255,255,255,0.76);
+  --hero-feature-text:#2f3a47;
+  --hero-badge-bg:rgba(255,255,255,0.82);
+  --hero-badge-text:#1f2937;
+  --hero-btn-bg:#E63946;
+  --hero-quality-bg:#1FB970;
+  --offer-bg:linear-gradient(135deg, #eefaf1 0%, #f5f9f6 100%);
+  --offer-text:#1a1a1a;
+  --offer-subtle:#5b6472;
   --nav-h:64px;
   --topbar-h:56px;
   --shadow-sm:0 1px 2px rgba(0,0,0,0.04);
@@ -95,6 +107,18 @@ body {
   --border:#2A2A2A;
   --bg-alt:#161616;
   --accent-light:#4A1A1C;
+  --hero-bg:linear-gradient(135deg, #1d0f10 0%, #0d0d0d 100%);
+  --hero-text:#fff5f1;
+  --hero-subtitle:#d7c9c7;
+  --hero-feature-bg:rgba(255,255,255,0.08);
+  --hero-feature-text:#f3ece9;
+  --hero-badge-bg:rgba(255,255,255,0.08);
+  --hero-badge-text:#f7f7f7;
+  --hero-btn-bg:#E63946;
+  --hero-quality-bg:#1FB970;
+  --offer-bg:linear-gradient(135deg, #102519 0%, #1a2d24 100%);
+  --offer-text:#f4fff8;
+  --offer-subtle:#cfe7d8;
   --shadow-sm:0 2px 4px rgba(0,0,0,0.5);
   --shadow-md:0 4px 12px rgba(0,0,0,0.6);
   --shadow-lg:0 8px 24px rgba(0,0,0,0.7);
@@ -107,11 +131,135 @@ button{cursor:pointer;border:none;background:none;color:inherit;font:inherit}
 input,textarea{font:inherit;color:inherit}
 
 /* ── App shell ── */
-#app{min-height:100vh !important;display:block !important;position:relative !important;width:100% !important;overflow:visible !important}
+#app{min-height:100vh !important;display:block !important;position:relative !important;width:100% !important;max-width:430px !important;margin:0 auto !important;overflow:visible !important;background:var(--bg)}
 .screens{display:block !important;position:relative !important;width:100% !important;overflow:visible !important;min-height:0 !important}
 .screen{width:100% !important;background:var(--bg);display:none;padding-bottom:calc(var(--nav-h) + 24px);overflow:visible !important;position:relative !important;min-height:0 !important}
 .screen.active{display:block !important;overflow:visible !important}
 #screen-login{padding-bottom:0}
+
+.image-viewer-modal{display:none !important;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:20px;pointer-events:none}
+.image-viewer-modal.open{display:flex !important;pointer-events:auto}
+.image-viewer-container{width:min(92vw, 540px);position:relative;display:flex;flex-direction:column;align-items:center;gap:12px}
+.image-viewer-content{width:100%;border-radius:18px;overflow:hidden;background:#000;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.image-viewer-content img{display:block;width:100%;max-height:72vh;object-fit:contain;background:#000}
+.image-viewer-close{position:absolute;top:-12px;right:-12px;width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.9);color:#111;border:1px solid rgba(0,0,0,.08);font-size:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(0,0,0,.15)}
+.image-viewer-nav{display:flex;align-items:center;justify-content:center;gap:14px;background:rgba(255,255,255,.10);padding:8px 14px;border-radius:999px;color:#fff;backdrop-filter:blur(8px)}
+.image-viewer-btn{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center}
+.image-viewer-counter{font-size:14px;font-weight:700;letter-spacing:.02em}
+
+@media (min-width: 768px) {
+  body {
+    background: linear-gradient(180deg, #f3f4f6 0%, #eceff3 100%);
+    padding: 0;
+  }
+
+  #app {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+
+  .screen {
+    padding-bottom: 24px !important;
+  }
+
+  .screen#screen-home {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px 28px 40px;
+    background: transparent;
+  }
+
+  .home-topbar {
+    background: rgba(255,255,255,0.98);
+    border: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    border-radius: 18px 18px 0 0;
+    box-shadow: none;
+    margin: 0;
+    padding: 18px 24px;
+  }
+
+  .search-bar {
+    margin: 0 0 24px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: rgba(255,255,255,0.96);
+    box-shadow: none;
+  }
+
+  .hero-banner-container {
+    margin: 0 0 20px;
+    height: 300px;
+    border-radius: 24px;
+    box-shadow: 0 12px 28px rgba(15,23,42,0.08);
+  }
+
+  .hero-text h2 {
+    font-size: clamp(28px, 2vw, 42px);
+    line-height: 1.02;
+  }
+
+  .hero-image-container {
+    width: 100%;
+    height: 100%;
+    right: 0;
+    top: 0;
+  }
+
+  .hero-image-container img {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    object-fit: contain;
+    object-position: right center;
+  }
+
+  .offer-banners-container {
+    margin: 0 0 20px;
+    gap: 16px;
+    padding-bottom: 0;
+  }
+
+  .offer-banner {
+    min-height: 120px;
+    border-radius: 20px;
+    flex: 1;
+    box-shadow: 0 8px 20px rgba(15,23,42,0.06);
+  }
+
+  .cat-strip {
+    justify-content: flex-start;
+    gap: 18px;
+    padding: 0 0 24px;
+  }
+
+  .cat-chip {
+    flex: 0 0 auto;
+    min-width: 100px;
+  }
+
+  .product-grid {
+    grid-template-columns: repeat(4, minmax(180px, 1fr));
+    gap: 22px;
+    padding: 0 0 24px;
+  }
+
+  .prod-card {
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 20px rgba(15,23,42,0.06);
+  }
+
+  .section-title {
+    padding: 0;
+    margin-bottom: 18px;
+  }
+}
 
 /* ── Bottom nav ── */
 .bottom-nav{
@@ -437,15 +585,15 @@ input,textarea{font:inherit;color:inherit}
   font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;padding:0 4px;
   box-shadow:0 2px 8px rgba(230,57,70,0.35);border:2px solid var(--card)}
-/* ── Hero Banner (Fixed Text Overflow) ── */
+/* ── Hero Banner (Unified premium mobile style) ── */
 .hero-banner-container{
-  margin:16px 14px 20px;
+  margin:16px 14px 14px;
   position:relative;
-  height:240px;
-  border-radius:20px;
+  height:340px;
+  border-radius:24px;
   overflow:hidden;
-  box-shadow:0 4px 20px rgba(0,0,0,0.12);
-  background:#FFFFFF;
+  box-shadow:0 10px 24px rgba(15,23,42,0.08);
+  background:var(--hero-bg);
 }
 .hero-banner-slider{
   position:relative;
@@ -458,11 +606,15 @@ input,textarea{font:inherit;color:inherit}
   inset:0;
   display:flex;
   align-items:center;
-  padding:20px 16px;
+  justify-content:space-between;
+  padding:18px 20px 18px 20px;
   opacity:0;
   transform:translateX(100%);
   transition:all .5s cubic-bezier(.4,0,.2,1);
-  background:#FFFFFF;
+  background:linear-gradient(135deg, #f8f7f3 0%, #f4f0ed 100%);
+  border-radius:24px;
+  overflow:hidden;
+  position:relative;
 }
 .hero-slide.active{
   opacity:1;
@@ -472,45 +624,55 @@ input,textarea{font:inherit;color:inherit}
   transform:translateX(-100%);
 }
 .hero-content{
-  flex:1;
+  width:48%;
+  max-width:48%;
+  flex:none;
   display:flex;
   flex-direction:column;
   justify-content:center;
   position:relative;
   z-index:2;
-  padding-right:12px;
-  max-width:calc(100% - 200px);
+  padding:8px 8px 8px 10px;
+  min-width:0;
 }
 .hero-badge{
   display:inline-block;
-  background:#10B981;
-  color:#FFFFFF;
-  font-size:10px;
+  background:transparent;
+  color:#111111;
+  font-size:12px;
   font-weight:800;
   text-transform:uppercase;
-  letter-spacing:0.8px;
-  padding:5px 10px;
-  border-radius:8px;
-  margin-bottom:10px;
+  letter-spacing:0.04em;
+  padding:0;
+  border-radius:0;
+  margin:0 0 10px;
   width:fit-content;
-  box-shadow:0 2px 8px rgba(16,185,129,0.3);
+  box-shadow:none;
 }
 .hero-text h2{
-  font-size:20px;
+  font-size:clamp(26px, 1.8vw, 42px);
   font-weight:800;
-  line-height:1.1;
-  color:#1A1A1A;
-  margin-bottom:2px;
-  letter-spacing:-0.02em;
+  line-height:0.97;
+  color:#111111;
+  margin:0;
+  letter-spacing:-0.035em;
   font-family:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',system-ui,sans-serif;
   word-wrap:break-word;
   overflow-wrap:break-word;
+  white-space:nowrap;
+}
+.hero-text h2 span{
+  display:block;
+  white-space:nowrap;
+}
+.hero-text h2.hero-highlight {
+  color:#e63946;
 }
 .hero-text p{
-  font-size:12px;
-  color:#6B7280;
-  margin-bottom:12px;
-  line-height:1.3;
+  font-size:15px;
+  color:#4b4b4b;
+  margin:16px 0 18px;
+  line-height:1.45;
   font-weight:500;
   word-wrap:break-word;
   overflow-wrap:break-word;
@@ -518,95 +680,123 @@ input,textarea{font:inherit;color:inherit}
 .hero-features{
   display:flex;
   flex-wrap:wrap;
-  gap:6px;
-  margin-bottom:12px;
+  gap:7px;
+  margin-bottom:16px;
 }
 .hero-feature{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
   font-size:9px;
-  font-weight:600;
-  color:#374151;
-  background:#F3F4F6;
-  padding:3px 6px;
-  border-radius:4px;
-  border:1px solid #E5E7EB;
+  font-weight:700;
+  color:var(--hero-feature-text);
+  background:var(--hero-feature-bg);
+  padding:6px 8px;
+  border-radius:999px;
+  border:1px solid rgba(17,24,39,0.06);
+  white-space:nowrap;
+  box-shadow:0 2px 8px rgba(0,0,0,0.02);
 }
 .hero-btn{
-  background:#10B981;
+  background:#e63946;
   color:#FFFFFF;
   border:none;
-  padding:12px 16px;
-  border-radius:10px;
-  font-size:13px;
-  font-weight:700;
+  padding:14px 26px;
+  border-radius:14px;
+  font-size:17px;
+  font-weight:800;
   cursor:pointer;
   transition:all .2s ease;
   display:flex;
   align-items:center;
-  gap:4px;
+  gap:6px;
   width:fit-content;
-  box-shadow:0 4px 12px rgba(16,185,129,0.3);
-  letter-spacing:0.02em;
+  box-shadow:0 10px 18px rgba(230,57,70,0.18);
+  letter-spacing:0.01em;
+  margin-top:8px;
+  white-space: nowrap;
+  flex-direction: row;
+  width: auto;
 }
 .hero-btn:active{
   transform:scale(0.96);
 }
 .hero-image-container{
-  width:180px;
-  height:180px;
-  position:relative;
-  z-index:1;
+  position:absolute;
+  right:2%;
+  top:0;
+  width:62%;
+  height:100%;
   flex-shrink:0;
-  background:transparent;
   display:flex;
   align-items:center;
   justify-content:center;
-  overflow:visible;
+  overflow:hidden;
+  padding:0;
+  z-index:1;
+  pointer-events:none;
 }
 .hero-image-container img{
-  width:160px;
-  height:160px;
-  object-fit:cover;
-  border-radius:16px;
-  box-shadow:0 4px 16px rgba(0,0,0,0.1);
+  width:150%;
+  height:150%;
+  object-fit:contain;
+  object-position:110% center;  
+  transform: translateY(-00px);
+  border-radius:0;
+  box-shadow:none;
+  filter:none;
+  background:transparent;
+  display:block;
 }
 .hero-quality-badge{
   position:absolute;
-  top:8px;
-  right:8px;
-  background:#10B981;
-  color:#FFFFFF;
-  font-size:9px;
-  font-weight:800;
-  padding:5px 8px;
-  border-radius:6px;
+  right:18px;
+  bottom:14px;
+  background:#F7F7F7;
+  color:#1A1A1A;
+  font-size:10px;
+  font-weight:700;
+  padding:10px 12px;
+  border-radius:14px;
   z-index:3;
-  box-shadow:0 2px 8px rgba(16,185,129,0.4);
-  border:2px solid #FFFFFF;
+  box-shadow:0 10px 20px rgba(17,24,39,0.12);
+  border:1px solid rgba(17,24,39,0.08);
+  line-height:1.2;
+  text-align:center;
+  min-width:92px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
 }
+.hero-quality-badge span{display:block;}
+.hero-quality-badge span:first-child{font-size:10px;font-weight:700;letter-spacing:0.02em;text-transform:uppercase;}
+.hero-quality-badge span:nth-child(2){font-size:18px;font-weight:800;line-height:1.05;}
+.hero-quality-badge span:last-child{font-size:11px;line-height:1.1;opacity:0.9;}
 .hero-dots{
   position:absolute;
   bottom:12px;
   left:50%;
   transform:translateX(-50%);
   display:flex;
-  gap:8px;
+  gap:7px;
   z-index:3;
 }
 .hero-dot{
-  width:8px;
-  height:8px;
+  width:7px;
+  height:7px;
   border-radius:50%;
-  background:rgba(0,0,0,0.3);
+  background:rgba(17,24,39,0.25);
   cursor:pointer;
   transition:all 0.3s ease;
 }
 .hero-dot.active{
-  background:#10B981;
+  background:#16A34A;
   transform:scale(1.2);
-  box-shadow:0 2px 6px rgba(16,185,129,0.4);
+  box-shadow:0 2px 6px rgba(22,163,74,0.3);
 }
 
-/* ── Offer Banners (Images instead of Icons) ── */
 .offer-banners-container{
   margin:0 14px 20px;
   display:flex;
@@ -616,66 +806,67 @@ input,textarea{font:inherit;color:inherit}
   -webkit-overflow-scrolling:touch;
   padding-bottom:4px;
 }
-.offer-banners-container::-webkit-scrollbar{
-  display:none;
-}
+.offer-banners-container::-webkit-scrollbar{display:none}
 .offer-banner{
-  flex:0 0 280px;
-  height:100px;
-  border-radius:var(--radius-md);
-  padding:16px 20px;
+  flex:1 1 0;
+  min-height:96px;
+  border-radius:18px;
+  padding:14px 14px 12px;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  color:#fff;
+  color:var(--offer-text);
+  background:var(--offer-bg);
   position:relative;
   overflow:hidden;
-  box-shadow:var(--shadow-sm);
+  box-shadow:0 8px 18px rgba(0,0,0,0.06);
 }
 .offer-banner-content{
   flex:1;
   z-index:2;
+  min-width:0;
 }
 .offer-banner-label{
-  font-size:10px;
-  font-weight:700;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:0.08em;
   text-transform:uppercase;
-  letter-spacing:0.5px;
   opacity:0.9;
-  margin-bottom:2px;
+  margin-bottom:6px;
 }
 .offer-banner-title{
-  font-size:16px;
+  font-size:17px;
   font-weight:800;
-  line-height:1.2;
-  margin-bottom:2px;
+  line-height:1.15;
+  margin:0 0 2px;
+  letter-spacing:-0.03em;
 }
 .offer-banner-subtitle{
   font-size:12px;
-  font-weight:500;
-  opacity:0.8;
+  font-weight:600;
+  opacity:0.85;
 }
 .offer-banner-image{
-  width:60px;
-  height:60px;
-  border-radius:8px;
-  background:rgba(255,255,255,0.1);
-  backdrop-filter:blur(10px);
+  width:54px;
+  height:54px;
+  border-radius:14px;
+  background:rgba(255,255,255,0.18);
   display:flex;
   align-items:center;
   justify-content:center;
   z-index:2;
   overflow:hidden;
+  flex-shrink:0;
 }
 .offer-banner-image img{
   width:100%;
   height:100%;
   object-fit:cover;
-  border-radius:8px;
+  border-radius:14px;
 }
 .offer-banner-image .fallback-icon{
-  font-size:28px;
-  color:rgba(255,255,255,0.9);
+  font-size:26px;
+  color:rgba(17,24,39,0.8);
 }
 
 /* ── Category Chips (Bigger Round Circles, No All) ── */
@@ -787,117 +978,6 @@ input,textarea{font:inherit;color:inherit}
   border-radius:50%;
 }
 .voice-search-btn:active{transform:scale(.9);background:var(--accent-light)}
-/* Hero Banner Slideshow - Updated Design */
-.hero-banner-container {
-  margin: 16px 14px 20px;
-  position: relative;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-  height: 240px;
-}
-
-.hero-banner-slider {
-  position: relative;
-  height: 100%;
-  overflow: hidden;
-}
-
-.hero-slide {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px 20px;
-  opacity: 0;
-  transition: opacity 0.5s ease-in-out;
-  border-radius: 20px;
-  background: #FFFFFF;
-}
-
-.hero-slide.active {
-  opacity: 1;
-}
-
-.hero-content {
-  flex: 1;
-  z-index: 2;
-  padding-right: 16px;
-}
-
-.hero-text h2 {
-  font-size: 24px;
-  font-weight: 800;
-  line-height: 1.2;
-  color: #1A1A1A;
-  margin-bottom: 2px;
-  letter-spacing: -0.02em;
-}
-
-.hero-offer {
-  margin-top: 12px;
-}
-
-.offer-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: #6B7280;
-  display: block;
-  margin-bottom: 2px;
-}
-
-.offer-value {
-  font-size: 24px;
-  font-weight: 800;
-  color: #10B981;
-  letter-spacing: -0.02em;
-}
-
-.hero-image {
-  position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 160px;
-  height: 160px;
-  z-index: 1;
-}
-
-.hero-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-}
-
-.hero-dots {
-  position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 8px;
-  z-index: 3;
-}
-
-.hero-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(0,0,0,0.3);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.hero-dot.active {
-  background: #10B981;
-  transform: scale(1.2);
-  box-shadow: 0 2px 6px rgba(16,185,129,0.4);
-}
-
 .section-title{
   font-size:22px;
   font-weight:700;
@@ -1258,9 +1338,9 @@ input,textarea{font:inherit;color:inherit}
 .pm-item{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:all .15s}
 .pm-item:last-child{border-bottom:none}
 .pm-item:active{background:var(--bg-alt);margin:0 -14px;padding-left:14px;padding-right:14px}
-.pm-icon{width:44px;height:44px;background:var(--bg-alt);border-radius:var(--radius-md);
+.pm-icon{width:36px;height:36px;background:transparent;border:none;border-radius:0;
   display:flex;align-items:center;justify-content:center;font-size:22px;
-  box-shadow:none;border:1px solid var(--border)}
+  box-shadow:none;padding:0;line-height:1}
 .pm-label{flex:1;font-size:15px;font-weight:600;letter-spacing:-0.2px}
 .pm-arrow{color:var(--muted);font-size:18px}
 .logout-btn{margin:14px;width:calc(100% - 28px);padding:15px;background:rgba(239,68,68,.1);
@@ -1360,11 +1440,11 @@ input,textarea{font:inherit;color:inherit}
 .loc-topbar{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border)}
 .loc-topbar-title{font-size:15px;font-weight:800;flex:1;text-align:center;letter-spacing:.5px;text-transform:uppercase}
 .loc-body{flex:1;overflow-y:auto;padding:16px}
-.loc-search-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px;transition:border-color .2s}
+.loc-search-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px;transition:border-color .2s;box-shadow:0 0 0 1px rgba(0,0,0,.01)}
 .loc-search-row:focus-within{border-color:var(--accent)}
 .loc-search-input{flex:1;background:none;border:none;color:var(--text);font-size:14px;outline:none}
 .loc-search-input::placeholder{color:var(--muted)}
-.loc-gps-btn{display:flex;align-items:center;gap:12px;background:var(--card);border:1.5px solid var(--accent);color:var(--accent);
+.loc-gps-btn{display:flex;align-items:center;gap:12px;background:var(--card);border:2px solid var(--accent);color:var(--accent);
   padding:14px 16px;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;width:100%;margin-bottom:20px;transition:all .2s}
 .loc-gps-btn:active{opacity:.8;transform:scale(.98)}
 .loc-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -1625,7 +1705,10 @@ input,textarea{font:inherit;color:inherit}
         
         <!-- Use current location (PRIMARY) -->
         <button class="loc-gps-btn" id="locGpsBtn" onclick="detectGPSAndOpenMap()" style="margin:0 14px 12px;border:2px solid var(--accent)">
-          <span style="font-size:22px">📍</span>
+          <svg width="20" height="20" viewBox="0 0 64 64" aria-hidden="true" style="display:block;flex-shrink:0">
+            <path d="M32 6C20.4 6 11 15.2 11 26.5C11 42 32 58 32 58C32 58 53 42 53 26.5C53 15.2 43.6 6 32 6Z" fill="var(--accent)"/>
+            <circle cx="32" cy="25.5" r="8" fill="#fff"/>
+          </svg>
           <div style="text-align:left;flex:1">
             <div style="font-size:14px;font-weight:700;color:var(--accent)">Use my current location</div>
             <div style="font-size:11px;color:var(--muted);font-weight:400;margin-top:1px">Auto-detect via GPS</div>
@@ -1635,7 +1718,10 @@ input,textarea{font:inherit;color:inherit}
 
         <!-- Search (SECONDARY) -->
         <div class="loc-search-row">
-          <span style="font-size:18px;color:var(--muted)">🔍</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="display:block;color:var(--muted);flex-shrink:0">
+            <circle cx="11" cy="11" r="5.5" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M16 16L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
           <input id="locSearchInput" class="loc-search-input" placeholder="Enter area, street, landmark..."
             oninput="locSearchDebounce(this.value)" autocomplete="off"/>
           <button onclick="clearLocSearch()" style="color:var(--muted);font-size:16px;padding:4px;background:none;border:none;cursor:pointer">✕</button>
@@ -1654,7 +1740,12 @@ input,textarea{font:inherit;color:inherit}
 
         <div id="savedAddrList">
           <div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">
-            <div style="font-size:32px;margin-bottom:8px">📍</div>
+            <div style="display:flex;align-items:center;justify-content:center;margin-bottom:12px">
+              <svg width="42" height="42" viewBox="0 0 64 64" aria-hidden="true" style="display:block">
+                <path d="M32 6C20.4 6 11 15.2 11 26.5C11 42 32 58 32 58C32 58 53 42 53 26.5C53 15.2 43.6 6 32 6Z" fill="#F06292"/>
+                <circle cx="32" cy="25.5" r="8" fill="#fff"/>
+              </svg>
+            </div>
             No saved addresses yet<br><span style="font-size:11px">Use GPS or search to add your first address</span>
           </div>
         </div>
@@ -2092,8 +2183,11 @@ input,textarea{font:inherit;color:inherit}
       
       <!-- Search Bar -->
       <div style="padding:14px 14px 0">
-        <div style="display:flex;align-items:center;gap:10px;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 14px">
-          <span style="font-size:18px;color:var(--muted)">🔍</span>
+        <div style="display:flex;align-items:center;gap:10px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;box-shadow:0 0 0 1px rgba(0,0,0,.01)">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="display:block;color:var(--muted);flex-shrink:0">
+            <circle cx="11" cy="11" r="5.5" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M16 16L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
           <input id="orderSearch" type="text" placeholder="Search your orders" 
             oninput="searchOrders(this.value)"
             style="flex:1;background:none;border:none;outline:none;color:var(--text);font-size:14px"/>
@@ -2114,8 +2208,15 @@ input,textarea{font:inherit;color:inherit}
       <div class="screen-header">
         <button class="back-btn" onclick="goBack()">←</button>
         <div class="screen-title">My Profile</div>
-        <!-- Help & 3-dot menu in top-right -->
+        <!-- Help & theme icon in top-right -->
         <div style="position:absolute;right:14px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:8px">
+          <button id="appearanceTrigger" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme"
+            style="background:transparent;border:none;padding:6px;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center;line-height:0">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="display:block;transform:rotate(0deg)">
+              <circle cx="12" cy="12" r="5.5" fill="currentColor"></circle>
+              <path d="M12 1.8V4.2M12 19.8V22.2M4.93 4.93L6.56 6.56M17.44 17.44L19.07 19.07M1.8 12H4.2M19.8 12H22.2M4.93 19.07L6.56 17.44M17.44 6.56L19.07 4.93" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path>
+            </svg>
+          </button>
           <button onclick="showScreen('screen-help')" title="Help & Support" 
             style="background:transparent;color:var(--accent);border:none;padding:6px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px">
             Help
@@ -2152,72 +2253,52 @@ input,textarea{font:inherit;color:inherit}
           </button>
         </div>
 
-        <!-- Quick Access 4-Box Grid (Single Row) -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 14px;margin:16px 0">
-          <!-- My Orders -->
-          <div onclick="showScreen('screen-orders')" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:all .2s">
-            <div style="width:36px;height:36px;background:rgba(232,69,10,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">📦</div>
-            <div style="font-size:11px;font-weight:600;text-align:center;line-height:1.2">My Orders</div>
+        <!-- Quick Access Layout (aligned like earlier design) -->
+        <div style="display:grid;grid-template-columns:1.1fr 1.1fr 1.5fr;gap:12px;padding:0 14px;margin:16px 0;align-items:stretch">
+          <!-- Left big card -->
+          <div onclick="showScreen('screen-orders')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;cursor:pointer;min-height:168px;">
+            <div style="display:flex;align-items:center;justify-content:center;font-size:28px;line-height:1;color:var(--text);background:none;border:none;border-radius:0;padding:0">📦</div>
+            <div style="font-size:15px;font-weight:600;text-align:center;line-height:1.3">My Orders</div>
           </div>
-          
-          <!-- Saved Address -->
-          <div onclick="showSavedAddresses()" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:all .2s">
-            <div style="width:36px;height:36px;background:rgba(232,69,10,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">📍</div>
-            <div style="font-size:11px;font-weight:600;text-align:center;line-height:1.2">Saved Address</div>
-          </div>
-          
-          <!-- My Wishlist -->
-          <div onclick="showScreen('screen-wishlist')" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:all .2s">
-            <div style="width:36px;height:36px;background:rgba(232,69,10,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">❤️</div>
-            <div style="font-size:11px;font-weight:600;text-align:center;line-height:1.2">My Wishlist</div>
-          </div>
-          
-          <!-- Wallet & Rewards with Balance -->
-          <div onclick="showScreen('screen-wallet')" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:all .2s">
-            <div style="width:36px;height:36px;background:rgba(232,69,10,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">💳</div>
-            <div style="font-size:14px;font-weight:700;color:var(--accent)">₹<span id="profileWalletBox">0</span></div>
-            <div style="font-size:10px;font-weight:600;text-align:center;line-height:1.2;color:var(--muted)">Wallet</div>
-          </div>
-        </div>
 
-        <div class="section-box" id="membershipCard" style="margin:0 14px 12px">
-          <div style="display:flex;align-items:center;gap:10px;padding:12px 14px">
-            <span style="font-size:22px">🎖️</span>
-            <div style="flex:1">
-              <div style="font-size:13px;font-weight:700">NOW Plus Membership</div>
-              <div style="font-size:11px;color:var(--muted)" id="membershipSubtext">₹99/month • 10 free deliveries • Priority orders</div>
+          <!-- Middle stacked cards -->
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div onclick="showSavedAddresses()" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;min-height:52px;flex:1;">
+              <div style="width:40px;height:40px;background:transparent;border:none;border-radius:0;display:flex;align-items:center;justify-content:center;box-shadow:none;padding:0;line-height:1">
+                <svg width="22" height="22" viewBox="0 0 64 64" aria-hidden="true" style="display:block;overflow:visible">
+                  <path d="M32 6C20.4 6 11 15.2 11 26.5C11 42 32 58 32 58C32 58 53 42 53 26.5C53 15.2 43.6 6 32 6Z" fill="#E63946"/>
+                  <circle cx="32" cy="26" r="8" fill="#fff"/>
+                </svg>
+              </div>
+              <div style="font-size:13px;font-weight:600;text-align:center;line-height:1.2">Saved<br>Address</div>
             </div>
-            <button id="membershipBtn" style="background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer"
-              onclick="showScreen('screen-membership')">View</button>
-          </div>
-        </div>
 
-        <!-- Appearance Section - accordion (moved before menu) -->
-        <div style="margin:12px 14px">
-          <div onclick="toggleAppearance(this)"
-            style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--card);border-radius:14px;border:1px solid var(--border);cursor:pointer">
-            <div style="display:flex;align-items:center;gap:12px">
-              <div style="width:36px;height:36px;background:rgba(232,69,10,.1);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px">🎨</div>
-              <div style="font-size:14px;font-weight:600">Appearance</div>
+            <div onclick="showScreen('screen-wishlist')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;min-height:52px;flex:1;">
+              <div style="width:40px;height:40px;background:transparent;border:none;border-radius:0;display:flex;align-items:center;justify-content:center;font-size:22px;padding:0;line-height:1;color:var(--text)">❤️</div>
+              <div style="font-size:13px;font-weight:600;text-align:center;line-height:1.2">My Wishlist</div>
             </div>
-            <span id="appearanceArrow" style="font-size:12px;color:var(--muted);transition:transform .25s">▼</span>
+
+            <div onclick="showScreen('screen-wallet')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;min-height:52px;flex:1;">
+              <div style="width:40px;height:40px;background:transparent;border:none;border-radius:0;display:flex;align-items:center;justify-content:center;font-size:22px;padding:0;line-height:1;color:var(--text)">💳</div>
+              <div style="font-size:13px;font-weight:700;color:var(--accent);line-height:1.2">₹<span id="profileWalletBox">0</span></div>
+              <div style="font-size:11px;font-weight:600;text-align:center;color:var(--muted);line-height:1.2">Wallet</div>
+            </div>
           </div>
-          <div id="appearancePanel" style="display:none;background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;overflow:hidden">
-            <div onclick="setTheme('light')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
-              <span style="font-size:20px">☀️</span>
-              <div style="flex:1;font-size:14px;font-weight:500">Light Theme</div>
-              <div id="themeRadioLight" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
+
+          <!-- Right stacked cards -->
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="section-box" id="membershipCard" style="margin:0;min-height:110px;">
+              <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;height:100%">
+                <span style="font-size:22px">🎖️</span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:700;line-height:1.3">NOW Plus Membership</div>
+                  <div style="font-size:11px;color:var(--muted);line-height:1.4" id="membershipSubtext">₹99/month • 10 free deliveries • Priority orders</div>
+                </div>
+                <button id="membershipBtn" style="background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer;flex-shrink:0"
+                  onclick="showScreen('screen-membership')">View</button>
+              </div>
             </div>
-            <div onclick="setTheme('dark')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
-              <span style="font-size:20px">🌙</span>
-              <div style="flex:1;font-size:14px;font-weight:500">Dark Theme</div>
-              <div id="themeRadioDark" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
-            </div>
-            <div onclick="setTheme('system')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer">
-              <span style="font-size:20px">⚙️</span>
-              <div style="flex:1;font-size:14px;font-weight:500">System Default</div>
-              <div id="themeRadioSystem" style="width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0"></div>
-            </div>
+
           </div>
         </div>
 
@@ -2260,13 +2341,6 @@ input,textarea{font:inherit;color:inherit}
         <div style="padding:24px 14px 16px;text-align:center">
           <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px">Follow Us</div>
           <div id="socialLinksContainer" style="display:flex;justify-content:center;gap:16px;margin-bottom:20px"></div>
-          
-          <!-- Branding -->
-          <div style="padding:16px 0;border-top:1px solid var(--border)">
-            <img src="/now-logo.png" style="width:120px;height:auto;object-fit:contain;margin:0 auto 8px;display:block"/>
-            <div style="font-size:11px;color:var(--muted)">Fresh • Fast • Trusted</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:8px">v1.0.0</div>
-          </div>
         </div>
 
         <div style="height:12px"></div>
@@ -2594,24 +2668,7 @@ input,textarea{font:inherit;color:inherit}
 
       </div>
     </div>
-                • Inspect order at delivery and report issues promptly<br/>
-                • Fraudulent activities may result in account suspension<br/>
-                • NOW reserves right to cancel any order in exceptional circumstances
-              </div>
-              <div style="margin-top:12px;font-size:12px;color:var(--muted);font-style:italic">By placing an order, you confirm that you have read and accepted all applicable policies of NOW.</div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Version -->
-        <div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">
-          <img src="/logo.png" style="width:60px;height:60px;object-fit:contain;border-radius:12px;margin-bottom:8px;display:block;margin:0 auto 8px"/><br/>
-          <strong style="color:var(--text)">NOW — Nonveg On Wheel</strong><br/>
-          Fresh • Fast • Trusted<br/>
-          <span style="font-size:11px">v1.0.0</span>
-        </div>
-
-      </div>
     </div>
 
     <!-- ═══ SETTINGS SCREEN ═══ -->
@@ -3497,6 +3554,11 @@ window.pageLoadTime = Date.now();
 //  Navigation
 // ═══════════════════════════════════════════
 function showScreen(id) {
+  // Close any stale overlay before changing screen to avoid leaked modal content
+  if (typeof closeImageViewer === 'function') {
+    closeImageViewer();
+  }
+
   const screens = document.querySelectorAll('.screen');
   const target = document.getElementById(id);
   if (!target) return;
@@ -3631,12 +3693,16 @@ function focusSearch() {
 //  Theme
 // ═══════════════════════════════════════════
 function applyTheme() {
+  const root = document.documentElement;
+  root.classList.remove('light', 'dark');
+
   if (THEME === 'system') {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.className = prefersDark ? '' : 'light';
+    root.classList.add(prefersDark ? 'dark' : 'light');
   } else {
-    document.documentElement.className = THEME === 'light' ? 'light' : '';
+    root.classList.add(THEME === 'light' ? 'light' : 'dark');
   }
+
   // Update radio buttons
   const radios = { light: 'themeRadioLight', dark: 'themeRadioDark', system: 'themeRadioSystem' };
   Object.entries(radios).forEach(([t, id]) => {
@@ -3659,17 +3725,14 @@ function setTheme(t) {
 }
 
 function toggleTheme() {
-  THEME = THEME === 'dark' ? 'light' : 'dark';
+  const isDark = THEME === 'dark' || (THEME === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  THEME = isDark ? 'light' : 'dark';
   localStorage.setItem('now_theme', THEME);
   applyTheme();
 }
 
-function toggleAppearance(header) {
-  const panel = document.getElementById('appearancePanel');
-  const arrow = document.getElementById('appearanceArrow');
-  const isOpen = panel.style.display !== 'none';
-  panel.style.display = isOpen ? 'none' : 'block';
-  arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+function toggleAppearance() {
+  toggleTheme();
 }
 
 function updateTopbarUser() {
@@ -7305,7 +7368,7 @@ async function loadProfile() {
 
   const displayName = USER.name || 'Guest';
   avatarEl.textContent = displayName.charAt(0).toUpperCase() || '?';
-  nameEl.innerHTML = displayName + (USER.membership_active ? '<sup style="font-size:9px;color:#22c55e;font-weight:800;margin-left:3px;vertical-align:super">PLUS</sup>' : '');
+  nameEl.textContent = displayName;
   phoneEl.textContent = USER.phone ? '+91 ' + USER.phone : 'No phone on file';
   if (walletBoxEl) walletBoxEl.textContent = USER.wallet || 0;
 
@@ -7332,7 +7395,7 @@ async function loadProfile() {
         saveUser();
         
         avatarEl.textContent = (USER.name || 'G').charAt(0).toUpperCase();
-        nameEl.innerHTML = (USER.name || 'Guest') + (USER.membership_active ? '<sup style="font-size:9px;color:#22c55e;font-weight:800;margin-left:3px;vertical-align:super">PLUS</sup>' : '');
+        nameEl.textContent = USER.name || 'Guest';
         if (walletBoxEl) walletBoxEl.textContent = USER.wallet;
         if (c.orders !== undefined) {
           phoneEl.textContent = `+91 ${USER.phone}  •  ${c.orders} orders`;
@@ -10087,9 +10150,14 @@ async function renderSavedAddresses() {
 
   if (!addresses.length) {
     list.innerHTML = `<div style="text-align:center;padding:32px 16px;color:var(--muted)">
-      <div style="font-size:48px;margin-bottom:12px">📍</div>
-      <div style="font-size:14px;font-weight:600;margin-bottom:6px">No saved addresses yet</div>
-      <div style="font-size:12px">Add your first address to get started</div>
+      <div style="display:flex;align-items:center;justify-content:center;margin-bottom:12px">
+        <svg width="42" height="42" viewBox="0 0 64 64" aria-hidden="true" style="display:block">
+          <path d="M32 6C20.4 6 11 15.2 11 26.5C11 42 32 58 32 58C32 58 53 42 53 26.5C53 15.2 43.6 6 32 6Z" fill="#F06292"/>
+          <circle cx="32" cy="25.5" r="8" fill="#fff"/>
+        </svg>
+      </div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text)">No saved addresses yet</div>
+      <div style="font-size:12px;color:var(--muted)">Add your first address to get started</div>
     </div>`;
     return;
   }
@@ -10202,7 +10270,16 @@ async function showSavedAddresses() {
   
   let addrHtml = '';
   if (addresses.length === 0) {
-    addrHtml = '<div style="text-align:center;padding:20px;color:var(--muted)">No saved addresses yet</div>';
+    addrHtml = `<div style="text-align:center;padding:20px;color:var(--muted)">
+      <div style="display:flex;align-items:center;justify-content:center;margin-bottom:12px">
+        <svg width="42" height="42" viewBox="0 0 64 64" aria-hidden="true" style="display:block">
+          <path d="M32 6C20.4 6 11 15.2 11 26.5C11 42 32 58 32 58C32 58 53 42 53 26.5C53 15.2 43.6 6 32 6Z" fill="#F06292"/>
+          <circle cx="32" cy="25.5" r="8" fill="#fff"/>
+        </svg>
+      </div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text)">No saved addresses yet</div>
+      <div style="font-size:12px;color:var(--muted)">Add your first address to get started</div>
+    </div>`;
   } else {
     addrHtml = addresses.map((addr, idx) => {
       const isSelected = selectedAddr && selectedAddr.full === addr.full;
@@ -11591,46 +11668,51 @@ body {
 let currentSlide = 0;
 let heroSlideInterval;
 
-function initHeroBanner() {
-  const slides = document.querySelectorAll('.hero-slide');
+function bindHeroBannerDots() {
   const dots = document.querySelectorAll('.hero-dot');
-  
+  dots.forEach((dot, index) => {
+    dot.onclick = () => goToSlide(index);
+  });
+}
+
+function initHeroBanner() {
+  const slider = document.getElementById('heroBannerSlider');
+  if (!slider) return;
+
+  const slides = slider.querySelectorAll('.hero-slide');
   if (slides.length === 0) return;
-  
-  // Auto-advance slides every 4 seconds
+
+  bindHeroBannerDots();
+
+  if (heroSlideInterval) clearInterval(heroSlideInterval);
   heroSlideInterval = setInterval(() => {
     nextHeroSlide();
   }, 4000);
-  
-  // Add click handlers to dots
-  dots.forEach((dot, index) => {
-    dot.addEventListener('click', () => {
-      goToHeroSlide(index);
-    });
-  });
-  
-  // Touch/swipe support
+
   let startX = 0;
   let endX = 0;
-  const slider = document.getElementById('heroBannerSlider');
-  
-  slider.addEventListener('touchstart', (e) => {
-    startX = e.touches[0].clientX;
-  });
-  
-  slider.addEventListener('touchend', (e) => {
-    endX = e.changedTouches[0].clientX;
-    handleSwipe();
-  });
-  
-  function handleSwipe() {
-    const threshold = 50;
-    if (startX - endX > threshold) {
-      nextHeroSlide(); // Swipe left - next slide
-    } else if (endX - startX > threshold) {
-      prevHeroSlide(); // Swipe right - previous slide  
-    }
+
+  if (!slider.dataset.swipeBound) {
+    slider.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+    }, { passive: true });
+
+    slider.addEventListener('touchend', (e) => {
+      endX = e.changedTouches[0].clientX;
+      const threshold = 50;
+      if (startX - endX > threshold) {
+        nextHeroSlide();
+      } else if (endX - startX > threshold) {
+        prevHeroSlide();
+      }
+    }, { passive: true });
+
+    slider.dataset.swipeBound = 'true';
   }
+}
+
+function goToSlide(index) {
+  goToHeroSlide(index);
 }
 
 function goToHeroSlide(index) {
@@ -11639,13 +11721,11 @@ function goToHeroSlide(index) {
   
   if (index < 0 || index >= slides.length) return;
   
-  // Reset interval
   clearInterval(heroSlideInterval);
   heroSlideInterval = setInterval(() => {
     nextHeroSlide();
   }, 4000);
   
-  // Update slides
   slides.forEach((slide, i) => {
     slide.classList.remove('active', 'prev');
     if (i === index) {
@@ -11655,7 +11735,6 @@ function goToHeroSlide(index) {
     }
   });
   
-  // Update dots
   dots.forEach((dot, i) => {
     dot.classList.toggle('active', i === index);
   });
@@ -11665,12 +11744,14 @@ function goToHeroSlide(index) {
 
 function nextHeroSlide() {
   const slides = document.querySelectorAll('.hero-slide');
+  if (!slides.length) return;
   const nextIndex = (currentSlide + 1) % slides.length;
   goToHeroSlide(nextIndex);
 }
 
 function prevHeroSlide() {
   const slides = document.querySelectorAll('.hero-slide');
+  if (!slides.length) return;
   const prevIndex = (currentSlide - 1 + slides.length) % slides.length;
   goToHeroSlide(prevIndex);
 }
@@ -11688,7 +11769,7 @@ async function loadBannersAndCategories() {
   
   // First try localStorage (from admin panel saves)
   try {
-    const localSettings = localStorage.getItem('meatpe_mock_settings');
+    const localSettings = localStorage.getItem('meatpe_settings') || localStorage.getItem('meatpe_mock_settings');
     if (localSettings) {
       const settings = JSON.parse(localSettings);
       console.log('✅ Found localStorage settings:', settings);
@@ -11730,27 +11811,84 @@ async function loadBannersAndCategories() {
           height: 240,
           slides: [
             {
-              title1: 'Premium Quality',
-              title2: 'Just for You!',
+              title1: 'Fresh Meat,',
+              title2: 'Delivered Fast',
+              badge: 'PREMIUM QUALITY',
+              buttonText: 'Order Now →',
+              subtitle: 'AI-powered freshness. 100%',
+              subtitle2: 'Halal & Hygienic.',
+              features: [],
+              backgroundColor: 'linear-gradient(135deg, #f8f7f4 0%, #f4f0eb 100%)',
+              textColor: '#1A1A1A',
+              title1Color: '#1A1A1A',
+              title2Color: '#E63946',
+              badgeColor: '#F8F7F4',
+              badgeTextColor: '#1A1A1A',
+              buttonColor: '#E63946',
+              subtitleColor: '#4A4A4A',
+              qualityBadgeColor: '#F7F7F7',
+              qualityBadgeText: 'AI FRESH SCORE<br><span style="font-size:18px;font-weight:800;display:block;line-height:1.1;">99.4%</span><span style="font-size:11px;display:block;">Excellent</span>',
+              height: 240,
+              titleSize: 24,
+              subtitleSize: 14,
+              buttonSize: 15,
+              imageWidth: 180,
+              imageHeight: 180,
+              image: '/photos/hero-meat.png',
+              enabled: true
+            },
+            {
+              title1: 'Farm Fresh Meat,',
+              title2: 'Delivered to You',
               badge: '100% GUARANTEED',
               buttonText: 'Order Now →',
-              subtitle: 'Farm-fresh • Temperature controlled',
-              subtitle2: 'Delivered in 30 minutes',
-              features: ['⚡ Farm Fresh', '🔪 Expert Cut', '📦 Safe Packaging', '⭐ Premium Grade'],
-              backgroundColor: '#FFFFFF',
+              subtitle: 'Halal • Hygienic • Trusted',
+              subtitle2: 'AI ensures best quality',
+              features: [],
+              backgroundColor: 'linear-gradient(135deg, #f7f8f5 0%, #f0f6f1 100%)',
               textColor: '#1A1A1A',
-              badgeColor: '#E63946',
+              title1Color: '#1A1A1A',
+              title2Color: '#1A1A1A',
+              badgeColor: '#FFFFFF',
+              badgeTextColor: '#1A1A1A',
               buttonColor: '#10B981',
-              subtitleColor: '#6B7280',
-              qualityBadgeColor: '#10B981',
+              subtitleColor: '#4A4A4A',
+              qualityBadgeColor: '#F7F7F7',
+              qualityBadgeText: 'AI FRESH SCORE<br><span style="font-size:18px;font-weight:800;display:block;line-height:1.1;">99.4%</span><span style="font-size:11px;display:block;">Excellent</span>',
               height: 240,
-              titleSize: 20,
-              subtitleSize: 12,
-              buttonSize: 13,
-              imageWidth: 160,
-              imageHeight: 160,
-              image: '/photos/1779606918730-j4gsg1.png',
-              qualityBadgeText: 'Grade A+',
+              titleSize: 25,
+              subtitleSize: 13,
+              buttonSize: 15,
+              imageWidth: 180,
+              imageHeight: 180,
+              image: '/photos/hero-meat.png',
+              enabled: true
+            },
+            {
+              title1: 'Premium Meat',
+              title2: 'Delivered Fresh',
+              badge: 'AI POWERED',
+              buttonText: 'Shop Now →',
+              subtitle: 'Temperature locked.',
+              subtitle2: 'Farm to your table.',
+              features: [],
+              backgroundColor: 'linear-gradient(135deg, #f8f7f4 0%, #f5f3f0 100%)',
+              textColor: '#1A1A1A',
+              title1Color: '#E63946',
+              title2Color: '#1A1A1A',
+              badgeColor: '#F8F8F8',
+              badgeTextColor: '#1A1A1A',
+              buttonColor: '#E63946',
+              subtitleColor: '#4A4A4A',
+              qualityBadgeColor: '#F7F7F7',
+              qualityBadgeText: 'AI FRESH SCORE<br><span style="font-size:18px;font-weight:800;display:block;line-height:1.1;">99.4%</span><span style="font-size:11px;display:block;">Excellent</span>',
+              height: 240,
+              titleSize: 24,
+              subtitleSize: 14,
+              buttonSize: 15,
+              imageWidth: 185,
+              imageHeight: 185,
+              image: '/photos/hero-chicken.png',
               enabled: true
             }
           ]
@@ -11762,14 +11900,14 @@ async function loadBannersAndCategories() {
               label: 'FREE DELIVERY',
               title: 'On orders above',
               subtitle: '₹499',
-              backgroundColor: '#10B981',
-              textColor: '#FFFFFF',
-              icon: '🛵',
+              backgroundColor: 'var(--offer-bg)',
+              textColor: 'var(--offer-text)',
+              icon: '',
               image: '',
               imageSize: 60,
               width: 280,
               height: 100,
-              iconSize: 28,
+              iconSize: 56,
               labelSize: 10,
               titleSize: 16,
               subtitleSize: 12,
@@ -11779,9 +11917,9 @@ async function loadBannersAndCategories() {
               label: 'FIRST ORDER OFFER',
               title: 'Flat 20% OFF',
               subtitle: 'Use Code NOW20',
-              backgroundColor: '#F59E0B',
-              textColor: '#FFFFFF',
-              icon: '🥩',
+              backgroundColor: 'var(--offer-bg)',
+              textColor: 'var(--offer-text)',
+              icon: '🍗',
               image: '',
               imageSize: 60,
               width: 280,
@@ -11823,6 +11961,47 @@ window.addEventListener('message', function(event) {
   }
 });
 
+// Listen for localStorage changes (cross-tab sync)
+window.addEventListener('storage', function(event) {
+  if (event.key === 'meatpe_settings' && event.newValue) {
+    console.log('📥 Received settings update from localStorage');
+    try {
+      const settings = JSON.parse(event.newValue);
+      renderDynamicHeroBanners(settings.banners?.heroSlideshow);
+      renderDynamicOfferBanners(settings.banners?.offerBanners);
+      renderDynamicCategories(settings.categories);
+    } catch (e) {
+      console.error('❌ Failed to parse localStorage settings:', e);
+    }
+  }
+});
+
+function normalizeThemeColor(value, fallback, kind = 'hero') {
+  if (!value || typeof value !== 'string') return fallback;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.startsWith('var(')) return fallback;
+
+  const lower = trimmed.toLowerCase();
+  const map = {
+    '#ffffff': kind === 'offer' ? 'var(--offer-bg)' : 'var(--hero-bg)',
+    '#fff7ed': 'var(--hero-bg)',
+    '#ecfdf5': 'var(--hero-bg)',
+    '#1a1a1a': 'var(--hero-text)',
+    '#111827': 'var(--hero-text)',
+    '#6b7280': 'var(--hero-subtitle)',
+    '#5b6472': 'var(--hero-subtitle)',
+    '#10b981': kind === 'offer' ? 'var(--offer-bg)' : 'var(--hero-btn-bg)',
+    '#f59e0b': kind === 'offer' ? 'var(--offer-bg)' : 'var(--hero-quality-bg)',
+    '#8b5cf6': 'var(--hero-btn-bg)',
+    '#e63946': 'var(--accent)',
+    '#ffffff': kind === 'offer' ? 'var(--offer-bg)' : 'var(--hero-bg)',
+    '#f8f9fa': 'var(--bg-alt)',
+    '#161616': 'var(--bg-alt)'
+  };
+
+  return map[lower] || value;
+}
+
 function renderDynamicHeroBanners(heroSlideshow) {
   console.log('🎨 Rendering hero banners:', heroSlideshow);
   
@@ -11863,29 +12042,43 @@ function renderDynamicHeroBanners(heroSlideshow) {
   console.log('✅ Rendering', enabledSlides.length, 'slides');
   
   // Render slides
-  slider.innerHTML = enabledSlides.map((slide, index) => `
-    <div class="hero-slide ${index === 0 ? 'active' : ''}" style="background: ${slide.backgroundColor || '#FFFFFF'};">
-      <div class="hero-content">
-        ${slide.badge ? `<div class="hero-badge" style="background: ${slide.badgeColor || '#10B981'};">${slide.badge}</div>` : ''}
-        <div class="hero-text" style="color: ${slide.textColor || '#1A1A1A'};">
-          ${slide.title1 ? `<h2 style="font-size: ${slide.titleSize || 20}px;">${slide.title1}</h2>` : ''}
-          ${slide.title2 ? `<h2 style="font-size: ${slide.titleSize || 20}px;">${slide.title2}</h2>` : ''}
-          ${slide.subtitle || slide.subtitle2 ? `<p style="font-size: ${slide.subtitleSize || 12}px; color: ${slide.subtitleColor || '#6B7280'};">${slide.subtitle || ''}<br>${slide.subtitle2 || ''}</p>` : ''}
+  slider.innerHTML = enabledSlides.map((slide, index) => {
+    const bg = normalizeThemeColor(slide.backgroundColor, 'var(--hero-bg)', 'hero');
+    const text = normalizeThemeColor(slide.textColor, 'var(--hero-text)', 'hero');
+    const badgeBg = normalizeThemeColor(slide.badgeColor, 'var(--hero-badge-bg)', 'hero');
+    const badgeText = normalizeThemeColor(slide.badgeTextColor, 'var(--hero-badge-text)', 'hero');
+    const subtitle = normalizeThemeColor(slide.subtitleColor, 'var(--hero-subtitle)', 'hero');
+    const btn = normalizeThemeColor(slide.buttonColor, 'var(--hero-btn-bg)', 'hero');
+    const quality = normalizeThemeColor(slide.qualityBadgeColor, 'var(--hero-quality-bg)', 'hero');
+    const featureBg = normalizeThemeColor(slide.featureBg, 'var(--hero-feature-bg)', 'hero');
+    const featureText = normalizeThemeColor(slide.featureTextColor, 'var(--hero-feature-text)', 'hero');
+    const safeImage = slide.image || '/photos/hero-meat.png';
+    console.log('BANNER IMAGE:', slide.image, 'SAFE:', safeImage);
+    return `
+      <div class="hero-slide ${index === 0 ? 'active' : ''}" style="background: ${bg};">
+        <div class="hero-content">
+          <div class="hero-text" style="color: ${text};">
+          <h2>
+            <span>Premium Meat</span>
+            <span class="hero-highlight">Delivered Fresh</span>
+          </h2>
+            <p style="font-size: 15px; color: ${subtitle};">Temperature locked.<br>Farm to your table.</p>
+          </div>
+          <button class="hero-btn" style="background: ${btn}; font-size: 17px;">Shop Now →</button>
         </div>
-        ${slide.features && slide.features.length ? `<div class="hero-features">${slide.features.map(feature => `<span class="hero-feature">${feature}</span>`).join('')}</div>` : ''}
-        ${slide.buttonText ? `<button class="hero-btn" style="background: ${slide.buttonColor || '#10B981'}; font-size: ${slide.buttonSize || 13}px;">${slide.buttonText}</button>` : ''}
+        <div class="hero-image-container">
+          <img src="${safeImage}" alt="Premium meat" onerror="this.style.display='none'" />
+        </div>
       </div>
-      <div class="hero-image-container" style="width: ${slide.imageWidth || 160}px; height: ${slide.imageHeight || 160}px;">
-        ${slide.image ? `<img src="${slide.image}" alt="Hero Image" onerror="this.style.display='none'">` : ''}
-        ${slide.qualityBadgeText ? `<div class="hero-quality-badge" style="background: ${slide.qualityBadgeColor || '#10B981'};">${slide.qualityBadgeText}</div>` : ''}
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
   
   // Render dots
   dotsContainer.innerHTML = enabledSlides.map((_, index) => 
-    `<span class="hero-dot ${index === 0 ? 'active' : ''}" data-slide="${index}" onclick="goToSlide(${index})"></span>`
+    `<span class="hero-dot ${index === 0 ? 'active' : ''}" data-slide="${index}"></span>`
   ).join('');
+
+  bindHeroBannerDots();
   
   // Setup autoplay
   if (heroSlideInterval) clearInterval(heroSlideInterval);
@@ -11918,18 +12111,24 @@ function renderDynamicOfferBanners(offerBanners) {
   }
   
   container.style.display = 'flex';
-  container.innerHTML = enabledBanners.map(banner => `
-    <div class="offer-banner" style="background: ${banner.backgroundColor || '#10B981'}; flex: 0 0 ${banner.width || 280}px; height: ${banner.height || 100}px; color: ${banner.textColor || '#FFFFFF'};">
-      <div class="offer-banner-content">
-        <div class="offer-banner-label" style="font-size: ${banner.labelSize || 10}px; color: ${banner.textColor || '#FFFFFF'};">${banner.label || ''}</div>
-        <div class="offer-banner-title" style="font-size: ${banner.titleSize || 16}px; color: ${banner.textColor || '#FFFFFF'};">${banner.title || ''}</div>
-        <div class="offer-banner-subtitle" style="font-size: ${banner.subtitleSize || 12}px; color: ${banner.textColor || '#FFFFFF'};">${banner.subtitle || ''}</div>
+  container.innerHTML = enabledBanners.map(banner => {
+    const bg = normalizeThemeColor(banner.backgroundColor, 'var(--offer-bg)', 'offer');
+    const text = normalizeThemeColor(banner.textColor, 'var(--offer-text)', 'offer');
+    const iconColor = normalizeThemeColor(banner.iconColor, 'var(--offer-text)', 'offer');
+
+    return `
+      <div class="offer-banner" style="background: ${bg}; flex: 0 0 ${banner.width || 280}px; height: ${banner.height || 100}px; color: ${text};">
+        <div class="offer-banner-content">
+          <div class="offer-banner-label" style="font-size: ${banner.labelSize || 10}px; color: ${text};">${banner.label || ''}</div>
+          <div class="offer-banner-title" style="font-size: ${banner.titleSize || 16}px; color: ${text};">${banner.title || ''}</div>
+          <div class="offer-banner-subtitle" style="font-size: ${banner.subtitleSize || 12}px; color: ${text};">${banner.subtitle || ''}</div>
+        </div>
+        <div class="offer-banner-image" style="width: ${banner.imageSize || 60}px; height: ${banner.imageSize || 60}px;">
+          ${banner.image ? `<img src="${banner.image}" alt="${banner.title}" onerror="this.style.display='none'; this.parentNode.innerHTML='<span class=\\'fallback-icon\\'>${banner.icon || '🎯'}</span>';">` : `<span class="fallback-icon" style="font-size: ${banner.iconSize || 28}px; color: ${iconColor};">${banner.icon || '🎯'}</span>`}
+        </div>
       </div>
-      <div class="offer-banner-image" style="width: ${banner.imageSize || 60}px; height: ${banner.imageSize || 60}px;">
-        ${banner.image ? `<img src="${banner.image}" alt="${banner.title}" onerror="this.style.display='none'; this.parentNode.innerHTML='<span class=\\'fallback-icon\\'>${banner.icon || '🎯'}</span>';">` : `<span class="fallback-icon" style="font-size: ${banner.iconSize || 28}px;">${banner.icon || '🎯'}</span>`}
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function renderDynamicCategories(categories) {
