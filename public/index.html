@@ -11765,7 +11765,7 @@ body {
   box-sizing: border-box;
 }
 
-/* 1. Body aur HTML ko poori width do bina kisi side margin ke */
+/* 1. Full Screen Layout Fix */
 html, body {
   width: 100%;
   max-width: 100% !important;
@@ -11773,42 +11773,74 @@ html, body {
   padding: 0 !important;
   box-sizing: border-box;
   overflow-x: hidden;
-  position: relative;
   background-color: var(--bg);
 }
 
-/* 2. Top bar, Search bar aur Hero banner ko screen ke dono kinaron tak poora faila do */
-.home-topbar, 
-.search-container, 
-.hero-banner-wrapper, 
-#heroBannerSlider {
+/* 2. Top Bar, Search Bar & Hero Banner Edge-to-Edge Fix */
+.home-topbar {
   width: 100% !important;
-  max-width: 100% !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  border-radius: 0 !important; /* Agar koi unwanted box border ya curve ho toh hat jayega */
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+  border-radius: 0 0 24px 24px !important;
+  margin: 0 !important;
   box-sizing: border-box;
 }
 
-/* 3. Lekin andar ke text/content ko chipakne se bachane ke liye side padding denge */
-.home-topbar, 
-.search-container, 
-.hero-banner-wrapper {
+.search-container {
+  width: 100% !important;
   padding-left: 14px !important;
   padding-right: 14px !important;
+  margin: 8px 0 !important;
+  box-sizing: border-box;
 }
 
-/* 4. Top bar ke neeche wale corners ko wapas pyara sa rounded kar denge */
-.home-topbar {
-  border-radius: 0 0 24px 24px !important;
-  margin-top: 0 !important;
-}
-
-/* 5. Hero banner ko bhi thoda modern look dene ke liye side se halka margin ya edge-to-edge set karenge */
 #heroBannerSlider {
-  border-radius: 20px !important; /* Banner khud rounded rahega par width poori lega */
   width: calc(100% - 24px) !important;
   margin: 0 auto !important;
+  border-radius: 20px !important;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* 3. Niche Products / Cards & Buttons ka Professional Fix */
+/* Product Grid/Container jisme saare cards hain */
+.products-grid, .product-container, .all-products-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 cards side-by-side mobile mein */
+  gap: 10px !important;
+  padding: 0 12px !important;
+  box-sizing: border-box;
+}
+
+/* Individual Product Card */
+.product-card, .card {
+  background: #ffffff !important;
+  border-radius: 16px !important;
+  padding: 10px !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+/* Product Card ke andar ka Add/Action Button */
+.product-card button, .card-btn, .add-btn {
+  width: 100% !important;
+  background-color: var(--accent) !important;
+  color: #ffffff !important;
+  font-weight: bold;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 8px 0 !important;
+  margin-top: 8px !important;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.product-card button:active {
+  transform: scale(0.96);
 }
 
 </style>
