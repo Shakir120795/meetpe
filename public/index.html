@@ -149,20 +149,25 @@ input,textarea{font:inherit;color:inherit}
 
 @media (min-width: 768px) {
   body {
-    background: linear-gradient(180deg, #f3f4f6 0%, #eceff3 100%);
-    padding: 0;
+    background: #f3f4f6;
+    padding: 20px;
   }
 
+  /* #app ko desktop par full width ya proper layout dene ke liye */
   #app {
     width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-    border: none !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    overflow: visible !important;
-    background: transparent !important;
+    max-width: 1200px !important; /* Laptop par ek acchi max-width taaki content bikhre nahi */
+    margin: 0 auto !important;
+    border-radius: 24px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+    overflow: hidden;
   }
+
+  /* Hero banner ko bhi desktop ke hisaab se thoda aur bada/sundar karne ke liye */
+  .hero-banner-container {
+    height: 350px !important;
+  }
+}
 
   .screen {
     padding-bottom: 24px !important;
