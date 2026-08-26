@@ -11765,18 +11765,50 @@ body {
   box-sizing: border-box;
 }
 
+/* 1. Body aur HTML ko poori width do bina kisi side margin ke */
 html, body {
   width: 100%;
-  max-width: 480px; /* Mobile app container ko ek fixed width deta hai taaki bade phone ya tablet par bhi mobile jaisa hi dikhe */
-  margin: 0 auto;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box;
   overflow-x: hidden;
-  font-size: 16px;
-}
-
-/* Agar tu chahta hai ki poori app mobile screen ke andar ekdum fit aaye */
-body {
   position: relative;
   background-color: var(--bg);
+}
+
+/* 2. Top bar, Search bar aur Hero banner ko screen ke dono kinaron tak poora faila do */
+.home-topbar, 
+.search-container, 
+.hero-banner-wrapper, 
+#heroBannerSlider {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  border-radius: 0 !important; /* Agar koi unwanted box border ya curve ho toh hat jayega */
+  box-sizing: border-box;
+}
+
+/* 3. Lekin andar ke text/content ko chipakne se bachane ke liye side padding denge */
+.home-topbar, 
+.search-container, 
+.hero-banner-wrapper {
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+}
+
+/* 4. Top bar ke neeche wale corners ko wapas pyara sa rounded kar denge */
+.home-topbar {
+  border-radius: 0 0 24px 24px !important;
+  margin-top: 0 !important;
+}
+
+/* 5. Hero banner ko bhi thoda modern look dene ke liye side se halka margin ya edge-to-edge set karenge */
+#heroBannerSlider {
+  border-radius: 20px !important; /* Banner khud rounded rahega par width poori lega */
+  width: calc(100% - 24px) !important;
+  margin: 0 auto !important;
 }
 
 </style>
