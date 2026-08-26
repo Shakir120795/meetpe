@@ -1724,90 +1724,6 @@ input,textarea{font:inherit;color:inherit}
 }
 </style>
 
-
-<style id="mobile-margin-final-fix">
-@media (max-width: 767px) {
-  html, body {
-    width: 100% !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  #app {
-    width: 100vw !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  .screens {
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .screen#screen-home {
-    width: 100% !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    margin: 0 !important;
-    padding: 0 8px 90px !important;
-    box-sizing: border-box !important;
-  }
-
-  .screen#screen-home .home-topbar {
-    width: calc(100% + 16px) !important;
-    margin-left: -8px !important;
-    margin-right: -8px !important;
-    box-sizing: border-box !important;
-  }
-
-  .screen#screen-home .search-bar,
-  .screen#screen-home .hero-banner-container {
-    width: 100% !important;
-    max-width: none !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  .screen#screen-home .section-title {
-    width: 100% !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  .screen#screen-home .product-grid {
-    width: calc(100% + 4px) !important;
-    margin-left: -2px !important;
-    margin-right: -2px !important;
-    padding-left: 2px !important;
-    padding-right: 2px !important;
-    gap: 8px !important;
-    box-sizing: border-box !important;
-  }
-
-  #bottomNav.bottom-nav {
-    position: fixed !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100vw !important;
-    max-width: none !important;
-    transform: none !important;
-    z-index: 10000 !important;
-  }
-}
-</style>
-
 </head>
 <body>
 <div id="app">
@@ -12397,6 +12313,91 @@ body {
   #activeOrderStrip { bottom:calc(64px + env(safe-area-inset-bottom,0px)) !important; }
 }
 </style>
+
+<style id="mobile-final-edge-fix">
+@media (max-width: 767px) {
+  html, body {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  #app,
+  .screens,
+  .screen,
+  .screen#screen-home,
+  #screen-home {
+    width: 100vw !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Home itself owns only an 8px outer gutter. */
+  .screen#screen-home {
+    padding: 0 8px 90px !important;
+  }
+
+  /* Header stays full bleed. */
+  .screen#screen-home .home-topbar {
+    width: calc(100% + 16px) !important;
+    margin-left: -8px !important;
+    margin-right: -8px !important;
+  }
+
+  /* Kill the later 14px rules from the original stylesheet. */
+  .screen#screen-home .search-container,
+  .screen#screen-home .search-bar {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .screen#screen-home .hero-banner-container {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .screen#screen-home .section-title {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .screen#screen-home .product-grid {
+    width: calc(100% + 4px) !important;
+    margin-left: -2px !important;
+    margin-right: -2px !important;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+    gap: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  #bottomNav.bottom-nav {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    max-width: none !important;
+    transform: none !important;
+    z-index: 10000 !important;
+  }
+}
+</style>
+
 </body>
 </html>
 
