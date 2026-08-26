@@ -585,15 +585,15 @@ input,textarea{font:inherit;color:inherit}
   font-size:10px;font-weight:800;min-width:20px;height:20px;border-radius:10px;
   display:flex;align-items:center;justify-content:center;padding:0 4px;
   box-shadow:0 2px 8px rgba(230,57,70,0.35);border:2px solid var(--card)}
-/* ── Hero Banner (Unified premium mobile style) ── */
+/* Hero banner container ki height compact karne ke liye */
 .hero-banner-container{
-  margin:16px 14px 14px;
-  position:relative;
-  height:340px;
-  border-radius:24px;
-  overflow:hidden;
-  box-shadow:0 10px 24px rgba(15,23,42,0.08);
-  background:var(--hero-bg);
+  margin: 0 14px 14px !important;
+  position: relative;
+  height: 270px !important; /* Pehle 340px tha, ab chota kar diya hai */
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 10px 24px rgba(15,23,42,0.08);
+  background: var(--hero-bg);
 }
 .hero-banner-slider{
   position:relative;
@@ -601,20 +601,23 @@ input,textarea{font:inherit;color:inherit}
   height:100%;
   overflow:hidden;
 }
+/* Hero slide ki padding theek karne ke liye */
 .hero-slide{
-  position:absolute;
-  inset:0;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:18px 20px 18px 20px;
-  opacity:0;
-  transform:translateX(100%);
-  transition:all .5s cubic-bezier(.4,0,.2,1);
-  background:linear-gradient(135deg, #f8f7f3 0%, #f4f0ed 100%);
-  border-radius:24px;
-  overflow:hidden;
-  position:relative;
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px !important; /* Upar-neeche padding kam kar di */
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all .5s cubic-bezier(.4,0,.2,1);
+  border-radius: 24px;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 .hero-slide.active{
   opacity:1;
@@ -940,16 +943,16 @@ input,textarea{font:inherit;color:inherit}
 }
 
 .search-bar{
-  margin:20px 20px 24px;
-  display:flex;
-  align-items:center;
-  gap:12px;
-  background:var(--bg-alt);
-  border:2px solid transparent;
-  border-radius:28px;
-  padding:16px 20px;
-  transition:all .3s ease;
-  box-shadow:0 2px 12px rgba(0,0,0,0.04);
+  margin: 10px 14px 14px !important; /* Pehle margin zyada tha */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-alt);
+  border: 2px solid transparent;
+  border-radius: 28px;
+  padding: 14px 20px;
+  transition: all .3s ease;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
 }
 .search-bar:focus-within{
   border-color:var(--accent);
@@ -11767,187 +11770,83 @@ if (document.readyState === 'loading') {
 async function loadBannersAndCategories() {
   console.log('🔄 Loading banners and categories...');
   
-  // First try localStorage (from admin panel saves)
-  try {
-    const localSettings = localStorage.getItem('meatpe_settings') || localStorage.getItem('meatpe_mock_settings');
-    if (localSettings) {
-      const settings = JSON.parse(localSettings);
-      console.log('✅ Found localStorage settings:', settings);
-      if (settings.banners || settings.categories) {
-        renderDynamicHeroBanners(settings.banners?.heroSlideshow);
-        renderDynamicOfferBanners(settings.banners?.offerBanners);
-        renderDynamicCategories(settings.categories);
-        console.log('✅ Loaded settings from localStorage');
-        return;
-      }
-    }
-  } catch(e) {
-    console.warn('localStorage settings invalid:', e);
-  }
-  
-  // Try API
-  try {
-    const res = await fetch('/api/settings');
-    if (res.ok) {
-      const data = await res.json();
-      console.log('✅ API Response:', data);
-      if (data.ok && data.settings) {
-        renderDynamicHeroBanners(data.settings.banners?.heroSlideshow);
-        renderDynamicOfferBanners(data.settings.banners?.offerBanners);
-        renderDynamicCategories(data.settings.categories);
-        return;
-      }
-    }
-    throw new Error('API failed');
-  } catch(e) {
-    console.warn('⚠️ API not available, using fallback data');
-    
-    // Force immediate fallback rendering
-    const fallbackData = {
-      banners: {
-        heroSlideshow: {
-          enabled: true,
-          autoplaySpeed: 4,
-          height: 240,
-          slides: [
-            {
-              title1: 'Fresh Meat,',
-              title2: 'Delivered Fast',
-              badge: 'PREMIUM QUALITY',
-              buttonText: 'Order Now →',
-              subtitle: 'AI-powered freshness. 100%',
-              subtitle2: 'Halal & Hygienic.',
-              features: [],
-              backgroundColor: 'linear-gradient(135deg, #f8f7f4 0%, #f4f0eb 100%)',
-              textColor: '#1A1A1A',
-              title1Color: '#1A1A1A',
-              title2Color: '#E63946',
-              badgeColor: '#F8F7F4',
-              badgeTextColor: '#1A1A1A',
-              buttonColor: '#E63946',
-              subtitleColor: '#4A4A4A',
-              qualityBadgeColor: '#F7F7F7',
-              qualityBadgeText: 'AI FRESH SCORE<br><span style="font-size:18px;font-weight:800;display:block;line-height:1.1;">99.4%</span><span style="font-size:11px;display:block;">Excellent</span>',
-              height: 240,
-              titleSize: 24,
-              subtitleSize: 14,
-              buttonSize: 15,
-              imageWidth: 180,
-              imageHeight: 180,
-              image: '/photos/hero-meat.png',
-              enabled: true
-            },
-            {
-              title1: 'Farm Fresh Meat,',
-              title2: 'Delivered to You',
-              badge: '100% GUARANTEED',
-              buttonText: 'Order Now →',
-              subtitle: 'Halal • Hygienic • Trusted',
-              subtitle2: 'AI ensures best quality',
-              features: [],
-              backgroundColor: 'linear-gradient(135deg, #f7f8f5 0%, #f0f6f1 100%)',
-              textColor: '#1A1A1A',
-              title1Color: '#1A1A1A',
-              title2Color: '#1A1A1A',
-              badgeColor: '#FFFFFF',
-              badgeTextColor: '#1A1A1A',
-              buttonColor: '#10B981',
-              subtitleColor: '#4A4A4A',
-              qualityBadgeColor: '#F7F7F7',
-              qualityBadgeText: 'AI FRESH SCORE<br><span style="font-size:18px;font-weight:800;display:block;line-height:1.1;">99.4%</span><span style="font-size:11px;display:block;">Excellent</span>',
-              height: 240,
-              titleSize: 25,
-              subtitleSize: 13,
-              buttonSize: 15,
-              imageWidth: 180,
-              imageHeight: 180,
-              image: '/photos/hero-meat.png',
-              enabled: true
-            },
-            {
-              title1: 'Premium Meat',
-              title2: 'Delivered Fresh',
-              badge: 'AI POWERED',
-              buttonText: 'Shop Now →',
-              subtitle: 'Temperature locked.',
-              subtitle2: 'Farm to your table.',
-              features: [],
-              backgroundColor: 'linear-gradient(135deg, #f8f7f4 0%, #f5f3f0 100%)',
-              textColor: '#1A1A1A',
-              title1Color: '#E63946',
-              title2Color: '#1A1A1A',
-              badgeColor: '#F8F8F8',
-              badgeTextColor: '#1A1A1A',
-              buttonColor: '#E63946',
-              subtitleColor: '#4A4A4A',
-              qualityBadgeColor: '#F7F7F7',
-              qualityBadgeText: 'AI FRESH SCORE<br><span style="font-size:18px;font-weight:800;display:block;line-height:1.1;">99.4%</span><span style="font-size:11px;display:block;">Excellent</span>',
-              height: 240,
-              titleSize: 24,
-              subtitleSize: 14,
-              buttonSize: 15,
-              imageWidth: 185,
-              imageHeight: 185,
-              image: '/photos/hero-chicken.png',
-              enabled: true
-            }
-          ]
-        },
-        offerBanners: {
-          enabled: true,
-          banners: [
-            {
-              label: 'FREE DELIVERY',
-              title: 'On orders above',
-              subtitle: '₹499',
-              backgroundColor: 'var(--offer-bg)',
-              textColor: 'var(--offer-text)',
-              icon: '',
-              image: '',
-              imageSize: 60,
-              width: 280,
-              height: 100,
-              iconSize: 56,
-              labelSize: 10,
-              titleSize: 16,
-              subtitleSize: 12,
-              enabled: true
-            },
-            {
-              label: 'FIRST ORDER OFFER',
-              title: 'Flat 20% OFF',
-              subtitle: 'Use Code NOW20',
-              backgroundColor: 'var(--offer-bg)',
-              textColor: 'var(--offer-text)',
-              icon: '🍗',
-              image: '',
-              imageSize: 60,
-              width: 280,
-              height: 100,
-              iconSize: 28,
-              labelSize: 10,
-              titleSize: 16,
-              subtitleSize: 12,
-              enabled: true
-            }
-          ]
-        }
+  // NOTE: Maine API aur LocalStorage check hata diya hai taaki aapka naya design forcefully load ho.
+  const fallbackData = {
+    banners: {
+      heroSlideshow: {
+        enabled: true,
+        autoplaySpeed: 4,
+        height: 240,
+        slides: [
+          {
+            title1: 'Fresh Meat,',
+            title2: 'Delivered Fast',
+            badge: 'PREMIUM QUALITY',
+            buttonText: 'Order Now →',
+            subtitle: 'AI-powered freshness. 100%',
+            subtitle2: 'Halal & Hygienic.',
+            backgroundColor: 'linear-gradient(135deg, #f8f7f4 0%, #f4f0eb 100%)',
+            textColor: '#1A1A1A',
+            title1Color: '#1A1A1A',
+            title2Color: '#E63946',
+            buttonColor: '#E63946',
+            subtitleColor: '#4A4A4A',
+            image: '/photos/hero-meat.png',
+            enabled: true
+          },
+          // AApki Nayi 2nd SLIDE
+          {
+            title1: 'Farm Fresh Meat,',
+            title2: 'Delivered to You',
+            badge: '100% GUARANTEED',
+            buttonText: 'Order Now →',
+            subtitle: 'Halal • Hygienic • Trusted',
+            subtitle2: 'AI ensures best quality',
+            backgroundColor: 'linear-gradient(135deg, #fcfdfc 0%, #f0f6f1 100%)',
+            textColor: '#1A1A1A',
+            title1Color: '#1A1A1A',
+            title2Color: '#11682b',
+            badgeTextColor: '#11682b',
+            buttonColor: '#438a42',
+            subtitleColor: '#1A1A1A',
+            image: '/hero-chicken.png', // <-- Image path check karein (agar photos folder me hai toh '/photos/hero-chicken.png' likhein)
+            qualityBadgeText: '<span style="font-size:10px;font-weight:800;color:#1A1A1A">AI FRESH SCORE</span><br><span style="font-size:24px;font-weight:800;color:#11682b;line-height:1.2">99.4%</span><br><span style="font-size:12px;color:#1A1A1A;font-weight:600">Excellent</span>',
+            enabled: true
+          }
+        ]
       },
-      categories: [
-        { id: 'chicken', name: 'Chicken', icon: '🐔', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 1, enabled: true },
-        { id: 'mutton', name: 'Mutton', icon: '🐐', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 2, enabled: true },
-        { id: 'fish', name: 'Fish', icon: '🐟', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 3, enabled: true },
-        { id: 'ready_to_cook', name: 'Ready to Cook', icon: '🔥', image: '', size: 64, labelSize: 13, activeColor: '#E63946', order: 4, enabled: true }
-      ]
-    };
-    
-    // Immediate render
-    renderDynamicHeroBanners(fallbackData.banners.heroSlideshow);
-    renderDynamicOfferBanners(fallbackData.banners.offerBanners);  
-    renderDynamicCategories(fallbackData.categories);
-    
-    console.log('✅ Fallback data loaded successfully');
-  }
+      offerBanners: {
+        enabled: true,
+        banners: [
+          {
+            label: 'FREE DELIVERY',
+            title: 'On orders above',
+            subtitle: '₹499',
+            backgroundColor: 'var(--offer-bg)',
+            textColor: 'var(--offer-text)',
+            icon: '🚚',
+            imageSize: 60,
+            width: 280,
+            height: 100,
+            enabled: true
+          }
+        ]
+      }
+    },
+    categories: [
+      { id: 'chicken', name: 'Chicken', icon: '🐔', activeColor: '#E63946', order: 1, enabled: true },
+      { id: 'mutton', name: 'Mutton', icon: '🐐', activeColor: '#E63946', order: 2, enabled: true },
+      { id: 'fish', name: 'Fish', icon: '🐟', activeColor: '#E63946', order: 3, enabled: true },
+      { id: 'ready_to_cook', name: 'Ready to Cook', icon: '🔥', activeColor: '#E63946', order: 4, enabled: true }
+    ]
+  };
+  
+  // Immediate render (ye direct aapka naya data screen par bhej dega)
+  renderDynamicHeroBanners(fallbackData.banners.heroSlideshow);
+  renderDynamicOfferBanners(fallbackData.banners.offerBanners);  
+  renderDynamicCategories(fallbackData.categories);
+  
+  console.log('✅ Hardcoded fallback data loaded successfully');
 }
 
 // Listen for settings updates from admin panel
@@ -11976,122 +11875,104 @@ window.addEventListener('storage', function(event) {
   }
 });
 
-function normalizeThemeColor(value, fallback, kind = 'hero') {
-  if (!value || typeof value !== 'string') return fallback;
-  const trimmed = value.trim();
-  if (!trimmed || trimmed.startsWith('var(')) return fallback;
-
-  const lower = trimmed.toLowerCase();
-  const map = {
-    '#ffffff': kind === 'offer' ? 'var(--offer-bg)' : 'var(--hero-bg)',
-    '#fff7ed': 'var(--hero-bg)',
-    '#ecfdf5': 'var(--hero-bg)',
-    '#1a1a1a': 'var(--hero-text)',
-    '#111827': 'var(--hero-text)',
-    '#6b7280': 'var(--hero-subtitle)',
-    '#5b6472': 'var(--hero-subtitle)',
-    '#10b981': kind === 'offer' ? 'var(--offer-bg)' : 'var(--hero-btn-bg)',
-    '#f59e0b': kind === 'offer' ? 'var(--offer-bg)' : 'var(--hero-quality-bg)',
-    '#8b5cf6': 'var(--hero-btn-bg)',
-    '#e63946': 'var(--accent)',
-    '#ffffff': kind === 'offer' ? 'var(--offer-bg)' : 'var(--hero-bg)',
-    '#f8f9fa': 'var(--bg-alt)',
-    '#161616': 'var(--bg-alt)'
-  };
-
-  return map[lower] || value;
-}
-
-function renderDynamicHeroBanners(heroSlideshow) {
-  console.log('🎨 Rendering hero banners:', heroSlideshow);
-  
-  if (!heroSlideshow || heroSlideshow.enabled === false) {
-    console.log('❌ Hero slideshow disabled or not found');
-    return;
-  }
-  
+function renderDynamicHeroBanners() {
   const slider = document.getElementById('heroBannerSlider');
   const dotsContainer = document.getElementById('heroBannerDots');
-  
-  if (!slider || !dotsContainer) {
-    console.error('❌ Hero banner containers not found');
-    return;
-  }
-  
-  if (!heroSlideshow.slides || heroSlideshow.slides.length === 0) {
-    console.log('❌ No slides found');
-    return;
-  }
-  
-  // Update container height
-  const container = document.getElementById('heroBannerContainer');
-  if (container && heroSlideshow.height) {
-    container.style.height = heroSlideshow.height + 'px';
-  }
-  
-  const enabledSlides = heroSlideshow.slides.filter(slide => slide.enabled !== false);
-  if (enabledSlides.length === 0) {
-    console.log('❌ No enabled slides');
-    return;
-  }
-  
-  // Clear current content
-  slider.innerHTML = '';
-  dotsContainer.innerHTML = '';
-  
-  console.log('✅ Rendering', enabledSlides.length, 'slides');
-  
-  // Render slides
-  slider.innerHTML = enabledSlides.map((slide, index) => {
-    const bg = normalizeThemeColor(slide.backgroundColor, 'var(--hero-bg)', 'hero');
-    const text = normalizeThemeColor(slide.textColor, 'var(--hero-text)', 'hero');
-    const badgeBg = normalizeThemeColor(slide.badgeColor, 'var(--hero-badge-bg)', 'hero');
-    const badgeText = normalizeThemeColor(slide.badgeTextColor, 'var(--hero-badge-text)', 'hero');
-    const subtitle = normalizeThemeColor(slide.subtitleColor, 'var(--hero-subtitle)', 'hero');
-    const btn = normalizeThemeColor(slide.buttonColor, 'var(--hero-btn-bg)', 'hero');
-    const quality = normalizeThemeColor(slide.qualityBadgeColor, 'var(--hero-quality-bg)', 'hero');
-    const featureBg = normalizeThemeColor(slide.featureBg, 'var(--hero-feature-bg)', 'hero');
-    const featureText = normalizeThemeColor(slide.featureTextColor, 'var(--hero-feature-text)', 'hero');
-    const safeImage = slide.image || '/photos/hero-meat.png';
-    console.log('BANNER IMAGE:', slide.image, 'SAFE:', safeImage);
-    return `
-      <div class="hero-slide ${index === 0 ? 'active' : ''}" style="background: ${bg};">
-        <div class="hero-content">
-          <div class="hero-text" style="color: ${text};">
+  if (!slider || !dotsContainer) return;
+
+  // DIRECT HARDCODED DATA
+  const mySlides = [
+    {
+      // 1st Slide (Red Theme - Meat)
+      bg: 'linear-gradient(135deg, #ffffff 0%, #f4f5f5 100%)',
+      badge: 'PREMIUM QUALITY',
+      badgeColor: '#4A4A4A', 
+      title1: 'Fresh Meat,',
+      title2: 'Delivered Fast',
+      title1Color: '#1A1A1A',
+      title2Color: '#E63946', 
+      sub1: 'AI-powered freshness',
+      sub2: 'Halal & Hygienic.',
+      btnBg: '#E63946', 
+      btnText: 'Order Now →',
+      img: '/photos/hero-meat.png',
+      badgeHtml: '', 
+      // PERFECT SIZE: contain ke sath position set kar di hai taaki bada na lage
+      imgStyle: 'width: 150%; height: 150%; object-fit: contain; object-position: 75% center; border-radius: 0 24px 24px 0; mix-blend-mode: multiply; -webkit-mask-image: linear-gradient(to right, transparent 0%, black 30%); mask-image: linear-gradient(to right, transparent 0%, black 30%);'
+    },
+    {
+      // 2nd Slide (Green Theme - Chicken)
+      bg: 'linear-gradient(135deg, #fcfdfc 0%, #f0f6f1 100%)',
+      badge: '100% GUARANTEED',
+      badgeColor: '#11682b',
+      title1: 'Farm Fresh Meat,',
+      title2: 'Delivered to You',
+      title1Color: '#1A1A1A',
+      title2Color: '#11682b',
+      sub1: 'Hygienic • Trusted',
+      sub2: 'Best quality',
+      btnBg: '#438a42',
+      btnText: 'Order Now →',
+      img: '/photos/hero-chicken.png',
+      badgeHtml: '', 
+      // PERFECT SIZE: contain ke sath position set kar di hai taaki bada na lage
+      imgStyle: 'width: 135%; height: 135%; object-fit: contain; object-position: 75% center; border-radius: 0 24px 24px 0; mix-blend-mode: multiply; -webkit-mask-image: linear-gradient(to right, transparent 0%, black 30%); mask-image: linear-gradient(to right, transparent 0%, black 30%);'
+    },
+    {
+      // 3rd Slide (Mutton - Weekend Special)
+      bg: 'linear-gradient(135deg, #ffffff 0%, #f4f5f5 100%)',
+      badge: 'WEEKEND SPECIAL',
+      badgeColor: '#4A4A4A', 
+      title1: 'Premium Cuts,',
+      title2: 'Fresh & Tender',
+      title1Color: '#1A1A1A',
+      title2Color: '#E63946', 
+      sub1: 'Rich in flavor.',
+      sub2: 'Perfect for curries.',
+      btnBg: '#E63946', 
+      btnText: 'Explore Menu →',
+      img: '/photos/hero-mutton.png',
+      badgeHtml: '', 
+      // PERFECT SIZE: contain ke sath position set kar di hai taaki bada na lage
+      imgStyle: 'width: 140%; height: 140%; object-fit: contain; object-position: 75% center; border-radius: 0 24px 24px 0; mix-blend-mode: multiply; -webkit-mask-image: linear-gradient(to right, transparent 0%, black 30%); mask-image: linear-gradient(to right, transparent 0%, black 30%);'
+    }
+  ];
+
+  slider.innerHTML = mySlides.map((slide, i) => `
+    <div class="hero-slide ${i === 0 ? 'active' : ''}" style="background: ${slide.bg};">
+      <div class="hero-content" style="width: 55%; z-index: 2; position: relative; padding-top: 10px;">
+        <div class="hero-badge" style="color:${slide.badgeColor}; font-weight:800; background: transparent; padding: 0; margin-bottom: 10px; box-shadow: none; letter-spacing: 0.5px;">${slide.badge}</div>
+        <div class="hero-text">
           <h2>
-            <span>Premium Meat</span>
-            <span class="hero-highlight">Delivered Fresh</span>
+            <span style="color: ${slide.title1Color};">${slide.title1}</span><br>
+            <span class="hero-highlight" style="color: ${slide.title2Color};">${slide.title2}</span>
           </h2>
-            <p style="font-size: 15px; color: ${subtitle};">Temperature locked.<br>Farm to your table.</p>
-          </div>
-          <button class="hero-btn" style="background: ${btn}; font-size: 17px;">Shop Now →</button>
+          <p style="font-size: 14px; color: #4b4b4b; margin-top: 8px; font-weight: 500;">
+            ${slide.sub1}<br>${slide.sub2}
+          </p>
         </div>
-        <div class="hero-image-container">
-          <img src="${safeImage}" alt="Premium meat" onerror="this.style.display='none'" />
-        </div>
+        <button class="hero-btn" style="background: ${slide.btnBg}; font-size: 14px; border-radius: 20px; padding: 12px 24px; color: #fff; font-weight: bold; border: none; margin-top: 12px;">
+          ${slide.btnText}
+        </button>
       </div>
-    `;
-  }).join('');
-  
-  // Render dots
-  dotsContainer.innerHTML = enabledSlides.map((_, index) => 
-    `<span class="hero-dot ${index === 0 ? 'active' : ''}" data-slide="${index}"></span>`
+      <!-- Yahan image container ki width badha kar 60% kar di hai taaki mask fade smooth lage -->
+      <div class="hero-image-container" style="position: absolute; right: 0; top: 0; width: 60%; height: 100%; display: flex; align-items: center; justify-content: flex-end; z-index: 1;">
+        <img src="${slide.img}" alt="Banner" style="${slide.imgStyle}" onerror="this.onerror=null; this.src='/photo/hero-meat.png';" />
+        ${slide.badgeHtml}
+      </div>
+    </div>
+  `).join('');
+
+  dotsContainer.innerHTML = mySlides.map((_, i) => 
+    `<span class="hero-dot ${i === 0 ? 'active' : ''}" data-slide="${i}"></span>`
   ).join('');
 
-  bindHeroBannerDots();
+  if (typeof bindHeroBannerDots === 'function') bindHeroBannerDots();
   
-  // Setup autoplay
-  if (heroSlideInterval) clearInterval(heroSlideInterval);
-  
-  const speed = (heroSlideshow.autoplaySpeed || 4) * 1000;
-  heroSlideInterval = setInterval(() => {
-    nextHeroSlide();
-  }, speed);
-  
-  // Reset current slide
-  currentSlide = 0;
-  
-  console.log('✅ Hero banner rendered successfully');
+  if (window.heroSlideInterval) clearInterval(window.heroSlideInterval);
+  window.heroSlideInterval = setInterval(() => {
+    if (typeof nextHeroSlide === 'function') nextHeroSlide();
+  }, 4000);
 }
 
 function renderDynamicOfferBanners(offerBanners) {
