@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
@@ -11759,6 +11759,24 @@ body {
 .hero-banner-wrapper,
 #heroBannerSlider {
   margin-top: 0px !important;
+}
+/* Sabhi phones par layout aur sizing fix karne ke liye */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  max-width: 480px; /* Mobile app container ko ek fixed width deta hai taaki bade phone ya tablet par bhi mobile jaisa hi dikhe */
+  margin: 0 auto;
+  overflow-x: hidden;
+  font-size: 16px;
+}
+
+/* Agar tu chahta hai ki poori app mobile screen ke andar ekdum fit aaye */
+body {
+  position: relative;
+  background-color: var(--bg);
 }
 
 </style>
