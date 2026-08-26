@@ -12438,6 +12438,24 @@ body {
   }
 }
 </style>
+<style id="mobile-hero-image-size-fix">
+@media (max-width: 767px) {
+  .hero-image-container {
+    width: 50% !important;
+    max-width: 50% !important;
+    overflow: visible !important;
+  }
+
+  .hero-image-container img {
+    width: 165% !important;
+    height: 165% !important;
+    max-width: none !important;
+    max-height: none !important;
+    object-fit: contain !important;
+    object-position: center right !important;
+  }
+}
+</style>
 
 </body>
 </html>
