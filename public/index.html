@@ -1651,6 +1651,79 @@ input,textarea{font:inherit;color:inherit}
 <link rel="stylesheet" href="/ui-v5.css?v=5">
 <!-- Removed external CSS file that was overriding inline styles -->
 
+
+<style id="mobile-layout-fix-v2">
+@media (max-width: 767px) {
+  /* Full mobile width: remove excessive side gutters */
+  #app,
+  .screens,
+  .screen,
+  #screen-home {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  #screen-home {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 18px) !important;
+  }
+
+  .search-bar {
+    width: calc(100% - 20px) !important;
+    margin-left: 10px !important;
+    margin-right: 10px !important;
+  }
+
+  .hero-banner-container {
+    width: calc(100% - 20px) !important;
+    margin-left: 10px !important;
+    margin-right: 10px !important;
+  }
+
+  .product-grid {
+    width: 100% !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+
+  .section-title {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  /* Bottom navigation must stay pinned to the phone viewport */
+  #bottomNav.bottom-nav {
+    position: fixed !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    max-width: 430px !important;
+    height: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-top: 8px !important;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
+    transform: translateX(-50%) !important;
+    z-index: 10000 !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  #bottomNav .nav-btn {
+    min-height: 48px !important;
+  }
+
+  #activeOrderStrip {
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <div id="app">
