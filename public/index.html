@@ -12397,6 +12397,35 @@ body {
   }
 }
 </style>
+<style id="mobile-hero-height-fix">
+@media (max-width: 767px) {
+  .hero-banner-container {
+    height: clamp(250px, 72vw, 310px) !important;
+    aspect-ratio: auto !important;
+  }
+
+  .hero-slide {
+    height: 100% !important;
+    align-items: center !important;
+  }
+
+  .hero-content {
+    width: 55% !important;
+    max-width: 55% !important;
+    overflow: visible !important;
+    padding-top: 0 !important;
+  }
+
+  .hero-text {
+    overflow: visible !important;
+  }
+
+  .hero-btn {
+    margin-top: 8px !important;
+    margin-bottom: 4px !important;
+  }
+}
+</style>
 
 </body>
 </html>
