@@ -9,14 +9,19 @@
 <title data-brand-name>NOW</title>
 <meta name="description" content="Fresh chicken & mutton delivered in 30 min across Agra"/>
 <link rel="manifest" href="/manifest.json"/>
-<meta name="theme-color" content="#E63946"/>
+
+<!-- STATUS BAR FIX: Isse time aur battery ke icons dark dikhenge -->
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#1A1A1A" media="(prefers-color-scheme: dark)" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+
 <link rel="preload" href="/splash-intro.png" as="image"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="NOW"/>
 <link rel="apple-touch-icon" href="/app-icon.png"/>
 <link rel="icon" type="image/png" href="/app-icon.png"/>
+
 <!-- Leaflet Map - for location picking -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -147,21 +152,49 @@ input,textarea{font:inherit;color:inherit}
 .image-viewer-btn{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center}
 .image-viewer-counter{font-size:14px;font-weight:700;letter-spacing:.02em}
 
+/* 2. Jab koi ise Laptop ya PC par khole (Screen width 768px se zyada ho) */
 @media (min-width: 768px) {
-  body {
-    background: #f3f4f6;
-    padding: 20px;
+  .hero-image-container {
+    width: 55% !important;
+    height: 100% !important;
+    right: 0 !important;
+    top: 0 !important;
+    display: flex !important;
+    position: absolute !important;
+  }
+  .hero-image-container img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: right center !important;
+  }
+}
+
+  #app {
+    max-width: 800px !important; /* Laptop par thoda aur wide aur khula-khula dikhega */
+    border-radius: 24px !important;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.12) !important;
   }
 
-  /* #app ko desktop par full width ya proper layout dene ke liye */
-  #app {
-    width: 100% !important;
-    max-width: 1200px !important; /* Laptop par ek acchi max-width taaki content bikhre nahi */
-    margin: 0 auto !important;
-    border-radius: 24px !important;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
-    overflow: hidden;
+  /* Products jo abhi 2 column mein hain, unhe desktop par aur behtar set karne ke liye */
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
   }
+}
+
+/* 1. Mobile ke liye default view (App jaisa) */
+#app {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #ffffff;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  box-sizing: border-box;
+}
 
   /* Hero banner ko bhi desktop ke hisaab se thoda aur bada/sundar karne ke liye */
   .hero-banner-container {
@@ -181,14 +214,51 @@ input,textarea{font:inherit;color:inherit}
   }
 
   .home-topbar {
-    background: rgba(255,255,255,0.98);
-    border: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    border-radius: 18px 18px 0 0;
-    box-shadow: none;
-    margin: 0;
-    padding: 18px 24px;
-  }
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px; /* Spacing kam ki hai premium look ke liye */
+  padding-top: max(10px, env(safe-area-inset-top, 10px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Ye icons ko ekdum right me push karega */
+  gap: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+
+.topbar-loc-center {
+  flex: 1; /* Ye bachi hui poori space lega aur icons ko right shift karega */
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: 0;
+  min-width: 0;
+  cursor: pointer;
+}
+.topbar-loc-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+.topbar-loc-addr {
+  display: flex;
+  align-items: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar-loc-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
   .search-bar {
     margin: 0 0 24px;
@@ -606,30 +676,33 @@ input,textarea{font:inherit;color:inherit}
   height:100%;
   overflow:hidden;
 }
-/* Hero slide ki padding theek karne ke liye */
-.hero-slide{
+/* Hero Slide Layout & Animation Fix */
+.hero-slide {
   position: absolute !important;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px !important; /* Upar-neeche padding kam kar di */
+  padding: 12px 16px !important;
   opacity: 0;
   transform: translateX(100%);
-  transition: all .5s cubic-bezier(.4,0,.2,1);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 24px;
   overflow: hidden;
   box-sizing: border-box;
 }
-.hero-slide.active{
-  opacity:1;
-  transform:translateX(0);
+
+.hero-slide.active {
+  opacity: 1;
+  transform: translateX(0);
 }
-.hero-slide.prev{
-  transform:translateX(-100%);
+
+.hero-slide.prev {
+  transform: translateX(-100%);
+}
 }
 .hero-content{
   width:48%;
@@ -1857,17 +1930,85 @@ input,textarea{font:inherit;color:inherit}
       <!-- Store Closed Banner -->
       <div id="storeClosedBanner" style="display:none;margin:0 14px 12px;background:linear-gradient(135deg,#991b1b,#7f1d1d);border-radius:14px;padding:14px 16px;color:#fff;border:1px solid #dc2626"></div>
 
-      <!-- Hero Banner Slideshow (Dynamic) -->
-      <div class="hero-banner-container" id="heroBannerContainer">
-        <div class="hero-banner-slider" id="heroBannerSlider">
-          <!-- Dynamic content will be loaded here by renderDynamicHeroBanners() -->
+      <!-- Hero Banner Slideshow (Direct Hardcoded HTML for Zero Failures) -->
+<div class="hero-banner-container" id="heroBannerContainer">
+  <div class="hero-banner-slider" id="heroBannerSlider">
+    
+    <!-- Slide 1 -->
+    <div class="hero-slide active" style="background: linear-gradient(135deg, #ffffff 0%, #f4f5f5 100%); position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: space-between;">
+      <div class="hero-content" style="width: 55%; z-index: 2; position: relative; padding-top: 10px;">
+        <div class="hero-badge" style="color:#4A4A4A; font-weight:800; background: transparent; padding: 0; margin-bottom: 10px; box-shadow: none; letter-spacing: 0.5px;">PREMIUM QUALITY</div>
+        <div class="hero-text">
+          <h2>
+            <span style="color: #1A1A1A;">Fresh Meat,</span><br>
+            <span class="hero-highlight" style="color: #E63946;">Delivered Fast</span>
+          </h2>
+          <p style="font-size: 14px; color: #4b4b4b; margin-top: 8px; font-weight: 500;">
+            AI-powered freshness<br>Halal & Hygienic.
+          </p>
         </div>
-        
-        <!-- Banner Dots (Dynamic) -->
-        <div class="hero-dots" id="heroBannerDots">
-          <!-- Dynamic dots will be loaded here -->
-        </div>
+        <button class="hero-btn" style="background: #E63946; font-size: 14px; border-radius: 20px; padding: 12px 24px; color: #fff; font-weight: bold; border: none; margin-top: 12px;">
+          Order Now →
+        </button>
       </div>
+      <div class="hero-image-container" style="flex: 1; height: 100%; display: flex; align-items: center; justify-content: flex-end; position: relative;">
+  <img src="/photo/hero-meat.png" alt="Banner" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 0 16px 16px 0;" onerror="this.onerror=null;;" />
+</div>
+    </div>
+
+    <!-- Slide 2 -->
+    <div class="hero-slide" style="background: linear-gradient(135deg, #fcfdfc 0%, #f0f6f1 100%); position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: space-between;">
+      <div class="hero-content" style="width: 55%; z-index: 2; position: relative; padding-top: 10px;">
+        <div class="hero-badge" style="color:#11682b; font-weight:800; background: transparent; padding: 0; margin-bottom: 10px; box-shadow: none; letter-spacing: 0.5px;">100% GUARANTEED</div>
+        <div class="hero-text">
+          <h2>
+            <span style="color: #1A1A1A;">Farm Fresh Meat,</span><br>
+            <span class="hero-highlight" style="color: #11682b;">Delivered to You</span>
+          </h2>
+          <p style="font-size: 14px; color: #4b4b4b; margin-top: 8px; font-weight: 500;">
+            Hygienic • Trusted<br>Best quality
+          </p>
+        </div>
+        <button class="hero-btn" style="background: #438a42; font-size: 14px; border-radius: 20px; padding: 12px 24px; color: #fff; font-weight: bold; border: none; margin-top: 12px;">
+          Order Now →
+        </button>
+      </div>
+      <div class="hero-image-container" style="flex: 1; height: 100%; display: flex; align-items: center; justify-content: flex-end; position: relative;">
+        <img src="/photos/hero-chicken.png" alt="Banner" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 0 16px 16px 0;" />
+      </div>
+    </div>
+
+    <!-- Slide 3 -->
+    <div class="hero-slide" style="background: linear-gradient(135deg, #ffffff 0%, #f4f5f5 100%); position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: space-between;">
+      <div class="hero-content" style="width: 55%; z-index: 2; position: relative; padding-top: 10px;">
+        <div class="hero-badge" style="color:#4A4A4A; font-weight:800; background: transparent; padding: 0; margin-bottom: 10px; box-shadow: none; letter-spacing: 0.5px;">WEEKEND SPECIAL</div>
+        <div class="hero-text">
+          <h2>
+            <span style="color: #1A1A1A;">Premium Cuts,</span><br>
+            <span class="hero-highlight" style="color: #E63946;">Fresh & Tender</span>
+          </h2>
+          <p style="font-size: 14px; color: #4b4b4b; margin-top: 8px; font-weight: 500;">
+            Rich in flavor.<br>Perfect for curries.
+          </p>
+        </div>
+        <button class="hero-btn" style="background: #E63946; font-size: 14px; border-radius: 20px; padding: 12px 24px; color: #fff; font-weight: bold; border: none; margin-top: 12px;">
+          Explore Menu →
+        </button>
+      </div>
+      <div class="hero-image-container" style="position: absolute; right: 0; top: 0; width: 55%; height: 100%; display: flex; align-items: center; justify-content: flex-end; z-index: 1;">
+        <img src="/photos/hero-mutton.png" alt="Banner" style="width: 100%; height: 100%; object-fit: contain; object-position: right center; border-radius: 0 24px 24px 0;" />
+      </div>
+    </div>
+
+  </div>
+  
+  <!-- Banner Dots -->
+  <div class="hero-dots" id="heroBannerDots">
+    <span class="hero-dot active" data-slide="0"></span>
+    <span class="hero-dot" data-slide="1"></span>
+    <span class="hero-dot" data-slide="2"></span>
+  </div>
+</div>
 
       <!-- Offer Banners (Dynamic) -->
       <div class="offer-banners-container" id="offerBannersContainer">
@@ -11609,6 +11750,16 @@ body {
 .tracking-actions button:last-child {
   background: #3b82f6;
 }
+/* Top Bar, Search aur Hero Banner ke beech ka gap kam karne ke liye */
+.search-container {
+  margin-top: 6px !important;
+  margin-bottom: 8px !important;
+}
+
+.hero-banner-wrapper,
+#heroBannerSlider {
+  margin-top: 0px !important;
+}
 
 </style>
 
@@ -11775,38 +11926,36 @@ if (document.readyState === 'loading') {
 async function loadBannersAndCategories() {
   console.log('🔄 Loading banners and categories...');
   
-  // NOTE: Maine API aur LocalStorage check hata diya hai taaki aapka naya design forcefully load ho.
   const fallbackData = {
     banners: {
       heroSlideshow: {
         enabled: true,
         autoplaySpeed: 4,
-        height: 240,
+        height: 270,
         slides: [
           {
             title1: 'Fresh Meat,',
             title2: 'Delivered Fast',
             badge: 'PREMIUM QUALITY',
             buttonText: 'Order Now →',
-            subtitle: 'AI-powered freshness. 100%',
+            subtitle: 'AI-powered freshness',
             subtitle2: 'Halal & Hygienic.',
-            backgroundColor: 'linear-gradient(135deg, #f8f7f4 0%, #f4f0eb 100%)',
+            backgroundColor: 'linear-gradient(135deg, #ffffff 0%, #f4f5f5 100%)',
             textColor: '#1A1A1A',
             title1Color: '#1A1A1A',
             title2Color: '#E63946',
             buttonColor: '#E63946',
             subtitleColor: '#4A4A4A',
-            image: '/photos/hero-meat.png',
+            image: '/photos/hero-meat.png', // <-- EXACT PATH FIXED
             enabled: true
           },
-          // AApki Nayi 2nd SLIDE
           {
             title1: 'Farm Fresh Meat,',
             title2: 'Delivered to You',
             badge: '100% GUARANTEED',
             buttonText: 'Order Now →',
-            subtitle: 'Halal • Hygienic • Trusted',
-            subtitle2: 'AI ensures best quality',
+            subtitle: 'Hygienic • Trusted',
+            subtitle2: 'Best quality',
             backgroundColor: 'linear-gradient(135deg, #fcfdfc 0%, #f0f6f1 100%)',
             textColor: '#1A1A1A',
             title1Color: '#1A1A1A',
@@ -11814,8 +11963,23 @@ async function loadBannersAndCategories() {
             badgeTextColor: '#11682b',
             buttonColor: '#438a42',
             subtitleColor: '#1A1A1A',
-            image: '/hero-chicken.png', // <-- Image path check karein (agar photos folder me hai toh '/photos/hero-chicken.png' likhein)
-            qualityBadgeText: '<span style="font-size:10px;font-weight:800;color:#1A1A1A">AI FRESH SCORE</span><br><span style="font-size:24px;font-weight:800;color:#11682b;line-height:1.2">99.4%</span><br><span style="font-size:12px;color:#1A1A1A;font-weight:600">Excellent</span>',
+            image: '/photos/hero-chicken.png', // <-- EXACT PATH FIXED
+            enabled: true
+          },
+          {
+            title1: 'Premium Cuts,',
+            title2: 'Fresh & Tender',
+            badge: 'WEEKEND SPECIAL',
+            buttonText: 'Explore Menu →',
+            subtitle: 'Rich in flavor.',
+            subtitle2: 'Perfect for curries.',
+            backgroundColor: 'linear-gradient(135deg, #ffffff 0%, #f4f5f5 100%)',
+            textColor: '#1A1A1A',
+            title1Color: '#1A1A1A',
+            title2Color: '#E63946',
+            buttonColor: '#E63946',
+            subtitleColor: '#4A4A4A',
+            image: '/photos/hero-mutton.png', // <-- EXACT PATH FIXED
             enabled: true
           }
         ]
@@ -11846,12 +12010,12 @@ async function loadBannersAndCategories() {
     ]
   };
   
-  // Immediate render (ye direct aapka naya data screen par bhej dega)
-  renderDynamicHeroBanners(fallbackData.banners.heroSlideshow);
+  // Render using our core hero banner function which has the exact styling & fade effect
+  renderDynamicHeroBanners();
   renderDynamicOfferBanners(fallbackData.banners.offerBanners);  
   renderDynamicCategories(fallbackData.categories);
   
-  console.log('✅ Hardcoded fallback data loaded successfully');
+  console.log('✅ Fallback data loaded successfully with correct paths');
 }
 
 // Listen for settings updates from admin panel
@@ -11883,48 +12047,10 @@ window.addEventListener('storage', function(event) {
 function renderDynamicHeroBanners() {
   const slider = document.getElementById('heroBannerSlider');
   const dotsContainer = document.getElementById('heroBannerDots');
-  if (!slider || !dotsContainer) return;
+  if (!slider) return;
 
-  // DIRECT HARDCODED DATA
   const mySlides = [
     {
-      // 1st Slide (Red Theme - Meat)
-      bg: 'linear-gradient(135deg, #ffffff 0%, #f4f5f5 100%)',
-      badge: 'PREMIUM QUALITY',
-      badgeColor: '#4A4A4A', 
-      title1: 'Fresh Meat,',
-      title2: 'Delivered Fast',
-      title1Color: '#1A1A1A',
-      title2Color: '#E63946', 
-      sub1: 'AI-powered freshness',
-      sub2: 'Halal & Hygienic.',
-      btnBg: '#E63946', 
-      btnText: 'Order Now →',
-      img: '/photos/hero-meat.png',
-      badgeHtml: '', 
-      // PERFECT SIZE: contain ke sath position set kar di hai taaki bada na lage
-      imgStyle: 'width: 150%; height: 150%; object-fit: contain; object-position: 75% center; border-radius: 0 24px 24px 0; mix-blend-mode: multiply; -webkit-mask-image: linear-gradient(to right, transparent 0%, black 30%); mask-image: linear-gradient(to right, transparent 0%, black 30%);'
-    },
-    {
-      // 2nd Slide (Green Theme - Chicken)
-      bg: 'linear-gradient(135deg, #fcfdfc 0%, #f0f6f1 100%)',
-      badge: '100% GUARANTEED',
-      badgeColor: '#11682b',
-      title1: 'Farm Fresh Meat,',
-      title2: 'Delivered to You',
-      title1Color: '#1A1A1A',
-      title2Color: '#11682b',
-      sub1: 'Hygienic • Trusted',
-      sub2: 'Best quality',
-      btnBg: '#438a42',
-      btnText: 'Order Now →',
-      img: '/photos/hero-chicken.png',
-      badgeHtml: '', 
-      // PERFECT SIZE: contain ke sath position set kar di hai taaki bada na lage
-      imgStyle: 'width: 135%; height: 135%; object-fit: contain; object-position: 75% center; border-radius: 0 24px 24px 0; mix-blend-mode: multiply; -webkit-mask-image: linear-gradient(to right, transparent 0%, black 30%); mask-image: linear-gradient(to right, transparent 0%, black 30%);'
-    },
-    {
-      // 3rd Slide (Mutton - Weekend Special)
       bg: 'linear-gradient(135deg, #ffffff 0%, #f4f5f5 100%)',
       badge: 'WEEKEND SPECIAL',
       badgeColor: '#4A4A4A', 
@@ -11936,48 +12062,133 @@ function renderDynamicHeroBanners() {
       sub2: 'Perfect for curries.',
       btnBg: '#E63946', 
       btnText: 'Explore Menu →',
-      img: '/photos/hero-mutton.png',
-      badgeHtml: '', 
-      // PERFECT SIZE: contain ke sath position set kar di hai taaki bada na lage
-      imgStyle: 'width: 140%; height: 140%; object-fit: contain; object-position: 75% center; border-radius: 0 24px 24px 0; mix-blend-mode: multiply; -webkit-mask-image: linear-gradient(to right, transparent 0%, black 30%); mask-image: linear-gradient(to right, transparent 0%, black 30%);'
+      img: './photos/hero-mutton.png'
+    },
+    {
+      bg: 'linear-gradient(135deg, #fcfaf8 0%, #f3eee8 100%)',
+      badge: '100% GUARANTEED',
+      badgeColor: '#11682b',
+      title1: 'Farm Fresh Meat,',
+      title2: 'Delivered to You',
+      title1Color: '#1A1A1A',
+      title2Color: '#11682b',
+      sub1: 'Hygienic • Trusted',
+      sub2: 'Best quality',
+      btnBg: '#438a42',
+      btnText: 'Order Now →',
+      img: './photos/hero-meat.png'
+    },
+    {
+      bg: 'linear-gradient(135deg, #F8F8F8 0%, #F0F0F0 100%)',
+      badge: 'PREMIUM QUALITY',
+      badgeColor: '#4A4A4A', 
+      title1: 'Fresh Meat,',
+      title2: 'Delivered Fast',
+      title1Color: '#1A1A1A',
+      title2Color: '#E63946', 
+      sub1: 'AI-powered freshness',
+      sub2: 'Halal & Hygienic.',
+      btnBg: '#E63946', 
+      btnText: 'Order Now →',
+      img: './photos/hero-chicken.png'
     }
   ];
 
+  // HTML Rendering (With Premium Image Styling & Animation)
   slider.innerHTML = mySlides.map((slide, i) => `
     <div class="hero-slide ${i === 0 ? 'active' : ''}" style="background: ${slide.bg};">
-      <div class="hero-content" style="width: 55%; z-index: 2; position: relative; padding-top: 10px;">
-        <div class="hero-badge" style="color:${slide.badgeColor}; font-weight:800; background: transparent; padding: 0; margin-bottom: 10px; box-shadow: none; letter-spacing: 0.5px;">${slide.badge}</div>
+      <div class="hero-content" style="width: 55%; z-index: 2; position: relative; padding-left: 8px;">
+        <div class="hero-badge" style="color:${slide.badgeColor}; font-weight:800; background: transparent; padding: 0; margin-bottom: 6px; letter-spacing: 0.5px; font-size: 11px;">${slide.badge}</div>
         <div class="hero-text">
-          <h2>
+          <h2 style="font-size: clamp(24px, 2vw, 42px); font-weight: 800; line-height: 0.8; margin: 0;">
             <span style="color: ${slide.title1Color};">${slide.title1}</span><br>
-            <span class="hero-highlight" style="color: ${slide.title2Color};">${slide.title2}</span>
+            <span style="color: ${slide.title2Color};">${slide.title2}</span>
           </h2>
-          <p style="font-size: 14px; color: #4b4b4b; margin-top: 8px; font-weight: 500;">
+          <p style="font-size: 13px; color: #4b4b4b; margin: 8px 0; font-weight: 500; line-height: 1.3;">
             ${slide.sub1}<br>${slide.sub2}
           </p>
         </div>
-        <button class="hero-btn" style="background: ${slide.btnBg}; font-size: 14px; border-radius: 20px; padding: 12px 24px; color: #fff; font-weight: bold; border: none; margin-top: 12px;">
+        <button class="hero-btn" style="background: ${slide.btnBg}; font-size: 13px; border-radius: 14px; padding: 10px 20px; color: #fff; font-weight: bold; border: none; margin-top: 6px; cursor: pointer; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(0.96)'" onmouseout="this.style.transform='scale(1)'">
           ${slide.btnText}
         </button>
       </div>
-      <!-- Yahan image container ki width badha kar 60% kar di hai taaki mask fade smooth lage -->
-      <div class="hero-image-container" style="position: absolute; right: 0; top: 0; width: 60%; height: 100%; display: flex; align-items: center; justify-content: flex-end; z-index: 1;">
-        <img src="${slide.img}" alt="Banner" style="${slide.imgStyle}" onerror="this.onerror=null; this.src='/photo/hero-meat.png';" />
-        ${slide.badgeHtml}
+      
+      <!-- IMAGE CONTAINER (Badi image, blend mode, fade effect aur hover animation) -->
+      <div class="hero-image-container" style="position: absolute; right: 0; top: 0; width: 60%; height: 100%; display: flex; align-items: center; justify-content: flex-end; z-index: 1; overflow: hidden; border-radius: 0 24px 24px 0;">
+        <img src="${slide.img}" alt="Banner" 
+             style="width: 135%; height: 135%; object-fit: contain; object-position: 80% center; mix-blend-mode: multiply; -webkit-mask-image: linear-gradient(to right, transparent 0%, black 25%); mask-image: linear-gradient(to right, transparent 0%, black 25%); transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); transform: scale(1);" 
+             onmouseover="this.style.transform='scale(1.08)'" 
+             onmouseout="this.style.transform='scale(1)'" />
       </div>
     </div>
   `).join('');
 
-  dotsContainer.innerHTML = mySlides.map((_, i) => 
-    `<span class="hero-dot ${i === 0 ? 'active' : ''}" data-slide="${i}"></span>`
-  ).join('');
+  // Dots Rendering
+  if (dotsContainer) {
+    dotsContainer.innerHTML = mySlides.map((_, i) => 
+      `<span class="hero-dot ${i === 0 ? 'active' : ''}" data-slide="${i}" style="width: 7px; height: 7px; border-radius: 50%; background: ${i === 0 ? '#16A34A' : 'rgba(17,24,39,0.25)'}; cursor: pointer; display: inline-block; margin: 0 3px; transition: background 0.3s ease;"></span>`
+    ).join('');
+  }
 
-  if (typeof bindHeroBannerDots === 'function') bindHeroBannerDots();
-  
+  // ==========================================
+  // SINGLE CLEAN LOGIC FOR SLIDESHOW, DOTS & SWIPE
+  // ==========================================
+  let currentIdx = 0;
+  const slides = slider.querySelectorAll('.hero-slide');
+  const dots = dotsContainer ? dotsContainer.querySelectorAll('.hero-dot') : [];
+
+  function showSlide(index) {
+    if (slides.length <= 1) return;
+    if (index === currentIdx) return; 
+
+    if (index >= slides.length) index = 0;
+    if (index < 0) index = slides.length - 1;
+
+    slides.forEach((s, i) => {
+      s.classList.remove('active', 'prev');
+      if (i < index) s.classList.add('prev');
+    });
+    
+    dots.forEach(d => {
+      d.classList.remove('active');
+      d.style.background = 'rgba(17,24,39,0.25)';
+    });
+
+    currentIdx = index;
+    slides[currentIdx].classList.remove('prev');
+    slides[currentIdx].classList.add('active');
+    
+    if (dots[currentIdx]) {
+      dots[currentIdx].classList.add('active');
+      dots[currentIdx].style.background = '#16A34A'; 
+    }
+  }
+
   if (window.heroSlideInterval) clearInterval(window.heroSlideInterval);
-  window.heroSlideInterval = setInterval(() => {
-    if (typeof nextHeroSlide === 'function') nextHeroSlide();
-  }, 4000);
+  window.heroSlideInterval = setInterval(() => showSlide(currentIdx + 1), 4000);
+
+  dots.forEach((dot, index) => {
+    dot.onclick = () => {
+      clearInterval(window.heroSlideInterval);
+      showSlide(index);
+      window.heroSlideInterval = setInterval(() => showSlide(currentIdx + 1), 4000);
+    };
+  });
+
+  let startX = 0;
+  slider.ontouchstart = (e) => {
+    startX = e.changedTouches[0].screenX;
+    clearInterval(window.heroSlideInterval);
+  };
+
+  slider.ontouchend = (e) => {
+    let diff = startX - e.changedTouches[0].screenX;
+    if (Math.abs(diff) > 50) { 
+      if (diff > 0) showSlide(currentIdx + 1);
+      else showSlide(currentIdx - 1);
+    }
+    window.heroSlideInterval = setInterval(() => showSlide(currentIdx + 1), 4000);
+  };
 }
 
 function renderDynamicOfferBanners(offerBanners) {
