@@ -633,7 +633,7 @@ input,textarea{font:inherit;color:inherit}
 /* ── Splash screen ── */
 #screen-splash{background:var(--bg);
   display:flex;align-items:center;justify-content:center;padding:0;overflow:hidden;padding-bottom:0!important}
-#screen-splash img.splash-img{width:100%;height:100vh;object-fit:contain;object-position:center top}
+#screen-splash img.splash-img{width:100%;height:100vh;object-fit:contain;object-position:center}
 
 @keyframes zoomIn {
   from { transform:scale(0.5);opacity:0; }
@@ -1731,7 +1731,7 @@ input,textarea{font:inherit;color:inherit}
 
     <!-- ═══ SPLASH SCREEN ═══ -->
     <div class="screen active" id="screen-splash">
-      <img class="splash-img" src="/splash-intro.png" alt="NOW - Nonveg On Wheels"/>
+      <img class="splash-img" src="photos/splash-intro.png" alt="NOW - Nonveg On Wheels"/>
     </div>
 
     <!-- ═══ LOGIN SCREEN - STEP 1: Phone Number ═══ -->
@@ -12454,6 +12454,23 @@ body {
     object-fit: contain !important;
     object-position: center right !important;
   }
+}
+</style>
+<style id="login-hide-bottom-nav">
+@media (max-width: 767px) {
+  body:has(#screen-splash.active) #bottomNav,
+  body:has(#screen-login.active) #bottomNav,
+  body:has(#screen-otp.active) #bottomNav {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}
+</style>
+<style id="splash-bg-fix">
+#screen-splash {
+  background: #FAF6EE !important;
 }
 </style>
 

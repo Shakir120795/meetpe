@@ -3,12 +3,14 @@ package com.now.meatdelivery;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.webkit.GeolocationPermissions;
-import android.webkit.WebChromeClient;
 import android.webkit.WebView;
+
 import androidx.activity.OnBackPressedCallback;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -19,6 +21,15 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Keep the Android status bar visible and prevent the app
+        // from treating the status-bar area as hidden content.
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
+
+        WindowCompat.getInsetsController(
+                getWindow(),
+                getWindow().getDecorView()
+        ).show(WindowInsetsCompat.Type.statusBars());
+
         // Request location permission at startup
         requestLocationPermission();
 
@@ -27,6 +38,7 @@ public class MainActivity extends BridgeActivity {
             @Override
             public void handleOnBackPressed() {
                 WebView webView = getBridge().getWebView();
+
                 if (webView != null) {
                     webView.evaluateJavascript(
                         "try { " +
@@ -57,26 +69,34 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onStart() {
         super.onStart();
-        
+
         // Configure WebView for geolocation
         WebView webView = getBridge().getWebView();
+
         if (webView != null) {
             webView.getSettings().setGeolocationEnabled(true);
             webView.getSettings().setJavaScriptEnabled(true);
             webView.getSettings().setDomStorageEnabled(true);
-            webView.getSettings().setGeolocationDatabasePath(getFilesDir().getPath());
+            webView.getSettings().setGeolocationDatabasePath(
+                    getFilesDir().getPath()
+            );
         }
     }
 
     private void requestLocationPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) 
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+        ) != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(
+                this,
                 new String[]{
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.ACCESS_COARSE_LOCATION
                 },
-                LOCATION_PERMISSION_REQUEST);
+                LOCATION_PERMISSION_REQUEST
+            );
         }
     }
 }
