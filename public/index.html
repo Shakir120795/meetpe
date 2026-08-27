@@ -1889,17 +1889,12 @@ input,textarea{font:inherit;color:inherit}
 </style>
 <style id="force-top-alignment-fix">
 /* Home screen ko chhod kar baaki sabhi active screens ko Top par force karna */
-.screen.active:not(#screen-home) {
+.screen.active:not(#screen-home):not(#screen-login):not(#screen-otp) {
     display: flex !important;
     flex-direction: column !important;
-    justify-content: flex-start !important; /* Content hamesha upar se start ho */
-    position: absolute !important; 
-    top: 0 !important; 
-    left: 0 !important;
-    width: 100% !important;
-    min-height: 100vh !important;
-    background: var(--bg) !important;
-    z-index: 99 !important; /* Sabse upar rakhega */
+    justify-content: flex-start !important;
+    position: absolute !important;
+    top: 0 !important;
     margin: 0 !important;
     padding-bottom: 90px !important;
 }
@@ -2052,8 +2047,76 @@ input,textarea{font:inherit;color:inherit}
 #savedAddrOverlay > div {
     max-height: 85vh !important;
 }
+<style>
+/* Location screen khulne par bhi Bottom Nav clickable rahe */
+.loc-screen {
+    z-index: 999 !important;
+}
+#bottomNav.bottom-nav {
+    z-index: 10000 !important;
+    pointer-events: auto !important;
+}
 </style>
+<style>
+/* 1. Location screen jab tak khule na tab tak hidden rahe */
+#locMapScreen:not([style*="display: flex"]) {
+    display: none !important;
+}
 
+/* 2. Bottom Nav hamesha sabse upar aur click-able rahe */
+#bottomNav.bottom-nav {
+    z-index: 10000 !important;
+    pointer-events: auto !important;
+    position: fixed !important;
+    bottom: 0 !important;
+}
+
+/* 3. Screen switching safe rakhne ke liye default rule */
+.screen:not(.active) {
+    display: none !important;
+}
+.screen.active {
+    display: block !important;
+}
+</style>
+<style id="final-fixed-layout-and-location">
+/* 1. Location Screen Fix: Ye poori screen par sahi se baithegi aur background block nahi karegi */
+#locMapScreen {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    background: var(--bg) !important;
+    display: none;
+    flex-direction: column !important;
+}
+
+#locMapScreen.open, 
+#locMapScreen[style*="display: flex"] {
+    display: flex !important;
+}
+
+/* 2. Bottom Nav Fix: Hamesha sabse upar rahega aur clickable rahega */
+#bottomNav.bottom-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 100005 !important;
+    pointer-events: auto !important;
+    background: var(--card) !important;
+}
+
+/* 3. Screen Switching Safety */
+.screen:not(.active) {
+    display: none !important;
+}
+.screen.active {
+    display: block !important;
+}
+
+</style>
 </head>
 <body>
 <div id="app">
@@ -4311,6 +4374,9 @@ window.pageLoadTime = Date.now();
 //  Navigation
 // ═══════════════════════════════════════════
 function showScreen(id) {
+  // Agar location screen khuli hai toh nav click karte hi band ho jaye
+  const locMap = document.getElementById('locMapScreen');
+  if (locMap) locMap.style.display = 'none';
   // Close any stale overlay before changing screen to avoid leaked modal content
   if (typeof closeImageViewer === 'function') {
     closeImageViewer();
@@ -11621,28 +11687,60 @@ document.addEventListener('backbutton', function(e) {
 }, false);
 
 function handleAppBack() {
-  // Check if any overlay/modal is open first
+  // 1. Agar Return/Refund popup khula hai toh band karo
+  const returnModal = document.getElementById('returnModal');
+  if (returnModal && returnModal.classList.contains('show')) {
+    returnModal.classList.remove('show');
+    return;
+  }
+
+  // 2. Agar Coupons modal khula hai toh band karo
+  const couponsModal = document.getElementById('couponsModal');
+  if (couponsModal && couponsModal.classList.contains('show')) {
+    closeCouponsModal();
+    return;
+  }
+
+  // 3. Agar Filters modal khula hai toh band karo
+  const filtersModal = document.getElementById('filtersModal');
+  if (filtersModal && filtersModal.classList.contains('show')) {
+    filtersModal.classList.remove('show');
+    return;
+  }
+
+  // 4. Agar Location/Map screen khuli hai toh band karo
   const locMap = document.getElementById('locMapScreen');
-  if (locMap && locMap.style.display !== 'none') { closeLocMap(); return; }
-  
+  if (locMap && locMap.style.display !== 'none') {
+    closeLocMapSafe();
+    return;
+  }
+
+  // 5. Agar Map Picker screen khuli hai toh band karo
   const mapPicker = document.getElementById('mapPickerScreen');
-  if (mapPicker && mapPicker.classList.contains('open')) { mapPicker.classList.remove('open'); return; }
-  
+  if (mapPicker && mapPicker.classList.contains('open')) {
+    mapPicker.classList.remove('open');
+    return;
+  }
+
+  // 6. Agar Rating popup khula hai toh band karo
   const ratingPopup = document.getElementById('ratingPopupOverlay');
-  if (ratingPopup) { ratingPopup.remove(); return; }
-  
+  if (ratingPopup) {
+    ratingPopup.remove();
+    return;
+  }
+
+  // 7. Agar Order Menu khula hai toh band karo
   const orderMenu = window._orderMenuOverlay;
-  if (orderMenu) { closeOrderMenu(); return; }
-  
-  const modal = document.getElementById('modalOverlay');
-  if (modal && modal.style.display !== 'none') { closeModal(); return; }
-  
-  // Then handle screen navigation
+  if (orderMenu) {
+    closeOrderMenu();
+    return;
+  }
+
+  // 8. Baaki normal screen navigation ke liye
   const currentScreen = SCREEN_HISTORY[SCREEN_HISTORY.length - 1];
   if (currentScreen && currentScreen !== 'screen-home') {
     goBack();
   }
-  // On home screen — do nothing (Java will exit)
 }
 
 // ============ RIDER LOCATION TRACKING MAP ============
