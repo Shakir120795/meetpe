@@ -2127,6 +2127,22 @@ input,textarea{font:inherit;color:inherit}
     border: none !important;
 }
 </style>
+<style id="align-location-bars">
+/* "Use my current location" button aur Search bar ko ek line mein laane ke liye */
+#locMapScreen .loc-btn {
+    margin-left: 16px !important;
+    margin-right: 16px !important;
+    width: calc(100% - 32px) !important;
+    box-sizing: border-box !important;
+}
+
+/* Search bar ke wrapper ki width aur margin fix karne ke liye */
+#locMapScreen #locSearchInput {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+</style>
+
 </head>
 <body>
 <div id="app">
