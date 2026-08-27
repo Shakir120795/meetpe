@@ -2542,7 +2542,95 @@ input,textarea{font:inherit;color:inherit}
     <span class="hero-dot" data-slide="2"></span>
   </div>
 </div>
+<!-- OFFER CARDS SECTION (Inline CSS + Correct Image Path + Clickable) -->
+<div style="display: flex; gap: 12px; padding: 0 14px; margin: 16px 0; overflow-x: auto; width: 100%; box-sizing: border-box;">
+    
+    <!-- Card 1: Free Delivery -->
+    <!-- 👇 Yahan onclick aur cursor pointer lagaya hai 👇 -->
+    <div onclick="window.location.href='products.html'" style="cursor: pointer; flex: 1; min-width: 155px; position: relative; background-color: #EEEEE2; border-radius: 12px; padding: 14px 12px; display: flex; flex-direction: column; justify-content: center; min-height: 90px; overflow: hidden; box-sizing: border-box;">
+        <div style="position: relative; z-index: 2; width: 65%;">
+            <div style="color: #090501; font-size: 14px; font-weight: 700; margin-bottom: 4px;">Free Delivery</div>
+            <div style="font-size: 14px; color: #150404; line-height: 1.4;">On orders above</div>
+            <div style="font-size: 17px; font-weight: 700; color: #222; margin-top: 4px;">₹499</div>
+        </div>
+        <!-- Sahi Path: photos/scooter.png -->
+        <img src="photos/scooter.png" alt="Delivery" style="position: absolute; bottom: 5px; right: 5px; height: 100px; object-fit: contain; z-index: 1;">
+    </div>
 
+    <!-- Card 2: First Order Offer -->
+    <!-- 👇 Yahan bhi onclick aur cursor pointer lagaya hai 👇 -->
+    <div onclick="window.location.href='products.html'" style="cursor: pointer; flex: 1; min-width: 155px; position: relative; background-color: #EA2939; border-radius: 12px; padding: 14px 12px; display: flex; flex-direction: column; justify-content: center; min-height: 90px; overflow: hidden; box-sizing: border-box;">
+        <div style="position: relative; z-index: 2; width: 70%;">
+            <div style="color: #000c05; font-size: 14px; font-weight: 700; margin-bottom: 4px;">First Order Offer</div>
+            <div style="font-weight: 700; color: #020000; font-size: 16px;">Flat 10% OFF</div>
+            <div style="font-size: 14px; color: #444; margin-top: 2px;">Use Code: <b style="color: #000;">NOW10</b></div>
+        </div>
+        <!-- Sahi Path: photos/meat-offer.png -->
+        <img src="photos/meat-offer.png" alt="Offer" style="position: absolute; bottom: -10px; right: -15px; height: 120px; object-fit: contain; z-index: 1;">
+    </div>
+
+</div>
+<!-- POPULAR CATEGORIES SECTION -->
+<style>
+    /* Sirf is list ka scrollbar chupane ke liye */
+    .hide-scroll::-webkit-scrollbar { display: none; }
+    .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+
+<div style="margin: 20px 0 10px 0; padding: 0 14px;">
+    <!-- Title aur View All Row -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <div style="font-size: 16px; font-weight: 700; color: #000;">Popular Categories</div>
+        <div onclick="alert('All categories page abhi ban raha hai! 🚀')" style="font-size: 13px; font-weight: 500; color: #444; cursor: pointer;">View All</div>
+    </div>
+
+    <!-- Scrollable Categories Row -->
+    <div class="hide-scroll" style="display: flex; gap: 16px; overflow-x: auto; padding-bottom: 5px;">
+
+        <!-- Category 1: Chicken -->
+        <div onclick="alert('Chicken section jaldi aayega!')" style="display: flex; flex-direction: column; align-items: center; min-width: 72px; cursor: pointer;">
+            <div style="width: 72px; height: 72px; border-radius: 50%; background-color: #F9F9F9; display: flex; justify-content: center; align-items: center; border: 1px solid #EBEBEB; overflow: hidden;">
+                <img src="photos/cat-chicken.png" alt="Chicken" style="width: 110%; height: 110%; object-fit: contain;">
+            </div>
+            <div style="font-size: 13px; font-weight: 600; color: #111; margin-top: 8px;">Chicken</div>
+        </div>
+
+        <!-- Category 2: Mutton -->
+        <div onclick="alert('Mutton section jaldi aayega!')" style="display: flex; flex-direction: column; align-items: center; min-width: 72px; cursor: pointer;">
+            <div style="width: 72px; height: 72px; border-radius: 50%; background-color: #F9F9F9; display: flex; justify-content: center; align-items: center; border: 1px solid #EBEBEB; overflow: hidden;">
+                <img src="photos/cat-mutton.png" alt="Mutton" style="width: 110%; height: 110%; object-fit: contain;">
+            </div>
+            <div style="font-size: 13px; font-weight: 600; color: #111; margin-top: 8px;">Mutton</div>
+        </div>
+
+        <!-- Category 3: Fish -->
+        <div onclick="alert('Fish section jaldi aayega!')" style="display: flex; flex-direction: column; align-items: center; min-width: 72px; cursor: pointer;">
+            <div style="width: 72px; height: 72px; border-radius: 50%; background-color: #F9F9F9; display: flex; justify-content: center; align-items: center; border: 1px solid #EBEBEB; overflow: hidden;">
+                <img src="photos/cat-fish.png" alt="Fish" style="width: 110%; height: 110%; object-fit: contain;">
+            </div>
+            <div style="font-size: 13px; font-weight: 600; color: #111; margin-top: 8px;">Fish</div>
+        </div>
+
+        <!-- Category 4: Ready to Cook -->
+        <div onclick="alert('Ready to Cook section jaldi aayega!')" style="display: flex; flex-direction: column; align-items: center; min-width: 85px; cursor: pointer;">
+            <div style="width: 72px; height: 72px; border-radius: 50%; background-color: #F9F9F9; display: flex; justify-content: center; align-items: center; border: 1px solid #EBEBEB; overflow: hidden;">
+                <img src="photos/cat-ready.png" alt="Ready to Cook" style="width: 110%; height: 110%; object-fit: contain;">
+            </div>
+            <div style="font-size: 13px; font-weight: 600; color: #111; margin-top: 8px; white-space: nowrap;">Ready to Cook</div>
+        </div>
+
+        <!-- Category 5: Combo (Pehle 'All' tha) -->
+        <div onclick="alert('Combo section jaldi aayega!')" style="display: flex; flex-direction: column; align-items: center; min-width: 72px; cursor: pointer;">
+            <div style="width: 72px; height: 72px; border-radius: 50%; background-color: #F9F9F9; display: flex; justify-content: center; align-items: center; border: 1px solid #EBEBEB; overflow: hidden;">
+                <!-- Apni combo wali image ka naam yahan daalna -->
+                <img src="photos/cat-combo.png" alt="Combo" style="width: 110%; height: 110%; object-fit: contain;">
+            </div>
+            <div style="font-size: 13px; font-weight: 600; color: #111; margin-top: 8px;">Combo</div>
+        </div>
+
+    </div>
+</div>
+<!-- POPULAR CATEGORIES SECTION END -->
       <!-- Offer Banners (Dynamic) -->
       <div class="offer-banners-container" id="offerBannersContainer">
         <!-- Dynamic content will be loaded here by renderDynamicOfferBanners() -->
