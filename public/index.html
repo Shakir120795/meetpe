@@ -1723,6 +1723,201 @@ input,textarea{font:inherit;color:inherit}
   }
 }
 </style>
+<style id="wishlist-position-fix">
+@media (max-width: 767px) {
+  #screen-wishlist {
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    margin: 0 !important;
+    padding-top: 0 !important;
+    transform: none !important;
+    min-height: 0 !important;
+  }
+
+  #screen-wishlist .screen-header {
+    position: sticky !important;
+    top: 0 !important;
+    margin-top: 0 !important;
+    padding-top: 10px !important;
+    transform: none !important;
+  }
+}
+</style>
+<style id="wishlist-header-force-fix">
+@media (max-width: 767px) {
+
+  #screen-wishlist {
+    display: block !important;
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    margin: 0 !important;
+    padding: 0 0 90px !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  #screen-wishlist > .screen-header {
+    display: flex !important;
+    position: sticky !important;
+    top: 0 !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+
+    width: 100% !important;
+    height: auto !important;
+    min-height: 64px !important;
+    max-height: none !important;
+
+    margin: 0 !important;
+    padding: 10px 14px !important;
+
+    transform: none !important;
+    translate: none !important;
+
+    align-items: center !important;
+    justify-content: flex-start !important;
+
+    box-sizing: border-box !important;
+  }
+
+  #screen-wishlist > #wishlistContent {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+
+    margin: 0 !important;
+    padding: 14px !important;
+
+    transform: none !important;
+  }
+}
+</style>
+<style id="profile-page-blank-fix">
+/* Profile aur baaki pages ko force visible aur top par set karne ke liye */
+.screen#screen-profile,
+.screen#screen-settings,
+.screen#screen-orders,
+.screen#screen-wallet,
+.screen#screen-returns,
+.screen#screen-reviews,
+.screen#screen-subscriptions,
+.screen#screen-offers,
+.screen#screen-about,
+.screen#screen-help,
+.screen#screen-referral {
+    transform: none !important;
+    margin-top: 0 !important;
+    top: 0 !important;
+    position: relative !important;
+}
+
+/* Active screen ko properly display karne ke liye */
+.screen.active {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-height: 100vh !important;
+}
+</style>
+<style id="web-desktop-icon-fix">
+/* Global fix for gigantic PNG icons on Web/Desktop */
+.quick-action-icon img,
+.membership-icon img,
+.pm-icon img,
+.quick-action-icon svg {
+    width: 32px !important;
+    height: 32px !important;
+    max-width: 32px !important;
+    max-height: 32px !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: 0 auto !important;
+}
+
+/* Ensure the Quick Actions layout is a row on web too */
+.profile-quick-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    margin: 20px 0 !important;
+    padding: 10px !important;
+    background: transparent !important;
+}
+
+.quick-action-item {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    gap: 8px !important;
+    cursor: pointer !important;
+}
+
+.quick-action-label,
+.quick-action-wallet-text {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: var(--text) !important;
+}
+</style>
+<style id="hide-inactive-screens-fix">
+/* Wishlist aur baaki inactive pages ko Home page par dikhne se rokne ke liye */
+#screen-wishlist:not(.active),
+#screen-profile:not(.active),
+.screen:not(.active) {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+}
+</style>
+<style id="force-top-alignment-fix">
+/* Home screen ko chhod kar baaki sabhi active screens ko Top par force karna */
+.screen.active:not(#screen-home) {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important; /* Content hamesha upar se start ho */
+    position: absolute !important; 
+    top: 0 !important; 
+    left: 0 !important;
+    width: 100% !important;
+    min-height: 100vh !important;
+    background: var(--bg) !important;
+    z-index: 99 !important; /* Sabse upar rakhega */
+    margin: 0 !important;
+    padding-bottom: 90px !important;
+}
+
+/* Header ko hamesha list me sabse pehle (No. 1 position) par force karna */
+.screen.active:not(#screen-home) .screen-header {
+    order: -1 !important; /* Isse header hamesha upar rahega */
+    position: sticky !important;
+    top: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    background: var(--bg) !important;
+}
+
+/* Header ke alawa baaki content ka extra space hatana */
+.screen.active:not(#screen-home) > div:not(.screen-header) {
+    margin-top: 0 !important;
+}
+</style>
 
 </head>
 <body>
@@ -3996,10 +4191,19 @@ function showScreen(id) {
     s.style.display = 'none';
   });
 
-  target.style.display = '';
+  target.style.display = 'block';
   target.classList.add('active');
-  // Only scroll to top for home screen, not other screens
-  if (id === 'screen-home') target.scrollTop = 0;
+  // Reset every screen to top whenever it opens
+  target.scrollTop = 0;
+
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: 'auto'
+  });
 
   // Track history (avoid duplicates)
   if (SCREEN_HISTORY[SCREEN_HISTORY.length - 1] !== id) {
@@ -4090,7 +4294,7 @@ function goBack() {
     s.style.display = 'none';
     s.style.transform = '';
   });
-  target.style.display = '';
+  target.style.display = 'block';
   target.classList.add('active');
   // Restore scroll position for home screen (where user was browsing)
   if (prev !== 'screen-home') target.scrollTop = 0;
@@ -6846,12 +7050,12 @@ function renderOrdersList(orders) {
       <!-- Action buttons -->
       <div style="display:flex;gap:8px;border-top:1px solid var(--border);padding-top:12px">
         <button onclick="showOrderDetail(${order.id})" style="flex:1;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;justify-content:center;gap:6px">
-          📋 Details
+          <img src="photos/order.png" style="width:16px;height:16px;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%)" alt=""> Details
         </button>
-        <button onclick="reorderItems(${order.id})" style="flex:1;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;color:#22c55e;display:flex;align-items:center;justify-content:center;gap:6px">
-          🔄 Reorder
+        <button onclick="reorderItems(${order.id})" style="flex:1;padding:10px;background:rgba(230,57,70,.05);border:1px solid rgba(230,57,70,.2);border-radius:10px;font-size:13px;font-weight:600;color:var(--accent);display:flex;align-items:center;justify-content:center;gap:6px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> Reorder
         </button>
-        ${isDelivered ? `<button onclick="showOrderDetail(${order.id})" style="padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;color:#f59e0b;display:flex;align-items:center;justify-content:center;gap:4px">⭐</button>` : ''}
+        ${isDelivered ? `<button onclick="showOrderDetail(${order.id})" style="padding:10px 14px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;font-size:13px;font-weight:600;color:#f59e0b;display:flex;align-items:center;justify-content:center;gap:4px">⭐</button>` : ''}
       </div>
     </div>`;
   }).join('');
