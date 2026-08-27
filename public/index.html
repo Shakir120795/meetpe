@@ -47,7 +47,8 @@
 
 <!-- STATUS BAR FIX: Isse time aur battery ke icons dark dikhenge -->
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-<meta name="theme-color" content="#1A1A1A" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#1
+A1A1A" media="(prefers-color-scheme: dark)" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 
 <link rel="preload" href="/splash-intro.png" as="image"/>
@@ -2026,6 +2027,32 @@ input,textarea{font:inherit;color:inherit}
     background: var(--card) !important;
 }
 </style>
+<style id="bottom-overlap-spacing-fix">
+/* 1. Main Screens (jaise Cart) ke bottom me extra scroll space dena */
+/* Isse scroll karne par "Place Delivery Order" button Order Strip ke upar aa jayega */
+.screen {
+    padding-bottom: 160px !important; 
+}
+
+/* 2. Cart page ke "Place Delivery Order" button ko bottom se thoda aur upar uthana */
+#checkoutBtn {
+    margin-bottom: 60px !important;
+}
+
+/* 3. Saved Address Popup, Map Picker aur baaki Modals me niche jagah banana */
+/* Taaki inke "Add New Address" ya "Save" button Nav bar ke piche hide na hon */
+.modal-box, 
+#savedAddrOverlay > div,
+#editProfileOverlay > div,
+#mapStep2 {
+    padding-bottom: 120px !important;
+}
+
+/* Modal aur Overlays me content katne se rokne ke liye */
+#savedAddrOverlay > div {
+    max-height: 85vh !important;
+}
+</style>
 
 </head>
 <body>
@@ -2094,7 +2121,7 @@ input,textarea{font:inherit;color:inherit}
               onblur="this.style.borderColor='var(--border)'"
             />
             <div style="font-size:11px;color:var(--muted);margin-top:6px;padding-left:4px">
-              💰 Get ₹20 bonus on first order with referral code
+              <img src="photos/wallet.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Wallet"> Get ₹20 bonus on first order with referral code
             </div>
           </div>
           
@@ -2186,7 +2213,7 @@ input,textarea{font:inherit;color:inherit}
     <!-- ═══ LOCATION SCREEN (Blinkit style) ═══ -->
     <div class="loc-screen" id="locMapScreen" style="display:none">
       <div class="loc-topbar">
-        <button class="icon-btn" onclick="closeLocMap()" style="background:var(--border);border-radius:10px">←</button>
+        <button class="icon-btn" onclick="closeLocMapSafe()" style="background:var(--border);border-radius:10px">←</button>
         <div class="loc-topbar-title">Set Delivery Location</div>
         <div style="width:36px"></div>
       </div>
@@ -2487,7 +2514,7 @@ input,textarea{font:inherit;color:inherit}
       
       <!-- Product Image -->
       <div class="pd-img" id="pdImg">
-        <span class="emoji-lg" id="pdEmoji">🥩</span>
+        <span class="emoji-lg" id="pdEmoji"><img src="photos/chicken-leg.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Meat"></span>
         <div class="pd-temp">❄️ Temp Locked at -4°C</div>
       </div>
       
@@ -2669,7 +2696,7 @@ input,textarea{font:inherit;color:inherit}
         <div class="divider"></div>
 
         <div class="section-box" id="walletSection" style="display:none">
-          <div class="section-box-title">💳 NOW Wallet</div>
+          <div class="section-box-title"><img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> NOW Wallet</div>
           <div class="wallet-row">
             <div style="flex:1">
               <div style="font-size:13px;font-weight:600">Apply NOW Wallet Balance</div>
@@ -2939,7 +2966,7 @@ input,textarea{font:inherit;color:inherit}
     <div class="screen" id="screen-returns">
       <div class="screen-header">
         <button class="back-btn" onclick="goBack()">←</button>
-        <div class="screen-title">🔄 Returns &amp; Refunds</div>
+        <div class="screen-title"><img src="photos/reorder.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Returns &amp; Refunds</div>
       </div>
       <div id="returnsContent" style="padding:14px">
         <div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div>
@@ -2950,7 +2977,7 @@ input,textarea{font:inherit;color:inherit}
     <div class="screen" id="screen-wallet">
       <div class="screen-header">
         <button class="back-btn" onclick="goBack()">←</button>
-        <div class="screen-title">💳 Wallet &amp; Rewards</div>
+        <div class="screen-title"><img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Wallet &amp; Rewards</div>
       </div>
       <div id="walletContent" style="padding:14px">
         <div class="empty"><div class="empty-icon">⏳</div><p>Loading...</p></div>
@@ -2961,7 +2988,7 @@ input,textarea{font:inherit;color:inherit}
     <div class="screen" id="screen-payment">
       <div class="screen-header">
         <button class="back-btn" onclick="goBack()">←</button>
-        <div class="screen-title">💰 Complete Payment</div>
+        <div class="screen-title"><img src="photos/wallet.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Wallet"> Complete Payment</div>
       </div>
       <div style="padding:14px;padding-bottom:100px">
         
@@ -2978,13 +3005,13 @@ input,textarea{font:inherit;color:inherit}
             📱 UPI
           </button>
           <button onclick="selectPaymentTab('cards')" id="tab-cards" class="payment-tab">
-            💳 Cards
+            <img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Cards
           </button>
           <button onclick="selectPaymentTab('netbanking')" id="tab-netbanking" class="payment-tab">
             🏦 Net Banking
           </button>
           <button onclick="selectPaymentTab('wallet')" id="tab-wallet" class="payment-tab">
-            💰 Wallet
+            <img src="photos/wallet.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Wallet"> Wallet
           </button>
           <button onclick="selectPaymentTab('cod')" id="tab-cod" class="payment-tab">
             💵 COD
@@ -2996,7 +3023,7 @@ input,textarea{font:inherit;color:inherit}
 
         <!-- Pay Button -->
         <button id="payBtn" onclick="processPayment()" style="width:100%;padding:16px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:20px;transition:all .2s">
-          💳 Pay Now
+          <img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Pay Now
         </button>
 
       </div>
@@ -3162,7 +3189,7 @@ input,textarea{font:inherit;color:inherit}
         <!-- Refund Policy -->
         <div style="background:var(--card);border-radius:16px;margin-bottom:14px;border:1px solid var(--border);overflow:hidden">
           <div onclick="toggleAboutAcc(this)" style="padding:18px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:16px;font-weight:800;">
-            <span>💰 Refund Policy</span><span style="font-size:12px;transition:transform .25s">▼</span>
+            <span><img src="photos/wallet.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Wallet"> Refund Policy</span><span style="font-size:12px;transition:transform .25s">▼</span>
           </div>
           <div style="max-height:0;overflow:hidden;transition:max-height .35s ease;padding:0 20px">
             <div style="padding-bottom:20px" id="pageContent-refund">
@@ -3613,7 +3640,7 @@ input,textarea{font:inherit;color:inherit}
       
       <!-- Payment Method -->
       <div style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)">💳 PAYMENT METHOD</div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)"><img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> PAYMENT METHOD</div>
         <div style="background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border)">
           <div id="paymentMethodsList" style="display:flex;flex-direction:column;gap:8px"></div>
         </div>
@@ -3637,7 +3664,7 @@ input,textarea{font:inherit;color:inherit}
 <div class="modal-overlay" id="returnModal" style="align-items:flex-end">
   <div class="modal-box" style="border-radius:20px 20px 0 0;padding-bottom:32px">
     <div class="modal-handle"></div>
-    <div class="modal-title">🔄 Request Return / Refund</div>
+    <div class="modal-title"><img src="photos/reorder.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Request Return / Refund</div>
     <div id="returnOrderInfo" style="font-size:13px;color:var(--muted);margin-bottom:16px"></div>
     <div style="margin-bottom:14px">
       <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase">Reason</div>
@@ -3676,7 +3703,7 @@ input,textarea{font:inherit;color:inherit}
     <div style="max-height:400px;overflow-y:auto;padding:0 14px;margin-bottom:16px">
       <!-- Price Range -->
       <div style="margin-bottom:18px">
-        <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:8px">💰 PRICE RANGE</div>
+        <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:8px"><img src="photos/wallet.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Wallet"> PRICE RANGE</div>
         <div style="display:flex;gap:8px;align-items:center">
           <input type="number" id="priceMin" placeholder="Min" style="flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--text);font-size:13px"/>
           <span style="color:var(--muted)">-</span>
@@ -3702,7 +3729,7 @@ input,textarea{font:inherit;color:inherit}
       
       <!-- Type -->
       <div style="margin-bottom:18px">
-        <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:8px">🥩 TYPE</div>
+        <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;margin-bottom:8px"><img src="photos/chicken-leg.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Meat"> TYPE</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <label style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px">
             <input type="checkbox" name="type" value="boneless" class="filter-checkbox"/> Boneless
@@ -3879,7 +3906,7 @@ function applyBranding() {
   
   // Update footer
   const footer = document.querySelector('.drawer-footer');
-  if (footer) footer.textContent = `${name || 'NOW'} — ${tagline || 'Fresh Meat Delivered Fast'} 🥩`;
+  if (footer) footer.textContent = `${name || 'NOW'} — ${tagline || 'Fresh Meat Delivered Fast'} <img src="photos/chicken-leg.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Meat">`;
   
   // Render social links from settings
   renderSocialLinks();
@@ -3993,7 +4020,7 @@ function renderBanners() {
         <p>${hero.subtitle || ''}</p>
         ${hero.pill ? `<div class="hero-pill">${hero.pill}</div>` : ''}
       </div>
-      <div class="hero-emoji-big">${hero.emoji || '🥩'}</div>
+      <div class="hero-emoji-big">${hero.emoji || '<img src="photos/chicken-leg.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Meat">'}</div>
     `;
   } else if (heroEl && hero?.enabled === false) {
     heroEl.style.display = 'none';
@@ -4846,8 +4873,8 @@ function loginSuccess() {
     }).catch(()=>{});
   }
   
-  showToast('Welcome! 🥩','success');
-  showToast('Welcome! 🥩','success');
+  showToast('Welcome! <img src="photos/chicken-leg.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Meat">','success');
+  showToast('Welcome! <img src="photos/chicken-leg.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Meat">','success');
 }
 
 // ═══════════════════════════════════════════
@@ -5494,7 +5521,7 @@ function renderProducts() {
 }
 
 function catEmoji(cat) {
-  return CAT_EMOJI[cat] || '🥩';
+  return CAT_EMOJI[cat] || '<img src="photos/chicken-leg.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Meat">';
 }
 
 function filterCat(cat, el) {
@@ -5893,7 +5920,7 @@ function openProduct(code) {
   const save = Math.round(((mrp - item.price) / mrp) * 100);
   document.getElementById('pdMrp').textContent = '₹' + mrp;
   document.getElementById('pdSaveTag').textContent = 'Save ' + save + '%';
-  document.getElementById('pdCatBadge').textContent = (CAT_EMOJI[item.cat]||'🥩') + ' ' + (item.cat||'').replace(/_/g,' ');
+  document.getElementById('pdCatBadge').textContent = (CAT_EMOJI[item.cat]||'<img src="photos/chicken-leg.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Meat">') + ' ' + (item.cat||'').replace(/_/g,' ');
   document.getElementById('pdDesc').textContent = item.description || 'Premium quality, farm-fresh meat. Hygienically cleaned and cut. Delivered within 30 minutes.';
 
   // Rating display
@@ -6970,7 +6997,7 @@ function showOrderSuccess(orderId, total, name, creditUsed, creditsRemaining) {
     
     <div style="background:var(--card);border-radius:16px;padding:16px 20px;margin-bottom:24px;border:1px solid var(--border);max-width:320px;width:100%">
       <div style="font-size:13px;color:var(--muted);line-height:1.8">
-        Hey <strong>${name}</strong>! 🥩<br/>
+        Hey <strong>${name}</strong>! <img src="photos/chicken-leg.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Meat"><br/>
         Your order is being processed.<br/>
         <strong>ETA: ~30 minutes 🛵</strong>
       </div>
@@ -7552,7 +7579,7 @@ function showOrderMenu(orderId) {
     
     <button onclick="closeOrderMenu();showOrderDetail(${orderId})" 
       style="width:100%;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;text-align:left;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:12px">
-      <span style="font-size:20px">📋</span>
+      <img src="photos/order.png" style="width:20px;height:20px;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%)" alt="">
       <span>View Details</span>
     </button>
     
@@ -7736,7 +7763,7 @@ function showOrderDetail(id) {
     { label:'Preparing', sub:'Your meat is being cleaned & cut' },
     { label:'Packed', sub:'Order packed and ready' },
     { label:'Out for Delivery', sub:'Rider is on the way 🛵' },
-    { label:'Delivered', sub:'Enjoy your fresh meat! 🥩' },
+    { label:'Delivered', sub:'Enjoy your fresh meat! <img src="photos/chicken-leg.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Meat">' },
   ];
   const statusLevel = {placed:1, preparing:4, out_for_delivery:5, delivered:6, cancelled:0}[order.status] || 0;
   const isCancelled = order.status === 'cancelled';
@@ -7837,7 +7864,7 @@ function showOrderDetail(id) {
     <div style="margin-top:12px;background:var(--card);border-radius:14px;padding:14px;border:1px solid var(--border)">
       <button onclick="openReturnModal(${order.id})"
         style="width:100%;padding:13px;background:rgba(239,68,68,.08);border:1.5px solid rgba(239,68,68,.2);border-radius:12px;color:#ef4444;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-        🔄 Request Return / Refund
+        <img src="photos/reorder.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Request Return / Refund
       </button>
     </div>` : '';
 
@@ -8426,7 +8453,7 @@ async function loadWallet() {
         </div>
         <button onclick="startWalletTopup()"
           style="width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">
-          💳 Add Money
+          <img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Add Money
         </button>
       </div>
 
@@ -8662,7 +8689,7 @@ function renderPaymentContent(method) {
     case 'cards':
       container.innerHTML = `
         <div style="background:var(--card);border-radius:14px;padding:20px;border:1px solid var(--border)">
-          <div style="font-size:14px;font-weight:700;margin-bottom:16px">💳 Card Payment</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:16px"><img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Card Payment</div>
           
           <div style="margin-bottom:14px">
             <label style="display:block;font-size:13px;font-weight:600;margin-bottom:8px">Card Number</label>
@@ -8746,7 +8773,7 @@ function renderPaymentContent(method) {
       
       container.innerHTML = `
         <div style="background:var(--card);border-radius:14px;padding:20px;border:1px solid var(--border)">
-          <div style="font-size:14px;font-weight:700;margin-bottom:16px">💰 NOW Wallet</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:16px"><img src="photos/wallet.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Wallet"> NOW Wallet</div>
           
           <div style="background:linear-gradient(135deg,#1a0800,#3d1a00);border-radius:14px;padding:20px;margin-bottom:16px;text-align:center;border:1px solid #5a2d00">
             <div style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:6px">Available Balance</div>
@@ -8866,7 +8893,7 @@ async function processPayment() {
         if (!upiId) {
           showToast('Please enter UPI ID', 'error');
           payBtn.disabled = false;
-          payBtn.textContent = '💳 Pay Now';
+          payBtn.textContent = '<img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Pay Now';
           payBtn.style.opacity = '1';
           return;
         }
@@ -8893,7 +8920,7 @@ async function processPayment() {
         if (!cardNumber || !cardExpiry || !cardCvv || !cardName) {
           showToast('Please fill all card details', 'error');
           payBtn.disabled = false;
-          payBtn.textContent = '💳 Pay Now';
+          payBtn.textContent = '<img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Pay Now';
           payBtn.style.opacity = '1';
           return;
         }
@@ -8913,7 +8940,7 @@ async function processPayment() {
         if (!selectedBank) {
           showToast('Please select a bank', 'error');
           payBtn.disabled = false;
-          payBtn.textContent = '💳 Pay Now';
+          payBtn.textContent = '<img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Pay Now';
           payBtn.style.opacity = '1';
           return;
         }
@@ -8935,7 +8962,7 @@ async function processPayment() {
         if (walletBalance < orderAmount) {
           showToast('Insufficient wallet balance', 'error');
           payBtn.disabled = false;
-          payBtn.textContent = '💳 Pay Now';
+          payBtn.textContent = '<img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Pay Now';
           payBtn.style.opacity = '1';
           return;
         }
@@ -8964,7 +8991,7 @@ async function processPayment() {
         } catch(e) {
           showToast(e.message || 'Payment failed', 'error');
           payBtn.disabled = false;
-          payBtn.textContent = '💳 Pay Now';
+          payBtn.textContent = '<img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Pay Now';
           payBtn.style.opacity = '1';
         }
         break;
@@ -8978,7 +9005,7 @@ async function processPayment() {
   } catch(e) {
     showToast('Payment failed: ' + e.message, 'error');
     payBtn.disabled = false;
-    payBtn.textContent = '💳 Pay Now';
+    payBtn.textContent = '<img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Pay Now';
     payBtn.style.opacity = '1';
   }
 }
@@ -9067,7 +9094,7 @@ async function loadMembershipDetails() {
     if (eligible && !hasActive) {
       planHTML = `
         <div style="background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid var(--border)">
-          <div style="font-size:14px;font-weight:700;margin-bottom:14px">💳 Choose Your Plan</div>
+          <div style="font-size:14px;font-weight:700;margin-bottom:14px"><img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Choose Your Plan</div>
           
           <div style="display:flex;gap:10px;margin-bottom:16px" id="membershipPlanSelector">
             <div onclick="selectMembershipPlan('monthly')" id="plan-monthly" class="membership-plan-card selected" style="flex:1;background:var(--bg);border:2px solid var(--accent);border-radius:14px;padding:16px;text-align:center;cursor:pointer;transition:all .2s">
@@ -9090,7 +9117,7 @@ async function loadMembershipDetails() {
           <div id="walletPayOption" style="margin-top:10px;text-align:center;display:none">
             <div style="font-size:12px;color:var(--muted);margin-bottom:6px">— or —</div>
             <button onclick="payMembershipWithWallet()" id="walletPayBtn" style="width:100%;padding:12px;background:var(--card);color:var(--text);border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer">
-              💰 Pay with NOW Wallet (<span id="walletBalMem">₹0</span>)
+              <img src="photos/wallet.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Wallet"> Pay with NOW Wallet (<span id="walletBalMem">₹0</span>)
             </button>
           </div>
         </div>
@@ -9284,7 +9311,7 @@ async function payMembershipWithWallet() {
     showToast('Network error', 'error');
   } finally {
     btn.disabled = false;
-    btn.textContent = '💰 Pay with NOW Wallet';
+    btn.textContent = '<img src="photos/wallet.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Wallet"> Pay with NOW Wallet';
   }
 }
 
@@ -9862,7 +9889,7 @@ function notifyOrderPlaced(orderId, total) {
 }
 
 function notifyCashback(amount) {
-  addNotification('wallet', 'Cashback Received! 💸', `₹${amount} cashback credited to your wallet.`, '💰');
+  addNotification('wallet', 'Cashback Received! 💸', `₹${amount} cashback credited to your wallet.`, '<img src="photos/wallet.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Wallet">');
 }
 
 function notifyReward(amount) {
@@ -9870,7 +9897,7 @@ function notifyReward(amount) {
 }
 
 function notifyWalletTopup(amount) {
-  addNotification('wallet', 'Wallet Topped Up! 💳', `₹${amount} added to your NOW Wallet.`, '💳');
+  addNotification('wallet', 'Wallet Topped Up! <img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="">', `₹${amount} added to your NOW Wallet.`, '<img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="">');
 }
 
 function notifyOffer(title, message) {
@@ -11113,7 +11140,7 @@ function showSavedPayments() {
   if (cards.length) {
     cardsHtml = cards.map((card, idx) => `
       <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:12px;margin-bottom:8px">
-        <div style="font-size:24px">${card.brand === 'visa' ? '💳' : card.brand === 'mastercard' ? '💳' : '💳'}</div>
+        <div style="font-size:24px">${card.brand === 'visa' ? '<img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="">' : card.brand === 'mastercard' ? '<img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="">' : '<img src="photos/card.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="">'}</div>
         <div style="flex:1">
           <div style="font-size:13px;font-weight:700">${card.brand ? card.brand.toUpperCase() : 'Card'} •••• ${card.last4}</div>
           <div style="font-size:11px;color:var(--muted)">Expires ${card.expiry}</div>
@@ -11647,7 +11674,7 @@ function initRiderTrackingMap(orderId) {
 
     fetchRiderLocation(orderId);
     riderTrackingIntervals[orderId] = setInterval(() => fetchRiderLocation(orderId), 5000);
-    if (statusEl) statusEl.textContent = '🔄 Connecting...';
+    if (statusEl) statusEl.textContent = '<img src="photos/reorder.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Connecting...';
   } catch (err) {
     console.error('Map init error:', err);
     if (mapContainer) mapContainer.style.display = 'none';
@@ -11800,7 +11827,7 @@ if ('serviceWorker' in navigator) {
     <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
       <button class="quick-reply" onclick="sendQuickReply('Order issue')">📦 Order</button>
       <button class="quick-reply" onclick="sendQuickReply('Delivery problem')">🚚 Delivery</button>
-      <button class="quick-reply" onclick="sendQuickReply('Billing issue')">💰 Billing</button>
+      <button class="quick-reply" onclick="sendQuickReply('Billing issue')"><img src="photos/wallet.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Wallet"> Billing</button>
       <button class="quick-reply" onclick="sendQuickReply('Other')">❓ Other</button>
     </div>
     
@@ -11820,7 +11847,7 @@ let CHAT_MESSAGES = [
 const AUTO_RESPONSES = {
   'order': '📦 We\'ll help you with your order. Please share your order ID or phone number.',
   'delivery': '🚚 Having delivery issues? Share your order ID and we\'ll track it for you.',
-  'billing': '💰 Let\'s resolve your billing issue. What\'s the problem?',
+  'billing': '<img src="photos/wallet.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Wallet"> Let\'s resolve your billing issue. What\'s the problem?',
   'other': '❓ Tell us more about your concern and we\'ll help you asap!'
 };
 
@@ -12784,7 +12811,7 @@ body {
     
     <!-- Price Range -->
     <div class="filter-section">
-      <div class="filter-section-title">💰 Price Range</div>
+      <div class="filter-section-title"><img src="photos/wallet.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt="Wallet"> Price Range</div>
       <div class="filter-range">
         <input type="number" id="priceMinInput" placeholder="Min ₹" min="0"/>
         <span style="color:var(--muted)">–</span>
@@ -13432,7 +13459,31 @@ document.addEventListener('DOMContentLoaded', function () {
 
 </body>
 </html>
+<script>
+// === FIX 1: Return/Refund Modal ko Background Click se Close karne ke liye ===
+document.addEventListener('DOMContentLoaded', () => {
+  const returnModal = document.getElementById('returnModal');
+  if (returnModal) {
+    returnModal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.remove('show');
+      }
+    });
+  }
+});
 
+// === FIX 2: Map/Location Screen par Back Button & Close Safety ===
+function closeLocMapSafe() {
+  const locMap = document.getElementById('locMapScreen');
+  if (locMap) {
+    locMap.style.display = 'none';
+  }
+  // Agar user ke paas pehle se saved location hai, toh Home screen dikha do
+  if (getSelectedAddr()) {
+    showScreen('screen-home');
+  }
+}
+</script>
 
 <script>
 // ═══ Hero Banner Slideshow ═══
@@ -13536,7 +13587,7 @@ if (document.readyState === 'loading') {
 
 // ═══ Load Dynamic Content from Admin Settings ═══
 async function loadBannersAndCategories() {
-  console.log('🔄 Loading banners and categories...');
+  console.log('<img src="photos/reorder.png" style="width:1.2em;height:1.2em;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%); vertical-align:middle;" alt=""> Loading banners and categories...');
   
   const fallbackData = {
     banners: {
