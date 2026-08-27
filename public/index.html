@@ -1737,7 +1737,7 @@ input,textarea{font:inherit;color:inherit}
     <!-- ═══ LOGIN SCREEN - STEP 1: Phone Number ═══ -->
     <div class="screen" id="screen-login">
       <div class="login-wrap">
-        <img src="/now-logo.png" alt="NOW" class="login-logo" style="border:none;box-shadow:none;background:transparent" onerror="this.style.display='none'"/>
+        <img src="photos/now-logo.png" alt="NOW" class="login-logo" style="border:none;box-shadow:none;background:transparent" onerror="this.style.display='none'"/>
           <p>Enter your phone number to continue</p>
           <div class="phone-row">
             <span class="phone-prefix">🇮🇳 +91</span>
@@ -1757,7 +1757,7 @@ input,textarea{font:inherit;color:inherit}
     <!-- ═══ OTP VERIFICATION SCREEN - STEP 2 ═══ -->
     <div class="screen" id="screen-otp">
       <div class="login-wrap">
-        <img src="/now-logo.png" alt="NOW" class="login-logo" style="border:none;box-shadow:none;background:transparent" onerror="this.style.display='none'"/>
+        <img src="/photos/now-logo.png" alt="NOW" class="login-logo" style="border:none;box-shadow:none;background:transparent" onerror="this.style.display='none'"/>
         <div class="login-tagline">Fresh. Fast. Trusted.</div>
         <div class="login-card">
           <h2>Verify OTP 🔐</h2>
@@ -2487,7 +2487,7 @@ input,textarea{font:inherit;color:inherit}
         <!-- Profile dropdown menu -->
         <div id="profileDropdown" style="display:none;position:absolute;right:14px;top:48px;background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:999;min-width:160px;overflow:hidden">
           <div onclick="showEditProfile()" style="padding:12px 16px;cursor:pointer;font-size:14px;font-weight:500;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
-            <span>✏️</span> Edit Profile
+            <span><img src="photos/edit.png" alt="Edit address"></span> Edit Profile
           </div>
           <div onclick="showScreen('screen-settings')" style="padding:12px 16px;cursor:pointer;font-size:14px;font-weight:500;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
             <span>⚙️</span> Settings
@@ -2510,101 +2510,118 @@ input,textarea{font:inherit;color:inherit}
           </button>
         </div>
 
-        <!-- Quick Access Layout (aligned like earlier design) -->
-        <div style="display:grid;grid-template-columns:1.1fr 1.1fr 1.5fr;gap:12px;padding:0 14px;margin:16px 0;align-items:stretch">
-          <!-- Left big card -->
-          <div onclick="showScreen('screen-orders')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;cursor:pointer;min-height:168px;">
-            <div style="display:flex;align-items:center;justify-content:center;font-size:28px;line-height:1;color:var(--text);background:none;border:none;border-radius:0;padding:0">📦</div>
-            <div style="font-size:15px;font-weight:600;text-align:center;line-height:1.3">My Orders</div>
-          </div>
+        <!-- Quick Access Layout -->
+<!-- Quick Access Layout -->
+<div class="profile-quick-actions">
+  <div class="quick-action-item" onclick="showScreen('screen-orders')">
+    <div class="quick-action-icon">
+      <img src="photos/order.png" alt="My Orders">
+    </div>
+    <div class="quick-action-label">My Orders</div>
+  </div>
 
-          <!-- Middle stacked cards -->
-          <div style="display:flex;flex-direction:column;gap:12px">
-            <div onclick="showSavedAddresses()" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;min-height:52px;flex:1;">
-              <div style="width:40px;height:40px;background:transparent;border:none;border-radius:0;display:flex;align-items:center;justify-content:center;box-shadow:none;padding:0;line-height:1">
-                <svg width="22" height="22" viewBox="0 0 64 64" aria-hidden="true" style="display:block;overflow:visible">
-                  <path d="M32 6C20.4 6 11 15.2 11 26.5C11 42 32 58 32 58C32 58 53 42 53 26.5C53 15.2 43.6 6 32 6Z" fill="#E63946"/>
-                  <circle cx="32" cy="26" r="8" fill="#fff"/>
-                </svg>
-              </div>
-              <div style="font-size:13px;font-weight:600;text-align:center;line-height:1.2">Saved<br>Address</div>
-            </div>
+  <div class="quick-action-item" onclick="showSavedAddresses()">
+    <div class="quick-action-icon">
+      <svg width="24" height="24" viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M32 6C20.4 6 11 15.2 11 26.5C11 42 32 58 32 58C32 58 53 42 53 26.5C53 15.2 43.6 6 32 6Z" fill="#E63946"/>
+        <circle cx="32" cy="26" r="8" fill="#fff"/>
+      </svg>
+    </div>
+    <div class="quick-action-label">Saved Address</div>
+  </div>
 
-            <div onclick="showScreen('screen-wishlist')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;min-height:52px;flex:1;">
-              <div style="width:40px;height:40px;background:transparent;border:none;border-radius:0;display:flex;align-items:center;justify-content:center;font-size:22px;padding:0;line-height:1;color:var(--text)">❤️</div>
-              <div style="font-size:13px;font-weight:600;text-align:center;line-height:1.2">My Wishlist</div>
-            </div>
+  <div class="quick-action-item" onclick="showScreen('screen-wishlist')">
+    <div class="quick-action-icon">
+      <img src="photos/wishlist.png" alt="My Wishlist">
+    </div>
+    <div class="quick-action-label">My Wishlist</div>
+  </div>
 
-            <div onclick="showScreen('screen-wallet')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;min-height:52px;flex:1;">
-              <div style="width:40px;height:40px;background:transparent;border:none;border-radius:0;display:flex;align-items:center;justify-content:center;font-size:22px;padding:0;line-height:1;color:var(--text)">💳</div>
-              <div style="font-size:13px;font-weight:700;color:var(--accent);line-height:1.2">₹<span id="profileWalletBox">0</span></div>
-              <div style="font-size:11px;font-weight:600;text-align:center;color:var(--muted);line-height:1.2">Wallet</div>
-            </div>
-          </div>
+  <div class="quick-action-item" onclick="showScreen('screen-wallet')">
+    <div class="quick-action-icon">
+      <img src="photos/wallet.png" alt="Wallet">
+    </div>
+    <div class="quick-action-label wallet-label">₹<span id="profileWalletBox">0</span></div>
+    <div class="quick-action-wallet-text">Wallet</div>
+  </div>
+</div>
 
-          <!-- Right stacked cards -->
-          <div style="display:flex;flex-direction:column;gap:12px">
-            <div class="section-box" id="membershipCard" style="margin:0;min-height:110px;">
-              <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;height:100%">
-                <span style="font-size:22px">🎖️</span>
-                <div style="flex:1;min-width:0">
-                  <div style="font-size:13px;font-weight:700;line-height:1.3">NOW Plus Membership</div>
-                  <div style="font-size:11px;color:var(--muted);line-height:1.4" id="membershipSubtext">₹99/month • 10 free deliveries • Priority orders</div>
-                </div>
-                <button id="membershipBtn" style="background:var(--accent);color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;border:none;cursor:pointer;flex-shrink:0"
-                  onclick="showScreen('screen-membership')">View</button>
-              </div>
-            </div>
+<!-- NOW Plus Membership -->
+<div id="membershipCard" class="profile-membership-card">
+  <div class="membership-inner">
+    <span class="membership-icon">
+      <img src="photos/membership .png" alt="NOW Plus Membership">
+    </span>
+    <div class="membership-info">
+      <div class="membership-title">NOW Plus Membership</div>
+      <div class="membership-subtext" id="membershipSubtext">₹99/month • 10 free deliveries • Priority orders</div>
+    </div>
+    <button id="membershipBtn" class="membership-view-btn" onclick="showScreen('screen-membership')">View</button>
+  </div>
+</div>
 
-          </div>
-        </div>
+<!-- Profile Menu (all items from drawer merged here) -->
+<div class="profile-menu">
+  <div class="pm-item" onclick="showScreen('screen-returns')">
+    <div class="pm-icon"><img src="photos/refund & refunds.png" alt="Returns & Refunds"></div>
+    <div class="pm-label">Returns &amp; Refunds</div>
+    <div class="pm-arrow">›</div>
+  </div>
+  <div class="pm-item" onclick="showScreen('screen-offers')">
+    <div class="pm-icon"><img src="photos/coupan & offers .png" alt="Coupons & Offers"></div>
+    <div class="pm-label">Coupons &amp; Offers</div>
+    <div class="pm-arrow">›</div>
+  </div>
+  <div class="pm-item" onclick="showSavedPayments()">
+    <div class="pm-icon"><img src="photos/payment methods.png" alt="Payment Methods"></div>
+    <div class="pm-label">Payment Methods</div>
+    <div class="pm-arrow">›</div>
+  </div>
+  <div style="padding:0 14px;margin:14px 0;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">MORE</div>
+  <div class="pm-item" onclick="void(0)">
+    <div class="pm-icon"><img src="photos/rate.png" alt="Rate the App"></div>
+    <div class="pm-label">Rate the App</div>
+    <div class="pm-arrow">›</div>
+  </div>
+  <div class="pm-item" onclick="showScreen('screen-referral')">
+    <div class="pm-icon"><img src="photos/refer & earn.png" alt="Refer & Earn"></div>
+    <div class="pm-label">Refer &amp; Earn</div>
+    <div class="pm-arrow">›</div>
+  </div>
+  <div class="pm-item" onclick="showScreen('screen-about')">
+    <div class="pm-icon"><img src="photos/about now.png" alt="About NOW"></div>
+    <div class="pm-label">About <span data-brand-name>NOW</span></div>
+    <div class="pm-arrow">›</div>
+  </div>
+</div>
 
-        <!-- Profile Menu (all items from drawer merged here) -->
-        <div class="profile-menu">
-          <div class="pm-item" onclick="showScreen('screen-returns')">
-            <div class="pm-icon">🔄</div>
-            <div class="pm-label">Returns &amp; Refunds</div>
-            <div class="pm-arrow">›</div>
-          </div>
-          <div class="pm-item" onclick="showScreen('screen-offers')">
-            <div class="pm-icon">🎁</div>
-            <div class="pm-label">Coupons &amp; Offers</div>
-            <div class="pm-arrow">›</div>
-          </div>
-          <div class="pm-item" onclick="showSavedPayments()">
-            <div class="pm-icon">💳</div>
-            <div class="pm-label">Payment Methods</div>
-            <div class="pm-arrow">›</div>
-          </div>
-          <div style="padding:0 14px;margin:14px 0;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">MORE</div>
-          <div class="pm-item" onclick="void(0)">
-            <div class="pm-icon">⭐</div>
-            <div class="pm-label">Rate the App</div>
-            <div class="pm-arrow">›</div>
-          </div>
-          <div class="pm-item" onclick="showScreen('screen-referral')">
-            <div class="pm-icon">🤝</div>
-            <div class="pm-label">Refer &amp; Earn</div>
-            <div class="pm-arrow">›</div>
-          </div>
-          <div class="pm-item" onclick="showScreen('screen-about')">
-            <div class="pm-icon">ℹ️</div>
-            <div class="pm-label">About <span data-brand-name>NOW</span></div>
-            <div class="pm-arrow">›</div>
-          </div>
-        </div>
+<!-- Social Links (dynamic from admin settings) -->
+<div style="padding:24px 14px 16px;text-align:center">
+  <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px">Follow Us</div>
+  <div id="socialLinksContainer" style="display:flex;justify-content:center;gap:16px;margin-bottom:20px"></div>
+  <div class="profile-footer-brand">
+    <img
+      src="/photos/now-logo.png"
+      alt="NOW - Nonveg On Wheels"
+      class="profile-footer-logo"
+    >
 
-        <!-- Social Links (dynamic from admin settings) -->
-        <div style="padding:24px 14px 16px;text-align:center">
-          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px">Follow Us</div>
-          <div id="socialLinksContainer" style="display:flex;justify-content:center;gap:16px;margin-bottom:20px"></div>
-        </div>
+    <div class="profile-footer-tagline">
+      Fresh • Fast • Trusted
+    </div>
 
-        <div style="height:12px"></div>
+    <div class="profile-footer-version">
+      v1.0.0
+    </div>
+  </div>
+</div>
+</div>
+
+<div style="height:12px"></div>
       </div>
     </div>
 
-    <!-- ═══ SUBSCRIPTIONS SCREEN ═══ -->
+<!-- ═══ SUBSCRIPTIONS SCREEN ═══ -->
     <div class="screen" id="screen-subscriptions">
       <div class="screen-header">
         <button class="back-btn" onclick="goBack()">←</button>
@@ -3020,6 +3037,155 @@ input,textarea{font:inherit;color:inherit}
     </div>
 
   </div><!-- /screens -->
+<!-- Profile mobile icon/layout fixes: place inside the document <body>, before </body>. -->
+<style id="profile-mobile-final-fix">
+@media (max-width: 767px) {
+  #screen-profile .profile-quick-actions {
+    display: flex !important;
+    width: 100% !important;
+    margin: 16px 0 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  #screen-profile .quick-action-item {
+    flex: 1 1 25% !important;
+    min-width: 0 !important;
+    min-height: 74px !important;
+    padding: 8px 5px !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-right: 1px solid var(--border) !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    box-sizing: border-box !important;
+  }
+
+  #screen-profile .quick-action-item:last-child {
+    border-right: 0 !important;
+  }
+
+  #screen-profile .quick-action-icon,
+  #screen-profile .quick-action-icon img {
+    width: 28px !important;
+    height: 28px !important;
+    object-fit: contain !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+  }
+
+  #screen-profile .quick-action-icon svg {
+    width: 24px !important;
+    height: 24px !important;
+    display: block !important;
+  }
+
+  #screen-profile .quick-action-label,
+  #screen-profile .quick-action-wallet-text {
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+    white-space: normal !important;
+  }
+
+  #screen-profile .wallet-label {
+    color: var(--accent) !important;
+    font-weight: 700 !important;
+  }
+
+  #screen-profile .profile-membership-card {
+    width: 100% !important;
+    margin: 14px 0 !important;
+    background: var(--card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 14px !important;
+    box-shadow: none !important;
+    box-sizing: border-box !important;
+  }
+
+  #screen-profile .membership-inner {
+    min-height: 82px !important;
+    padding: 12px 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  #screen-profile .membership-icon,
+  #screen-profile .membership-icon img {
+    width: 26px !important;
+    height: 26px !important;
+    object-fit: contain !important;
+    display: block !important;
+    flex-shrink: 0 !important;
+  }
+
+  #screen-profile .membership-info {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  #screen-profile .membership-title {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+  }
+
+  #screen-profile .membership-subtext {
+    margin-top: 4px !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+
+  #screen-profile .membership-view-btn {
+    flex-shrink: 0 !important;
+    padding: 9px 14px !important;
+    border: 0 !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    background: var(--accent) !important;
+    color: #fff !important;
+  }
+
+  #screen-profile .profile-menu .pm-item {
+    border-bottom: 0 !important;
+  }
+
+  #screen-profile .profile-menu .pm-icon {
+    width: 28px !important;
+    height: 28px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+
+  #screen-profile .profile-menu .pm-icon img {
+    width: 24px !important;
+    height: 24px !important;
+    object-fit: contain !important;
+    display: block !important;
+  }
+  #screen-profile .quick-action-icon img,
+#screen-profile .membership-icon img,
+#screen-profile .profile-menu .pm-icon img {
+  filter: invert(33%) sepia(88%) saturate(2100%)
+          hue-rotate(345deg) brightness(94%)
+          contrast(92%) !important;
+}
+}
+</style>
 
   <!-- ── Active Order Strip (above bottom nav) ── -->
   <div id="activeOrderStrip" style="display:none;position:fixed;bottom:60px;left:0;right:0;z-index:140;background:var(--card);border-top:1px solid var(--border);padding:10px 14px;overflow:hidden;pointer-events:auto">
@@ -3427,52 +3593,85 @@ function applyBranding() {
 function renderSocialLinks() {
   const container = document.getElementById('socialLinksContainer');
   if (!container) return;
-  
+
   const socials = APP_SETTINGS?.socials || [];
-  
-  // Default socials if none configured
+
+  // Default socials
   const defaultSocials = [
     { platform: 'instagram', url: 'https://instagram.com', icon: '📷' },
-    { platform: 'x', url: 'https://twitter.com', icon: '✖️' },
+    { platform: 'x', url: 'https://x.com', icon: '✖️' },
     { platform: 'facebook', url: 'https://facebook.com', icon: '👍' },
-    { platform: 'youtube', url: 'https://youtube.com', icon: '▶️' }
+    { platform: 'youtube', url: 'https://youtube.com', icon: '▶️' },
+    { platform: 'linkedin', url: 'https://linkedin.com', icon: 'in' }
   ];
-  
+
   const links = socials.length > 0 ? socials : defaultSocials;
-  
-  // SVG icons for each platform (proper branded)
-  const platformSVGs = {
-    instagram: '<svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>',
-    x: '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
-    twitter: '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
-    facebook: '<svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>',
-    youtube: '<svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>',
-    linkedin: '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>',
-    whatsapp: '<svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>'
+
+  // PNG icons from /public/photos/
+  const platformIcons = {
+    instagram: 'photos/instagram.png',
+    x: 'photos/x.png',
+    twitter: 'photos/x.png',
+    facebook: 'photos/facebook.png',
+    youtube: 'photos/youtube.png',
+    linkedin: 'photos/linkedin.png',
+    whatsapp: 'photos/whatsapp.png',
+    telegram: 'photos/telegram.png'
   };
-  
-  const platformColors = {
-    instagram: 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',
-    x: '#000', twitter: '#000',
-    facebook: '#1877f2',
-    youtube: '#ff0000',
-    linkedin: '#0077b5',
-    whatsapp: '#25d366',
-    telegram: '#0088cc'
-  };
-  
+
   container.innerHTML = links.map(s => {
-    const platform = (s.platform || '').toLowerCase();
-    const color = platformColors[platform] || '#6b7280';
-    const bgStyle = color.includes('gradient') ? `background:${color}` : `background:${color}`;
-    const svg = platformSVGs[platform];
-    
-    // Use SVG icon if available, otherwise emoji
-    const iconHtml = svg || `<span style="font-size:20px">${s.icon || '🔗'}</span>`;
-    
-    return `<a href="${s.url}" target="_blank" title="${s.platform}" style="width:44px;height:44px;border-radius:50%;${bgStyle};display:flex;align-items:center;justify-content:center;text-decoration:none;transition:transform .2s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-      ${iconHtml}
-    </a>`;
+    const platform = (s.platform || '').toLowerCase().trim();
+
+    const iconPath = platformIcons[platform];
+
+    // PNG available → use PNG
+    const iconHtml = iconPath
+      ? `
+        <img
+          src="${iconPath}"
+          alt="${s.platform || ''}"
+          style="
+            width:30px;
+            height:30px;
+            object-fit:contain;
+            display:block;
+          "
+        >
+      `
+      : `
+        <span style="font-size:20px;line-height:1;">
+          ${s.icon || '🔗'}
+        </span>
+      `;
+
+    return `
+      <a
+        href="${s.url || '#'}"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="${s.platform || ''}"
+        style="
+          width:44px;
+          height:44px;
+          min-width:44px;
+          min-height:44px;
+          border-radius:50%;
+          background:transparent;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          text-decoration:none;
+          transition:transform .2s;
+          padding:0;
+          margin:0;
+          box-sizing:border-box;
+        "
+        onmouseover="this.style.transform='scale(1.1)'"
+        onmouseout="this.style.transform='scale(1)'"
+      >
+        ${iconHtml}
+      </a>
+    `;
   }).join('');
 }
 
@@ -4378,7 +4577,7 @@ function showEditProfile() {
   overlay.innerHTML = `
     <div style="background:var(--card);border-radius:20px;padding:24px;max-width:380px;width:100%;max-height:90vh;overflow-y:auto">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-        <div style="font-size:18px;font-weight:800">✏️ Edit Profile</div>
+        <div style="font-size:18px;font-weight:800"><img src="photos/edit.png" alt="Edit address"> Edit Profile</div>
         <button onclick="document.getElementById('editProfileOverlay').remove()" style="background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
       </div>
       
@@ -7169,7 +7368,7 @@ function downloadInvoice(orderId) {
   // Signatory section
   const signatoryHtml = showSign ? '<div class="fr"><div style="font-size:10px;font-weight:600;margin-bottom:4px">For '+companyName+'</div>'+(signName?'<div style="font-size:11px;font-weight:700;margin-top:25px">'+signName+'</div>':'<div class="sl"></div>')+'<div class="st">Authorized Signatory</div></div>' : '';
 
-  const html = '<!DOCTYPE html><html><head><title>Invoice_'+invoiceNum+'</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Segoe UI,Arial,sans-serif;font-size:12px;color:#333;padding:20px}.inv{max-width:800px;margin:0 auto;border:2px solid #d62828}.hdr{background:#d62828;color:#fff;text-align:center;padding:8px;font-size:16px;font-weight:700;letter-spacing:2px}.cs{display:flex;border-bottom:1px solid #ddd}.cl{width:60%;padding:12px;display:flex;gap:12px;border-right:1px solid #ddd}.logo{width:60px;height:60px;border:1px solid #ddd;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#d62828;text-align:center}.cd{font-size:10px;line-height:1.5}.cd strong{font-size:11px;display:block;margin-bottom:2px}.cr{width:40%;padding:12px}.it td,.it th{padding:4px 8px;font-size:11px;border-bottom:1px solid #eee}.it td:first-child{font-weight:600;color:#555;width:40%}.bs{display:flex;border-bottom:1px solid #ddd}.bl{width:50%;padding:12px;border-right:1px solid #ddd}.br{width:50%;padding:12px}.bt{font-weight:700;font-size:11px;margin-bottom:6px;color:#d62828}.tbl{width:100%;border-collapse:collapse}.tbl th{background:#f5f5f5;padding:8px 6px;font-size:10px;text-align:center;border:1px solid #ddd;font-weight:700}.tbl td{padding:6px;text-align:center;border:1px solid #ddd;font-size:11px}.ts{display:flex;border-top:2px solid #d62828}.tsl{width:50%;padding:12px}.tsr{width:50%;padding:12px;border-left:1px solid #ddd}.gt th,.gt td{padding:4px 8px;font-size:10px;border:1px solid #ddd;text-align:center}.gt th{background:#f9f9f9}.aw{padding:8px 12px;background:#fef3f2;border-top:1px solid #ddd;border-bottom:1px solid #ddd;font-size:11px}.fs{padding:12px;border-top:1px solid #ddd;display:flex;justify-content:space-between}.fl{font-size:10px;color:#666;line-height:1.6;max-width:55%}.fr{text-align:center}.sl{width:120px;border-bottom:1px solid #333;margin:30px auto 4px}.st{font-size:10px;color:#666}@media print{body{padding:0}.inv{border:none}.np{display:none!important}}</style></head><body><div class="inv"><div class="hdr">Original Tax Invoice</div><div class="cs"><div class="cl"><div class="logo"><img src="/now-logo.png" style="width:90px;height:90px;object-fit:contain;background:#fff;border-radius:8px;padding:4px"/></div><div class="cd"><strong>Details of Supplier</strong>'+companyName+'<br>'+(supplierAddr?supplierAddr+'<br>':'')+supplierCity+(supplierState?', '+supplierState:'')+'<br>'+(supplierPhone?'Tel: '+supplierPhone+'<br>':'')+(supplierEmail?'Email: '+supplierEmail+'<br>':'')+legalLines+'</div></div><div class="cr"><table class="it"><tr><td>Invoice No.</td><td><strong>'+invoiceNum+'</strong></td></tr><tr><td>Invoice Date</td><td>'+dateStr+'</td></tr><tr><td>Order No.</td><td>#'+orderId+'</td></tr><tr><td>Payment</td><td>'+((order.payment_method||'cod').toUpperCase())+'</td></tr><tr><td>Slot</td><td>'+(order.delivery_slot||'ASAP')+'</td></tr><tr><td>Items</td><td>'+((order.items||[]).length)+'</td></tr></table></div></div><div class="bs"><div class="bl"><div class="bt">Bill To:</div><div style="font-size:11px;line-height:1.6"><strong>'+(USER?.name||'Customer')+'</strong><br>+91 '+(USER?.phone||'N/A')+'<br>'+(order.address||'N/A')+'</div></div><div class="br"><div class="bt">Ship To:</div><div style="font-size:11px;line-height:1.6"><strong>'+(USER?.name||'Customer')+'</strong><br>'+(order.address||'N/A')+'</div></div></div><table class="tbl"><thead><tr><th style="width:30px">Sl</th><th style="text-align:left">Item Description</th><th style="width:40px">Qty</th><th style="width:60px">Price</th><th style="width:70px">Amount</th><th style="width:70px">CGST</th><th style="width:70px">SGST</th><th style="width:70px">Total</th></tr></thead><tbody>'+itemRows+'</tbody></table><div class="aw"><strong>Total (In Words):</strong> '+totalWords+'</div><div class="ts"><div class="tsl"><div style="font-weight:700;font-size:11px;margin-bottom:6px">GST Summary</div><table class="gt"><tr><th>Tax</th><th>Rate</th><th>Taxable</th><th>Amount</th></tr><tr><td>CGST</td><td>'+cgstPct+'%</td><td>₹'+subtotal.toFixed(2)+'</td><td>₹'+cgstAmt.toFixed(2)+'</td></tr><tr><td>SGST</td><td>'+sgstPct+'%</td><td>₹'+subtotal.toFixed(2)+'</td><td>₹'+sgstAmt.toFixed(2)+'</td></tr></table><div style="margin-top:10px;font-size:10px;color:#666"><strong>Other Charges:</strong><br>Packaging: ₹'+packagingCharge+'<br>Delivery: '+(deliveryFeeAmt===0?'FREE':'₹'+deliveryFeeAmt)+'</div></div><div class="tsr"><table style="width:100%"><tr><td style="padding:4px 8px;font-size:11px">Sub Total</td><td style="text-align:right;padding:4px 8px;font-size:11px">₹'+subtotal.toFixed(2)+'</td></tr><tr><td style="padding:4px 8px;font-size:11px">CGST ('+cgstPct+'%)</td><td style="text-align:right;padding:4px 8px;font-size:11px">₹'+cgstAmt.toFixed(2)+'</td></tr><tr><td style="padding:4px 8px;font-size:11px">SGST ('+sgstPct+'%)</td><td style="text-align:right;padding:4px 8px;font-size:11px">₹'+sgstAmt.toFixed(2)+'</td></tr><tr><td style="padding:4px 8px;font-size:11px">Packaging</td><td style="text-align:right;padding:4px 8px;font-size:11px">₹'+packagingCharge+'</td></tr><tr><td style="padding:4px 8px;font-size:11px">Delivery</td><td style="text-align:right;padding:4px 8px;font-size:11px">'+(deliveryFeeAmt===0?'FREE':'₹'+deliveryFeeAmt)+'</td></tr><tr style="border-top:2px solid #d62828"><td style="padding:8px;font-size:14px;font-weight:800;color:#d62828">Grand Total</td><td style="text-align:right;padding:8px;font-size:14px;font-weight:800;color:#d62828">₹'+grandTotal+'</td></tr></table></div></div><div class="fs"><div class="fl"><strong>Terms:</strong><br>'+(term1?'1. '+term1+'<br>':'')+(term2?'2. '+term2+'<br>':'')+(term3?'3. '+term3+'<br>':'')+'<br>'+(footerNote?'<em>'+footerNote+'</em>':'')+'</div>'+signatoryHtml+'</div></div><div class="np" style="text-align:center;margin-top:20px"><button onclick="window.print()" style="padding:12px 24px;background:#d62828;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">📄 Save as PDF</button></div></body></html>';
+  const html = '<!DOCTYPE html><html><head><title>Invoice_'+invoiceNum+'</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Segoe UI,Arial,sans-serif;font-size:12px;color:#333;padding:20px}.inv{max-width:800px;margin:0 auto;border:2px solid #d62828}.hdr{background:#d62828;color:#fff;text-align:center;padding:8px;font-size:16px;font-weight:700;letter-spacing:2px}.cs{display:flex;border-bottom:1px solid #ddd}.cl{width:60%;padding:12px;display:flex;gap:12px;border-right:1px solid #ddd}.logo{width:60px;height:60px;border:1px solid #ddd;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#d62828;text-align:center}.cd{font-size:10px;line-height:1.5}.cd strong{font-size:11px;display:block;margin-bottom:2px}.cr{width:40%;padding:12px}.it td,.it th{padding:4px 8px;font-size:11px;border-bottom:1px solid #eee}.it td:first-child{font-weight:600;color:#555;width:40%}.bs{display:flex;border-bottom:1px solid #ddd}.bl{width:50%;padding:12px;border-right:1px solid #ddd}.br{width:50%;padding:12px}.bt{font-weight:700;font-size:11px;margin-bottom:6px;color:#d62828}.tbl{width:100%;border-collapse:collapse}.tbl th{background:#f5f5f5;padding:8px 6px;font-size:10px;text-align:center;border:1px solid #ddd;font-weight:700}.tbl td{padding:6px;text-align:center;border:1px solid #ddd;font-size:11px}.ts{display:flex;border-top:2px solid #d62828}.tsl{width:50%;padding:12px}.tsr{width:50%;padding:12px;border-left:1px solid #ddd}.gt th,.gt td{padding:4px 8px;font-size:10px;border:1px solid #ddd;text-align:center}.gt th{background:#f9f9f9}.aw{padding:8px 12px;background:#fef3f2;border-top:1px solid #ddd;border-bottom:1px solid #ddd;font-size:11px}.fs{padding:12px;border-top:1px solid #ddd;display:flex;justify-content:space-between}.fl{font-size:10px;color:#666;line-height:1.6;max-width:55%}.fr{text-align:center}.sl{width:120px;border-bottom:1px solid #333;margin:30px auto 4px}.st{font-size:10px;color:#666}@media print{body{padding:0}.inv{border:none}.np{display:none!important}}</style></head><body><div class="inv"><div class="hdr">Original Tax Invoice</div><div class="cs"><div class="cl"><div class="logo"><img src="/photos/now-logo.png" style="width:90px;height:90px;object-fit:contain;background:#fff;border-radius:8px;padding:4px"/></div><div class="cd"><strong>Details of Supplier</strong>'+companyName+'<br>'+(supplierAddr?supplierAddr+'<br>':'')+supplierCity+(supplierState?', '+supplierState:'')+'<br>'+(supplierPhone?'Tel: '+supplierPhone+'<br>':'')+(supplierEmail?'Email: '+supplierEmail+'<br>':'')+legalLines+'</div></div><div class="cr"><table class="it"><tr><td>Invoice No.</td><td><strong>'+invoiceNum+'</strong></td></tr><tr><td>Invoice Date</td><td>'+dateStr+'</td></tr><tr><td>Order No.</td><td>#'+orderId+'</td></tr><tr><td>Payment</td><td>'+((order.payment_method||'cod').toUpperCase())+'</td></tr><tr><td>Slot</td><td>'+(order.delivery_slot||'ASAP')+'</td></tr><tr><td>Items</td><td>'+((order.items||[]).length)+'</td></tr></table></div></div><div class="bs"><div class="bl"><div class="bt">Bill To:</div><div style="font-size:11px;line-height:1.6"><strong>'+(USER?.name||'Customer')+'</strong><br>+91 '+(USER?.phone||'N/A')+'<br>'+(order.address||'N/A')+'</div></div><div class="br"><div class="bt">Ship To:</div><div style="font-size:11px;line-height:1.6"><strong>'+(USER?.name||'Customer')+'</strong><br>'+(order.address||'N/A')+'</div></div></div><table class="tbl"><thead><tr><th style="width:30px">Sl</th><th style="text-align:left">Item Description</th><th style="width:40px">Qty</th><th style="width:60px">Price</th><th style="width:70px">Amount</th><th style="width:70px">CGST</th><th style="width:70px">SGST</th><th style="width:70px">Total</th></tr></thead><tbody>'+itemRows+'</tbody></table><div class="aw"><strong>Total (In Words):</strong> '+totalWords+'</div><div class="ts"><div class="tsl"><div style="font-weight:700;font-size:11px;margin-bottom:6px">GST Summary</div><table class="gt"><tr><th>Tax</th><th>Rate</th><th>Taxable</th><th>Amount</th></tr><tr><td>CGST</td><td>'+cgstPct+'%</td><td>₹'+subtotal.toFixed(2)+'</td><td>₹'+cgstAmt.toFixed(2)+'</td></tr><tr><td>SGST</td><td>'+sgstPct+'%</td><td>₹'+subtotal.toFixed(2)+'</td><td>₹'+sgstAmt.toFixed(2)+'</td></tr></table><div style="margin-top:10px;font-size:10px;color:#666"><strong>Other Charges:</strong><br>Packaging: ₹'+packagingCharge+'<br>Delivery: '+(deliveryFeeAmt===0?'FREE':'₹'+deliveryFeeAmt)+'</div></div><div class="tsr"><table style="width:100%"><tr><td style="padding:4px 8px;font-size:11px">Sub Total</td><td style="text-align:right;padding:4px 8px;font-size:11px">₹'+subtotal.toFixed(2)+'</td></tr><tr><td style="padding:4px 8px;font-size:11px">CGST ('+cgstPct+'%)</td><td style="text-align:right;padding:4px 8px;font-size:11px">₹'+cgstAmt.toFixed(2)+'</td></tr><tr><td style="padding:4px 8px;font-size:11px">SGST ('+sgstPct+'%)</td><td style="text-align:right;padding:4px 8px;font-size:11px">₹'+sgstAmt.toFixed(2)+'</td></tr><tr><td style="padding:4px 8px;font-size:11px">Packaging</td><td style="text-align:right;padding:4px 8px;font-size:11px">₹'+packagingCharge+'</td></tr><tr><td style="padding:4px 8px;font-size:11px">Delivery</td><td style="text-align:right;padding:4px 8px;font-size:11px">'+(deliveryFeeAmt===0?'FREE':'₹'+deliveryFeeAmt)+'</td></tr><tr style="border-top:2px solid #d62828"><td style="padding:8px;font-size:14px;font-weight:800;color:#d62828">Grand Total</td><td style="text-align:right;padding:8px;font-size:14px;font-weight:800;color:#d62828">₹'+grandTotal+'</td></tr></table></div></div><div class="fs"><div class="fl"><strong>Terms:</strong><br>'+(term1?'1. '+term1+'<br>':'')+(term2?'2. '+term2+'<br>':'')+(term3?'3. '+term3+'<br>':'')+'<br>'+(footerNote?'<em>'+footerNote+'</em>':'')+'</div>'+signatoryHtml+'</div></div><div class="np" style="text-align:center;margin-top:20px"><button onclick="window.print()" style="padding:12px 24px;background:#d62828;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">📄 Save as PDF</button></div></body></html>';
 
   const w = window.open('', '_blank');
   if (!w) { showToast('Allow popups for invoice', 'error'); return; }
@@ -9128,7 +9327,7 @@ function loadWishlist() {
           🛒 Add All to Cart
         </button>
         <button onclick="clearWishlist()" style="padding:8px 14px;background:var(--bg);border:1px solid var(--border);color:var(--muted);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">
-          🗑️ Clear
+          <img src="photos/delete.png" alt="Delete address"> Clear
         </button>
       </div>
     </div>
@@ -10401,7 +10600,11 @@ async function renderSavedAddresses() {
     return;
   }
 
-  const typeIcon = { Home: '🏠', Work: '🏢', Other: '📍' };
+  const typeIcon = {
+  Home: '<img src="photos/home.png" alt="Home">',
+  Work: '<img src="photos/home.png" alt="Work">',
+  Other: '<img src="photos/home.png" alt="Other">'
+};
 
   list.innerHTML = addresses.map(addr => {
     const isSelected = selected && (selected.full === addr.full || selected.label === addr.label);
@@ -10419,8 +10622,8 @@ async function renderSavedAddresses() {
         <div class="addr-full" title="${addr.full}">${displayFull}</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="addr-menu-btn" onclick="event.stopPropagation();editAddress(${addr.id})" title="Edit address" style="background:rgba(59,130,246,.1);color:#3b82f6">✏️</button>
-        <button class="addr-menu-btn" onclick="event.stopPropagation();deleteAddress(${addr.id})" title="Delete address">🗑️</button>
+        <button class="addr-menu-btn" onclick="event.stopPropagation();editAddress(${addr.id})" title="Edit address" style="background:rgba(59,130,246,.1);color:#3b82f6"><img src="photos/edit.png" alt="Edit address"></button>
+        <button class="addr-menu-btn" onclick="event.stopPropagation();deleteAddress(${addr.id})" title="Delete address"><img src="photos/delete.png" alt="Delete address"></button>
       </div>
     </div>`;
   }).join('');
@@ -10450,7 +10653,7 @@ async function deleteAddress(id) {
     updateLocTopbar('Set Location');
   }
   renderSavedAddresses();
-  showToast('🗑️ Address removed', '', 1500);
+  showToast('<img src="photos/delete.png" alt="Delete address"> Address removed', '', 1500);
 }
 
 function editAddress(id) {
@@ -10495,7 +10698,7 @@ function editAddress(id) {
   const locText = addr.label.length > 45 ? addr.label.slice(0, 43) + '…' : addr.label;
   document.getElementById('mapStep2Loc').textContent = '📍 ' + locText;
   
-  showToast('✏️ Editing address', 'info', 1500);
+  showToast('<img src="photos/edit.png" alt="Edit address"> Editing address', 'info', 1500);
 }
 
 async function showSavedAddresses() {
@@ -10530,7 +10733,7 @@ async function showSavedAddresses() {
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
           ${isSelected ? '<span style="font-size:11px;color:var(--accent);font-weight:700;padding:4px 8px;background:rgba(232,69,10,.1);border-radius:4px">Active</span>' : ''}
-          <button onclick="event.stopPropagation();deleteSavedAddr(${idx})" style="width:28px;height:28px;background:rgba(239,68,68,.1);border:none;border-radius:6px;color:#ef4444;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">🗑️</button>
+          <button onclick="event.stopPropagation();deleteSavedAddr(${idx})" style="width:28px;height:28px;background:rgba(239,68,68,.1);border:none;border-radius:6px;color:#ef4444;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center"><img src="photos/delete.png" alt="Delete address"></button>
         </div>
       </div>`;
     }).join('');
@@ -10598,7 +10801,7 @@ function showSavedPayments() {
           <div style="font-size:13px;font-weight:700">${card.brand ? card.brand.toUpperCase() : 'Card'} •••• ${card.last4}</div>
           <div style="font-size:11px;color:var(--muted)">Expires ${card.expiry}</div>
         </div>
-        <button onclick="event.stopPropagation();deleteSavedPayment(${payments.indexOf(card)})" style="width:28px;height:28px;background:rgba(239,68,68,.1);border:none;border-radius:6px;color:#ef4444;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">🗑️</button>
+        <button onclick="event.stopPropagation();deleteSavedPayment(${payments.indexOf(card)})" style="width:28px;height:28px;background:rgba(239,68,68,.1);border:none;border-radius:6px;color:#ef4444;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center"><img src="photos/delete.png" alt="Delete address"></button>
       </div>
     `).join('');
   }
@@ -10611,7 +10814,7 @@ function showSavedPayments() {
           <div style="font-size:13px;font-weight:700">${upi.upiId}</div>
           <div style="font-size:11px;color:var(--muted)">UPI ID</div>
         </div>
-        <button onclick="event.stopPropagation();deleteSavedPayment(${payments.indexOf(upi)})" style="width:28px;height:28px;background:rgba(239,68,68,.1);border:none;border-radius:6px;color:#ef4444;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">🗑️</button>
+        <button onclick="event.stopPropagation();deleteSavedPayment(${payments.indexOf(upi)})" style="width:28px;height:28px;background:rgba(239,68,68,.1);border:none;border-radius:6px;color:#ef4444;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center"><img src="photos/delete.png" alt="Delete address"></button>
       </div>
     `).join('');
   }
@@ -10619,7 +10822,11 @@ function showSavedPayments() {
   overlay.innerHTML = `
     <div style="background:var(--card);border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:500px;max-height:80vh;overflow-y:auto">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-        <div style="font-size:17px;font-weight:800">💳 Payment Methods</div>
+        <div style="font-size:17px;font-weight:800;display:flex;align-items:center;gap:8px">
+  <img src="photos/payment methods.png" alt="Payment Methods"
+       style="width:22px;height:22px;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%)">
+  Payment Methods
+</div>
         <button onclick="document.getElementById('savedPayOverlay').remove()" style="background:var(--bg);border:none;width:32px;height:32px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
       </div>
       
@@ -10639,7 +10846,11 @@ function showSavedPayments() {
       <div style="margin-bottom:16px">
         <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)">WALLET</div>
         <div onclick="document.getElementById('savedPayOverlay').remove();showScreen('screen-wallet')" style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:12px;cursor:pointer">
-          <div style="font-size:24px">💰</div>
+          <div style="width:24px;height:24px;display:flex;align-items:center;justify-content:center">
+  <img src="photos/wallet.png"
+       alt="NOW Wallet"
+       style="width:24px;height:24px;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%)">
+</div>
           <div style="flex:1">
             <div style="font-size:13px;font-weight:700">NOW Wallet</div>
             <div style="font-size:11px;color:var(--muted)">Balance: ₹${USER?.wallet || 0}</div>
@@ -10652,10 +10863,12 @@ function showSavedPayments() {
       <div style="border-top:1px solid var(--border);padding-top:16px">
         <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)">ADD NEW</div>
         <button onclick="addNewCard()" style="width:100%;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px;margin-bottom:8px;color:var(--text)">
-          <span style="font-size:18px">💳</span> Add Debit/Credit Card
+          <img src="photos/card.png" alt="Add Card" style="width:18px;height:18px;object-fit:contain">
+          Add Debit/Credit Card
         </button>
         <button onclick="addNewUpi()" style="width:100%;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px;color:var(--text)">
-          <span style="font-size:18px">📱</span> Add UPI ID
+          <img src="photos/upi.png" alt="Add UPI" style="width:18px;height:18px;object-fit:contain">
+          Add UPI ID
         </button>
       </div>
     </div>
@@ -12473,6 +12686,432 @@ body {
   background: #FAF6EE !important;
 }
 </style>
+<style id="mobile-profile-header-fix">
+@media (max-width: 767px) {
+  #screen-profile .screen-header {
+    min-height: 64px !important;
+    padding: 10px 14px !important;
+    box-sizing: border-box !important;
+  }
+
+  #screen-profile .screen-title {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+  }
+
+  #screen-profile .profile-top {
+    padding: 22px 14px 18px !important;
+    gap: 10px !important;
+  }
+}
+</style>
+<style id="mobile-profile-quick-actions">
+@media (max-width: 767px) {
+
+  .profile-quick-actions {
+    display: flex !important;
+    width: 100% !important;
+    margin: 16px 0 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .quick-action-item {
+    flex: 1 !important;
+    min-width: 0 !important;
+    min-height: 72px !important;
+    padding: 8px 6px !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-right: 1px solid var(--border) !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    box-sizing: border-box !important;
+  }
+
+  .quick-action-item:last-child {
+    border-right: none !important;
+  }
+
+  .quick-action-icon {
+    font-size: 24px !important;
+    line-height: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .quick-action-label,
+  .quick-action-wallet-text {
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+    white-space: normal !important;
+  }
+
+  .profile-membership-card {
+    width: 100% !important;
+    margin: 14px 0 !important;
+    background: var(--card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 14px !important;
+    box-sizing: border-box !important;
+  }
+
+  .membership-inner {
+    min-height: 82px !important;
+    padding: 12px 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  .membership-icon {
+    font-size: 22px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .membership-info {
+    flex: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .membership-title {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+  }
+
+  .membership-subtext {
+    margin-top: 4px !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+
+  .membership-view-btn {
+    flex-shrink: 0 !important;
+    padding: 9px 14px !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    background: var(--accent) !important;
+    color: #fff !important;
+  }
+}
+</style>
+<style id="profile-menu-no-divider">
+@media (max-width: 767px) {
+  #screen-profile .profile-menu .pm-item {
+    border-bottom: none !important;
+  }
+}
+</style>
+<style id="topbar-search-theme-color">
+@media (max-width: 767px) {
+
+  /* Top bar icons */
+  #screen-home .topbar-loc-addr svg,
+  #screen-home .home-topbar > div > button svg,
+  #screen-home #topProfileBtn svg {
+    color: var(--accent) !important;
+    stroke: var(--accent) !important;
+  }
+
+  /* Search icon */
+  #screen-home .search-bar > svg {
+    color: var(--accent) !important;
+  }
+
+  #screen-home .search-bar > svg circle,
+  #screen-home .search-bar > svg path {
+    stroke: var(--accent) !important;
+  }
+
+  /* Voice search */
+  #screen-home .voice-search-btn {
+    color: var(--accent) !important;
+  }
+
+  #screen-home .voice-search-btn svg,
+  #screen-home .voice-search-btn svg path,
+  #screen-home .voice-search-btn svg line {
+    stroke: var(--accent) !important;
+  }
+
+  /* Location text stays normal */
+  #screen-home .topbar-loc-text {
+    color: var(--text) !important;
+  }
+}
+</style>
+<style id="saved-address-icon-size-fix">
+@media (max-width: 767px) {
+
+  /* Home icon */
+  .addr-card .addr-icon img {
+    width: 32px !important;
+    height: 32px !important;
+    object-fit: contain !important;
+    display: block !important;
+  }
+
+  /* Edit + Delete */
+  .addr-card .addr-menu-btn img {
+    width: 20px !important;
+    height: 20px !important;
+    object-fit: contain !important;
+    display: block !important;
+  }
+
+  .addr-card .addr-menu-btn {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+</style>
+<style id="global-action-icons-final">
+@media (max-width: 767px) {
+
+  /* HOME */
+  img[src$="home.png"] {
+    width: 28px !important;
+    height: 28px !important;
+    max-width: 28px !important;
+    max-height: 28px !important;
+    object-fit: contain !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+    filter: invert(33%) sepia(88%) saturate(2100%)
+            hue-rotate(345deg) brightness(94%)
+            contrast(92%) !important;
+  }
+
+  /* EDIT */
+  img[src$="edit.png"] {
+    width: 22px !important;
+    height: 22px !important;
+    max-width: 22px !important;
+    max-height: 22px !important;
+    object-fit: contain !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+    filter: invert(33%) sepia(88%) saturate(2100%)
+            hue-rotate(345deg) brightness(94%)
+            contrast(92%) !important;
+  }
+
+  /* DELETE */
+  img[src$="delete.png"] {
+    width: 22px !important;
+    height: 22px !important;
+    max-width: 22px !important;
+    max-height: 22px !important;
+    object-fit: contain !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+    filter: invert(33%) sepia(88%) saturate(2100%)
+            hue-rotate(345deg) brightness(94%)
+            contrast(92%) !important;
+  }
+}
+</style>
+
+<script id="global-action-icons-final-script">
+(function () {
+  const iconMap = {
+    '🏠': 'photos/home.png',
+    '✏️': 'photos/edit.png',
+    '🗑️': 'photos/delete.png'
+  };
+
+  function replaceIcons(root) {
+    if (!root) return;
+
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT
+    );
+
+    const replacements = [];
+    let node;
+
+    while ((node = walker.nextNode())) {
+      const value = node.nodeValue.trim();
+
+      if (iconMap[value]) {
+        replacements.push({
+          node,
+          src: iconMap[value]
+        });
+      }
+    }
+
+    replacements.forEach(({ node, src }) => {
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = '';
+      img.setAttribute('aria-hidden', 'true');
+
+      node.parentNode.replaceChild(img, node);
+    });
+  }
+
+  function init() {
+    replaceIcons(document.body);
+
+    const observer = new MutationObserver(() => {
+      replaceIcons(document.body);
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+<style id="bottom-nav-theme-color">
+@media (max-width: 767px) {
+
+  #bottomNav .nav-btn .nav-icon svg {
+    color: var(--accent) !important;
+  }
+
+  #bottomNav .nav-btn .nav-icon svg path,
+  #bottomNav .nav-btn .nav-icon svg circle,
+  #bottomNav .nav-btn .nav-icon svg line,
+  #bottomNav .nav-btn .nav-icon svg polyline {
+    stroke: var(--accent) !important;
+  }
+
+  /* Selected + non-selected both same red theme */
+  #bottomNav .nav-btn,
+  #bottomNav .nav-btn span {
+    color: var(--accent) !important;
+  }
+}
+</style>
+<style id="profile-footer-final-fix">
+@media (max-width: 767px) {
+
+  /* Follow Us spacing */
+  #screen-profile #socialLinksContainer {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 16px !important;
+    margin: 0 auto 18px !important;
+    min-height: 44px !important;
+  }
+
+  /* Social buttons */
+  #screen-profile #socialLinksContainer a {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Social SVG */
+  #screen-profile #socialLinksContainer svg {
+    width: 22px !important;
+    height: 22px !important;
+    max-width: 22px !important;
+    max-height: 22px !important;
+  }
+
+  /* Footer logo */
+  #screen-profile .profile-footer-brand {
+    width: 100% !important;
+    text-align: center !important;
+    padding: 6px 0 90px !important;
+    box-sizing: border-box !important;
+  }
+
+  #screen-profile .profile-footer-logo {
+  width: 150px !important;
+  height: 85px !important;
+  max-width: 150px !important;
+  max-height: 85px !important;
+  object-fit: contain !important;
+  display: block !important;
+  margin: 0 auto 8px !important;
+
+  background: #FAF6EE !important;
+  mix-blend-mode: multiply !important;
+}
+
+  .profile-footer-tagline {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    color: var(--muted) !important;
+  }
+
+  .profile-footer-version {
+    margin-top: 6px !important;
+    font-size: 13px !important;
+    color: var(--muted) !important;
+  }
+}
+</style>
+
+<script id="profile-footer-social-init">
+document.addEventListener('DOMContentLoaded', function () {
+  setTimeout(function () {
+    if (typeof renderSocialLinks === 'function') {
+      renderSocialLinks();
+    }
+  }, 300);
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const logo = document.querySelector('#screen-profile .profile-footer-logo');
+
+  if (logo) {
+    logo.src = new URL('./photos/now-logo.png?v=3', document.baseURI).href;
+  }
+});
+</script>
+<style>
+@media (max-width: 767px) {
+  #screen-profile .profile-footer-logo {
+    width: 180px !important;
+    height: 105px !important;
+    max-width: 180px !important;
+    max-height: 105px !important;
+    object-fit: contain !important;
+    display: block !important;
+    margin: 0 auto 8px !important;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+}
+</style>
+
 
 </body>
 </html>
