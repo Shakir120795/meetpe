@@ -2127,18 +2127,24 @@ input,textarea{font:inherit;color:inherit}
     border: none !important;
 }
 </style>
-<style id="align-location-bars">
-/* "Use my current location" button aur Search bar ko ek line mein laane ke liye */
-#locMapScreen .loc-btn {
-    margin-left: 16px !important;
-    margin-right: 16px !important;
-    width: calc(100% - 32px) !important;
+<style id="force-align-gps-button">
+/* "Use my current location" button ko zabardasti search bar aur cards ke barabar karna */
+#locMapScreen .loc-btn,
+#locMapScreen button[onclick*="gps"],
+#locMapScreen div[style*="border: 1px solid"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
     box-sizing: border-box !important;
+    transform: none !important;
 }
 
-/* Search bar ke wrapper ki width aur margin fix karne ke liye */
+/* Agar search bar par bhi extra margin hai toh usko fix karega */
+#locMapScreen .search-bar,
 #locMapScreen #locSearchInput {
     width: 100% !important;
+    max-width: 100% !important;
     box-sizing: border-box !important;
 }
 </style>
