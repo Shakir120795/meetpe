@@ -1918,6 +1918,22 @@ input,textarea{font:inherit;color:inherit}
     margin-top: 0 !important;
 }
 </style>
+<style id="thin-floating-strip-fix">
+/* Active Order Strip ko thin aur bottom nav ke upar float karne ke liye */
+#activeOrderStrip {
+    left: 16px !important;
+    right: 16px !important;
+    bottom: calc(70px + env(safe-area-inset-bottom, 0px)) !important; /* Bottom nav ke theek upar */
+    border-radius: 12px !important;
+    padding: 8px 12px !important; /* Padding kam karke strip ko thin banaya */
+    border: 1px solid var(--border) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+    width: auto !important;
+    max-width: 400px !important;
+    margin: 0 auto !important;
+    background: var(--card) !important;
+}
+</style>
 
 </head>
 <body>
@@ -5226,7 +5242,7 @@ function renderProductCardHTML(item, isBestSeller = false) {
       ${item.isHalal ? '<div class="badge-halal" style="position:absolute;top:42px;left:6px;background:rgba(34,197,94,.9);color:#fff;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;z-index:2">حلال Halal</div>' : ''}
       ${item.isBestseller || isBestSeller ? '<div class="badge-best">BESTSELLER</div>' : ''}
       ${oos ? '<div class="badge-oos">Out of Stock</div>' : ''}
-      <button class="wishlist-btn ${inWishlist ? 'active' : ''}" onclick="event.stopPropagation();toggleWishlist('${item.code}','${item.name.replace(/'/g,"\\'")}','${item.unit || ''}',${item.price},'${finalImageUrl ? finalImageUrl.replace(/'/g,"\\'") : '/logo.png'}');" title="Add to wishlist">
+      <button class="wishlist-btn ${inWishlist ? 'active' : ''}" onclick="event.stopPropagation();toggleWishlist('${item.code}','${item.name.replace(/'/g,"\\'")}','${item.unit || ''}',${item.price},'${finalImageUrl ? finalImageUrl.replace(/'/g,"\\'") : 'photos/now-logo.png'}');" title="Add to wishlist">
         ${inWishlist ? '❤️' : '🤍'}
       </button>
     </div>
@@ -5355,7 +5371,7 @@ function renderProducts() {
         ${item.isHalal ? '<div class="badge-halal" style="position:absolute;top:42px;left:6px;background:rgba(34,197,94,.9);color:#fff;padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;z-index:2">حلال Halal</div>' : ''}
         ${item.isBestseller || isBest ? '<div class="badge-best">BESTSELLER</div>' : ''}
         ${oos ? '<div class="badge-oos">Out of Stock</div>' : ''}
-        <button class="wishlist-btn ${inWishlist ? 'active' : ''}" onclick="event.stopPropagation();toggleWishlist('${item.code}','${item.name.replace(/'/g,"\\'")}','${item.unit || ''}',${item.price},'${(item.images && item.images[0]) ? item.images[0].replace(/'/g,"\\'") : '/logo.png'}');" title="Add to wishlist">
+        <button class="wishlist-btn ${inWishlist ? 'active' : ''}" onclick="event.stopPropagation();toggleWishlist('${item.code}','${item.name.replace(/'/g,"\\'")}','${item.unit || ''}',${item.price},'${(item.images && item.images[0]) ? item.images[0].replace(/'/g,"\\'") : 'photos/now-logo.png'}');" title="Add to wishlist">
           ${inWishlist ? '❤️' : '🤍'}
         </button>
       </div>
@@ -7025,8 +7041,8 @@ function renderOrdersList(orders) {
     const itemImages = (order.items||[])
       .slice(0, 3)
       .map(item => {
-        const img = item.image || (MENU.find(m => m.code === item.code)?.images?.[0]) || '/logo.png';
-        return `<img src="${img}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border)" onerror="this.src='/logo.png'"/>`;
+        const img = item.image || (MENU.find(m => m.code === item.code)?.images?.[0]) || 'photos/now-logo.png';
+        return `<img src="${img}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border)" onerror="this.src='photos/now-logo.png'"/>`;
       }).join('');
     
     return `<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;margin:0 14px 12px;padding:14px;position:relative">
@@ -7128,36 +7144,41 @@ function updateActiveOrderStrip(orders) {
   // Generate strip cards
   slider.innerHTML = allStripOrders.map(order => {
     const status = order.status || 'placed';
-    let icon = '', text = '', color = '';
+    let text = '', color = '';
     
+    // Status text aur color (Chhote aur clean text)
     if (status === 'placed') {
-      icon = '📋'; text = 'Order Placed • Waiting for confirmation'; color = '#f59e0b';
+      text = 'Order Placed • Waiting...'; color = 'var(--accent)';
     } else if (status === 'preparing') {
-      icon = '👨‍🍳'; text = 'Preparing your order...'; color = '#818cf8';
+      text = 'Preparing your order...'; color = 'var(--accent)';
     } else if (status === 'out_for_delivery') {
-      icon = '🛵'; text = 'Out for delivery!'; color = '#22c55e';
+      text = 'Out for delivery!'; color = 'var(--accent)';
     } else if (status === 'delivered') {
-      icon = '⭐'; text = 'Rate your order'; color = '#f59e0b';
+      text = 'Rate your order'; color = '#f59e0b';
     }
+    
+    // Yahan tera order.png set kar diya hai (Path me / laga diya hai taaki hamesha show ho)
+    const iconHtml = `<img src="/photos/order.png" style="width:22px;height:22px;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%)" alt="Order">`;
     
     // Delivered orders show rating buttons, others show tracking
     if (status === 'delivered') {
-      return `<div onclick="showRatingPopup(${order.id})" style="min-width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;padding:2px 0">
-        <div style="font-size:20px">✅</div>
+      return `<div onclick="showRatingPopup(${order.id})" style="min-width:100%;display:flex;align-items:center;gap:8px;cursor:pointer;padding:2px 0">
+        <div>${iconHtml}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:700;color:#22c55e">Order #${order.id} Delivered! ✅</div>
-          <div style="font-size:11px;color:var(--muted)">₹${order.total} • Tap to rate your experience ⭐</div>
+          <div style="font-size:12px;font-weight:700;color:#22c55e;line-height:1.2">Order #${order.id} Delivered!</div>
+          <div style="font-size:10px;color:var(--muted)">₹${order.total} • Tap to rate</div>
         </div>
-        <button onclick="event.stopPropagation();showRatingPopup(${order.id})" style="padding:6px 12px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">⭐ Rate</button>
+        <button onclick="event.stopPropagation();showRatingPopup(${order.id})" style="padding:4px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">⭐ Rate</button>
       </div>`;
     }
     
-    return `<div onclick="openOrderTracking(${order.id})" style="min-width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;padding:2px 0">
-      <div style="font-size:20px">${icon}</div>
+    return `<div onclick="openOrderTracking(${order.id})" style="min-width:100%;display:flex;align-items:center;gap:8px;cursor:pointer;padding:2px 0">
+      <div>${iconHtml}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:700;color:${color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${text}</div>
-        <div style="font-size:11px;color:var(--muted)">Order #${order.id} • ₹${order.total}</div>
+        <div style="font-size:12px;font-weight:700;color:${color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2">${text}</div>
+        <div style="font-size:10px;color:var(--muted)">Order #${order.id} • ₹${order.total}</div>
       </div>
+      <div style="color:var(--accent);font-weight:800;font-size:18px;line-height:1">›</div>
     </div>`;
   }).join('');
   
@@ -9546,7 +9567,7 @@ function loadWishlist() {
     
     return `<div style="background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:12px;border:1px solid var(--border);display:flex;gap:12px;padding:12px;${!inStock ? 'opacity:0.6' : ''}">
       <div onclick="openProduct('${item.code}')" style="cursor:pointer;flex-shrink:0">
-        <img src="${item.img || '/logo.png'}" alt="${item.name}" style="width:80px;height:80px;border-radius:10px;object-fit:cover" onerror="this.src='/logo.png'"/>
+        <img src="${item.img || 'photos/now-logo.png'}" alt="${item.name}" style="width:80px;height:80px;border-radius:10px;object-fit:cover" onerror="this.src='photos/now-logo.png'"/>
       </div>
       <div style="flex:1;min-width:0">
         <div onclick="openProduct('${item.code}')" style="cursor:pointer">
