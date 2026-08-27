@@ -7547,13 +7547,12 @@ function showOrderMenu(orderId) {
   sheet.style.cssText = 'width:100%;max-width:500px;margin:0 auto;background:var(--card);border-radius:20px 20px 0 0;padding:20px;animation:slideUp 0.3s';
   
   // Menu options HTML
-  // Menu options HTML
   const menuOptions = `
     <div style="font-size:16px;font-weight:800;margin-bottom:16px;color:var(--text)">Order #${orderId}</div>
     
     <button onclick="closeOrderMenu();showOrderDetail(${orderId})" 
       style="width:100%;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;text-align:left;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:12px">
-      <span style="font-size:20px;width:20px;text-align:center">📋</span>
+      <span style="font-size:20px">📋</span>
       <span>View Details</span>
     </button>
     
@@ -7565,7 +7564,7 @@ function showOrderMenu(orderId) {
     
     <button onclick="closeOrderMenu();${isDelivered ? 'showOrderDetail(' + orderId + ')' : 'showToast(\'Available after delivery\', \'info\')'}" 
       style="width:100%;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:12px;margin-bottom:8px;text-align:left;font-size:14px;font-weight:600;color:${isDelivered ? 'var(--text)' : 'var(--muted)'};cursor:pointer;display:flex;align-items:center;gap:12px;opacity:${isDelivered ? '1' : '0.5'}">
-      <span style="font-size:20px;width:20px;text-align:center">⭐</span>
+      <img src="photos/rate.png" style="width:20px;height:20px;object-fit:contain;filter:invert(33%) sepia(88%) saturate(2100%) hue-rotate(345deg) brightness(94%) contrast(92%)" alt="">
       <span>Rate Order</span>
     </button>
     
