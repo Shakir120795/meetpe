@@ -5975,11 +5975,33 @@ function updateCartBar() {
 // ═══════════════════════════════════════════
 //  Product Detail Screen
 // ═══════════════════════════════════════════
-function openProduct(code) {
+async function openProduct(code) {
   try {
-  const item = MENU.find(i => i.code === code);
-  if (!item) return;
-  CURRENT_PRODUCT = item;
+    let item = MENU.find(i => i.code === code);
+    if (!item) return;
+
+    // Use Home-list data immediately
+    CURRENT_PRODUCT = item;
+
+    // Fetch authoritative full product detail
+    try {
+      const res = await fetch(`/api/menu/${encodeURIComponent(code)}`);
+
+      if (res.ok) {
+        const data = await res.json();
+
+        if (data.ok && data.item) {
+          item = {
+            ...item,
+            ...data.item
+          };
+
+          CURRENT_PRODUCT = item;
+        }
+      }
+    } catch (detailError) {
+      console.warn('Product detail API failed, using menu data:', detailError);
+    }
   ADDONS = { 1: true, 2: false };
   SELECTED_WEIGHT = item.unit; // default = base unit
   SELECTED_PRICE = item.price; // default = base price

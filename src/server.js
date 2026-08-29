@@ -310,6 +310,56 @@ app.get('/api/menu', (req, res) => {
   res.json(itemsWithRatings);
 });
 
+// ===== Public single-product detail API =====
+app.get('/api/menu/:code', (req, res) => {
+  try {
+    const code = String(req.params.code || '').trim();
+
+    if (!code) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Product code required'
+      });
+    }
+
+    const item = catalogWithStock().find(
+      i => String(i.code || '').toLowerCase() === code.toLowerCase()
+    );
+
+    if (!item || item.listed === false) {
+      return res.status(404).json({
+        ok: false,
+        error: 'Product not found'
+      });
+    }
+
+    const ratingData = db.prepare(`
+      SELECT
+        COUNT(*) AS review_count,
+        AVG(rating) AS avg_rating
+      FROM reviews
+      WHERE item_code = ?
+    `).get(item.code);
+
+    res.json({
+      ok: true,
+      item: {
+        ...item,
+        rating: ratingData.avg_rating
+          ? Number(ratingData.avg_rating.toFixed(1))
+          : 0,
+        review_count: ratingData.review_count || 0
+      }
+    });
+  } catch (e) {
+    console.error('Product detail API error:', e);
+    res.status(500).json({
+      ok: false,
+      error: 'Failed to load product'
+    });
+  }
+});
+
 // ===== Image upload endpoint =====
 app.post('/api/upload', requireAdmin, upload.array('images', 10), (req, res) => {
   if (!req.files || !req.files.length) return res.status(400).json({ ok: false, error: 'No files uploaded' });
