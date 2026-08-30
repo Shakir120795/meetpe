@@ -9,7 +9,15 @@
       "https://images.unsplash.com/photo-1563379091339-d0feefd290e5?w=400&h=400&fit=crop",
       "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=400&h=400&fit=crop",
       "https://images.unsplash.com/photo-1599599810694-b5ac4dd12b20?w=400&h=400&fit=crop"
-    ]
+    ],
+    "weightOptions": [
+      "500g - 8-10 pcs - ₹130",
+      "1kg - 19-22 pcs - ₹260",
+      "1.5kg - 30-32 pcs - ₹390"
+    ],
+    "pieces": "18-20 pcs",
+    "mrp": 286,
+    "discount": 9
   },
   {
     "code": "C2",
@@ -17,7 +25,15 @@
     "name": "Half Chicken (500g)",
     "price": 135,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-7 pcs - ₹68",
+      "500g - 10-12 pcs - ₹135",
+      "750g - 13-16 pcs - ₹203"
+    ],
+    "pieces": "9-12 pcs",
+    "mrp": 149,
+    "discount": 9
   },
   {
     "code": "C3",
@@ -25,7 +41,15 @@
     "name": "Boneless Chicken (1kg)",
     "price": 335,
     "unit": "1kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "500g - 10-12 pcs - ₹168",
+      "1kg - 18-21 pcs - ₹335",
+      "1.5kg - 29-31 pcs - ₹503"
+    ],
+    "pieces": "20-22 pcs",
+    "mrp": 369,
+    "discount": 9
   },
   {
     "code": "C4",
@@ -33,7 +57,15 @@
     "name": "Chicken Curry Cut (1kg)",
     "price": 270,
     "unit": "1kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "500g - 8-11 pcs - ₹135",
+      "1kg - 19-21 pcs - ₹270",
+      "1.5kg - 30-33 pcs - ₹405"
+    ],
+    "pieces": "18-21 pcs",
+    "mrp": 297,
+    "discount": 9
   },
   {
     "code": "C5",
@@ -41,7 +73,15 @@
     "name": "Chicken Liver (500g)",
     "price": 140,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-6 pcs - ₹70",
+      "500g - 10-13 pcs - ₹140",
+      "750g - 13-15 pcs - ₹210"
+    ],
+    "pieces": "9-11 pcs",
+    "mrp": 154,
+    "discount": 9
   },
   {
     "code": "C6",
@@ -49,7 +89,15 @@
     "name": "Chicken Wings (500g)",
     "price": 160,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 5-8 pcs - ₹80",
+      "500g - 8-10 pcs - ₹160",
+      "750g - 14-17 pcs - ₹240"
+    ],
+    "pieces": "10-13 pcs",
+    "mrp": 176,
+    "discount": 9
   },
   {
     "code": "C7",
@@ -57,7 +105,15 @@
     "name": "Chicken Drumsticks (500g)",
     "price": 175,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-6 pcs - ₹88",
+      "500g - 9-12 pcs - ₹175",
+      "750g - 15-17 pcs - ₹263"
+    ],
+    "pieces": "8-10 pcs",
+    "mrp": 193,
+    "discount": 9
   },
   {
     "code": "C8",
@@ -65,7 +121,15 @@
     "name": "Chicken Keema (500g)",
     "price": 180,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-7 pcs - ₹90",
+      "500g - 10-12 pcs - ₹180",
+      "750g - 13-16 pcs - ₹270"
+    ],
+    "pieces": "9-12 pcs",
+    "mrp": 198,
+    "discount": 9
   },
   {
     "code": "M1",
@@ -73,7 +137,15 @@
     "name": "Premium Fresh Mutton (1kg)",
     "price": 800,
     "unit": "1kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "500g - 10-12 pcs - ₹400",
+      "1kg - 18-21 pcs - ₹800",
+      "1.5kg - 29-31 pcs - ₹1200"
+    ],
+    "pieces": "20-22 pcs",
+    "mrp": 880,
+    "discount": 9
   },
   {
     "code": "M2",
@@ -81,7 +153,15 @@
     "name": "Half Mutton (500g)",
     "price": 420,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-7 pcs - ₹210",
+      "500g - 9-11 pcs - ₹420",
+      "750g - 15-18 pcs - ₹630"
+    ],
+    "pieces": "8-11 pcs",
+    "mrp": 462,
+    "discount": 9
   },
   {
     "code": "M3",
@@ -89,7 +169,15 @@
     "name": "Curry Cut Mutton (1kg)",
     "price": 820,
     "unit": "1kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "500g - 9-11 pcs - ₹410",
+      "1kg - 20-23 pcs - ₹820",
+      "1.5kg - 28-30 pcs - ₹1230"
+    ],
+    "pieces": "19-21 pcs",
+    "mrp": 902,
+    "discount": 9
   },
   {
     "code": "M4",
@@ -97,7 +185,15 @@
     "name": "Boneless Mutton (1kg)",
     "price": 925,
     "unit": "1kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "500g - 10-13 pcs - ₹463",
+      "1kg - 18-20 pcs - ₹925",
+      "1.5kg - 29-32 pcs - ₹1388"
+    ],
+    "pieces": "20-23 pcs",
+    "mrp": 1018,
+    "discount": 9
   },
   {
     "code": "M5",
@@ -105,7 +201,15 @@
     "name": "Mutton Keema (500g)",
     "price": 470,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-6 pcs - ₹235",
+      "500g - 9-12 pcs - ₹470",
+      "750g - 15-17 pcs - ₹705"
+    ],
+    "pieces": "8-10 pcs",
+    "mrp": 517,
+    "discount": 9
   },
   {
     "code": "M6",
@@ -113,7 +217,15 @@
     "name": "Mutton Liver (500g)",
     "price": 380,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-7 pcs - ₹190",
+      "500g - 10-12 pcs - ₹380",
+      "750g - 13-16 pcs - ₹570"
+    ],
+    "pieces": "9-12 pcs",
+    "mrp": 418,
+    "discount": 9
   },
   {
     "code": "M7",
@@ -121,7 +233,15 @@
     "name": "Mutton Chops (1kg)",
     "price": 950,
     "unit": "1kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "500g - 10-12 pcs - ₹475",
+      "1kg - 18-21 pcs - ₹950",
+      "1.5kg - 29-31 pcs - ₹1425"
+    ],
+    "pieces": "20-22 pcs",
+    "mrp": 1045,
+    "discount": 9
   },
   {
     "code": "F1",
@@ -129,7 +249,15 @@
     "name": "Rohu Fish - Cleaned (1kg)",
     "price": 280,
     "unit": "1kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "500g - 8-11 pcs - ₹140",
+      "1kg - 19-21 pcs - ₹280",
+      "1.5kg - 30-33 pcs - ₹420"
+    ],
+    "pieces": "18-21 pcs",
+    "mrp": 308,
+    "discount": 9
   },
   {
     "code": "F2",
@@ -137,7 +265,15 @@
     "name": "Katla Fish - Cleaned (1kg)",
     "price": 290,
     "unit": "1kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "500g - 9-11 pcs - ₹145",
+      "1kg - 20-23 pcs - ₹290",
+      "1.5kg - 28-30 pcs - ₹435"
+    ],
+    "pieces": "19-21 pcs",
+    "mrp": 319,
+    "discount": 9
   },
   {
     "code": "F3",
@@ -145,7 +281,15 @@
     "name": "Singhara Fish (1kg)",
     "price": 350,
     "unit": "1kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "500g - 10-13 pcs - ₹175",
+      "1kg - 18-20 pcs - ₹350",
+      "1.5kg - 29-32 pcs - ₹525"
+    ],
+    "pieces": "20-23 pcs",
+    "mrp": 385,
+    "discount": 9
   },
   {
     "code": "F4",
@@ -153,7 +297,15 @@
     "name": "Pomfret - Medium (1kg)",
     "price": 650,
     "unit": "1kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "500g - 8-10 pcs - ₹325",
+      "1kg - 19-22 pcs - ₹650",
+      "1.5kg - 30-32 pcs - ₹975"
+    ],
+    "pieces": "18-20 pcs",
+    "mrp": 715,
+    "discount": 9
   },
   {
     "code": "F5",
@@ -161,7 +313,15 @@
     "name": "Basa Fillet - Boneless (1kg)",
     "price": 480,
     "unit": "1kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "500g - 9-12 pcs - ₹240",
+      "1kg - 20-22 pcs - ₹480",
+      "1.5kg - 28-31 pcs - ₹720"
+    ],
+    "pieces": "19-22 pcs",
+    "mrp": 528,
+    "discount": 9
   },
   {
     "code": "F6",
@@ -169,7 +329,15 @@
     "name": "Tilapia (1kg)",
     "price": 320,
     "unit": "1kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "500g - 10-12 pcs - ₹160",
+      "1kg - 18-21 pcs - ₹320",
+      "1.5kg - 29-31 pcs - ₹480"
+    ],
+    "pieces": "20-22 pcs",
+    "mrp": 352,
+    "discount": 9
   },
   {
     "code": "F7",
@@ -177,7 +345,15 @@
     "name": "Prawns - Medium (500g)",
     "price": 380,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-7 pcs - ₹190",
+      "500g - 9-11 pcs - ₹380",
+      "750g - 15-18 pcs - ₹570"
+    ],
+    "pieces": "8-11 pcs",
+    "mrp": 418,
+    "discount": 9
   },
   {
     "code": "R1",
@@ -185,7 +361,15 @@
     "name": "Tandoori Chicken Marinated (500g)",
     "price": 220,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-6 pcs - ₹110",
+      "500g - 10-13 pcs - ₹220",
+      "750g - 13-15 pcs - ₹330"
+    ],
+    "pieces": "9-11 pcs",
+    "mrp": 242,
+    "discount": 9
   },
   {
     "code": "R2",
@@ -193,7 +377,15 @@
     "name": "Chicken Tikka Marinated (500g)",
     "price": 230,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 5-8 pcs - ₹115",
+      "500g - 8-10 pcs - ₹230",
+      "750g - 14-17 pcs - ₹345"
+    ],
+    "pieces": "10-13 pcs",
+    "mrp": 253,
+    "discount": 9
   },
   {
     "code": "R3",
@@ -201,7 +393,15 @@
     "name": "Chicken Seekh Kebab (500g)",
     "price": 240,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-6 pcs - ₹120",
+      "500g - 9-12 pcs - ₹240",
+      "750g - 15-17 pcs - ₹360"
+    ],
+    "pieces": "8-10 pcs",
+    "mrp": 264,
+    "discount": 9
   },
   {
     "code": "R4",
@@ -209,7 +409,15 @@
     "name": "Chicken Malai Tikka (500g)",
     "price": 250,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-7 pcs - ₹125",
+      "500g - 10-12 pcs - ₹250",
+      "750g - 13-16 pcs - ₹375"
+    ],
+    "pieces": "9-12 pcs",
+    "mrp": 275,
+    "discount": 9
   },
   {
     "code": "R5",
@@ -217,7 +425,15 @@
     "name": "Chicken Hariyali Kebab (500g)",
     "price": 245,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 5-7 pcs - ₹123",
+      "500g - 8-11 pcs - ₹245",
+      "750g - 14-16 pcs - ₹368"
+    ],
+    "pieces": "10-12 pcs",
+    "mrp": 270,
+    "discount": 9
   },
   {
     "code": "R6",
@@ -225,7 +441,15 @@
     "name": "Mutton Seekh Kebab (500g)",
     "price": 460,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-7 pcs - ₹230",
+      "500g - 9-11 pcs - ₹460",
+      "750g - 15-18 pcs - ₹690"
+    ],
+    "pieces": "8-11 pcs",
+    "mrp": 506,
+    "discount": 9
   },
   {
     "code": "R7",
@@ -233,7 +457,15 @@
     "name": "Mutton Galouti Kebab (500g)",
     "price": 520,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-6 pcs - ₹260",
+      "500g - 10-13 pcs - ₹520",
+      "750g - 13-15 pcs - ₹780"
+    ],
+    "pieces": "9-11 pcs",
+    "mrp": 572,
+    "discount": 9
   },
   {
     "code": "R8",
@@ -241,7 +473,15 @@
     "name": "Fish Tikka Marinated (500g)",
     "price": 280,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 5-8 pcs - ₹140",
+      "500g - 8-10 pcs - ₹280",
+      "750g - 14-17 pcs - ₹420"
+    ],
+    "pieces": "10-13 pcs",
+    "mrp": 308,
+    "discount": 9
   },
   {
     "code": "R9",
@@ -249,7 +489,15 @@
     "name": "Fish Fingers - Crumb Coated (500g)",
     "price": 260,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-6 pcs - ₹130",
+      "500g - 9-12 pcs - ₹260",
+      "750g - 15-17 pcs - ₹390"
+    ],
+    "pieces": "8-10 pcs",
+    "mrp": 286,
+    "discount": 9
   },
   {
     "code": "R10",
@@ -257,7 +505,15 @@
     "name": "Chicken Nuggets (500g)",
     "price": 230,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-7 pcs - ₹115",
+      "500g - 10-12 pcs - ₹230",
+      "750g - 13-16 pcs - ₹345"
+    ],
+    "pieces": "9-12 pcs",
+    "mrp": 253,
+    "discount": 9
   },
   {
     "code": "R11",
@@ -265,7 +521,15 @@
     "name": "Chicken Sausages (450g)",
     "price": 210,
     "unit": "450g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 5-7 pcs - ₹117",
+      "450g - 7-10 pcs - ₹210",
+      "675g - 13-15 pcs - ₹315"
+    ],
+    "pieces": "9-11 pcs",
+    "mrp": 231,
+    "discount": 9
   },
   {
     "code": "R12",
@@ -273,7 +537,15 @@
     "name": "Chicken Salami (200g)",
     "price": 180,
     "unit": "200g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-7 pcs - ₹225",
+      "200g - 4-6 pcs - ₹180",
+      "300g - 6-9 pcs - ₹270"
+    ],
+    "pieces": "4-7 pcs",
+    "mrp": 198,
+    "discount": 9
   },
   {
     "code": "R13",
@@ -281,7 +553,15 @@
     "name": "Chicken Lollipop Marinated (500g)",
     "price": 250,
     "unit": "500g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 4-6 pcs - ₹125",
+      "500g - 10-13 pcs - ₹250",
+      "750g - 13-15 pcs - ₹375"
+    ],
+    "pieces": "9-11 pcs",
+    "mrp": 275,
+    "discount": 9
   },
   {
     "code": "R14",
@@ -289,7 +569,15 @@
     "name": "Mutton Shami Kebab (400g)",
     "price": 380,
     "unit": "400g",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "250g - 5-8 pcs - ₹238",
+      "400g - 6-8 pcs - ₹380",
+      "600g - 11-14 pcs - ₹570"
+    ],
+    "pieces": "8-11 pcs",
+    "mrp": 418,
+    "discount": 9
   },
   {
     "code": "P1",
@@ -297,7 +585,15 @@
     "name": "Chicken Family Pack (2kg, cleaned + cut)",
     "price": 519,
     "unit": "2kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "1kg - 18-20 pcs - ₹260",
+      "2kg - 39-42 pcs - ₹519",
+      "3kg - 60-62 pcs - ₹779"
+    ],
+    "pieces": "38-40 pcs",
+    "mrp": 571,
+    "discount": 9
   },
   {
     "code": "P2",
@@ -305,7 +601,15 @@
     "name": "Mutton Family Pack (2kg, cleaned + cut)",
     "price": 1599,
     "unit": "2kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "1kg - 19-22 pcs - ₹800",
+      "2kg - 40-42 pcs - ₹1599",
+      "3kg - 58-61 pcs - ₹2399"
+    ],
+    "pieces": "39-42 pcs",
+    "mrp": 1759,
+    "discount": 9
   },
   {
     "code": "P3",
@@ -313,7 +617,15 @@
     "name": "Weekend Party Pack (3kg mixed combo)",
     "price": 2199,
     "unit": "3kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "1.5kg - 30-32 pcs - ₹1100",
+      "3kg - 58-61 pcs - ₹2199",
+      "4.5kg - 89-91 pcs - ₹3299"
+    ],
+    "pieces": "60-62 pcs",
+    "mrp": 2419,
+    "discount": 9
   },
   {
     "code": "P4",
@@ -321,7 +633,15 @@
     "name": "BBQ Combo (Tikka + Kebab + Wings 1.2kg)",
     "price": 599,
     "unit": "1.2kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "600g - 10-13 pcs - ₹300",
+      "1.2kg - 23-25 pcs - ₹599",
+      "1.8kg - 36-39 pcs - ₹899"
+    ],
+    "pieces": "22-25 pcs",
+    "mrp": 659,
+    "discount": 9
   },
   {
     "code": "P5",
@@ -329,6 +649,14 @@
     "name": "Fish Lovers Combo (Rohu + Basa + Prawns)",
     "price": 899,
     "unit": "2kg",
-    "img": ""
+    "img": "",
+    "weightOptions": [
+      "1kg - 19-21 pcs - ₹450",
+      "2kg - 40-43 pcs - ₹899",
+      "3kg - 58-60 pcs - ₹1349"
+    ],
+    "pieces": "39-41 pcs",
+    "mrp": 989,
+    "discount": 9
   }
 ]

@@ -59,7 +59,8 @@ app.use((req, res, next) => {
   const allowedOrigins = [
     'https://nonvegonwheel.in',
     'https://www.nonvegonwheel.in',
-    'http://localhost:3000'
+    'http://localhost:3000',
+    'http://127.0.0.1:5500'
   ];
   const origin = req.headers.origin;
   if (origin && allowedOrigins.includes(origin)) {
@@ -4747,3 +4748,4 @@ app.get('/api/rider/order/:orderId/delivery-location', requireRiderAuth, (req, r
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
+

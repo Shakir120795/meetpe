@@ -190,8 +190,8 @@ function applyMigrations(db) {
       name: '011_add_session_active_flag',
       up: () => {
         try {
-          db.exec(`ALTER TABLE customer_sessions ADD COLUMN is_active INTEGER DEFAULT 1`);
-          console.log('  ✅ Added is_active column to customer_sessions');
+          db.exec(`ALTER TABLE sessions ADD COLUMN is_active INTEGER DEFAULT 1`);
+          console.log('  ✅ Added is_active column to sessions');
         } catch (e) {
           if (!e.message.includes('duplicate column')) throw e;
         }

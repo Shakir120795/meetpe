@@ -15,6 +15,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+
   if (e.request.method !== 'GET' || url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin/')) return;
 
   if (e.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('/index.html')) {
@@ -41,5 +42,8 @@ self.addEventListener('fetch', e => {
       caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone)).catch(() => {});
     }
     return res;
-  }).catch(() => caches.match(e.request).then(cached => cached || undefined)));
+  }).catch(() => caches.match(e.request).then(cached => cached || Response.error())));
 });
+
+
+

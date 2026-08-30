@@ -12,6 +12,9 @@ const DATA_DIR    = path.join(__dirname, '..', '..', 'data');
 const CATALOG_FILE = path.join(DATA_DIR, 'catalog.json');
 const STOCK_FILE   = path.join(DATA_DIR, 'stock.json');
 
+const CATALOG_BACKUP_DIR = path.join(DATA_DIR, 'catalog-backups');
+const MAX_CATALOG_BACKUPS = 20;
+
 // ---- Defaults (used only on first run) ----
 const defaultCatalog = [
   // ===== CHICKEN =====
@@ -85,23 +88,161 @@ const VALID_CATEGORIES = Object.keys(categoryLabels);
 function ensureDataDir() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 }
-function readCatalog() {
+function ensureCatalogBackupDir() {
   ensureDataDir();
-  if (!fs.existsSync(CATALOG_FILE)) {
-    fs.writeFileSync(CATALOG_FILE, JSON.stringify(defaultCatalog, null, 2));
-    return defaultCatalog.slice();
-  }
-  try {
-    const data = JSON.parse(fs.readFileSync(CATALOG_FILE, 'utf8'));
-    return Array.isArray(data) ? data : defaultCatalog.slice();
-  } catch (e) {
-    console.warn('catalog.json read failed, using defaults:', e.message);
-    return defaultCatalog.slice();
+
+  if (!fs.existsSync(CATALOG_BACKUP_DIR)) {
+    fs.mkdirSync(CATALOG_BACKUP_DIR, { recursive: true });
   }
 }
+
+function createCatalogBackup() {
+  if (!fs.existsSync(CATALOG_FILE)) return null;
+
+  ensureCatalogBackupDir();
+
+  const now = new Date();
+  const stamp =
+    now.getFullYear().toString() +
+    String(now.getMonth() + 1).padStart(2, '0') +
+    String(now.getDate()).padStart(2, '0') + '-' +
+    String(now.getHours()).padStart(2, '0') +
+    String(now.getMinutes()).padStart(2, '0') +
+    String(now.getSeconds()).padStart(2, '0') + '-' +
+    String(now.getMilliseconds()).padStart(3, '0');
+
+  const backupFile = path.join(
+    CATALOG_BACKUP_DIR,
+    `catalog-${stamp}.json`
+  );
+
+  fs.copyFileSync(CATALOG_FILE, backupFile);
+
+  // Keep only the newest backups.
+  const backups = fs.readdirSync(CATALOG_BACKUP_DIR)
+    .filter(name => /^catalog-\d{8}-\d{6}-\d{3}\.json$/.test(name))
+    .sort()
+    .reverse();
+
+  for (const oldBackup of backups.slice(MAX_CATALOG_BACKUPS)) {
+    try {
+      fs.unlinkSync(path.join(CATALOG_BACKUP_DIR, oldBackup));
+    } catch (e) {
+      console.warn('Could not remove old catalog backup:', e.message);
+    }
+  }
+
+  return backupFile;
+}
+
+function getLatestCatalogBackup() {
+  if (!fs.existsSync(CATALOG_BACKUP_DIR)) return null;
+
+  const backups = fs.readdirSync(CATALOG_BACKUP_DIR)
+    .filter(name => /^catalog-\d{8}-\d{6}-\d{3}\.json$/.test(name))
+    .sort()
+    .reverse();
+
+  return backups.length
+    ? path.join(CATALOG_BACKUP_DIR, backups[0])
+    : null;
+}
+
+function readCatalog() {
+  ensureDataDir();
+
+  if (!fs.existsSync(CATALOG_FILE)) {
+    const initial = defaultCatalog.map(item => ({ ...item }));
+
+    fs.writeFileSync(
+      CATALOG_FILE,
+      JSON.stringify(initial, null, 2),
+      'utf8'
+    );
+
+    return initial;
+  }
+
+  try {
+    const raw = fs.readFileSync(CATALOG_FILE, 'utf8');
+    const data = JSON.parse(raw);
+
+    if (!Array.isArray(data)) {
+      throw new Error('catalog.json must contain an array');
+    }
+
+    return data;
+  } catch (e) {
+    console.error('❌ catalog.json is invalid:', e.message);
+
+    // Never silently replace real catalog data with defaultCatalog.
+    const latestBackup = getLatestCatalogBackup();
+
+    if (latestBackup) {
+      try {
+        const rawBackup = fs.readFileSync(latestBackup, 'utf8');
+        const backupData = JSON.parse(rawBackup);
+
+        if (!Array.isArray(backupData)) {
+          throw new Error('Latest backup is not a valid catalog array');
+        }
+
+        // Restore the last known-good catalog.
+        fs.copyFileSync(latestBackup, CATALOG_FILE);
+
+        console.warn(
+          '✅ catalog.json restored from backup:',
+          path.basename(latestBackup)
+        );
+
+        return backupData;
+      } catch (restoreError) {
+        throw new Error(
+          `Catalog recovery failed: ${restoreError.message}`
+        );
+      }
+    }
+
+    // No valid backup exists, so fail loudly instead of deleting/replacing
+    // customer data with defaults.
+    throw new Error(
+      'catalog.json is corrupted and no valid catalog backup exists'
+    );
+  }
+}
+
 function writeCatalog(items) {
   ensureDataDir();
-  fs.writeFileSync(CATALOG_FILE, JSON.stringify(items, null, 2));
+  ensureCatalogBackupDir();
+
+  if (!Array.isArray(items)) {
+    throw new TypeError('writeCatalog expects an array');
+  }
+
+  // Backup current catalog BEFORE changing it.
+  createCatalogBackup();
+
+  const tempFile = `${CATALOG_FILE}.tmp`;
+
+  try {
+    fs.writeFileSync(
+      tempFile,
+      JSON.stringify(items, null, 2),
+      'utf8'
+    );
+
+    // Atomic replacement: catalog.json is replaced only after the
+    // complete temporary file has been successfully written.
+    fs.renameSync(tempFile, CATALOG_FILE);
+  } catch (e) {
+    try {
+      if (fs.existsSync(tempFile)) {
+        fs.unlinkSync(tempFile);
+      }
+    } catch (_) {}
+
+    throw new Error(`Failed to save catalog: ${e.message}`);
+  }
 }
 
 // ===== STOCK FILE I/O =====
@@ -193,6 +334,32 @@ function validateItem(input, { existingCode } = {}) {
   if (!name || name.length < 2) errors.push('Name is required');
   const price = parseInt(input.price, 10);
   if (!Number.isFinite(price) || price <= 0 || price > 100000) errors.push('Price must be a positive integer (≤ 100000)');
+
+  // Product pricing and offer fields
+  const mrpRaw = input.mrp;
+  const mrp = (mrpRaw === '' || mrpRaw === null || mrpRaw === undefined)
+    ? price
+    : parseInt(mrpRaw, 10);
+
+  if (!Number.isFinite(mrp) || mrp <= 0 || mrp > 100000) {
+    errors.push('MRP must be a positive integer (≤ 100000)');
+  }
+
+  if (mrp < price) {
+    errors.push('MRP cannot be lower than selling price');
+  }
+
+  const discountRaw = input.discount;
+  const discount = (
+    discountRaw === '' ||
+    discountRaw === null ||
+    discountRaw === undefined
+  )
+    ? (mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0)
+    : Math.max(0, Math.min(100, Number(discountRaw)));
+
+  const pieces = String(input.pieces || '').trim().slice(0, 100);
+  const serves = String(input.serves || '').trim().slice(0, 100);
   const unit = String(input.unit || '').trim();
   if (!unit) errors.push('Unit is required (e.g. 500g, 1kg)');
   const description = String(input.description || '').trim().slice(0, 500);
@@ -213,20 +380,17 @@ function validateItem(input, { existingCode } = {}) {
   // NEW: Product detail fields
   const weightOptions = Array.isArray(input.weightOptions) ? input.weightOptions : [];
   const nutritionInfo = input.nutritionInfo || {};
-  const storageTips = String(input.storageTips || '').trim().slice(0, 300);
-  const cutTypes = Array.isArray(input.cutTypes) ? input.cutTypes : [];
-  const boneOptions = Array.isArray(input.boneOptions) ? input.boneOptions : [];
   const freshnessGuarantee = String(input.freshnessGuarantee || '').trim().slice(0, 200);
+  const marketedBy = String(input.marketedBy || '').trim().slice(0, 200);
   const returnPolicy = String(input.returnPolicy || '').trim().slice(0, 200);
 
   if (errors.length) return { ok: false, errors };
   return { 
     ok: true, 
     item: { 
-      code, cat, name, price, unit, description, images, 
+      code, cat, name, price, mrp, discount, unit, pieces, serves, description, images, 
       isFresh, isHalal, isBestseller,
-      weightOptions, nutritionInfo, storageTips, cutTypes, boneOptions,
-      freshnessGuarantee, returnPolicy
+      freshnessGuarantee, marketedBy, returnPolicy
     } 
   };
 }
@@ -400,3 +564,5 @@ module.exports = {
   deleteItem,
   suggestNextCode,
 };
+
+

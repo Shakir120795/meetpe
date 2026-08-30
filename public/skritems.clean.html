@@ -293,17 +293,6 @@
       <label>Price (Γé╣) *</label>
       <input name="price" id="priceInput" type="number" min="1" placeholder="e.g. 240" required />
 
-      <label>MRP (₹)</label>
-      <input name="mrp" id="mrpInput" type="number" min="1" placeholder="e.g. 280" />
-
-      <label>Offer / Discount (%)</label>
-      <input name="discount" id="discountInput" type="number" min="0" max="100" placeholder="e.g. 16" />
-
-      <label>Pieces</label>
-      <input name="pieces" id="piecesInput" type="text" placeholder="e.g. 10-12 pcs" />
-
-      <label>Serves</label>
-      <input name="serves" id="servesInput" type="text" placeholder="e.g. Serves 4" />
       <label>Description <small style="color:var(--gray);font-weight:400">(optional, max 500 chars)</small></label>
       <textarea name="description" id="descInput" rows="3" placeholder="e.g. Fresh, hygienically cleaned, curry-cut pieces. Perfect for home cooking." maxlength="500" style="resize:vertical"></textarea>
 
@@ -327,7 +316,6 @@
       <div id="weightOptionsContainer" style="border:1px solid #ddd;border-radius:8px;padding:12px;background:#f9f9f9;margin-bottom:12px">
         <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center">
           <div style="font-weight:600;font-size:12px;color:#666">Weight</div>
-          <div style="font-weight:600;font-size:12px;color:#666">Pieces</div>
           <div style="font-weight:600;font-size:12px;color:#666">Price (Γé╣)</div>
           <div></div>
         </div>
@@ -336,14 +324,17 @@
       <button type="button" id="addWeightBtn" style="padding:8px 12px;background:#007bff;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-bottom:12px">+ Add Weight</button>
       <textarea id="weightOptionsInput" rows="3" placeholder="500g - Γé╣135&#10;1kg - Γé╣260&#10;2kg - Γé╣510" style="resize:vertical;font-family:monospace;font-size:13px;display:none"></textarea>
 
+      <label>Cut Type Options <small style="color:var(--gray);font-weight:400">(comma-separated)</small></label>
+      <input id="cutTypesInput" placeholder="Whole, Curry Cut, Boneless, Drumsticks, Wings" />
 
+      <label>Bone Options <small style="color:var(--gray);font-weight:400">(comma-separated)</small></label>
+      <input id="boneOptionsInput" placeholder="With Bone, Boneless" />
 
       <label>Nutrition Info <small style="color:var(--gray);font-weight:400">(JSON format)</small></label>
       <textarea id="nutritionInfoInput" rows="2" placeholder='{"protein":"21g","fat":"4g","calories":"165 kcal","carbs":"0g"}' style="resize:vertical;font-family:monospace;font-size:12px"></textarea>
 
-
-      <label>Marketed By</label>
-      <input name="marketedBy" id="marketedByInput" type="text" placeholder="e.g. MeatPe Foods" />
+      <label>Storage Tips <small style="color:var(--gray);font-weight:400">(max 300 chars)</small></label>
+      <textarea id="storageTipsInput" rows="2" placeholder="Store in refrigerator at 0-4┬░C. Use within 24 hours..." maxlength="300" style="resize:vertical"></textarea>
 
       <label>Freshness Guarantee <small style="color:var(--gray);font-weight:400">(max 200 chars)</small></label>
       <textarea id="freshnessGuaranteeInput" rows="2" placeholder="Farm-fresh, delivered within 2 hours of processing..." maxlength="200" style="resize:vertical"></textarea>
@@ -534,19 +525,17 @@ async function openModal(item) {
     $('nameInput').value = item.name;
     $('unitInput').value = item.unit;
     $('priceInput').value = item.price;
-    $('mrpInput').value = item.mrp ?? '';
-    $('discountInput').value = item.discount ?? '';
-    $('piecesInput').value = item.pieces || '';
-    $('servesInput').value = item.serves || '';
     $('descInput').value = item.description || '';
     $('isFreshCheck').checked = item.isFresh || false;
     $('isHalalCheck').checked = item.isHalal || false;
     $('isBestsellerCheck').checked = item.isBestseller || false;
     $('weightOptionsInput').value = (item.weightOptions || []).join('\n');
     renderWeightRows();
+    $('cutTypesInput').value = (item.cutTypes || []).join(', ');
+    $('boneOptionsInput').value = (item.boneOptions || []).join(', ');
     $('nutritionInfoInput').value = item.nutritionInfo ? JSON.stringify(item.nutritionInfo) : '';
+    $('storageTipsInput').value = item.storageTips || '';
     $('freshnessGuaranteeInput').value = item.freshnessGuarantee || '';
-    marketedByInput.value = item.marketedBy || '';
     $('returnPolicyInput').value = item.returnPolicy || '';
     const imgs = Array.isArray(item.images) && item.images.length ? item.images : (item.img ? [item.img] : []);
     imgContainer.innerHTML = '';
@@ -571,10 +560,12 @@ async function openModal(item) {
     $('isBestsellerCheck').checked = false;
     $('weightOptionsInput').value = '';
     renderWeightRows();
+    $('cutTypesInput').value = '';
+    $('boneOptionsInput').value = '';
     $('nutritionInfoInput').value = '';
+    $('storageTipsInput').value = '';
     $('freshnessGuaranteeInput').value = '';
     $('returnPolicyInput').value = '';
-    marketedByInput.value = '';
     imgContainer.innerHTML = '';
     addImageRow('');
   }
@@ -600,72 +591,27 @@ function renderWeightRows() {
   const textarea = $('weightOptionsInput');
   const container = $('weightRows');
   const lines = textarea.value.split('\n').map(l => l.trim()).filter(l => l);
-
+  
   container.innerHTML = lines.map((line, idx) => {
-    const parts = line.split('-').map(p => p.trim());
-
-    const weight = parts[0] || '';
-    let pieces = '';
-    let price = '';
-
-    if (!pieces) {
-      const w = String(weight).toLowerCase().replace(/\s/g, '');
-      if (w === '250g') pieces = '5-6 pcs';
-      else if (w === '500g') pieces = '10-12 pcs';
-      else if (w === '750g') pieces = '15-18 pcs';
-      else if (w === '1kg' || w === '1000g') pieces = '20-24 pcs';
-      else if (w === '1.5kg' || w === '1500g') pieces = '30-36 pcs';
-      else if (w === '2kg' || w === '2000g') pieces = '40-48 pcs';
-      else pieces = '10-12 pcs';
-    }
-
-
-    if (parts.length >= 3) {
-      pieces = parts[1] || '';
-      price = parts.slice(2).join(' - ').replace('₹', '').trim();
-    } else if (parts.length === 2) {
-      price = parts[1].replace('₹', '').trim();
-    }
-
+    const [weight, price] = line.split('-').map(p => p.trim());
+    const priceNum = price?.replace('Γé╣', '').trim() || '';
     return `
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:center">
-        <input type="text"
-          value="${escapeHtml(weight)}"
-          placeholder="500g"
-          style="padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px"
-          data-weight-idx="${idx}"
-          class="weight-input" />
-
-        <input type="text"
-          value="${escapeHtml(pieces)}"
-          placeholder="10-12 pcs"
-          style="padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px"
-          data-pieces-idx="${idx}"
-          class="pieces-input" />
-
-        <input type="number"
-          value="${escapeHtml(price)}"
-          placeholder="250"
-          min="1"
-          style="padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px"
-          data-price-idx="${idx}"
-          class="price-input" />
-
-        <button type="button"
-          class="remove-weight"
-          data-idx="${idx}"
-          style="padding:6px 10px;background:#dc3545;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px">×</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center">
+        <input type="text" value="${escapeHtml(weight)}" placeholder="500g" style="padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px" data-weight-idx="${idx}" class="weight-input" />
+        <input type="number" value="${priceNum}" placeholder="Γé╣135" style="padding:6px;border:1px solid #ccc;border-radius:4px;font-size:13px" data-price-idx="${idx}" class="price-input" />
+        <button type="button" class="remove-weight" data-idx="${idx}" style="padding:6px 10px;background:#dc3545;color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px">├ù</button>
       </div>
     `;
   }).join('');
-
-  document.querySelectorAll('.weight-input, .pieces-input, .price-input').forEach(input => {
+  
+  // Bind events
+  document.querySelectorAll('.weight-input, .price-input').forEach(input => {
     input.addEventListener('change', updateWeightTextarea);
   });
-
+  
   document.querySelectorAll('.remove-weight').forEach(btn => {
     btn.addEventListener('click', () => {
-      const idx = parseInt(btn.dataset.idx, 10);
+      const idx = parseInt(btn.dataset.idx);
       const lines = textarea.value.split('\n').filter((_, i) => i !== idx);
       textarea.value = lines.join('\n');
       renderWeightRows();
@@ -675,40 +621,26 @@ function renderWeightRows() {
 
 function updateWeightTextarea() {
   const weights = [];
-
   document.querySelectorAll('.weight-input').forEach((input, idx) => {
     const weight = input.value.trim();
-
-    const piecesInput = document.querySelector(
-      `.pieces-input[data-pieces-idx="${idx}"]`
-    );
-    const pieces = piecesInput?.value.trim() || '';
-
-    const priceInput = document.querySelector(
-      `.price-input[data-price-idx="${idx}"]`
-    );
-    const price = priceInput?.value.trim() || '';
-
+    const priceInput = document.querySelector(`.price-input[data-price-idx="${idx}"]`);
+    const price = priceInput?.value.trim();
     if (weight && price) {
-      weights.push(`${weight} - ${pieces || 'N/A'} - ₹${price}`);
+      weights.push(`${weight} - Γé╣${price}`);
     }
   });
-
   $('weightOptionsInput').value = weights.join('\n');
 }
 
 $('addWeightBtn').addEventListener('click', () => {
   const textarea = $('weightOptionsInput');
-
   if (textarea.value.trim()) {
     textarea.value += '\n';
   }
-
-  textarea.value += '500g - 10-12 pcs - ₹250';
+  textarea.value += '500g - Γé╣250';
   renderWeightRows();
 });
 
-// File upload handler
 // File upload handler
 $('fileUploadInput').addEventListener('change', async (e) => {
   const files = e.target.files;
@@ -759,7 +691,12 @@ async function submitItem() {
   const weightOptionsText = $('weightOptionsInput').value.trim();
   const weightOptions = weightOptionsText ? weightOptionsText.split('\n').map(l => l.trim()).filter(l => l) : [];
 
+  // Parse cut types and bone options
+  const cutTypesText = $('cutTypesInput').value.trim();
+  const cutTypes = cutTypesText ? cutTypesText.split(',').map(t => t.trim()).filter(t => t) : [];
   
+  const boneOptionsText = $('boneOptionsInput').value.trim();
+  const boneOptions = boneOptionsText ? boneOptionsText.split(',').map(t => t.trim()).filter(t => t) : [];
 
   // Parse nutrition info JSON
   let nutritionInfo = {};
@@ -779,19 +716,17 @@ async function submitItem() {
     name: $('nameInput').value.trim(),
     unit: $('unitInput').value.trim(),
     price: parseInt($('priceInput').value, 10),
-    mrp: $('mrpInput').value === '' ? null : parseInt($('mrpInput').value, 10),
-    discount: discountInput.value === '' ? null : Number(discountInput.value),
-    pieces: piecesInput.value.trim(),
-    serves: servesInput.value.trim(),
     description: $('descInput').value.trim(),
     images: images,
     isFresh: $('isFreshCheck').checked,
     isHalal: $('isHalalCheck').checked,
     isBestseller: $('isBestsellerCheck').checked,
     weightOptions: weightOptions,
+    cutTypes: cutTypes,
+    boneOptions: boneOptions,
     nutritionInfo: nutritionInfo,
+    storageTips: $('storageTipsInput').value.trim(),
     freshnessGuarantee: $('freshnessGuaranteeInput').value.trim(),
-    marketedBy: marketedByInput.value.trim(),
     returnPolicy: $('returnPolicyInput').value.trim(),
   };
   $('submitBtn').disabled = true;
@@ -869,11 +804,5 @@ async function toggleListing(code) {
 </script>
 </body>
 </html>
-
-
-
-
-
-
 
 
