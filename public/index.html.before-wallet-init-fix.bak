@@ -5469,10 +5469,7 @@ function initMainApp() {
         bottomNav.style.display = 'flex';
         console.log('✅ [INIT_MAIN] Bottom nav display set to flex');
       }
-
-      // Restore logged-in user's wallet in the Home topbar.
-      updateTopbarUser();
-
+      
       // Load menu using the single shared loader.
       loadMenu();
       
@@ -17591,7 +17588,6 @@ function syncHomeWallet() {
 
 </body>
 </html>
-
 
 
 
