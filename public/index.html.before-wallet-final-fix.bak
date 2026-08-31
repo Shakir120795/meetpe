@@ -5727,52 +5727,14 @@ function toggleAppearance() {
 function updateTopbarUser() {
   const walletEl = document.getElementById('topWalletBal');
   const profileIcon = document.getElementById('topProfileIcon');
-
+  if (USER && USER.wallet !== undefined && walletEl) {
+    walletEl.textContent = '₹' + (USER.wallet || 0);
+  }
   if (USER && USER.name && profileIcon) {
     profileIcon.textContent = USER.name.charAt(0).toUpperCase();
     profileIcon.style.fontSize = '15px';
   }
-
-  if (!USER || !USER.phone) {
-    if (walletEl) walletEl.textContent = '₹0';
-    return;
-  }
-
-  // Show cached wallet immediately.
-  if (walletEl) {
-    walletEl.textContent = '₹' + Number(USER.wallet || 0);
-  }
-
-  // Fetch authoritative wallet from server.
-  fetch('/api/customer/' + encodeURIComponent(USER.phone), {
-    credentials: 'same-origin',
-    cache: 'no-store'
-  })
-    .then(r => {
-      if (!r.ok) throw new Error('Wallet API ' + r.status);
-      return r.json();
-    })
-    .then(d => {
-      if (!d || !d.ok || !d.customer) return;
-
-      const wallet = Number(d.customer.wallet || 0);
-      USER.wallet = wallet;
-
-      const el = document.getElementById('topWalletBal');
-      if (el) el.textContent = '₹' + wallet;
-
-      saveUser();
-    })
-    .catch(e => console.warn('Wallet topbar refresh failed:', e.message));
-
-  // Retry after login/render timing settles.
-  [300, 1000, 2000, 4000].forEach(delay => {
-    setTimeout(() => {
-      if (!USER || !USER.phone) return;
-      const el = document.getElementById('topWalletBal');
-      if (el) el.textContent = '₹' + Number(USER.wallet || 0);
-    }, delay);
-  });
+  refreshTopWalletBalance();
 }
 
 async function refreshTopWalletBalance() {
@@ -17588,7 +17550,6 @@ function syncHomeWallet() {
 
 </body>
 </html>
-
 
 
 
