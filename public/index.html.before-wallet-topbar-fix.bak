@@ -5725,6 +5725,7 @@ function toggleAppearance() {
 }
 
 function updateTopbarUser() {
+  // Update wallet balance in topbar
   const walletEl = document.getElementById('topWalletBal');
   const profileIcon = document.getElementById('topProfileIcon');
   if (USER && USER.wallet !== undefined && walletEl) {
@@ -5734,23 +5735,19 @@ function updateTopbarUser() {
     profileIcon.textContent = USER.name.charAt(0).toUpperCase();
     profileIcon.style.fontSize = '15px';
   }
-  refreshTopWalletBalance();
-}
-
-async function refreshTopWalletBalance() {
-  if (!USER || !USER.phone) return;
-  const walletEl = document.getElementById('topWalletBal');
-  if (!walletEl) return;
-  try {
-    const res = await fetch('/api/customer/' + USER.phone);
-    if (!res.ok) return;
-    const data = await res.json();
-    const wallet = Number(data?.customer?.wallet ?? 0);
-    USER.wallet = wallet;
-    walletEl.textContent = '₹' + wallet;
-    saveUser();
-  } catch (e) {
-    console.warn('Topbar wallet refresh failed:', e);
+  // Refresh from server
+  if (USER && USER.phone) {
+    fetch('/api/customer/' + USER.phone)
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok && d.customer && walletEl) {
+          walletEl.textContent = '₹' + (d.customer.wallet || 0);
+          USER.wallet = d.customer.wallet || 0;
+          USER.membership_active = d.customer.membership_active || false;
+          USER.membership_expiry = d.customer.membership_expiry || null;
+          saveUser();
+        }
+      }).catch(() => {});
   }
 }
 
@@ -17529,7 +17526,6 @@ if (document.readyState === 'loading') {
 
 <style id="absolute-final-bottom-nav-fix">#bottomNav.bottom-nav{height:68px!important;min-height:68px!important;padding:4px 0!important;box-sizing:border-box!important;overflow:visible!important;align-items:stretch!important}#bottomNav .nav-btn{height:60px!important;min-height:60px!important;padding:2px 8px!important;gap:2px!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;overflow:visible!important;position:relative!important}#bottomNav .nav-icon{height:27px!important;min-height:27px!important;line-height:1!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;overflow:visible!important;transform:none!important}#bottomNav .nav-icon svg{width:24px!important;height:24px!important;display:block!important;overflow:visible!important}#bottomNav #cartDot.nav-badge{position:absolute!important;top:2px!important;right:calc(50% - 22px)!important;display:none!important;min-width:21px!important;width:auto!important;height:21px!important;padding:0 5px!important;background:#e63946!important;color:#fff!important;border:2px solid #fff!important;border-radius:999px!important;font-size:11px!important;line-height:17px!important;font-weight:800!important;text-align:center!important;align-items:center!important;justify-content:center!important;box-sizing:border-box!important;z-index:99999!important;white-space:nowrap!important;opacity:1!important;visibility:visible!important;overflow:visible!important}#bottomNav #cartDot.nav-badge[data-count]:not([data-count="0"]){display:flex!important}</style></body>
 </html>
-
 
 
 
