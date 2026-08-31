@@ -212,24 +212,24 @@ function applyMigrations(db) {
       name: '013_add_admin_audit_log',
       up: () => {
         try {
-          db.exec('CREATE TABLE IF NOT EXISTS admin_audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT DEFAULT CURRENT_TIMESTAMP, ip TEXT NOT NULL, method TEXT NOT NULL, path TEXT NOT NULL, body TEXT, status_code INTEGER, duration_ms INTEGER)');
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS admin_audit_log (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+              ip TEXT NOT NULL,
+              method TEXT NOT NULL,
+              path TEXT NOT NULL,
+              body TEXT,
+              status_code INTEGER,
+              duration_ms INTEGER
+            )
+          `);
           console.log('  ✅ Created admin_audit_log table');
         } catch (e) {
           if (!e.message.includes('already exists')) throw e;
         }
       }
-    },
-    {
-      name: '014_add_wallet_balance',
-      up: () => {
-        try {
-          db.exec('ALTER TABLE customers ADD COLUMN wallet_balance INTEGER DEFAULT 0');
-          console.log('  ✅ Added wallet_balance column');
-        } catch (e) {
-          if (!e.message.includes('duplicate column')) throw e;
-        }
-      }
-    },
+    }
   ];
   
   // Apply each migration if not already applied

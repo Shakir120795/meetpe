@@ -42,7 +42,6 @@
   .screen#screen-home{padding-left:0 !important;padding-right:0 !important;}
   .bottom-nav{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px) !important;}
 }
-        ${cardWeightOptions.length ? `<select class="np-weight-select" onchange="updateProductCardWeight(this)" onclick="event.stopPropagation()">${cardWeightOptions.map((w, i) => `<option value="${String(w).replace(/"/g, '&quot;')}" ${i === 0 ? 'selected' : ''}>${String(w).split(' - ')[0].trim()}</option>`).join('')}</select><div class="np-weight-selected">${String(cardWeightOptions[0]).split(' - ')[0].trim()}${String(cardWeightOptions[0]).split(' - ').length >= 3 ? ' | ' + String(cardWeightOptions[0]).split(' - ')[1].trim() : ''}</div>` : `<div class="np-weight">${item.unit || ''}</div>`}
   width:100%;
   height:30px;
   padding:0 28px 0 9px;
@@ -2289,20 +2288,6 @@ input,textarea{font:inherit;color:inherit}
 <div class="pd-temp">❄️ Temp Locked at -4°C</div>
 </div>
 <!-- Info Badges -->
-<div style="display:flex;gap:8px;padding:12px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch">
-<div style="background:rgba(230,57,70,.10);color:#E63946;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap;display:flex;align-items:center;gap:4px">
-          ⏱️ 30 mins
-        </div>
-<div style="background:rgba(59,130,246,.12);color:#3b82f6;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap">
-          🦴 Boneless
-        </div>
-<div style="background:rgba(234,179,8,.12);color:#eab308;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap">
-          🔪 Curry Cut
-        </div>
-<div style="background:rgba(168,85,247,.12);color:#a855f7;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;white-space:nowrap">
-          💪 High Protein
-        </div>
-</div>
 <div class="pd-body">
 <div class="chip-badge" id="pdCatBadge">🐔 Chicken</div>
 <div class="pd-name" id="pdName">Whole Chicken</div>
@@ -2311,77 +2296,61 @@ input,textarea{font:inherit;color:inherit}
 <div class="pd-price" id="pdPrice">₹260</div>
 <div class="pd-mrp" id="pdMrp">₹286</div>
 <div class="pd-save-tag" id="pdSaveTag">Save 9%</div>
+  <div class="pd-detail-actions">
+    <button id="pdAddBtn" class="pd-inline-add-btn" onclick="addFromDetail()">Add to Basket →</button>
+    <button id="pdWishlistBtn" class="pd-inline-wishlist-btn" onclick="toggleDetailWishlist()">♡ Wishlist</button>
+  </div>
 </div>
-<!-- Product Highlights -->
-<div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:12px 14px;margin-bottom:16px">
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-<span style="font-size:16px">✅</span>
-<span style="font-size:13px;font-weight:700;color:#10B981">Fresh &amp; Hygienic</span>
+<div class="pd-product-info-row">
+  <div class="pd-info-item">
+    <span class="pd-info-icon">⚖️</span>
+    <span id="pdWeightValue">500 g</span>
+  </div>
+  <div class="pd-info-divider"></div>
+  <div class="pd-info-item">
+    <span class="pd-info-icon">🍴</span>
+    <span id="pdPiecesValue">10-12 Pieces</span>
+  </div>
+  <div class="pd-info-divider"></div>
+  <div class="pd-info-item">
+    <span class="pd-info-icon">🍽️</span>
+    <span id="pdServesValue">Serves 4</span>
+  </div>
 </div>
-<div style="font-size:12px;color:var(--muted);line-height:1.6">
-            Farm-fresh meat, cleaned hygienically. Delivered in 30 minutes with temperature control.
-          </div>
-</div>
-<!-- Nutritional Info -->
-<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px">
-<div style="font-size:13px;font-weight:700;margin-bottom:10px">📊 Nutritional Info (per 100g)</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px">
-<div><span style="color:var(--muted)">Protein:</span> <strong>21g</strong></div>
-<div><span style="color:var(--muted)">Fat:</span> <strong>4g</strong></div>
-<div><span style="color:var(--muted)">Calories:</span> <strong>165 kcal</strong></div>
-<div><span style="color:var(--muted)">Carbs:</span> <strong>0g</strong></div>
-</div>
-</div>
+
 <div class="pd-section">
-<div class="pd-section">
-<div class="pd-section">
-  <div class="pd-product-info-row">
-    <div class="pd-info-item">
-      <span class="pd-info-icon">⚖️</span>
-      <span id="pdWeightValue">500 g</span>
+  <div class="pd-section-title">DESCRIPTION</div>
+  <div id="pdDesc" style="font-size:13px;color:var(--muted);line-height:1.6">
+    Premium quality, farm-fresh meat. Hygienically cleaned and cut. Delivered within 30 minutes.
+  </div>
+</div>
+
+<div class="pd-section" id="nutritionSection">
+  <div class="pd-section-title">📊 Nutritional Info (per 100g)</div>
+  <div id="nutritionGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px">
+    <div><span style="color:var(--muted)">Protein:</span> <strong>21g</strong></div>
+    <div><span style="color:var(--muted)">Fat:</span> <strong>4g</strong></div>
+    <div><span style="color:var(--muted)">Calories:</span> <strong>165 kcal</strong></div>
+    <div><span style="color:var(--muted)">Carbs:</span> <strong>0g</strong></div>
+  </div>
+</div>
+
+<div class="pd-section" id="freshnessSection" style="display:none">
+  <div id="freshnessGuarantee" style="border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:12px 14px;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="font-size:16px">✅</span>
+      <span style="font-size:13px;font-weight:700;color:#10B981">Fresh &amp; Hygienic</span>
     </div>
-    <div class="pd-info-divider"></div>
-    <div class="pd-info-item">
-      <span class="pd-info-icon">🍴</span>
-      <span id="pdPiecesValue">10-12 Pieces</span>
-    </div>
-    <div class="pd-info-divider"></div>
-    <div class="pd-info-item">
-      <span class="pd-info-icon">🍽️</span>
-      <span id="pdServesValue">Serves 4</span>
+    <div id="freshnessText" style="font-size:12px;color:var(--muted);line-height:1.6">
+      Farm-fresh meat, cleaned hygienically. Delivered in 30 minutes with temperature control.
     </div>
   </div>
 </div>
 
-<div class="pd-section-title">Description</div>
-<div id="pdDesc" style="font-size:13px;color:var(--muted);line-height:1.6">
-            Premium quality, farm-fresh meat. Hygienically cleaned and cut as per your preference. Delivered within 30 minutes.
-          </div>
-</div>
-<!-- Nutritional Info (Updated) -->
-<div class="pd-section" id="nutritionSection">
-<div class="pd-section-title">📊 Nutritional Info (per 100g)</div>
-<div id="nutritionGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px">
-<div><span style="color:var(--muted)">Protein:</span> <strong>21g</strong></div>
-<div><span style="color:var(--muted)">Fat:</span> <strong>4g</strong></div>
-<div><span style="color:var(--muted)">Calories:</span> <strong>165 kcal</strong></div>
-<div><span style="color:var(--muted)">Carbs:</span> <strong>0g</strong></div>
-</div>
-</div>
-<!-- Storage Tips -->
-<div class="pd-section" id="storageTipsSection" style="display:none">
-<div class="pd-section-title">❄️ Storage Tips</div>
-<div id="storageTips" style="font-size:13px;color:var(--muted);line-height:1.6;background:var(--card);padding:12px;border-radius:8px;border:1px solid var(--border)"></div>
-</div>
-<!-- Freshness Guarantee -->
-<div class="pd-section" id="freshnessSection" style="display:none">
-<div class="pd-section-title">✅ Freshness Guarantee</div>
-<div id="freshnessGuarantee" style="font-size:13px;color:var(--muted);line-height:1.6;background:rgba(16,185,129,.08);padding:12px;border-radius:8px;border:1px solid rgba(16,185,129,.2)"></div>
-</div>
-<!-- Return Policy -->
 <div class="pd-section" id="returnPolicySection" style="display:none">
-<div class="pd-section-title">↩️ Return Policy</div>
-<div id="returnPolicy" style="font-size:13px;color:var(--muted);line-height:1.6;background:var(--card);padding:12px;border-radius:8px;border:1px solid var(--border)"></div>
+  <div class="pd-section-title">↩️ Return Policy</div>
+  <div id="returnPolicy" style="font-size:13px;color:var(--muted);line-height:1.6">
+  </div>
 </div>
 <!-- Customer Reviews -->
 <div class="pd-section" id="reviewsSection">
@@ -2394,8 +2363,6 @@ input,textarea{font:inherit;color:inherit}
 <div id="similarProducts" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px"></div>
 </div>
 </div>
-<div class="pd-add-btn">
-<button id="pdAddBtn" onclick="addFromDetail()">Add to Basket →</button>
 </div>
 </div><div class="screen" id="screen-basket">
 <div class="screen-header">
@@ -2927,7 +2894,13 @@ input,textarea{font:inherit;color:inherit}
 <span>✨ New Arrivals</span>
 </div>
 <div class="product-grid" id="newArrivalsGrid"></div>
-</div><div class="shop-container">
+
+<!-- Home bottom branding -->
+<div class="home-bottom-brand">
+  <img class="home-bottom-logo" src="/photos/now-logo.png" alt="NOW - Nonveg On Wheels">
+  <div class="home-bottom-tagline">Fresh • Fast • Trusted</div>
+  <div class="home-bottom-version">v1.0.0</div>
+</div>
 </div></div><div class="screen" id="screen-subscriptions">
 <div class="screen-header">
 <button class="back-btn" onclick="goBack()">←</button>
@@ -3608,43 +3581,6 @@ html, body {
 }
 </style>
 
-<script id="wishlist-visibility-guard">
-(function () {
-  // Safety guard: every time a screen changes, only the active screen is
-  // allowed to participate in layout. This does not alter existing navigation
-  // functions or data loading.
-  function enforceSingleActiveScreen() {
-    const screens = document.querySelectorAll('#app .screens > .screen');
-    if (!screens.length) return;
-
-    let activeSeen = false;
-    screens.forEach(function (screen) {
-      if (screen.classList.contains('active') && !activeSeen) {
-        activeSeen = true;
-        screen.style.setProperty('display', 'block', 'important');
-        screen.style.setProperty('visibility', 'visible', 'important');
-        screen.style.setProperty('opacity', '1', 'important');
-        screen.style.setProperty('pointer-events', 'auto', 'important');
-      } else {
-        screen.classList.remove('active');
-        screen.style.setProperty('display', 'none', 'important');
-        screen.style.setProperty('visibility', 'hidden', 'important');
-        screen.style.setProperty('opacity', '0', 'important');
-        screen.style.setProperty('pointer-events', 'none', 'important');
-      }
-    });
-  }
-
-  // Run once after DOM/app navigation settles.
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () {
-      setTimeout(enforceSingleActiveScreen, 50);
-    }, {once:true});
-  } else {
-    setTimeout(enforceSingleActiveScreen, 50);
-  }
-})();
-</script>
 
 
 <style id="cart-count-final-override">
@@ -4642,7 +4578,7 @@ html, body {
 #screen-category .np-wishlist:hover{
   background:transparent !important;
 }
-</style></body>. -->
+</style>
 <style id="profile-mobile-final-fix">
 @media (max-width: 767px) {
   #screen-profile .profile-quick-actions {
@@ -6697,7 +6633,6 @@ function renderProductCardHTML(item, isBestSeller = false) {
         <div class="np-price-row">${priceHtml}</div>
 
         <div class="np-title">${item.name}</div>
-        ${cardWeightOptions.length ? `<div class="np-weight-picker"><select class="np-weight-select" onchange="updateProductCardWeight(this)" onclick="event.stopPropagation()">${cardWeightOptions.map((w, i) => { const parts = String(w).split(' - '); const weight = parts[0] || ''; return `<option value="${String(w).replace(/"/g, '&quot;')}" ${i === 0 ? 'selected' : ''}>${weight}</option>`; }).join('')}</select><span class="np-weight-selected">${(() => { const parts = String(cardWeightOptions[0]).split(' - '); return parts.length >= 3 ? parts[1].trim() : ''; })()}</span></div>` : `<div class="np-weight">${item.unit || ''}</div>`}
 
         ${ratingHtml}
       </div>
@@ -7527,25 +7462,18 @@ function renderStorageTips(item) {
 function renderFreshnessGuarantee(item) {
   const section = document.getElementById('freshnessSection');
   const guarantee = document.getElementById('freshnessGuarantee');
-  
-  if (item.freshnessGuarantee) {
-    guarantee.textContent = item.freshnessGuarantee;
-    section.style.display = 'block';
-  } else {
-    section.style.display = 'none';
-  }
+  if (!section || !guarantee) return;
+  const text = item.freshnessGuarantee || 'Farm-fresh meat, cleaned hygienically. Delivered in 30 minutes with temperature control.';
+  guarantee.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="font-size:16px">✅</span><span style="font-size:13px;font-weight:700;color:#10B981">Fresh &amp; Hygienic</span></div><div style="font-size:12px;color:var(--muted);line-height:1.6">' + text + '</div>';
+  section.style.display = 'block';
 }
 
 function renderReturnPolicy(item) {
   const section = document.getElementById('returnPolicySection');
   const policy = document.getElementById('returnPolicy');
-  
-  if (item.returnPolicy) {
-    policy.textContent = item.returnPolicy;
-    section.style.display = 'block';
-  } else {
-    section.style.display = 'none';
-  }
+  if (!section || !policy) return;
+  policy.textContent = item.returnPolicy || 'Return policy details available. Contact support for assistance.';
+  section.style.display = 'block';
 }
 
 // Product Detail Image Slider
@@ -7871,44 +7799,114 @@ function toggleAddon(num) {
   }
 }
 
-function updatePdBtn() {
+function getDetailCartKey() {
   const item = CURRENT_PRODUCT;
-  if (!item) return;
-  const qty = CART[item.code] || 0;
-  const btn = document.getElementById('pdAddBtn');
-  if (!item.inStock) {
-    btn.textContent = 'Out of Stock';
-    btn.disabled = true;
-    return;
-  }
-  btn.disabled = false;
-  btn.textContent = qty > 0 ? `Update Basket (${qty} in cart) →` : 'Add to Basket →';
+  if (!item) return null;
+  const weight = SELECTED_WEIGHT || item.unit || "";
+  const base = parseUnitGrams(item.unit);
+  const selected = parseUnitGrams(weight);
+  return Math.abs(selected - base) < 1 ? item.code : item.code + "_" + weight.replace(/\s/g,"");
 }
 
+function updatePdBtn() {
+  const item = CURRENT_PRODUCT;
+  const btn = document.getElementById("pdAddBtn");
+  if (!item || !btn) return;
+
+  if (!item.inStock) {
+    btn.disabled = true;
+    btn.innerHTML = "Out of Stock";
+    return;
+  }
+
+  btn.disabled = false;
+  const key = getDetailCartKey();
+  const qty = key ? Number(CART[key] || 0) : 0;
+
+  if (qty > 0) {
+    btn.innerHTML = `
+      <span style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:6px">
+        <span style="width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.20);display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;cursor:pointer" onclick="event.stopPropagation();detailQtyChange(-1)">−</span>
+        <strong style="flex:1;text-align:center;font-size:12px">${qty}</strong>
+        <span style="width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.20);display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;cursor:pointer" onclick="event.stopPropagation();detailQtyChange(1)">+</span>
+      </span>`;
+  } else {
+    btn.innerHTML = "Add to Basket →";
+  }
+}
+
+function detailQtyChange(delta) {
+  const key = getDetailCartKey();
+  if (!key) return;
+
+  const oldQty = Number(CART[key] || 0);
+  const newQty = Math.max(0, oldQty + delta);
+
+  if (newQty === 0) {
+    delete CART[key];
+  } else {
+    CART[key] = newQty;
+  }
+
+  saveCart();
+  updateCartBar();
+
+  if (typeof renderProducts === "function") renderProducts();
+  updatePdBtn();
+}
+
+function syncDetailWishlist() {
+  const btn = document.getElementById("pdWishlistBtn");
+  const item = CURRENT_PRODUCT;
+  if (!btn || !item) return;
+
+  let wishlist = [];
+  try {
+    wishlist = JSON.parse(localStorage.getItem("now_wishlist") || "[]");
+  } catch(e) {
+    wishlist = [];
+  }
+
+  const active = wishlist.some(w => w.code === item.code);
+  btn.classList.toggle("active", active);
+  btn.innerHTML = active ? "♥ Wishlist" : "♡ Wishlist";
+}
+
+function toggleDetailWishlist() {
+  if (!CURRENT_PRODUCT) return;
+
+  toggleWishlist(
+    CURRENT_PRODUCT.code,
+    CURRENT_PRODUCT.name,
+    CURRENT_PRODUCT.unit || "",
+    CURRENT_PRODUCT.price,
+    (getUsableProductImages(CURRENT_PRODUCT)[0] || "")
+  );
+
+  setTimeout(() => syncDetailWishlist(), 0);
+}
 function addFromDetail() {
   if (!CURRENT_PRODUCT) return;
   const item = CURRENT_PRODUCT;
   const price = SELECTED_PRICE > 0 ? SELECTED_PRICE : item.price;
   const weight = SELECTED_WEIGHT || item.unit;
-  // Use a composite key if weight differs from base unit
   const baseGrams = parseUnitGrams(item.unit);
   const selGrams = parseUnitGrams(weight);
+
   if (Math.abs(selGrams - baseGrams) < 1) {
-    // Same as base — use item code directly
     addToCart(item.code);
   } else {
-    // Add as custom weight item to cart
-    const cartKey = item.code + '_' + weight.replace(/\s/g,'');
-    if (!CART[cartKey]) {
-      // Store custom item in MENU-like object for subtotal calc
-      MENU_CUSTOM = MENU_CUSTOM || {};
-      MENU_CUSTOM[cartKey] = { ...item, code: cartKey, price, unit: weight, name: item.name + ' (' + weight + ')' };
+    const cartKey = item.code + "_" + weight.replace(/\s/g,"");
+    MENU_CUSTOM = MENU_CUSTOM || {};
+    if (!MENU_CUSTOM[cartKey]) {
+      MENU_CUSTOM[cartKey] = { ...item, code: cartKey, price: price, unit: weight, name: item.name + " (" + weight + ")" };
     }
     CART[cartKey] = (CART[cartKey] || 0) + 1;
     saveCart();
     updateCartBar();
-    showToast('Added: ' + item.name + ' ' + weight);
+    showToast("Added: " + item.name + " " + weight);
   }
+
   updatePdBtn();
 }
 
@@ -17301,60 +17299,209 @@ if (document.readyState === 'loading') {
 .np-stepper{width:54px!important;min-width:54px!important;height:22px!important;border-radius:6px!important;right:6px!important;bottom:6px!important;}
 .np-step{width:17px!important;min-width:17px!important;height:22px!important;font-size:11px!important;line-height:22px!important;}
 .np-qty{width:20px!important;min-width:20px!important;height:22px!important;font-size:9px!important;line-height:22px!important;}
-.pd-product-info-row{display:flex!important;align-items:center!important;width:100%!important;min-height:44px!important;padding:0 10px!important;border-radius:10px!important;background:#f7f7f7!important;box-sizing:border-box!important;}
+.pd-product-info-row{display:flex!important;align-items:center!important;width:100%!important;min-height:44px!important;padding:0 10px!important;border-radius:10px!important;background:transparent!important;box-sizing:border-box!important;}
 .pd-info-item{display:flex!important;align-items:center!important;gap:7px!important;flex:1 1 0!important;min-width:0!important;font-size:12px!important;font-weight:700!important;color:var(--text,#222)!important;white-space:nowrap!important;justify-content:center!important;}
 .pd-info-icon{font-size:15px!important;line-height:1!important;flex:0 0 auto!important;}
 .pd-info-divider{width:1px!important;height:22px!important;background:var(--border,#e5e5e5)!important;flex:0 0 1px!important;}
 .pd-section{margin-bottom:12px!important;}
-#screen-home{display:block!important;width:100%!important;height:auto!important;min-height:100%!important;opacity:1!important;visibility:visible!important;position:relative!important;}
 #productGrid{display:grid!important;width:100%!important;height:auto!important;min-height:1px!important;opacity:1!important;visibility:visible!important;}
-#screen-home.active{display:block!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;min-height:1px!important;opacity:1!important;visibility:visible!important;transform:none!important;animation:none!important;}
-#screen-home.active .product-grid{display:grid!important;width:100%!important;height:auto!important;min-height:1px!important;opacity:1!important;visibility:visible!important;transform:none!important;}
-#screen-home.active .np-card{display:flex!important;width:100%!important;height:auto!important;min-height:1px!important;opacity:1!important;visibility:visible!important;transform:none!important;}
 .screens{display:block!important;position:relative!important;width:100%!important;height:auto!important;min-height:1px!important;max-height:none!important;overflow:visible!important;opacity:1!important;visibility:visible!important;transform:none!important;}
 .screen{width:100%!important;height:auto!important;min-height:1px!important;max-height:none!important;position:relative!important;display:none!important;opacity:1!important;visibility:visible!important;transform:none!important;overflow:visible!important;}
 .screen.active{display:block!important;width:100%!important;height:auto!important;min-height:1px!important;max-height:none!important;opacity:1!important;visibility:visible!important;transform:none!important;animation:none!important;overflow:visible!important;}
-#screen-home.active{display:block!important;width:100%!important;height:auto!important;min-height:1px!important;opacity:1!important;visibility:visible!important;transform:none!important;animation:none!important;}
-#screen-home.active .product-grid{display:grid!important;width:100%!important;height:auto!important;min-height:1px!important;opacity:1!important;visibility:visible!important;}
-#screen-home.active .np-card{display:flex!important;width:100%!important;height:auto!important;min-height:1px!important;opacity:1!important;visibility:visible!important;}
 #screen-product.active{display:block!important;width:100%!important;height:auto!important;min-height:1px!important;opacity:1!important;visibility:visible!important;transform:none!important;animation:none!important;}
 .screens{display:block!important;width:100%!important;min-width:100%!important;max-width:none!important;height:auto!important;min-height:1px!important;flex:none!important;opacity:1!important;visibility:visible!important;overflow:visible!important;}
 .screen.active{display:block!important;width:100%!important;min-width:100%!important;height:auto!important;min-height:1px!important;opacity:1!important;visibility:visible!important;transform:none!important;animation:none!important;overflow:visible!important;}
-#screen-home.active{display:block!important;width:100%!important;min-width:100%!important;height:auto!important;min-height:1px!important;opacity:1!important;visibility:visible!important;transform:none!important;animation:none!important;}
 #screen-home.active>div{opacity:1!important;visibility:visible!important;transform:none!important;}
 #screen-home .product-grid{display:grid!important;width:100%!important;height:auto!important;min-height:1px!important;opacity:1!important;visibility:visible!important;}
-</style></body>
+
+/* Product detail inline actions */
+.pd-detail-actions{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0}
+.pd-inline-add-btn{padding:10px 14px;border:none;border-radius:10px;background:var(--gradient-primary);color:#fff;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer}
+.pd-inline-wishlist-btn{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font-size:13px;font-weight:600;white-space:nowrap;cursor:pointer}
+.pd-inline-add-btn:active,.pd-inline-wishlist-btn:active{transform:scale(.98)}
+@media(max-width:420px){.pd-price-row{align-items:center;gap:7px}.pd-price{font-size:24px}.pd-detail-actions{gap:6px}.pd-inline-add-btn,.pd-inline-wishlist-btn{padding:9px 9px;font-size:11px}}
+
+/* Compact product detail add button */
+.pd-inline-add-btn{padding:8px 11px !important;font-size:11px !important;border-radius:9px !important;min-height:38px !important;}
+.pd-inline-wishlist-btn{padding:8px 10px !important;font-size:11px !important;border-radius:9px !important;min-height:38px !important;}
+.pd-detail-actions{gap:7px !important;}
+
+/* Detail wishlist active state */
+.pd-inline-wishlist-btn.active{
+  color:#E63946 !important;
+  border-color:#E63946 !important;
+  background:rgba(230,57,70,.08) !important;
+  font-weight:700 !important;
+
+/* Wishlist button matches Add to Basket */
+.pd-inline-wishlist-btn.active{
+  background:var(--gradient-primary) !important;
+  color:#fff !important;
+  border-color:var(--accent) !important;
+  font-weight:700 !important;
+  box-shadow:0 2px 8px rgba(230,57,70,.20) !important;
+}
+
+/* ACTIVE WISHLIST = SOLID RED */
+.pd-inline-wishlist-btn.active{
+  background:var(--gradient-primary) !important;
+  color:#fff !important;
+  border:1px solid var(--accent) !important;
+  box-shadow:0 2px 8px rgba(230,57,70,.22) !important;
+  font-weight:700 !important;
+}
+.pd-inline-wishlist-btn.active:hover{
+  background:var(--gradient-primary) !important;
+  color:#fff !important;
+}
+
+/* Keep product info strip on its own line below price/actions */
+.pd-price-row{flex-wrap:wrap !important;align-items:center !important;}
+.pd-price-row .pd-product-info-row{
+  flex:0 0 100% !important;
+  width:100% !important;
+  max-width:100% !important;
+  margin-top:8px !important;
+  order:99 !important;
+}
+
+/* Product detail: info strip must be below price/actions */
+.pd-body{
+  display:block !important;
+  width:100% !important;
+  box-sizing:border-box !important;
+}
+.pd-price-row{
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  width:100% !important;
+  align-items:center !important;
+  box-sizing:border-box !important;
+}
+.pd-product-info-row{
+  display:flex !important;
+  width:100% !important;
+  max-width:100% !important;
+  clear:both !important;
+  float:none !important;
+  position:relative !important;
+  margin:10px 0 16px !important;
+  box-sizing:border-box !important;
+}
+
+/* FINAL product detail layout */
+.pd-body{display:block!important;width:100%!important;box-sizing:border-box!important;}
+.pd-price-row{display:flex!important;align-items:center!important;flex-wrap:nowrap!important;width:100%!important;box-sizing:border-box!important;}
+.pd-detail-actions{display:flex!important;align-items:center!important;gap:7px!important;flex-shrink:0!important;}
+.pd-product-info-row{display:flex!important;align-items:center!important;width:100%!important;max-width:100%!important;clear:both!important;float:none!important;box-sizing:border-box!important;margin:10px 0 16px!important;}
+
+/* Remove backgrounds from product info + freshness blocks */
+.pd-product-info-row{
+  background:transparent !important;
+}
+.pd-body > div[style*="rgba(16,185,129,.08)"]{
+  background:transparent !important;
+}
+
+/* Transparent product detail info surfaces */
+#screen-product .pd-product-info-row{
+  background:transparent !important;
+}
+#screen-product div[style*="rgba(16,185,129"]{
+  background:transparent !important;
+}
+
+/* Remove only these two product-detail section backgrounds */
+#screen-product .pd-product-info-row{
+  background:transparent !important;
+  box-shadow:none !important;
+}
+#screen-product .pd-product-info-row::before,
+#screen-product .pd-product-info-row::after{
+  background:transparent !important;
+}
+#screen-product #freshnessSection,
+#screen-product #freshnessSection > div,
+#screen-product .pd-section:has(#freshnessGuarantee){
+  background:transparent !important;
+}
+
+/* Marketed By */
+.marketed-by-section{margin-top:18px !important;padding:12px 0 !important;}
+.marketed-by-section .pd-section-title{font-size:13px !important;font-weight:700 !important;margin-bottom:5px !important;}
+.marketed-by-value{font-size:12px !important;color:var(--muted) !important;line-height:1.5 !important;}
+
+/* Home bottom branding */
+.home-bottom-brand{
+  width:100%;
+  padding:46px 20px 30px;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+.home-bottom-logo{
+  width:150px;
+  max-width:60%;
+  height:auto;
+  object-fit:contain;
+  margin-bottom:14px;
+}
+.home-bottom-tagline{
+  font-size:13px;
+  color:var(--muted);
+  margin-bottom:5px;
+  letter-spacing:.3px;
+}
+.home-bottom-version{
+  font-size:10px;
+  color:var(--muted);
+}
+}</style></body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

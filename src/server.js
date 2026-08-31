@@ -247,7 +247,7 @@ const settings = require('./data/settings');
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-app.use(apiLimiter); // Apply general rate limiting to all routes
+app.use('/api', apiLimiter); // Apply general rate limiting only to API routes
 
 // Apply rate limiting + auth to ALL /admin/* routes globally
 app.use('/admin', adminLimiter, requireAdmin);
