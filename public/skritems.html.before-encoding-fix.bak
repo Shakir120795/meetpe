@@ -228,21 +228,21 @@
   <p class="sub">Add new items, edit price, name, or remove. Changes are live instantly.</p>
 
   <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-    <a href="/skrdashboard.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📊 Dashboard</a>
-    <a href="/skradmin.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📦 Stock</a>
-    <a href="/skrorders.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📋 Orders</a>
-    <a href="/skritems.html" style="padding:8px 14px;background:#d62828;color:white;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;border-color:#d62828">🛒 Items</a>
-    <a href="/skrcoupons.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🏷️ Coupons</a>
-    <a href="/skrreviews.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">⭐ Reviews</a>
-    <a href="/skrreturns.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">↩️ Returns</a>
-    <a href="/skrusers.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">👥 Users</a>
-    <a href="/skrtickets.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🎫 Tickets</a>
-    <a href="/skrdelivery.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🚚 Delivery</a>
-    <a href="/skrdelivery-boys.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🛵 Riders</a>
-    <a href="/skrbanners.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🎨 Banners</a>
-    <a href="/skrnotifications-admin.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">🔔 Notify</a>
-    <a href="/skrreports.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">📊 Reports</a>
-    <a href="/skrsettings.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">⚙️ Settings</a>
+    <a href="/skrdashboard.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">≡ƒôè Dashboard</a>
+    <a href="/skradmin.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">≡ƒôª Stock</a>
+    <a href="/skrorders.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">≡ƒôï Orders</a>
+    <a href="/skritems.html" style="padding:8px 14px;background:#d62828;color:white;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;border-color:#d62828">≡ƒìù Items</a>
+    <a href="/skrcoupons.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">≡ƒÅ╖∩╕Å Coupons</a>
+    <a href="/skrreviews.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">Γ¡É Reviews</a>
+    <a href="/skrreturns.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">Γå⌐∩╕Å Returns</a>
+    <a href="/skrusers.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">≡ƒæÑ Users</a>
+    <a href="/skrtickets.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">≡ƒÄ½ Tickets</a>
+    <a href="/skrdelivery.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">≡ƒÜÜ Delivery</a>
+    <a href="/skrdelivery-boys.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">≡ƒ¢╡ Riders</a>
+    <a href="/skrbanners.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">≡ƒÄ¿ Banners</a>
+    <a href="/skrnotifications-admin.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">≡ƒöö Notify</a>
+    <a href="/skrreports.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">≡ƒôè Reports</a>
+    <a href="/skrsettings.html" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">ΓÜÖ∩╕Å Settings</a>
     <a href="/" target="_blank" style="padding:8px 14px;background:white;border-radius:8px;color:#6b7280;text-decoration:none;font-size:13px;font-weight:600;border:1px solid #e5e7eb">≡ƒîÉ View Site</a>
   </div>
 
@@ -274,11 +274,11 @@
     <form id="itemForm">
       <label>Category *</label>
       <select name="cat" id="catSelect" required>
-        <option value="chicken">🐔 Fresh Chicken</option>
-        <option value="mutton">🐐 Fresh Mutton</option>
-        <option value="fish">🐟 Fresh Fish</option>
-        <option value="ready_to_cook">🔥 Ready to Cook</option>
-        <option value="family_pack">👨‍👩‍👧 Family / Combo Packs</option>
+        <option value="chicken">≡ƒÉö Fresh Chicken</option>
+        <option value="mutton">≡ƒÉÉ Fresh Mutton</option>
+        <option value="fish">≡ƒÉƒ Fresh Fish</option>
+        <option value="ready_to_cook">≡ƒöÑ Ready to Cook</option>
+        <option value="family_pack">≡ƒæ¿ΓÇì≡ƒæ⌐ΓÇì≡ƒæº Family / Combo Packs</option>
       </select>
 
       <label>Code *</label>
@@ -319,7 +319,7 @@
         </label>
         <label style="display:flex;align-items:center;gap:10px;font-weight:500;cursor:pointer;font-size:14px">
           <input type="checkbox" id="isBestsellerCheck" style="width:18px;height:18px;cursor:pointer">
-          <span>🔥 <strong>Bestseller</strong> - Show bestseller badge</span>
+          <span>≡ƒöÑ <strong>Bestseller</strong> - Show bestseller badge</span>
         </label>
       </div>
 
@@ -393,11 +393,11 @@ const filtersEl= $('filters');
 const search   = $('search');
 
 const CAT_LABELS = {
-  chicken: '🐔 Fresh Chicken',
-  mutton: '🐐 Fresh Mutton',
-  fish: '🐟 Fresh Fish',
-  ready_to_cook: '🔥 Ready to Cook',
-  family_pack: '👨‍👩‍👧 Family / Combo Packs',
+  chicken: '≡ƒÉö Fresh Chicken',
+  mutton: '≡ƒÉÉ Fresh Mutton',
+  fish: '≡ƒÉƒ Fresh Fish',
+  ready_to_cook: '≡ƒöÑ Ready to Cook',
+  family_pack: '≡ƒæ¿ΓÇì≡ƒæ⌐ΓÇì≡ƒæº Family / Combo Packs',
 };
 
 let ITEMS = [];
@@ -501,14 +501,14 @@ function render() {
         <span class="code">${escapeHtml(i.code)}</span>
         <span class="name">${escapeHtml(i.name)}${!isListed ? ' <span style="font-size:10px;color:#ef4444;font-weight:700">[HIDDEN]</span>' : ''}</span>
         <span class="unit">${escapeHtml(i.unit)}</span>
-        <span class="price">₹${i.price}</span>
+        <span class="price">Γé╣${i.price}</span>
         <span class="stock ${i.inStock === false ? 'out' : 'in'}">
-          ${i.inStock === false ? '❌ Out' : '✅ In Stock'}
+          ${i.inStock === false ? 'Γ¢ö Out' : 'Γ£à In Stock'}
         </span>
         <span class="actions">
-          <button onclick="toggleListing('${i.code}')" style="padding:4px 8px;border-radius:6px;border:1px solid ${isListed ? '#16a34a' : '#ef4444'};background:${isListed ? '#dcfce7' : '#fee2e2'};color:${isListed ? '#14532d' : '#991b1b'};font-size:11px;font-weight:600;cursor:pointer" title="${isListed ? 'Click to hide from app' : 'Click to show on app'}">${isListed ? '👁️ Listed' : '🙈 Hidden'}</button>
-          <button class="btn-edit" data-act="edit" data-code="${i.code}">✏️ Edit</button>
-          <button class="btn-delete" data-act="del" data-code="${i.code}">🗑️</button>
+          <button onclick="toggleListing('${i.code}')" style="padding:4px 8px;border-radius:6px;border:1px solid ${isListed ? '#16a34a' : '#ef4444'};background:${isListed ? '#dcfce7' : '#fee2e2'};color:${isListed ? '#14532d' : '#991b1b'};font-size:11px;font-weight:600;cursor:pointer" title="${isListed ? 'Click to hide from app' : 'Click to show on app'}">${isListed ? '≡ƒæü∩╕Å Listed' : '≡ƒÜ½ Hidden'}</button>
+          <button class="btn-edit" data-act="edit" data-code="${i.code}">Γ£Å∩╕Å Edit</button>
+          <button class="btn-delete" data-act="del" data-code="${i.code}">≡ƒùæ∩╕Å</button>
         </span>
       </div>`;
     }
@@ -869,9 +869,6 @@ async function toggleListing(code) {
 </script>
 </body>
 </html>
-
-
-
 
 
 

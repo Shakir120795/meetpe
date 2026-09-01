@@ -330,7 +330,7 @@ async function loadOrders(showLoad) {
   localStorage.setItem('meatpe_admin_key', key);
   try {
     let url = `/admin/orders`;
-const params = [`key=${encodeURIComponent(key)}`];
+    const params = [];
     if (CURRENT_FILTER) params.push(`status=${CURRENT_FILTER}`);
     if (CURRENT_SOURCE) params.push(`source=${CURRENT_SOURCE}`);
     if (params.length > 0) url += `?${params.join('&')}`;
@@ -624,6 +624,5 @@ render = function() {
 </script>
 </body>
 </html>
-
 
 

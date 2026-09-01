@@ -39,6 +39,12 @@
     "timing": "8:00 AM – 9:30 PM, all days",
     "location": "Live now, expanding to all major cities 🚀"
   },
+  "vendorLocation": {
+    "lat": 27.1767,
+    "lon": 78.0081,
+    "address": "Agra, Uttar Pradesh",
+    "name": "MeatPe Main Warehouse"
+  },
   "socials": [],
   "pages": {
     "about": "Welcome to NOW (Nonveg On Wheel)\n\nFreshness is not just a promise—it's our commitment.\n\nNOW (Nonveg On Wheel) is dedicated to delivering fresh, hygienically prepared chicken and mutton directly to your doorstep. Every order is carefully handled, quality checked, and packed to maintain freshness and taste.\n\nWe believe customers deserve premium quality, transparent pricing, and reliable delivery every time they order.\n\nWhy Choose NOW?\n✅ Freshly Prepared Products\n✅ Hygienic Processing & Packaging\n✅ Fast & Reliable Delivery\n✅ Quality Checked Before Dispatch\n✅ Secure Payments\n✅ Dedicated Customer Support\n\nNOW – Fresh • Fast • Trusted",
@@ -49,5 +55,525 @@
     "delivery": "NOW currently delivers only within serviceable areas.\n\nDelivery charges and estimated delivery time are calculated automatically based on your delivery location.\n\nEstimated delivery times may vary due to:\n• Traffic\n• Weather\n• High order volume\n• Festivals\n• Operational conditions\n\nDelivery will be attempted at the address provided by the customer.\n\nIf the customer is unavailable or cannot be contacted after reasonable attempts, the order may be cancelled without refund for freshly prepared products.",
     "membership": "NOW Membership provides extra convenience and exclusive benefits.\n\nMembership may include:\n• Reduced delivery charges\n• Priority order processing\n• Exclusive member offers\n• Special rewards\n\nPlease Note\n\n• Benefits are available only in eligible delivery zones.\n• Membership benefits are non-transferable.\n• Membership fee is non-refundable except where required by applicable law.\n• Unused benefits expire according to the membership plan.\n• NOW reserves the right to update membership pricing and benefits.",
     "faq": "How do I place an order?\nLogin, select products, choose your delivery address, complete payment or choose Cash on Delivery, and place your order.\n\nWhich products are available?\nFresh Chicken and Fresh Mutton.\n\nCan I cancel my order?\nOrders may be cancelled only before preparation begins. Once preparation has started, cancellation may not be possible because products are prepared fresh.\n\nHow do I track my order?\nTrack your order live from the Order Tracking section in the app.\n\nWhich payment methods are supported?\nCash on Delivery, UPI, Debit/Credit Cards, Wallet and other supported payment methods.\n\nHow can I contact customer support?\nThrough the Support section available inside the app."
-  }
+  },
+  "trendingSearches": [
+    "chicken breast",
+    "boneless mutton",
+    "fresh fish",
+    "marinated chicken",
+    "tandoori"
+  ],
+  "cart": {
+    "enableMembershipDiscount": true,
+    "membershipDiscountPercent": 5,
+    "showTaxesBreakdown": true,
+    "gstPercent": 5,
+    "packagingCharge": 10,
+    "enableTipDeliveryPartner": true,
+    "tipOptions": [
+      10,
+      20,
+      30,
+      50
+    ],
+    "deliveryCharges": {
+      "freeAbove": 699,
+      "belowThreshold": 399,
+      "lowOrderFee": 29,
+      "regularOrderFee": 19
+    }
+  },
+  "checkout": {
+    "deliverySlots": [
+      {
+        "id": "asap",
+        "label": "ASAP (30-45 min)",
+        "enabled": true
+      },
+      {
+        "id": "morning",
+        "label": "8:00 AM - 12:00 PM",
+        "enabled": true
+      },
+      {
+        "id": "afternoon",
+        "label": "12:00 PM - 4:00 PM",
+        "enabled": true
+      },
+      {
+        "id": "evening",
+        "label": "4:00 PM - 8:00 PM",
+        "enabled": true
+      },
+      {
+        "id": "night",
+        "label": "8:00 PM - 10:00 PM",
+        "enabled": true
+      }
+    ],
+    "paymentMethods": [
+      {
+        "id": "cod",
+        "label": "Cash on Delivery",
+        "icon": "💵",
+        "enabled": true,
+        "description": "Pay when order arrives"
+      },
+      {
+        "id": "upi",
+        "label": "UPI / QR Code",
+        "icon": "📱",
+        "enabled": true,
+        "description": "Pay via UPI apps"
+      },
+      {
+        "id": "online",
+        "label": "Pay Online",
+        "icon": "💳",
+        "enabled": true,
+        "description": "Cards, Wallets, NetBanking"
+      }
+    ],
+    "enableSavedAddresses": true,
+    "maxSavedAddresses": 5,
+    "requirePhone": true,
+    "allowGuestCheckout": false
+  },
+  "paymentGateway": {
+    "provider": "razorpay",
+    "mode": "test",
+    "mockPaymentEnabled": true,
+    "razorpay": {
+      "keyId": "",
+      "keySecret": "",
+      "webhookSecret": ""
+    },
+    "stripe": {
+      "publishableKey": "",
+      "secretKey": "",
+      "webhookSecret": ""
+    },
+    "paytm": {
+      "merchantId": "",
+      "merchantKey": "",
+      "websiteName": "WEBSTAGING",
+      "industryType": "Retail"
+    },
+    "upiOptions": {
+      "enabled": true,
+      "merchantVpa": "meatpe@paytm",
+      "merchantName": "MeatPe",
+      "showQrCode": true
+    },
+    "cardOptions": {
+      "enabled": true,
+      "acceptedCards": [
+        "visa",
+        "mastercard",
+        "rupay",
+        "amex"
+      ],
+      "saveCardOption": false
+    },
+    "netBankingOptions": {
+      "enabled": true,
+      "banks": [
+        {
+          "id": "sbi",
+          "name": "State Bank of India",
+          "icon": "🏦"
+        },
+        {
+          "id": "hdfc",
+          "name": "HDFC Bank",
+          "icon": "🏦"
+        },
+        {
+          "id": "icici",
+          "name": "ICICI Bank",
+          "icon": "🏦"
+        },
+        {
+          "id": "axis",
+          "name": "Axis Bank",
+          "icon": "🏦"
+        },
+        {
+          "id": "pnb",
+          "name": "Punjab National Bank",
+          "icon": "🏦"
+        },
+        {
+          "id": "bob",
+          "name": "Bank of Baroda",
+          "icon": "🏦"
+        },
+        {
+          "id": "kotak",
+          "name": "Kotak Mahindra Bank",
+          "icon": "🏦"
+        }
+      ]
+    },
+    "walletOptions": {
+      "enabled": true,
+      "allowWalletPayment": true,
+      "minWalletBalance": 10
+    },
+    "codOptions": {
+      "enabled": true,
+      "maxOrderAmount": 5000,
+      "minOrderAmount": 100,
+      "extraCharge": 0
+    }
+  },
+  "orderTracking": {
+    "enableLiveTracking": true,
+    "enableDeliveryBoyDetails": true,
+    "enableCallButton": true,
+    "enableChatButton": true,
+    "supportPhone": "+917617555488",
+    "supportWhatsApp": "+917617555488",
+    "mapProvider": "google",
+    "googleMapsApiKey": "",
+    "mapboxToken": "",
+    "defaultETA": 30,
+    "etaUpdateInterval": 30,
+    "deliveryBoys": [
+      {
+        "id": "DB001",
+        "name": "Raj Kumar",
+        "phone": "+919876543210",
+        "photo": "",
+        "rating": 4.8,
+        "totalDeliveries": 450,
+        "vehicleNumber": "UP 16 AB 1234",
+        "vehicleType": "Bike",
+        "status": "available"
+      },
+      {
+        "id": "DB002",
+        "name": "Amit Singh",
+        "phone": "+919876543211",
+        "photo": "",
+        "rating": 4.9,
+        "totalDeliveries": 520,
+        "vehicleNumber": "UP 16 CD 5678",
+        "vehicleType": "Bike",
+        "status": "available"
+      },
+      {
+        "id": "DB9261",
+        "name": "shakir malik",
+        "phone": "+918126812317",
+        "vehicleType": "Bike",
+        "vehicleNumber": "",
+        "rating": 5,
+        "totalDeliveries": 0,
+        "photo": "",
+        "status": "available",
+        "aadhaar": "",
+        "pan": "",
+        "drivingLicense": "",
+        "bankDetails": "",
+        "upiId": "shakir.malik321@gmail.com",
+        "ifsc": ""
+      }
+    ]
+  },
+  "helpSupport": {
+    "whatsappNumber": "+917617555488",
+    "callNumber": "+917617555488",
+    "email": "",
+    "faqs": [
+      {
+        "q": "How do I place an order?",
+        "a": "Login, select products, choose your delivery address, complete payment or choose Cash on Delivery, and place your order."
+      },
+      {
+        "q": "Which products are available?",
+        "a": "Fresh Chicken and Fresh Mutton."
+      },
+      {
+        "q": "Can I cancel my order?",
+        "a": "Orders may be cancelled only before preparation begins. Once preparation has started, cancellation may not be possible because products are prepared fresh."
+      },
+      {
+        "q": "How do I track my order?",
+        "a": "Track your order live from the Order Tracking section in the app."
+      },
+      {
+        "q": "Which payment methods are supported?",
+        "a": "Cash on Delivery, UPI, Debit/Credit Cards, Wallet and other supported payment methods."
+      },
+      {
+        "q": "How can I contact customer support?",
+        "a": "Through the Support section available inside the app."
+      }
+    ]
+  },
+  "banners": {
+    "heroSlideshow": {
+      "enabled": true,
+      "autoplaySpeed": 4,
+      "height": 200,
+      "slides": [
+        {
+          "title1": "Fresh Meat,",
+          "title2": "Delivered Fast",
+          "badge": "PREMIUM QUALITY",
+          "buttonText": "Order Now →",
+          "subtitle": "AI-powered freshness. 100%",
+          "subtitle2": "Halal & Hygienic.",
+          "features": [],
+          "backgroundColor": "linear-gradient(135deg, #f8f7f4 0%, #f4f0eb 100%)",
+          "textColor": "#1A1A1A",
+          "title1Color": "#1A1A1A",
+          "title2Color": "#E63946",
+          "badgeColor": "#F8F7F4",
+          "badgeTextColor": "#1A1A1A",
+          "buttonColor": "#E63946",
+          "subtitleColor": "#4A4A4A",
+          "qualityBadgeColor": "#F7F7F7",
+          "qualityBadgeText": "AI FRESH SCORE<br><span style=\"font-size:18px;font-weight:800;display:block;line-height:1.1;\">99.4%</span><span style=\"font-size:11px;display:block;\">Excellent</span>",
+          "height": 200,
+          "titleSize": 24,
+          "subtitleSize": 14,
+          "buttonSize": 15,
+          "imageWidth": 180,
+          "imageHeight": 180,
+          "image": "/photos/hero-meat.png",
+          "enabled": true
+        },
+        {
+          "title1": "Farm Fresh Meat,",
+          "title2": "Delivered to You",
+          "badge": "100% GUARANTEED",
+          "buttonText": "Order Now →",
+          "subtitle": "Halal • Hygienic • Trusted",
+          "subtitle2": "AI ensures best quality",
+          "features": [],
+          "backgroundColor": "linear-gradient(135deg, #f7f8f5 0%, #f0f6f1 100%)",
+          "textColor": "#1A1A1A",
+          "title1Color": "#1A1A1A",
+          "title2Color": "#1A1A1A",
+          "badgeColor": "#FFFFFF",
+          "badgeTextColor": "#1A1A1A",
+          "buttonColor": "#10B981",
+          "subtitleColor": "#4A4A4A",
+          "qualityBadgeColor": "#F7F7F7",
+          "qualityBadgeText": "AI FRESH SCORE<br><span style=\"font-size:18px;font-weight:800;display:block;line-height:1.1;\">99.4%</span><span style=\"font-size:11px;display:block;\">Excellent</span>",
+          "height": 200,
+          "titleSize": 24,
+          "subtitleSize": 13,
+          "buttonSize": 15,
+          "imageWidth": 180,
+          "imageHeight": 180,
+          "image": "/photos/hero-meat.png",
+          "enabled": true
+        },
+        {
+          "title1": "Premium Meat",
+          "title2": "Delivered Fresh",
+          "badge": "AI POWERED",
+          "buttonText": "Shop Now →",
+          "subtitle": "Temperature locked.",
+          "subtitle2": "Farm to your table.",
+          "features": [],
+          "backgroundColor": "linear-gradient(135deg, #f8f7f4 0%, #f5f3f0 100%)",
+          "textColor": "#1A1A1A",
+          "title1Color": "#E63946",
+          "title2Color": "#1A1A1A",
+          "badgeColor": "#F8F8F8",
+          "badgeTextColor": "#1A1A1A",
+          "buttonColor": "#E63946",
+          "subtitleColor": "#4A4A4A",
+          "qualityBadgeColor": "#F7F7F7",
+          "qualityBadgeText": "AI FRESH SCORE<br><span style=\"font-size:18px;font-weight:800;display:block;line-height:1.1;\">99.4%</span><span style=\"font-size:11px;display:block;\">Excellent</span>",
+          "height": 200,
+          "titleSize": 24,
+          "subtitleSize": 14,
+          "buttonSize": 15,
+          "imageWidth": 185,
+          "imageHeight": 185,
+          "image": "/photos/hero-meat.png",
+          "enabled": true
+        }
+      ]
+    },
+    "offerBanners": {
+      "enabled": true,
+      "banners": [
+        {
+          "label": "Free Delivery",
+          "title": "On orders above",
+          "subtitle": "₹499",
+          "backgroundColor": "#10B981",
+          "textColor": "#FFFFFF",
+          "icon": "🛵",
+          "width": 280,
+          "height": 100,
+          "iconSize": 28,
+          "labelSize": 10,
+          "titleSize": 16,
+          "subtitleSize": 12,
+          "enabled": true
+        },
+        {
+          "label": "First Order Offer",
+          "title": "Flat 20% OFF",
+          "subtitle": "Use Code: NOW20",
+          "backgroundColor": "#F59E0B",
+          "textColor": "#FFFFFF",
+          "icon": "🥩",
+          "width": 280,
+          "height": 100,
+          "iconSize": 28,
+          "labelSize": 10,
+          "titleSize": 16,
+          "subtitleSize": 12,
+          "enabled": true
+        }
+      ]
+    }
+  },
+  "walletRewards": {
+    "enableWallet": true,
+    "minTopup": 10,
+    "maxTopup": 10000,
+    "autoApplyWallet": false,
+    "enableRewards": true,
+    "rewardThreshold": 500,
+    "rewardAmount": 10,
+    "rewardExpiry": 15,
+    "rewardLabel": "Cashback Reward",
+    "enableCashback": false,
+    "cashbackPercent": 5,
+    "cashbackMaxAmount": 100,
+    "cashbackMinOrder": 299,
+    "cashbackCreditDelay": 0,
+    "cashbackLabel": "Order Cashback",
+    "enableReferralBonus": true,
+    "referralBonus": 20,
+    "refereeBonus": 20,
+    "showWalletInTopbar": true,
+    "showRewardsSection": true,
+    "showCashbackBanner": false,
+    "earnRuleText": "Earn ₹10 on every order above ₹500",
+    "cashbackRuleText": "5% cashback on all orders (max ₹100)"
+  },
+  "invoice": {
+    "companyName": "NOW - Nonveg On Wheel",
+    "companyTagline": "Fresh Meat Delivered to Your Door",
+    "supplierAddress": "",
+    "supplierCity": "Agra, Uttar Pradesh",
+    "supplierState": "Uttar Pradesh (09)",
+    "supplierPhone": "+91 7617555488",
+    "supplierEmail": "",
+    "gstin": "",
+    "cin": "",
+    "fssaiNo": "",
+    "panNo": "",
+    "invoicePrefix": "NOW",
+    "termsLine1": "Goods once sold will not be taken back.",
+    "termsLine2": "Quality issues reported within 2 hours with photo will be replaced.",
+    "termsLine3": "This is a computer-generated invoice.",
+    "footerNote": "*Includes GST component. As per Section 31 of CGST Act.",
+    "showAuthorizedSignatory": true,
+    "signatoryName": ""
+  },
+  "deliveryZones": [
+    {
+      "id": "zone_a",
+      "name": "Zone A",
+      "distanceRange": "0-3 km",
+      "minDistance": 0,
+      "maxDistance": 3,
+      "deliveryTime": "20-30 Minutes",
+      "deliveryFee": 29,
+      "freeDeliveryAbove": 699
+    },
+    {
+      "id": "zone_b",
+      "name": "Zone B",
+      "distanceRange": "3-7 km",
+      "minDistance": 3,
+      "maxDistance": 7,
+      "deliveryTime": "30-45 Minutes",
+      "deliveryFee": 39,
+      "freeDeliveryAbove": 899
+    },
+    {
+      "id": "zone_c",
+      "name": "Zone C",
+      "distanceRange": "7-12 km",
+      "minDistance": 7,
+      "maxDistance": 12,
+      "deliveryTime": "45-60 Minutes",
+      "deliveryFee": 59,
+      "freeDeliveryAbove": 1199
+    },
+    {
+      "id": "zone_d",
+      "name": "Zone D",
+      "distanceRange": "12-20 km",
+      "minDistance": 12,
+      "maxDistance": 20,
+      "deliveryTime": "60-90 Minutes",
+      "deliveryFee": 79,
+      "freeDeliveryAbove": 1499
+    }
+  ],
+  "membershipPlans": [
+    {
+      "zoneId": "zone_a",
+      "zoneName": "Zone A (0-3 km)",
+      "price": 249,
+      "deliveryCredits": 10,
+      "saving": 41,
+      "benefits": [
+        "10 delivery credits",
+        "Priority order processing",
+        "Exclusive member-only offers"
+      ]
+    },
+    {
+      "zoneId": "zone_b",
+      "zoneName": "Zone B (3-7 km)",
+      "price": 349,
+      "deliveryCredits": 10,
+      "saving": 41,
+      "benefits": [
+        "10 delivery credits",
+        "Priority order processing",
+        "Exclusive member-only offers"
+      ]
+    },
+    {
+      "zoneId": "zone_c",
+      "zoneName": "Zone C (7-12 km)",
+      "price": 529,
+      "deliveryCredits": 10,
+      "saving": 61,
+      "benefits": [
+        "10 delivery credits",
+        "Premium support",
+        "Exclusive member-only offers"
+      ]
+    },
+    {
+      "zoneId": "zone_d",
+      "zoneName": "Zone D (12-20 km)",
+      "price": 699,
+      "deliveryCredits": 10,
+      "saving": 91,
+      "benefits": [
+        "10 delivery credits",
+        "Priority handling",
+        "Premium customer support"
+      ]
+    }
+  ],
+  "storeOpen": true,
+  "storeClosedMessage": "We are currently unavailable. Please try again later."
 }
