@@ -2686,7 +2686,7 @@ input,textarea{font:inherit;color:inherit}
 <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"></circle>
 <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
 </svg>
-<input autocomplete="off" id="searchInput" onblur="hideSearchSuggestionsDelayed()" onfocus="showSearchSuggestions()" oninput="searchInputTyping(this.value)" placeholder="Search for fresh meat..."/>
+<input autocomplete="off" id="searchInput" onblur="hideSearchSuggestionsDelayed()" onfocus="showSearchSuggestions()" oninput="searchProducts(this.value)" placeholder="Search for fresh meat..."/>
 <button class="voice-search-btn" id="voiceSearchBtn" onclick="startVoiceSearch()" style="border:none;background:none;cursor:pointer;padding:4px;color:var(--muted);display:flex;align-items:center" title="Voice search">
 <svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="20">
 <path d="M12 2c1.1 0 2 .9 2 2v6c0 1.1-.9 2-2 2s-2-.9-2-2V4c0-1.1.9-2 2-2Z"></path>
@@ -17564,26 +17564,6 @@ if (document.readyState === 'loading') {
   setTimeout(bindSearchUX,500);
 })();
 </script>
-<script>
-function searchInputTyping(q){
-  SEARCH_Q = q;
-}
-document.addEventListener('DOMContentLoaded',function(){
-  const input=document.getElementById('searchInput');
-  if(!input) return;
-  input.addEventListener('keydown',function(e){
-    if(e.key==='Enter'){
-      e.preventDefault();
-      searchProducts(this.value);
-      this.blur();
-      setTimeout(()=>{
-        const grid=document.getElementById('productGrid');
-        if(grid) grid.scrollIntoView({behavior:'smooth',block:'start'});
-      },120);
-    }
-  });
-});
-</script>
 </body>
 
 
@@ -17680,26 +17660,6 @@ function syncHomeWallet() {
   document.addEventListener('DOMContentLoaded',bindSearchUX);
   setTimeout(bindSearchUX,500);
 })();
-</script>
-<script>
-function searchInputTyping(q){
-  SEARCH_Q = q;
-}
-document.addEventListener('DOMContentLoaded',function(){
-  const input=document.getElementById('searchInput');
-  if(!input) return;
-  input.addEventListener('keydown',function(e){
-    if(e.key==='Enter'){
-      e.preventDefault();
-      searchProducts(this.value);
-      this.blur();
-      setTimeout(()=>{
-        const grid=document.getElementById('productGrid');
-        if(grid) grid.scrollIntoView({behavior:'smooth',block:'start'});
-      },120);
-    }
-  });
-});
 </script>
 </body>
 </html>
