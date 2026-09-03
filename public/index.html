@@ -2426,8 +2426,8 @@ input,textarea{font:inherit;color:inherit}
 </span>
 <span id="priceDelivery">₹0</span>
 </div>
-<div class="price-row" id="pricePackagingRow" style="display:none"><span>Packaging Charge</span><span id="pricePackaging">₹0</span></div>
-<div class="price-row" id="priceTaxRow" style="display:none"><span>GST (<span id="gstPercent">5</span>%)</span><span id="priceTax">₹0</span></div>
+<div class="price-row" id="pricePackagingRow" style="display:none!important"><span>Packaging Charge</span><span id="pricePackaging">₹0</span></div>
+<div class="price-row" id="priceTaxRow" style="display:none!important"><span>GST (<span id="gstPercent">5</span>%)</span><span id="priceTax">₹0</span></div>
 <div class="price-row" id="priceTipRow" style="display:none"><span>Delivery Partner Tip</span><span id="priceTip">₹0</span></div>
 <div class="price-row" id="priceDiscountRow" style="display:none"><span>Coupon Discount</span><span class="green" id="priceDiscount">-₹0</span></div>
 <div class="price-row" id="priceMembershipRow" style="display:none"><span>NOW+ Membership Discount (<span id="membershipPercent">5</span>%)</span><span class="green" id="priceMembership">-₹0</span></div>
@@ -2797,7 +2797,7 @@ input,textarea{font:inherit;color:inherit}
 <div style="position: relative; z-index: 2; width: 65%;">
 <div style="color: #090501; font-size: 13px; font-weight: 700; margin-bottom: 2px;">Free Delivery</div>
 <div style="font-size: 12px; color: #150404; line-height: 1.2;">On orders above</div>
-<div style="font-size: 15px; font-weight: 700; color: #222; margin-top: 3px;">₹499</div>
+<div style="font-size: 15px; font-weight: 700; color: #222; margin-top: 3px;">₹699</div>
 </div>
 <!-- Image ki height aur position patle banner ke hisaab se set ki hai -->
 <img alt="Delivery" src="photos/scooter.png" style="position: absolute; bottom: -5px; right: -5px; height: 80px; object-fit: contain; z-index: 1;"/>
@@ -8061,13 +8061,13 @@ function renderPrices(sub) {
   const fee = deliveryFee(sub);
   
   // Calculate packaging charge
-  const packaging = packagingCharge;
+  const packaging = 0;
   
   // Calculate subtotal with packaging
   const subtotalWithPackaging = sub + packaging;
   
   // Calculate GST (on subtotal + packaging)
-  const gstAmount = showTaxes && gstPercent > 0 ? Math.round((subtotalWithPackaging * gstPercent) / 100) : 0;
+  const gstAmount = 0;
   
   // Calculate membership discount (on subtotal only, before taxes)
   const membershipDiscount = (USER && USER.is_plus && membershipEnabled) 
@@ -8084,7 +8084,7 @@ function renderPrices(sub) {
   const tip = DELIVERY_TIP || 0;
   
   // Calculate total
-  const total = Math.max(0, sub + packaging + gstAmount + fee + tip - couponDisc - membershipDiscount - walletAmt);
+  const total = Math.max(0, sub + fee + tip - couponDisc - membershipDiscount - walletAmt);
   
   // Update UI
   document.getElementById('priceSubtotal').textContent = '₹' + sub;
@@ -8247,6 +8247,8 @@ function renderDeliverySlots() {
   if (!container) return;
   
   const checkoutSettings = (APP_SETTINGS && APP_SETTINGS.checkout) || {};
+  const section = document.getElementById('deliverySlotSection');
+  if (section) section.style.display = checkoutSettings.deliverySlotsEnabled === false ? 'none' : '';
   const slots = checkoutSettings.deliverySlots || [];
   
   if (!slots.length) {
@@ -9669,9 +9671,10 @@ async function loadProfile() {
         avatarEl.textContent = (USER.name || 'G').charAt(0).toUpperCase();
         nameEl.textContent = USER.name || 'Guest';
         if (walletBoxEl) walletBoxEl.textContent = USER.wallet;
-        if (c.orders !== undefined) {
-          phoneEl.textContent = `+91 ${USER.phone}  •  ${c.orders} orders`;
-        }
+const orderRes = await fetch('/api/orders/' + USER.phone);
+        const orderData = await orderRes.json();
+        const orderCount = orderData.ok && Array.isArray(orderData.orders) ? orderData.orders.length : 0;
+        phoneEl.textContent = '+91 ' + USER.phone + ' • ' + orderCount + ' orders';
       }
     } catch(e) {
       console.error('Failed to load profile:', e);

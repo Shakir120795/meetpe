@@ -225,35 +225,7 @@ const MOCK_SETTINGS = {
   ]
 };
 
-async function loadData() {
-  const key = getKey();
-  if (!key) {
-    alert('Please enter admin key first');
-    return;
-  }
-  
-  console.log('🔄 Loading admin data with key:', key);
-  
-  // First try to load from localStorage (same key as main app)
-  const savedSettings = localStorage.getItem('meatpe_settings');
-  if (savedSettings) {
-    try {
-      SETTINGS = JSON.parse(savedSettings);
-      console.log('✅ Loaded saved settings from localStorage');
-    } catch (e) {
-      console.warn('⚠️ Failed to parse saved settings, using mock data');
-      SETTINGS = MOCK_SETTINGS;
-    }
-  } else {
-    console.warn('⚠️ No saved settings found, using mock data');
-    SETTINGS = MOCK_SETTINGS;
-  }
-  
-  $('content').style.display = 'block';
-  render();
-  
-  console.log('✅ Data loaded successfully');
-}
+async function loadData(){try{const r=await fetch('/api/settings');const d=await r.json();if(!r.ok)throw new Error(d.error||'Settings load failed');SETTINGS=d.settings||d||{};if(!SETTINGS.banners)SETTINGS.banners={};if(!SETTINGS.banners.heroSlideshow)SETTINGS.banners.heroSlideshow={enabled:true,autoplaySpeed:4,height:260,slides:[]};if(!SETTINGS.categories)SETTINGS.categories=[];document.getElementById('content').style.display='block';render();}catch(e){console.error(e);alert('Load failed: '+e.message);}}
 
 function render() {
   const banners = SETTINGS.banners || {};
@@ -697,5 +669,7 @@ async function saveAll() {
 
 
 </script>
-</body>
+<script>
+window.addEventListener('DOMContentLoaded',async()=>{try{const r=await fetch('/api/settings');const d=await r.json();SETTINGS=d.settings||d||{};document.getElementById('content').style.display='block';render();}catch(e){console.error('Banner load error:',e);document.getElementById('content').style.display='block';}});
+</script></body>
 </html>

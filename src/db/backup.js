@@ -32,7 +32,7 @@ function createBackup() {
     console.log(`✅ Database backup created: ${backupPath}`);
     
     // Clean old backups (keep last 30 days)
-    cleanOldBackups();
+    cleanOldBackups(backupPath);
     
     return backupPath;
   } catch (error) {
@@ -44,7 +44,7 @@ function createBackup() {
 /**
  * Delete backups older than 30 days
  */
-function cleanOldBackups() {
+function cleanOldBackups(excludePath = null) {
   try {
     const files = fs.readdirSync(backupDir);
     const now = Date.now();
@@ -53,7 +53,7 @@ function cleanOldBackups() {
     let deletedCount = 0;
     files.forEach(file => {
       if (file.startsWith('meatpe-') && file.endsWith('.db')) {
-        const filePath = path.join(backupDir, file);
+        const filePath = path.join(backupDir, file); if (excludePath && path.resolve(filePath) === path.resolve(excludePath)) return;
         const stats = fs.statSync(filePath);
         
         // Only delete if truly old (not just created in last hour)

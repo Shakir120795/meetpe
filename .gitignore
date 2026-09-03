@@ -5,3 +5,6 @@ data/*.db-shm
 data/*.db-wal
 *.log
 .DS_Store
+
+# Production SQLite database - never commit/overwrite
+data/meatpe.db*

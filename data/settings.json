@@ -3,7 +3,7 @@
     "name": "NOW",
     "tagline": "Nonveg-On-Wheel",
     "logo": "/logo.png",
-    "topbar": "🚚 Free delivery on orders ₹699+ • 30-min delivery"
+    "topbar": "🚚 Free delivery on orders ₹499+ • 30-min delivery"
   },
   "categories": [
     {
@@ -77,38 +77,39 @@
       50
     ],
     "deliveryCharges": {
-      "freeAbove": 699,
+      "freeAbove": 499,
       "belowThreshold": 399,
       "lowOrderFee": 29,
       "regularOrderFee": 19
     }
   },
   "checkout": {
+    "deliverySlotsEnabled": true,
     "deliverySlots": [
       {
         "id": "asap",
         "label": "ASAP (30-45 min)",
-        "enabled": true
+        "enabled": false
       },
       {
         "id": "morning",
         "label": "8:00 AM - 12:00 PM",
-        "enabled": true
+        "enabled": false
       },
       {
         "id": "afternoon",
         "label": "12:00 PM - 4:00 PM",
-        "enabled": true
+        "enabled": false
       },
       {
         "id": "evening",
         "label": "4:00 PM - 8:00 PM",
-        "enabled": true
+        "enabled": false
       },
       {
         "id": "night",
         "label": "8:00 PM - 10:00 PM",
-        "enabled": true
+        "enabled": false
       }
     ],
     "paymentMethods": [
@@ -116,22 +117,22 @@
         "id": "cod",
         "label": "Cash on Delivery",
         "icon": "💵",
-        "enabled": true,
-        "description": "Pay when order arrives"
+        "description": "Pay when order arrives",
+        "enabled": true
       },
       {
         "id": "upi",
         "label": "UPI / QR Code",
         "icon": "📱",
-        "enabled": true,
-        "description": "Pay via UPI apps"
+        "description": "Pay via UPI apps",
+        "enabled": true
       },
       {
         "id": "online",
         "label": "Pay Online",
         "icon": "💳",
-        "enabled": true,
-        "description": "Cards, Wallets, NetBanking"
+        "description": "Cards, Wallets, NetBanking",
+        "enabled": true
       }
     ],
     "enableSavedAddresses": true,
@@ -239,47 +240,7 @@
     "mapboxToken": "",
     "defaultETA": 30,
     "etaUpdateInterval": 30,
-    "deliveryBoys": [
-      {
-        "id": "DB001",
-        "name": "Raj Kumar",
-        "phone": "+919876543210",
-        "photo": "",
-        "rating": 4.8,
-        "totalDeliveries": 450,
-        "vehicleNumber": "UP 16 AB 1234",
-        "vehicleType": "Bike",
-        "status": "available"
-      },
-      {
-        "id": "DB002",
-        "name": "Amit Singh",
-        "phone": "+919876543211",
-        "photo": "",
-        "rating": 4.9,
-        "totalDeliveries": 520,
-        "vehicleNumber": "UP 16 CD 5678",
-        "vehicleType": "Bike",
-        "status": "available"
-      },
-      {
-        "id": "DB9261",
-        "name": "shakir malik",
-        "phone": "+918126812317",
-        "vehicleType": "Bike",
-        "vehicleNumber": "",
-        "rating": 5,
-        "totalDeliveries": 0,
-        "photo": "",
-        "status": "available",
-        "aadhaar": "",
-        "pan": "",
-        "drivingLicense": "",
-        "bankDetails": "",
-        "upiId": "shakir.malik321@gmail.com",
-        "ifsc": ""
-      }
-    ]
+    "deliveryBoys": []
   },
   "helpSupport": {
     "whatsappNumber": "+917617555488",

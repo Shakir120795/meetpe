@@ -49,7 +49,8 @@ const defaults = {
   },
   // NEW: Checkout Settings (admin-editable)
   checkout: {
-    deliverySlots: [
+      deliverySlotsEnabled: true,
+      deliverySlots: [
       { id: 'asap', label: 'ASAP (30-45 min)', enabled: true },
       { id: 'morning', label: '8:00 AM - 12:00 PM', enabled: true },
       { id: 'afternoon', label: '12:00 PM - 4:00 PM', enabled: true },

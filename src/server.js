@@ -736,16 +736,17 @@ app.post('/api/addresses', (req, res) => {
     
     // Count existing addresses
     const count = db.prepare('SELECT COUNT(*) as cnt FROM saved_addresses WHERE phone = ?').get(waPhone);
+    const defaultCount = db.prepare('SELECT COUNT(*) as cnt FROM saved_addresses WHERE phone = ? AND is_default = 1').get(waPhone);
     if (count.cnt >= 5) return res.status(400).json({ ok: false, error: 'Max 5 addresses allowed' });
     
     // If setting as default, unset others
-    if (is_default) {
+    if (is_default || count.cnt === 0 || defaultCount.cnt === 0) {
       db.prepare('UPDATE saved_addresses SET is_default = 0 WHERE phone = ?').run(waPhone);
     }
     
     const result = db.prepare(
       'INSERT INTO saved_addresses (phone, tag, address, is_default) VALUES (?, ?, ?, ?)'
-    ).run(waPhone, tag || 'Home', address.trim(), is_default ? 1 : 0);
+    ).run(waPhone, tag || 'Home', address.trim(), (is_default || count.cnt === 0 || defaultCount.cnt === 0) ? 1 : 0);
     
     res.json({ ok: true, id: result.lastInsertRowid });
   } catch (e) {
@@ -2105,7 +2106,7 @@ if (process.env.IG_ACCESS_TOKEN && process.env.IG_USER_ID) {
 // ===== Database Backup Schedule =====
 // Automatic backups every 6 hours
 const { createBackup } = require('./db/backup');
-cron.schedule('0 */6 * * *', () => {
+cron.schedule('0 0 * * *', () => {
   console.log('🔄 Running scheduled backup...');
   try {
     createBackup();
@@ -2113,7 +2114,7 @@ cron.schedule('0 */6 * * *', () => {
     console.error('❌ Scheduled backup failed:', error.message);
   }
 });
-console.log('📦 Auto-backup scheduled (every 6 hours)');
+console.log('📦 Auto-backup scheduled (daily at 00:00)');
 
 // ===== Location debug (temp) =====
 app.get('/api/location/debug', async (req, res) => {
@@ -4748,4 +4749,8 @@ app.get('/api/rider/order/:orderId/delivery-location', requireRiderAuth, (req, r
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
+
+
+
+
 
