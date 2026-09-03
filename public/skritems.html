@@ -428,7 +428,7 @@ $('catSelect').addEventListener('change', async () => {
   // Suggest a code based on category
   const cat = $('catSelect').value;
   try {
-    const res = await fetch(`/admin/items/next-code?cat=${cat}&key=${encodeURIComponent(keyInput.value.trim())}`);
+    const res = await fetch(`/admin/items/next-code?cat=${encodeURIComponent(cat)}`);
     const data = await res.json();
     if (data.ok && data.code) $('codeInput').value = data.code;
   } catch {}
@@ -558,7 +558,7 @@ async function openModal(item) {
     $('catSelect').value = CURRENT_CAT || 'chicken';
     $('codeInput').readOnly = false;
     try {
-      const res = await fetch(`/admin/items/next-code?cat=${$('catSelect').value}&key=${encodeURIComponent(keyInput.value.trim())}`);
+      const res = await fetch(`/admin/items/next-code?cat=${encodeURIComponent($('catSelect').value)}`);
       const data = await res.json();
       $('codeInput').value = (data.ok && data.code) ? data.code : '';
     } catch { $('codeInput').value = ''; }
@@ -869,6 +869,8 @@ async function toggleListing(code) {
 </script>
 </body>
 </html>
+
+
 
 
 
