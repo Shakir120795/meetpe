@@ -444,7 +444,7 @@ async function loadItems(showLoad) {
   if (!key) { msg.innerHTML = '<div class="err">Enter admin key first.</div>'; return; }
   localStorage.setItem('meatpe_admin_key', key);
   try {
-    const res = await fetch(`/admin/items?key=${encodeURIComponent(key)}`);
+    const res = await fetch(`/admin/items`);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'load failed');
     ITEMS = data.items;
@@ -726,7 +726,7 @@ $('fileUploadInput').addEventListener('change', async (e) => {
   container.parentElement.appendChild(uploadMsg);
 
   try {
-    const res = await fetch(`/api/upload?key=${encodeURIComponent(key)}`, {
+    const res = await fetch(`/api/upload`, {
       method: 'POST',
       body: formData,
     });
@@ -869,6 +869,7 @@ async function toggleListing(code) {
 </script>
 </body>
 </html>
+
 
 
 
