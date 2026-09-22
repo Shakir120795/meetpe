@@ -317,6 +317,7 @@ function catalogWithStock() {
     return {
       ...i,
       images,
+      img: images[0] || '',
       description: i.description || '',
       inStock: !oosUpper.includes(i.code.toUpperCase()),
     };
