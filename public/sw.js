@@ -1,6 +1,6 @@
 // NOW App — Service Worker
 // v11: existing application; v7 secondary-screen layer + v8 Home visual layer.
-const CACHE_NAME = 'now-app-ui-v11';
+const CACHE_NAME = 'now-app-ui-v12';
 const STATIC_ASSETS = ['/', '/manifest.json', '/logo.png', '/style.css', '/ui-v5.css', '/ui-v6.css', '/ui-v7.css', '/ui-v8.css'];
 
 self.addEventListener('install', e => {
@@ -15,6 +15,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) return;
 
   if (e.request.method !== 'GET' || url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin/')) return;
 
