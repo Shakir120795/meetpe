@@ -6429,7 +6429,9 @@ document.getElementById('phoneInput').addEventListener('keydown', e => {
 // ═══════════════════════════════════════════
 async function loadMenu() {
   try {
-    const res = await fetch('/api/menu');
+    const res = await fetch('/api/menu', {
+      cache: 'no-store'
+    });
 
     if (!res.ok) {
       throw new Error(`Menu API HTTP ${res.status}`);
