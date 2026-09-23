@@ -2032,9 +2032,12 @@ async function sendLocationUpdate(orderId, position) {
     };
     
     try {
-        await fetch('/api/rider/location/update', { headers: riderAuthHeaders(),
+        await fetch('/api/rider/location/update', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                ...riderAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(locationData)
         });
         console.log('📍 Location updated:', locationData.latitude.toFixed(6), locationData.longitude.toFixed(6));
