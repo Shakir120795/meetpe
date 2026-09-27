@@ -6757,32 +6757,77 @@ function startProductCardSliders(root = document) {
     img.dataset.sliderStarted = '1';
 
     let index = 0;
-    const dots = img.parentElement.querySelectorAll('.np-dot');
+    const box = img.parentElement;
+    const dots = box.querySelectorAll('.np-dot');
+
+    // Image container
+    box.style.position = 'relative';
+    box.style.overflow = 'hidden';
+
+    // Current image
+    img.style.position = 'absolute';
+    img.style.inset = '0';
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.transform = 'translateX(0)';
+    img.style.transition = 'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)';
+    img.style.willChange = 'transform';
 
     setInterval(() => {
-      index = (index + 1) % images.length;
-
+      const nextIndex = (index + 1) % images.length;
       const next = new Image();
 
       next.onload = () => {
-        img.style.opacity = '0';
+        next.className = img.className;
+        next.style.position = 'absolute';
+        next.style.inset = '0';
+        next.style.width = '100%';
+        next.style.height = '100%';
+        next.style.objectFit = 'cover';
+        next.style.objectPosition = 'center center';
+        next.style.transform = 'translateX(100%)';
+        next.style.transition = 'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)';
+        next.style.willChange = 'transform';
+        next.style.zIndex = '2';
+
+        box.appendChild(next);
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            img.style.transform = 'translateX(-100%)';
+            next.style.transform = 'translateX(0)';
+          });
+        });
 
         setTimeout(() => {
-          img.src = images[index];
-          img.style.opacity = '1';
+          img.style.transition = 'none';
+          img.src = images[nextIndex];
+          img.style.transform = 'translateX(0)';
+          img.style.zIndex = '1';
+
+          next.remove();
+
+          // Restore transition
+          requestAnimationFrame(() => {
+            img.style.transition =
+              'transform 450ms cubic-bezier(0.4, 0, 0.2, 1)';
+          });
+
+          index = nextIndex;
 
           dots.forEach((dot, i) => {
             dot.classList.toggle('active', i === index);
           });
-        }, 180);
+        }, 470);
       };
 
       next.onerror = () => {};
 
-      next.src = images[index];
-    }, 1000);
+      next.src = images[nextIndex];
+    }, 1600);
   });
 }
+
 function filteredItems() {
   let items = MENU;
   if (CURRENT_CAT !== 'all') items = items.filter(i => i.cat === CURRENT_CAT);
