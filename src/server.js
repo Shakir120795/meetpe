@@ -1242,7 +1242,9 @@ app.get('/admin/orders', (req, res) => {
   const stats = db.prepare(`
     SELECT
       COUNT(*) AS total,
-      COALESCE(SUM(total),0) AS revenue,
+      COALESCE(SUM(CASE WHEN status='delivered' THEN total ELSE 0 END),0) AS revenue,
+      COALESCE(SUM(CASE WHEN status IN ('placed','preparing','out_for_delivery') THEN total ELSE 0 END),0) AS pending_amount,
+      COALESCE(SUM(CASE WHEN status='cancelled' THEN total ELSE 0 END),0) AS cancelled_amount,
       SUM(CASE WHEN status='placed'   THEN 1 ELSE 0 END) AS placed,
       SUM(CASE WHEN status='preparing' THEN 1 ELSE 0 END) AS preparing,
       SUM(CASE WHEN status='out_for_delivery' THEN 1 ELSE 0 END) AS out_for_delivery,
@@ -1253,7 +1255,10 @@ app.get('/admin/orders', (req, res) => {
     FROM orders
   `).get();
   const today = db.prepare(`
-    SELECT COUNT(*) AS count, COALESCE(SUM(total),0) AS revenue
+    SELECT COUNT(*) AS count,
+      COALESCE(SUM(CASE WHEN status='delivered' THEN total ELSE 0 END),0) AS revenue,
+      COALESCE(SUM(CASE WHEN status IN ('placed','preparing','out_for_delivery') THEN total ELSE 0 END),0) AS pending_amount,
+      COALESCE(SUM(CASE WHEN status='cancelled' THEN total ELSE 0 END),0) AS cancelled_amount
     FROM orders WHERE date(created_at) = date('now', 'localtime')
   `).get();
 

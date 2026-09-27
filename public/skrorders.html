@@ -355,7 +355,9 @@ function render() {
       <div class="stat primary"><div class="label">Today's Orders</div><div class="val">${TODAY_DATA.count}</div></div>
       <div class="stat green"><div class="label">Today's Revenue</div><div class="val">₹${TODAY_DATA.revenue}</div></div>
       <div class="stat blue"><div class="label">Total Orders</div><div class="val">${STATS_DATA.total || 0}</div></div>
-      <div class="stat orange"><div class="label">Total Revenue</div><div class="val">₹${STATS_DATA.revenue || 0}</div></div>
+      <div class="stat orange"><div class="label">Delivered Revenue</div><div class="val">₹${STATS_DATA.revenue || 0}</div></div>
+      <div class="stat orange"><div class="label">Pending Amount</div><div class="val">₹${STATS_DATA.pending_amount || 0}</div></div>
+      <div class="stat primary"><div class="label">Cancelled Amount</div><div class="val">₹${STATS_DATA.cancelled_amount || 0}</div></div>
     `;
   }
   // Source filter chips - HIDDEN (no WhatsApp)
