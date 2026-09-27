@@ -1272,6 +1272,8 @@ app.get('/admin/orders', (req, res) => {
     delivery_slot: r.delivery_slot || 'asap',
     notes: r.notes || '',
     created_at: r.created_at,
+    delivery_proof_url: r.delivery_proof_url || '',
+    delivery_proof_at: r.delivery_proof_at || null,
   }));
   
   res.json({ 
@@ -4174,7 +4176,9 @@ try {
   try { db.prepare('ALTER TABLE orders ADD COLUMN rider_accepted_at TEXT').run(); } catch(e) {}
   try { db.prepare('ALTER TABLE orders ADD COLUMN rider_picked_at TEXT').run(); } catch(e) {}
   try { db.prepare('ALTER TABLE orders ADD COLUMN rider_delivered_at TEXT').run(); } catch(e) {}
-  
+  try { db.prepare('ALTER TABLE orders ADD COLUMN delivery_proof_url TEXT').run(); } catch(e) {}
+  try { db.prepare('ALTER TABLE orders ADD COLUMN delivery_proof_at TEXT').run(); } catch(e) {}
+
   // Rider ratings table (dedicated rider ratings from customers)
   db.exec(`CREATE TABLE IF NOT EXISTS rider_ratings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -4371,23 +4375,10 @@ app.post('/api/rider/order/status', requireRiderAuth, (req, res) => {
     const otp = order.delivery_otp || String(Math.floor(1000 + Math.random() * 9000));
     db.prepare(`UPDATE orders SET status = ?, rider_picked_at = datetime('now'), delivery_otp = ? WHERE id = ?`).run(status, otp, orderId);
   } else if (status === 'delivered') {
-    db.prepare(`UPDATE orders SET status = 'delivered', rider_delivered_at = datetime('now') WHERE id = ?`).run(orderId);
-    // Credit rider earnings (only here, not in verify too)
-    const existingEarning = db.prepare('SELECT id FROM rider_earnings WHERE rider_id = ? AND order_id = ?').get(riderId, orderId);
-    if (!existingEarning) {
-      const settings = require('./data/settings').get();
-      const zones = settings.deliveryZones || [];
-      const earning = zones[0]?.deliveryFee || 30;
-      db.prepare('INSERT INTO rider_earnings (rider_id, order_id, amount, type) VALUES (?, ?, ?, ?)').run(riderId, orderId, earning, 'delivery');
-      // Credit tip if any
-      const orderTip = parseInt(order.tip || 0, 10);
-      if (orderTip > 0) {
-        db.prepare('INSERT INTO rider_earnings (rider_id, order_id, amount, type) VALUES (?, ?, ?, ?)').run(riderId, orderId, orderTip, 'tip');
-      }
-      if (order.payment_method === 'cod') {
-        db.prepare('INSERT INTO rider_cod (rider_id, order_id, amount) VALUES (?, ?, ?)').run(riderId, orderId, order.total);
-      }
-    }
+    return res.status(400).json({
+      ok: false,
+    error: 'Delivery photo and OTP verification are required before completing delivery'
+    });
   } else {
     db.prepare(`UPDATE orders SET status = ? WHERE id = ?`).run(status, orderId);
   }
@@ -4399,14 +4390,76 @@ app.post('/api/rider/order/status', requireRiderAuth, (req, res) => {
   res.json({ ok: true, status });
 });
 
+// POST /api/rider/order/:id/delivery-proof - Upload mandatory delivery proof
+app.post('/api/rider/order/:id/delivery-proof', requireRiderAuth, upload.single('photo'), (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id, 10);
+    const riderId = req.riderId;
+
+    if (!Number.isInteger(orderId)) {
+      return res.status(400).json({ ok: false, error: 'Invalid order ID' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ ok: false, error: 'Delivery photo is required' });
+    }
+
+    const order = db.prepare(`
+      SELECT id, rider_id, delivery_boy, status
+      FROM orders
+      WHERE id = ?
+        AND (rider_id = ? OR delivery_boy = ?)
+    `).get(orderId, riderId, riderId);
+
+    if (!order) {
+      return res.status(404).json({ ok: false, error: 'Order not found or not assigned to you' });
+    }
+
+    if (order.status !== 'out_for_delivery') {
+      return res.status(400).json({
+        ok: false,
+        error: 'Delivery proof can only be uploaded for an out-for-delivery order'
+      });
+    }
+
+    const proofUrl = '/photos/' + req.file.filename;
+
+    db.prepare(`
+      UPDATE orders
+      SET delivery_proof_url = ?,
+          delivery_proof_at = datetime('now')
+      WHERE id = ?
+    `).run(proofUrl, orderId);
+
+    res.json({
+      ok: true,
+      orderId,
+      proofUrl
+    });
+  } catch (e) {
+    console.error('Delivery proof upload error:', e);
+    res.status(500).json({
+      ok: false,
+      error: 'Failed to upload delivery proof'
+    });
+  }
+});
+
 // POST /api/rider/order/verify - Verify delivery OTP
-app.post('/api/rider/order/verify', (req, res) => {
-  const { riderId, orderId, otp } = req.body || {};
+app.post('/api/rider/order/verify', requireRiderAuth, (req, res) => {
+  const { orderId, otp } = req.body || {};
+  const riderId = req.riderId;
   
   const order = db.prepare('SELECT * FROM orders WHERE id = ? AND (rider_id = ? OR delivery_boy = ?)').get(orderId, riderId, riderId);
   if (!order) return res.status(404).json({ ok: false, error: 'order not found' });
   if (order.delivery_otp !== otp) return res.status(400).json({ ok: false, error: 'Invalid OTP' });
-  
+  if (!order.delivery_proof_url) {
+  return res.status(400).json({
+    ok: false,
+    error: 'Delivery photo is required before completing delivery'
+  });
+}
+
   // Mark delivered
   db.prepare(`UPDATE orders SET status = 'delivered', rider_delivered_at = datetime('now') WHERE id = ?`).run(orderId);
   

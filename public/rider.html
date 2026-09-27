@@ -1378,104 +1378,386 @@ function getNextStatus(currentStatus) {
     return statusFlow[currentStatus] || null;
 }
 
-// OTP Verification for Delivery
+// ============ DELIVERY PROOF + OTP VERIFICATION ============
+
 function showDeliveryOTP(orderId) {
     const overlay = document.createElement('div');
     overlay.id = 'otpOverlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
-    
+
+    overlay.style.cssText =
+        'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;' +
+        'display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto';
+
     overlay.innerHTML = `
-        <div style="background:var(--card);border-radius:20px;padding:24px;max-width:340px;width:100%;text-align:center">
-            <div style="font-size:48px;margin-bottom:12px">🔐</div>
-            <div style="font-size:18px;font-weight:700;margin-bottom:6px">Delivery Verification</div>
-            <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Ask customer for the 4-digit delivery OTP</div>
-            <input type="tel" id="deliveryOtpInput" maxlength="4" placeholder="Enter OTP" style="width:100%;padding:14px;background:var(--bg);border:2px solid var(--border);border-radius:12px;font-size:24px;text-align:center;color:var(--text);letter-spacing:8px;outline:none;margin-bottom:16px" inputmode="numeric"/>
+        <div style="
+            background:var(--card);
+            border-radius:20px;
+            padding:22px;
+            max-width:360px;
+            width:100%;
+            text-align:center;
+            box-shadow:0 20px 50px rgba(0,0,0,.3)
+        ">
+
+            <div style="font-size:42px;margin-bottom:8px">📸</div>
+
+            <div style="font-size:19px;font-weight:800;margin-bottom:6px">
+                Delivery Proof Required
+            </div>
+
+            <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+                Take a photo of the delivered order before completing delivery.
+            </div>
+
+            <label for="deliveryProofInput"
+                style="
+                    display:flex;
+                    flex-direction:column;
+                    align-items:center;
+                    justify-content:center;
+                    gap:8px;
+                    width:100%;
+                    min-height:110px;
+                    border:2px dashed var(--border);
+                    border-radius:14px;
+                    background:var(--bg);
+                    cursor:pointer;
+                    padding:14px;
+                    margin-bottom:14px;
+                ">
+
+                <span style="font-size:30px">📷</span>
+
+                <span id="deliveryProofLabel"
+                    style="font-size:13px;font-weight:700;color:var(--text)">
+                    Take Delivery Photo
+                </span>
+
+                <span style="font-size:11px;color:var(--muted)">
+                    Photo is mandatory
+                </span>
+
+                <input
+                    type="file"
+                    id="deliveryProofInput"
+                    accept="image/*"
+                    capture="environment"
+                    style="display:none"
+                />
+            </label>
+
+            <div id="deliveryProofPreview"
+                style="
+                    display:none;
+                    margin-bottom:14px;
+                    border-radius:12px;
+                    overflow:hidden;
+                    background:#000;
+                ">
+                <img
+                    id="deliveryProofPreviewImg"
+                    style="
+                        display:block;
+                        width:100%;
+                        max-height:220px;
+                        object-fit:cover;
+                    "
+                    alt="Delivery proof preview"
+                />
+            </div>
+
+            <div style="font-size:13px;color:var(--muted);margin-bottom:8px">
+                Ask customer for the 4-digit delivery OTP
+            </div>
+
+            <input
+                type="tel"
+                id="deliveryOtpInput"
+                maxlength="4"
+                placeholder="Enter OTP"
+                inputmode="numeric"
+                style="
+                    width:100%;
+                    padding:14px;
+                    background:var(--bg);
+                    border:2px solid var(--border);
+                    border-radius:12px;
+                    font-size:24px;
+                    text-align:center;
+                    color:var(--text);
+                    letter-spacing:8px;
+                    outline:none;
+                    margin-bottom:16px;
+                "
+            />
+
             <div style="display:flex;gap:10px">
-                <button onclick="verifyDeliveryOTP(${orderId})" style="flex:1;padding:14px;background:var(--success);color:white;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer">✅ Verify</button>
-                <button onclick="document.getElementById('otpOverlay').remove()" style="padding:14px 20px;background:var(--bg);border:1px solid var(--border);color:var(--muted);border-radius:12px;font-size:14px;cursor:pointer">Cancel</button>
+
+                <button
+                    id="completeDeliveryBtn"
+                    onclick="verifyDeliveryOTP(${orderId})"
+                    style="
+                        flex:1;
+                        padding:14px;
+                        background:var(--success);
+                        color:white;
+                        border:none;
+                        border-radius:12px;
+                        font-size:14px;
+                        font-weight:700;
+                        cursor:pointer;
+                    ">
+                    ✅ Complete Delivery
+                </button>
+
+                <button
+                    onclick="document.getElementById('otpOverlay')?.remove()"
+                    style="
+                        padding:14px 18px;
+                        background:var(--bg);
+                        border:1px solid var(--border);
+                        color:var(--muted);
+                        border-radius:12px;
+                        font-size:14px;
+                        cursor:pointer;
+                    ">
+                    Cancel
+                </button>
+
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(overlay);
-    setTimeout(() => document.getElementById('deliveryOtpInput')?.focus(), 100);
+
+    const input = document.getElementById('deliveryProofInput');
+    const label = document.getElementById('deliveryProofLabel');
+    const preview = document.getElementById('deliveryProofPreview');
+    const previewImg = document.getElementById('deliveryProofPreviewImg');
+
+    input?.addEventListener('change', () => {
+        const file = input.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            input.value = '';
+            showToast('Please select an image', 'error');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            input.value = '';
+            showToast('Photo must be under 5MB', 'error');
+            return;
+        }
+
+        label.textContent = '✅ Photo Selected';
+        previewImg.src = URL.createObjectURL(file);
+        preview.style.display = 'block';
+    });
+
+    setTimeout(() => {
+        document.getElementById('deliveryOtpInput')?.focus();
+    }, 100);
 }
 
+
 async function verifyDeliveryOTP(orderId) {
-    const otp = document.getElementById('deliveryOtpInput')?.value?.trim();
-    if (!otp || otp.length !== 4) { showToast('Enter 4-digit OTP', 'error'); return; }
-    
+    const photoInput = document.getElementById('deliveryProofInput');
+    const photoFile = photoInput?.files?.[0];
+    const otpInput = document.getElementById('deliveryOtpInput');
+    const otp = otpInput?.value?.trim();
+    const btn = document.getElementById('completeDeliveryBtn');
+
+    // Photo mandatory
+    if (!photoFile) {
+        showToast('📸 Delivery photo is required', 'error');
+        return;
+    }
+
+    // OTP mandatory
+    if (!otp || otp.length !== 4) {
+        showToast('Enter 4-digit OTP', 'error');
+        return;
+    }
+
     try {
-        showLoading();
-        const response = await fetch('/api/rider/order/verify', { headers: riderAuthHeaders(),
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ riderId: rider.id, orderId, otp })
-        });
-        const data = await response.json();
-        
-        if (data.ok) {
-            document.getElementById('otpOverlay')?.remove();
-            showToast('✅ Delivery verified! Earnings credited.', 'success');
-            loadOrders('active');
-            loadDashboard();
-        } else {
-            showToast(data.error || 'Invalid OTP', 'error');
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Uploading photo...';
+            btn.style.opacity = '0.7';
         }
-    } catch(e) {
-        showToast('Network error', 'error');
+
+        showLoading();
+
+        // Upload delivery proof
+        const formData = new FormData();
+        formData.append('photo', photoFile);
+
+        const uploadResponse = await fetch(
+            '/api/rider/order/' + orderId + '/delivery-proof',
+            {
+                method: 'POST',
+                headers: {
+                    'Authorization':
+                        'Bearer ' + (localStorage.getItem('rider_token') || '')
+                },
+                body: formData
+            }
+        );
+
+        const uploadData = await uploadResponse.json();
+
+        if (!uploadResponse.ok || !uploadData.ok) {
+            throw new Error(
+                uploadData.error || 'Delivery photo upload failed'
+            );
+        }
+
+        if (btn) {
+            btn.textContent = 'Verifying OTP...';
+        }
+
+        // Verify OTP
+        const verifyResponse = await fetch(
+            '/api/rider/order/verify',
+            {
+                method: 'POST',
+                headers: riderAuthHeaders(),
+                body: JSON.stringify({
+                    riderId: rider.id,
+                    orderId,
+                    otp
+                })
+            }
+        );
+
+        const data = await verifyResponse.json();
+
+        if (!verifyResponse.ok || !data.ok) {
+            throw new Error(data.error || 'Invalid OTP');
+        }
+
+        document.getElementById('otpOverlay')?.remove();
+
+        showToast(
+            '✅ Delivery verified! Proof photo saved.',
+            'success'
+        );
+
+        loadOrders('active');
+        loadDashboard();
+
+    } catch (err) {
+        showToast(
+            err.message || 'Delivery verification failed',
+            'error'
+        );
+
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '✅ Complete Delivery';
+            btn.style.opacity = '1';
+        }
+
     } finally {
         hideLoading();
     }
 }
 
+
+// ============ ACCEPT ORDER ============
+
 async function acceptOrder(orderId) {
     if (!rider) return;
+
     try {
         showLoading();
-        const response = await fetch('/api/rider/order/accept', { headers: riderAuthHeaders(),
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ riderId: rider.id, orderId })
-        });
+
+        const response = await fetch(
+            '/api/rider/order/accept',
+            {
+                method: 'POST',
+                headers: riderAuthHeaders(),
+                body: JSON.stringify({
+                    riderId: rider.id,
+                    orderId
+                })
+            }
+        );
+
         const data = await response.json();
+
         if (data.ok) {
             showToast('Order accepted! 🎉', 'success');
+
             // Switch to Active tab
             switchOrderTab('active');
+
         } else {
             showToast(data.error || 'Failed', 'error');
         }
-    } catch (err) { showToast('Network error', 'error'); }
-    finally { hideLoading(); }
+
+    } catch (err) {
+        showToast('Network error', 'error');
+
+    } finally {
+        hideLoading();
+    }
 }
+
+
+// ============ REJECT ORDER ============
 
 async function rejectOrder(orderId) {
     if (!confirm('Reject this order?')) return;
+
     showToast('Order rejected', 'error');
     loadOrders('new');
 }
 
+
+// ============ UPDATE ORDER STATUS ============
+
 async function updateOrderStatus(orderId, status) {
     if (!rider) return;
+
     try {
         showLoading();
-        const response = await fetch('/api/rider/order/status', {
-            method: 'POST',
-            headers: riderAuthHeaders(),
-            body: JSON.stringify({ riderId: rider.id, orderId, status })
-        });
+
+        const response = await fetch(
+            '/api/rider/order/status',
+            {
+                method: 'POST',
+                headers: riderAuthHeaders(),
+                body: JSON.stringify({
+                    riderId: rider.id,
+                    orderId,
+                    status
+                })
+            }
+        );
+
         const data = await response.json();
+
         if (data.ok) {
             showToast('Status updated! ✅', 'success');
+
             loadOrders('active');
             loadDashboard();
+
         } else {
             showToast(data.error || 'Failed', 'error');
         }
-    } catch (err) { showToast('Network error', 'error'); }
-    finally { hideLoading(); }
+
+    } catch (err) {
+        showToast('Network error', 'error');
+
+    } finally {
+        hideLoading();
+    }
 }
+
 
 // ============ EARNINGS ============
 function switchEarningsPeriod(period) {
