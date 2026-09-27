@@ -9318,7 +9318,7 @@ function showOrderDetail(id) {
   const settings = APP_SETTINGS?.orderTracking || {};
   
   // Live Tracking Section (only for active orders)
-  const liveTrackingHtml = isActive && settings.enableLiveTracking ? `
+  const liveTrackingHtml = order.status === 'out_for_delivery' && settings.enableLiveTracking ? `
     <div class="tracking-map">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 4px 6px">
         <span style="font-size:12px;font-weight:700;color:var(--muted)">📍 LIVE TRACKING</span>
@@ -9511,6 +9511,10 @@ function initLiveTrackMap(order) {
   _trackMap = L.map('liveTrackMap', { zoomControl: false, attributionControl: false }).setView([centerLat, centerLon], 14);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(_trackMap);
   
+  setTimeout(() => {
+  if (_trackMap) _trackMap.invalidateSize();
+}, 300);
+
   // Store marker
   const storeIcon = L.divIcon({ html: '<div style="font-size:24px;text-align:center">🏪</div>', iconSize: [30, 30], className: '' });
   L.marker([vendorLat, vendorLon], { icon: storeIcon }).addTo(_trackMap).bindPopup('Store');
@@ -9519,18 +9523,22 @@ function initLiveTrackMap(order) {
   const homeIcon = L.divIcon({ html: '<div style="font-size:24px;text-align:center">🏠</div>', iconSize: [30, 30], className: '' });
   L.marker([userLat, userLon], { icon: homeIcon }).addTo(_trackMap).bindPopup('Your Location');
   
-  // Rider marker
-  const bikeIcon = L.divIcon({ html: '<div style="font-size:28px;text-align:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))">🛵</div>', iconSize: [34, 34], className: '' });
-  
-  // Initial rider position
-  let bikeLat = vendorLat + (userLat - vendorLat) * 0.3;
-  let bikeLon = vendorLon + (userLon - vendorLon) * 0.3;
-  
-  _trackMarker = L.marker([bikeLat, bikeLon], { icon: bikeIcon }).addTo(_trackMap);
-  
-  // Route line
-  const routeLine = L.polyline([[vendorLat, vendorLon], [bikeLat, bikeLon], [userLat, userLon]], {
-    color: '#E8450A', weight: 3, opacity: 0.6, dashArray: '10, 10'
+  // Rider marker — created only after real GPS location arrives
+  const bikeIcon = L.divIcon({
+    html: '<div style="font-size:28px;text-align:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))">🛵</div>',
+    iconSize: [34, 34],
+    className: ''
+  });
+
+  _trackMarker = null;
+
+  // Route line starts with store → customer.
+  // Rider point is added only after real GPS is received.
+  const routeLine = L.polyline([[vendorLat, vendorLon], [userLat, userLon]], {
+    color: '#E8450A',
+    weight: 3,
+    opacity: 0.6,
+    dashArray: '10, 10'
   }).addTo(_trackMap);
   
   _trackMap.fitBounds([[vendorLat, vendorLon], [userLat, userLon]], { padding: [30, 30] });
@@ -9541,40 +9549,68 @@ function initLiveTrackMap(order) {
   // Fetch real rider GPS location if out_for_delivery
   if (order.status === 'out_for_delivery' && USER && USER.phone) {
     const fetchAndUpdate = async () => {
-      try {
-        const res = await fetch('/api/customer/rider/location/' + order.id + '?phone=' + encodeURIComponent(USER.phone));
-        const data = await res.json();
-        
-        if (data.ok && data.hasLocation && data.rider) {
-          const r = data.rider;
-          _trackMarker.setLatLng([r.latitude, r.longitude]);
-          
-          // Update route line
-          routeLine.setLatLngs([[vendorLat, vendorLon], [r.latitude, r.longitude], [userLat, userLon]]);
-          
-          // Update status
-          const timeSince = Math.floor((Date.now() - new Date(r.updated_at)) / 1000);
-          if (trackingStatusEl) {
-            if (timeSince < 15) trackingStatusEl.innerHTML = '<span style="color:#10B981">🟢 Live</span>';
-            else if (timeSince < 60) trackingStatusEl.innerHTML = '<span style="color:#F59E0B">🟡 ' + timeSince + 's ago</span>';
-            else trackingStatusEl.innerHTML = '<span style="color:#888">🔴 Offline</span>';
-          }
-        } else {
-          // No real GPS - simulate movement
-          if (trackingStatusEl) trackingStatusEl.innerHTML = '<span style="color:#888">📡 Locating rider...</span>';
-          bikeLat += (userLat - vendorLat) * 0.015;
-          bikeLon += (userLon - vendorLon) * 0.015;
-          if (bikeLat < userLat) _trackMarker.setLatLng([bikeLat, bikeLon]);
-        }
-      } catch(e) {
-        // Simulate on error
-        bikeLat += (userLat - vendorLat) * 0.015;
-        bikeLon += (userLon - vendorLon) * 0.015;
-        if (bikeLat < userLat) _trackMarker.setLatLng([bikeLat, bikeLon]);
+  try {
+    const res = await fetch(
+      '/api/customer/rider/location/' +
+      order.id +
+      '?phone=' +
+      encodeURIComponent(USER.phone)
+    );
+
+    const data = await res.json();
+
+    if (data.ok && data.hasLocation && data.rider) {
+      const r = data.rider;
+
+      // Create rider marker only when real GPS arrives
+      if (!_trackMarker) {
+        _trackMarker = L.marker([r.latitude, r.longitude], {
+          icon: bikeIcon
+        }).addTo(_trackMap);
+      } else {
+        _trackMarker.setLatLng([r.latitude, r.longitude]);
       }
-    };
-    
-    // Fetch immediately then every 5 seconds
+
+      // Update route line
+      routeLine.setLatLngs([
+        [vendorLat, vendorLon],
+        [r.latitude, r.longitude],
+        [userLat, userLon]
+      ]);
+
+      // Update status
+      const timeSince = Math.floor(
+        (Date.now() - new Date(r.updated_at)) / 1000
+      );
+
+      if (trackingStatusEl) {
+        if (timeSince < 15) {
+          trackingStatusEl.innerHTML =
+            '<span style="color:#10B981">🟢 Live</span>';
+        } else if (timeSince < 60) {
+          trackingStatusEl.innerHTML =
+            '<span style="color:#F59E0B">🟡 ' + timeSince + 's ago</span>';
+        } else {
+          trackingStatusEl.innerHTML =
+            '<span style="color:#888">🔴 Offline</span>';
+        }
+      }
+    } else {
+      if (trackingStatusEl) {
+        trackingStatusEl.innerHTML =
+          '<span style="color:#888">📡 Waiting for rider GPS...</span>';
+      }
+    }
+  } catch (e) {
+    console.error('Live tracking error:', e);
+
+    if (trackingStatusEl) {
+      trackingStatusEl.innerHTML =
+        '<span style="color:#888">📡 Waiting for rider GPS...</span>';
+    }
+  }
+};
+        // Fetch immediately then every 5 seconds
     fetchAndUpdate();
     _trackInterval = setInterval(fetchAndUpdate, 5000);
   }
@@ -12105,8 +12141,6 @@ async function submitOrderReview(orderId, code) {
 }
 
 // Legacy
-async function submitReview(orderId, itemCode) { submitOrderReview(orderId, itemCode); }
-async function submitQuickReview(orderId, code) { submitOrderReview(orderId, code); }
 
 async function submitReview(orderId, itemCode) {
   const key = orderId + '-' + itemCode;
