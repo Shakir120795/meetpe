@@ -1494,8 +1494,8 @@ function showDeliveryOTP(orderId) {
             <div style="display:flex;gap:10px">
 
                 <button
+                    type="button"
                     id="completeDeliveryBtn"
-                    onclick="verifyDeliveryOTP(${orderId})"
                     style="
                         flex:1;
                         padding:14px;
@@ -1529,6 +1529,7 @@ function showDeliveryOTP(orderId) {
     `;
 
     document.body.appendChild(overlay);
+    document.getElementById('completeDeliveryBtn')?.addEventListener('click', () => verifyDeliveryOTP(orderId));
 
     const input = document.getElementById('deliveryProofInput');
     const label = document.getElementById('deliveryProofLabel');
@@ -2124,8 +2125,7 @@ function showDeliveryMap(orderId) {
     `;
 
     document.body.appendChild(overlay);
-
-    // Init Leaflet map
+// Init Leaflet map
     setTimeout(() => {
         const map = L.map('deliveryMapEl', {
             zoomControl: true,
