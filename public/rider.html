@@ -1055,6 +1055,10 @@ function showApp() {
     document.getElementById('bottomNav').style.display = 'flex';
     updateTopbar();
     navigateTo('dashboard');
+
+    if (rider) {
+        initLocationTracking();
+    }
 }
 
 function updateTopbar() {
@@ -1456,9 +1460,9 @@ async function updateOrderStatus(orderId, status) {
     if (!rider) return;
     try {
         showLoading();
-        const response = await fetch('/api/rider/order/status', { headers: riderAuthHeaders(),
+        const response = await fetch('/api/rider/order/status', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: riderAuthHeaders(),
             body: JSON.stringify({ riderId: rider.id, orderId, status })
         });
         const data = await response.json();
@@ -2100,9 +2104,6 @@ updateOrderStatus = async function(orderId, status) {
 };
 
 // Initialize when rider logs in
-if (rider) {
-    initLocationTracking();
-}
 </script>
 </body>
 </html>
