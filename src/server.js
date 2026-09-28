@@ -5009,5 +5009,100 @@ app.get('/api/rider/order/:orderId/delivery-location', requireRiderAuth, async (
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
+// GET /api/rider/route/:orderId - Road-following route for rider
+app.get('/api/rider/route/:orderId', requireRiderAuth, async (req, res) => {
+  const { orderId } = req.params;
+  const riderId = req.riderId;
+
+  const fromLat = Number(req.query.fromLat);
+  const fromLng = Number(req.query.fromLng);
+
+  if (
+    !orderId ||
+    !Number.isFinite(fromLat) ||
+    !Number.isFinite(fromLng)
+  ) {
+    return res.status(400).json({
+      ok: false,
+      error: 'Valid orderId, fromLat and fromLng are required'
+    });
+  }
+
+  try {
+    const order = db.prepare(
+      'SELECT * FROM orders WHERE id = ? AND (rider_id = ? OR delivery_boy = ?)'
+    ).get(orderId, riderId, riderId);
+
+    if (!order) {
+      return res.status(404).json({
+        ok: false,
+        error: 'Order not found or not assigned to you'
+      });
+    }
+
+    const delivery = await resolveOrderDeliveryLocation(order);
+
+    if (!delivery || !hasValidCoordinates(delivery.lat, delivery.lng)) {
+      return res.status(404).json({
+        ok: false,
+        error: 'Delivery location unavailable'
+      });
+    }
+
+    const lKey = process.env.LOCATIONIQ_KEY;
+
+    if (!lKey) {
+      return res.status(503).json({
+        ok: false,
+        error: 'Routing service not configured'
+      });
+    }
+
+    const coordinates =
+      `${fromLng},${fromLat};${delivery.lng},${delivery.lat}`;
+
+    const routeResponse = await axios.get(
+      `https://us1.locationiq.com/v1/directions/driving/${coordinates}`,
+      {
+        params: {
+          key: lKey,
+          overview: 'full',
+          geometries: 'geojson',
+          alternatives: false,
+          steps: false
+        },
+        timeout: 8000
+      }
+    );
+
+    const route = routeResponse.data?.routes?.[0];
+
+    if (!route?.geometry?.coordinates?.length) {
+      return res.status(404).json({
+        ok: false,
+        error: 'No road route found'
+      });
+    }
+
+    res.json({
+      ok: true,
+      distanceMeters: route.distance || 0,
+      durationSeconds: route.duration || 0,
+      geometry: route.geometry,
+      delivery: {
+        lat: delivery.lat,
+        lng: delivery.lng,
+        label: delivery.label,
+        address: delivery.address
+      }
+    });
+  } catch (err) {
+    console.error('❌ Rider route error:', err.message);
+    res.status(500).json({
+      ok: false,
+      error: 'Routing service error'
+    });
+  }
+});
 
 

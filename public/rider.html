@@ -2200,167 +2200,728 @@ if (rider && isOnline) startRiderAutoRefresh();
 function showDeliveryMap(orderId) {
     if (!rider) return;
 
-    // Create full-screen map overlay
     const overlay = document.createElement('div');
     overlay.id = 'deliveryMapOverlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column';
+    overlay.style.cssText = `
+        position:fixed;
+        inset:0;
+        background:#111;
+        z-index:9999;
+        display:flex;
+        flex-direction:column;
+    `;
 
     overlay.innerHTML = `
-        <div style="display:flex;align-items:center;gap:12px;padding:16px 20px;background:var(--card);border-bottom:1px solid var(--border)">
-            <button onclick="closeDeliveryMap()" style="background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px">←</button>
-            <div>
-                <div style="font-size:16px;font-weight:700">📍 Delivery Location</div>
-                <div style="font-size:12px;color:var(--muted)">Order #${orderId}</div>
+        <div style="
+            display:flex;
+            align-items:center;
+            gap:12px;
+            padding:14px 18px;
+            background:#181818;
+            border-bottom:1px solid #2a2a2a;
+        ">
+            <button
+                onclick="closeDeliveryMap()"
+                style="
+                    width:40px;
+                    height:40px;
+                    border-radius:50%;
+                    border:1px solid #333;
+                    background:#222;
+                    color:#fff;
+                    font-size:22px;
+                    cursor:pointer;
+                "
+            >←</button>
+
+            <div style="flex:1">
+                <div style="
+                    color:#fff;
+                    font-size:16px;
+                    font-weight:800;
+                ">Delivery in progress</div>
+
+                <div style="
+                    color:#999;
+                    font-size:12px;
+                    margin-top:2px;
+                ">Order #${orderId}</div>
             </div>
-            <div id="delivMapStatus" style="margin-left:auto;font-size:12px;color:var(--muted)">Loading...</div>
+
+            <div id="delivMapStatus" style="
+                color:#22c55e;
+                font-size:12px;
+                font-weight:800;
+                white-space:nowrap;
+            ">● GPS Live</div>
         </div>
-        <div id="deliveryMapEl" style="flex:1;width:100%"></div>
-        <div style="padding:16px;background:var(--card);border-top:1px solid var(--border)">
-            <div id="deliveryAddrText" style="font-size:13px;color:var(--muted);margin-bottom:12px;text-align:center">Fetching address...</div>
-            <div style="display:flex;gap:10px">
-                <button id="navigateBtn" onclick="openNavigation()" style="flex:1;padding:12px;background:#2563eb;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">🗺️ Open in Maps</button>
-                <button onclick="closeDeliveryMap()" style="padding:12px 20px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:10px;font-size:14px;cursor:pointer">Close</button>
+
+        <div
+            id="deliveryMapEl"
+            style="
+                flex:1;
+                width:100%;
+                min-height:0;
+                background:#ddd;
+            "
+        ></div>
+
+        <div style="
+            background:#181818;
+            border-top:1px solid #2a2a2a;
+            padding:14px 16px 18px;
+        ">
+            <div style="
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                gap:12px;
+                margin-bottom:12px;
+            ">
+                <div style="
+                    display:flex;
+                    align-items:center;
+                    gap:10px;
+                    min-width:0;
+                ">
+                    <div style="
+                        width:42px;
+                        height:42px;
+                        border-radius:12px;
+                        background:#2a1a12;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        font-size:22px;
+                    ">📍</div>
+
+                    <div style="min-width:0">
+                        <div style="
+                            color:#fff;
+                            font-size:14px;
+                            font-weight:800;
+                        ">Delivering to</div>
+
+                        <div id="deliveryAddrText" style="
+                            color:#999;
+                            font-size:12px;
+                            margin-top:3px;
+                            white-space:nowrap;
+                            overflow:hidden;
+                            text-overflow:ellipsis;
+                            max-width:260px;
+                        ">Locating delivery address...</div>
+                    </div>
+                </div>
+
+                <div style="
+                    text-align:right;
+                    white-space:nowrap;
+                ">
+                    <div id="deliveryDistance" style="
+                        color:#fff;
+                        font-size:15px;
+                        font-weight:900;
+                    ">--</div>
+
+                    <div id="deliveryEta" style="
+                        color:#22c55e;
+                        font-size:11px;
+                        font-weight:800;
+                        margin-top:3px;
+                    ">Calculating...</div>
+                </div>
             </div>
+
+            <button
+                id="navigateBtn"
+                onclick="openNavigation()"
+                style="
+                    width:100%;
+                    padding:14px;
+                    background:#2563eb;
+                    color:#fff;
+                    border:none;
+                    border-radius:13px;
+                    font-size:14px;
+                    font-weight:800;
+                    cursor:pointer;
+                "
+            >🗺️ Open in Maps</button>
         </div>
     `;
 
     document.body.appendChild(overlay);
-// Init Leaflet map
+
     setTimeout(() => {
         const map = L.map('deliveryMapEl', {
             zoomControl: true,
-            attributionControl: false
-        }).setView([27.1767, 78.0081], 13);
+            attributionControl: true
+        }).setView([27.1767, 78.0081], 14);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+        L.tileLayer(
+            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }
+        ).addTo(map);
 
-        window._deliveryMap = { map, orderId, delivLat: null, delivLng: null, delivAddress: null };
+        window._deliveryMap = {
+            map,
+            orderId,
+            delivLat: null,
+            delivLng: null,
+            delivAddress: null,
+            riderMarker: null,
+            routeLine: null,
+            lastRiderPosition: null,
+            lastRouteFetchAt: 0,
+            lastRouteLat: null,
+            lastRouteLng: null,
+            firstFitDone: false,
+            animationId: null
+        };
 
-        // Get delivery location from API
-        fetch('/api/rider/order/' + orderId + '/delivery-location?riderId=' + rider.id, { headers: riderAuthHeaders() })
-            .then(r => r.json())
+        const statusEl = document.getElementById('delivMapStatus');
+        const addrEl = document.getElementById('deliveryAddrText');
+        const distanceEl = document.getElementById('deliveryDistance');
+        const etaEl = document.getElementById('deliveryEta');
+
+        const setStatus = (html) => {
+            if (statusEl) statusEl.innerHTML = html;
+        };
+
+        const formatDistance = (meters) => {
+            if (!Number.isFinite(meters)) return '--';
+
+            if (meters < 1000) {
+                return Math.round(meters) + ' m';
+            }
+
+            return (meters / 1000).toFixed(1) + ' km';
+        };
+
+        const formatEta = (seconds) => {
+            if (!Number.isFinite(seconds)) return '--';
+
+            const mins = Math.max(1, Math.round(seconds / 60));
+
+            if (mins < 60) {
+                return `${mins} min`;
+            }
+
+            const hours = Math.floor(mins / 60);
+            const remaining = mins % 60;
+
+            return remaining
+                ? `${hours}h ${remaining}m`
+                : `${hours}h`;
+        };
+
+        const bearingBetween = (from, to) => {
+            const lat1 = from[0] * Math.PI / 180;
+            const lat2 = to[0] * Math.PI / 180;
+            const dLng = (to[1] - from[1]) * Math.PI / 180;
+
+            const y = Math.sin(dLng) * Math.cos(lat2);
+            const x =
+                Math.cos(lat1) * Math.sin(lat2) -
+                Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+
+            return (
+                Math.atan2(y, x) * 180 / Math.PI + 360
+            ) % 360;
+        };
+
+        const createBikeIcon = (rotation = 0) => {
+            return L.divIcon({
+                className: 'rider-live-bike-icon',
+                html: `
+                    <div style="
+                        position:relative;
+                        width:56px;
+                        height:56px;
+                    ">
+                        <div style="
+                            position:absolute;
+                            inset:5px;
+                            border-radius:50%;
+                            background:rgba(34,197,94,.18);
+                            animation:riderBikePulse 1.8s infinite;
+                        "></div>
+
+                        <div class="rider-bike-body" style="
+                            position:absolute;
+                            inset:7px;
+                            border-radius:50%;
+                            background:#16a34a;
+                            border:3px solid #fff;
+                            box-shadow:0 4px 12px rgba(0,0,0,.35);
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            font-size:25px;
+                            transform:rotate(${rotation}deg);
+                            transition:transform .2s ease;
+                        ">🛵</div>
+                    </div>
+                `,
+                iconSize: [56, 56],
+                iconAnchor: [28, 28]
+            });
+        };
+
+        if (!document.getElementById('rider-bike-map-style')) {
+            const style = document.createElement('style');
+            style.id = 'rider-bike-map-style';
+            style.textContent = `
+                @keyframes riderBikePulse {
+                    0% { transform:scale(.75); opacity:.9; }
+                    70% { transform:scale(1.35); opacity:0; }
+                    100% { transform:scale(1.35); opacity:0; }
+                }
+
+                .leaflet-control-zoom {
+                    border:none !important;
+                    box-shadow:0 4px 12px rgba(0,0,0,.25) !important;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        const updateBikeRotation = (heading) => {
+            const mapState = window._deliveryMap;
+            if (!mapState?.riderMarker) return;
+
+            const el = mapState.riderMarker.getElement();
+            if (!el) return;
+
+            const bike = el.querySelector('.rider-bike-body');
+            if (!bike) return;
+
+            bike.style.transform = `rotate(${heading}deg)`;
+        };
+
+        const animateRiderMarker = (
+            fromLatLng,
+            toLatLng,
+            heading
+        ) => {
+            const mapState = window._deliveryMap;
+            if (!mapState?.riderMarker) return;
+
+            if (mapState.animationId) {
+                cancelAnimationFrame(mapState.animationId);
+                mapState.animationId = null;
+            }
+
+            const start = performance.now();
+            const duration = 900;
+
+            const frame = (now) => {
+                if (!window._deliveryMap?.riderMarker) return;
+
+                const progress = Math.min(
+                    (now - start) / duration,
+                    1
+                );
+
+                const eased =
+                    progress * (2 - progress);
+
+                const lat =
+                    fromLatLng[0] +
+                    (toLatLng[0] - fromLatLng[0]) *
+                    eased;
+
+                const lng =
+                    fromLatLng[1] +
+                    (toLatLng[1] - fromLatLng[1]) *
+                    eased;
+
+                mapState.riderMarker.setLatLng([lat, lng]);
+                updateBikeRotation(heading);
+
+                if (progress < 1) {
+                    mapState.animationId =
+                        requestAnimationFrame(frame);
+                } else {
+                    mapState.animationId = null;
+                }
+            };
+
+            mapState.animationId =
+                requestAnimationFrame(frame);
+        };
+
+        const updateRoadRoute = async (
+            riderLat,
+            riderLng,
+            force = false
+        ) => {
+            const mapState = window._deliveryMap;
+            if (
+                !mapState ||
+                !mapState.delivLat ||
+                !mapState.delivLng
+            ) {
+                return;
+            }
+
+            const now = Date.now();
+
+            const movedEnough =
+                !Number.isFinite(mapState.lastRouteLat) ||
+                !Number.isFinite(mapState.lastRouteLng) ||
+                Math.abs(riderLat - mapState.lastRouteLat) > 0.0004 ||
+                Math.abs(riderLng - mapState.lastRouteLng) > 0.0004;
+
+            if (
+                !force &&
+                (!movedEnough ||
+                    now - mapState.lastRouteFetchAt < 10000)
+            ) {
+                return;
+            }
+
+            mapState.lastRouteFetchAt = now;
+            mapState.lastRouteLat = riderLat;
+            mapState.lastRouteLng = riderLng;
+
+            try {
+                const response = await fetch(
+                    '/api/rider/route/' +
+                    orderId +
+                    '?fromLat=' +
+                    encodeURIComponent(riderLat) +
+                    '&fromLng=' +
+                    encodeURIComponent(riderLng),
+                    {
+                        headers: riderAuthHeaders()
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!data.ok || !data.geometry) {
+                    return;
+                }
+
+                if (mapState.routeLine) {
+                    mapState.map.removeLayer(
+                        mapState.routeLine
+                    );
+                }
+
+                mapState.routeLine = L.geoJSON(
+                    data.geometry,
+                    {
+                        style: {
+                            color: '#ef4444',
+                            weight: 6,
+                            opacity: 0.85,
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        }
+                    }
+                ).addTo(mapState.map);
+
+                if (distanceEl) {
+                    distanceEl.textContent =
+                        formatDistance(data.distanceMeters);
+                }
+
+                if (etaEl) {
+                    etaEl.textContent =
+                        'ETA ' +
+                        formatEta(data.durationSeconds);
+                }
+            } catch (error) {
+                console.error(
+                    'Road route error:',
+                    error
+                );
+            }
+        };
+
+        fetch(
+            '/api/rider/order/' +
+            orderId +
+            '/delivery-location?riderId=' +
+            encodeURIComponent(rider.id),
+            {
+                headers: riderAuthHeaders()
+            }
+        )
+            .then(response => response.json())
             .then(data => {
-                const statusEl = document.getElementById('delivMapStatus');
-                const addrEl = document.getElementById('deliveryAddrText');
-
                 if (!data.ok || !data.delivery) {
-                    if (statusEl) statusEl.textContent = '❌ No location';
-                    if (addrEl) addrEl.textContent = data.delivery?.address || 'Address not available';
+                    setStatus('❌ Location unavailable');
+
+                    if (addrEl) {
+                        addrEl.textContent =
+                            data.delivery?.address ||
+                            'Address not available';
+                    }
+
                     return;
                 }
 
                 const delivery = data.delivery;
-                if (addrEl) addrEl.textContent = '📍 ' + (delivery.label || delivery.address || 'Delivery Address');
 
-                // Store address for navigation fallback
-                window._deliveryMap.delivAddress = delivery.address || delivery.label || '';
-
-                if (delivery.lat && delivery.lng) {
-                    window._deliveryMap.delivLat = delivery.lat;
-                    window._deliveryMap.delivLng = delivery.lng;
-
-                    // Delivery marker
-                    const delIcon = L.divIcon({
-                        html: '<div style="background:#E8450A;color:#fff;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.4)">📍</div>',
-                        className: '', iconSize: [44, 44], iconAnchor: [22, 22]
-                    });
-                    L.marker([delivery.lat, delivery.lng], { icon: delIcon })
-                        .addTo(map)
-                        .bindPopup('<b>' + (delivery.label || 'Delivery Address') + '</b><br>' + (delivery.address || ''))
-                        .openPopup();
-
-                    map.setView([delivery.lat, delivery.lng], 16);
-                    if (statusEl) statusEl.textContent = '✅ Location found';
-
-                    // Show rider's live current location
-if (navigator.geolocation) {
-    const riderIcon = L.divIcon({
-        html: '<div style="background:#16A34A;color:#fff;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)">🛵</div>',
-        className: '',
-        iconSize: [40, 40],
-        iconAnchor: [20, 20]
-    });
-
-    const updateRiderMapPosition = (pos) => {
-        if (!window._deliveryMap) return;
-
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-
-        if (!window._deliveryMap.riderMarker) {
-            window._deliveryMap.riderMarker = L.marker([lat, lng], {
-                icon: riderIcon
-            })
-            .addTo(map)
-            .bindPopup('<b>🛵 You (Rider)</b>');
-        } else {
-            window._deliveryMap.riderMarker.setLatLng([lat, lng]);
-        }
-
-        if (window._deliveryMap.routeLine) {
-            map.removeLayer(window._deliveryMap.routeLine);
-        }
-
-        window._deliveryMap.routeLine = L.polyline([
-            [lat, lng],
-            [delivery.lat, delivery.lng]
-        ], {
-            color: '#E8450A',
-            weight: 3,
-            dashArray: '10,10'
-        }).addTo(map);
-
-        map.fitBounds(
-            L.latLngBounds(
-                [lat, lng],
-                [delivery.lat, delivery.lng]
-            ),
-            { padding: [40, 40] }
-        );
-
-        const status = document.getElementById('delivMapStatus');
-        if (status) status.textContent = '🟢 GPS Live';
-    };
-
-    const handleGpsError = (error) => {
-        console.error('Rider map GPS error:', error);
-
-        const status = document.getElementById('delivMapStatus');
-
-        if (status) {
-            if (error.code === 1) {
-                status.textContent = '⚠️ GPS permission denied';
-            } else {
-                status.textContent = '📡 Waiting for GPS';
-            }
-        }
-    };
-
-    if (deliveryMapWatchId !== null) {
-        navigator.geolocation.clearWatch(deliveryMapWatchId);
-    }
-
-    deliveryMapWatchId = navigator.geolocation.watchPosition(
-        updateRiderMapPosition,
-        handleGpsError,
-        {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-        }
-    );
-}
-                } else {
-                    if (statusEl) statusEl.textContent = '⚠️ No GPS - Use Maps';
-                    if (addrEl) addrEl.textContent = '📍 ' + (delivery.address || 'Address saved but no map coordinates');
-                    // Still allow navigation via address text
-                    window._deliveryMap.delivAddress = delivery.address || delivery.label || '';
+                if (!Number.isFinite(Number(delivery.lat)) ||
+                    !Number.isFinite(Number(delivery.lng))) {
+                    setStatus('⚠️ No delivery GPS');
+                    if (addrEl) {
+                        addrEl.textContent =
+                            delivery.address ||
+                            'No GPS coordinates';
+                    }
+                    return;
                 }
+
+                const deliveryLat = Number(delivery.lat);
+                const deliveryLng = Number(delivery.lng);
+
+                window._deliveryMap.delivLat =
+                    deliveryLat;
+                window._deliveryMap.delivLng =
+                    deliveryLng;
+                window._deliveryMap.delivAddress =
+                    delivery.address ||
+                    delivery.label ||
+                    '';
+
+                if (addrEl) {
+                    addrEl.textContent =
+                        delivery.address ||
+                        delivery.label ||
+                        'Delivery address';
+                }
+
+                const destinationIcon =
+                    L.divIcon({
+                        className:
+                            'delivery-destination-icon',
+                        html: `
+                            <div style="
+                                width:50px;
+                                height:50px;
+                                border-radius:50%;
+                                background:#ef4444;
+                                border:4px solid #fff;
+                                box-shadow:0 5px 14px rgba(0,0,0,.35);
+                                display:flex;
+                                align-items:center;
+                                justify-content:center;
+                                font-size:25px;
+                            ">📍</div>
+                        `,
+                        iconSize: [50, 50],
+                        iconAnchor: [25, 25]
+                    });
+
+                L.marker(
+                    [deliveryLat, deliveryLng],
+                    { icon: destinationIcon }
+                )
+                    .addTo(map)
+                    .bindPopup(
+                        '<b>📍 Delivery</b><br>' +
+                        (delivery.address || '')
+                    );
+
+                map.setView(
+                    [deliveryLat, deliveryLng],
+                    15
+                );
+
+                if (navigator.geolocation) {
+                    const handleGpsUpdate = (position) => {
+                        if (!window._deliveryMap) return;
+
+                        const lat =
+                            Number(position.coords.latitude);
+                        const lng =
+                            Number(position.coords.longitude);
+
+                        if (
+                            !Number.isFinite(lat) ||
+                            !Number.isFinite(lng)
+                        ) {
+                            return;
+                        }
+
+                        const headingFromGps =
+                            Number(position.coords.heading);
+
+                        const previous =
+                            window._deliveryMap.lastRiderPosition;
+
+                        let heading = 0;
+
+                        if (
+                            Number.isFinite(
+                                headingFromGps
+                            ) &&
+                            headingFromGps >= 0
+                        ) {
+                            heading = headingFromGps;
+                        } else if (previous) {
+                            heading = bearingBetween(
+                                previous,
+                                [lat, lng]
+                            );
+                        }
+
+                        if (
+                            !window._deliveryMap.riderMarker
+                        ) {
+                            window._deliveryMap.riderMarker =
+                                L.marker(
+                                    [lat, lng],
+                                    {
+                                        icon:
+                                            createBikeIcon(
+                                                heading
+                                            ),
+                                        zIndexOffset: 1000
+                                    }
+                                )
+                                    .addTo(map)
+                                    .bindPopup(
+                                        '<b>🛵 You are here</b>'
+                                    );
+
+                            if (distanceEl) {
+                                distanceEl.textContent =
+                                    'Live';
+                            }
+
+                            setStatus(
+                                '<span style="color:#22c55e">🟢 GPS Live</span>'
+                            );
+
+                            map.fitBounds(
+                                L.latLngBounds(
+                                    [lat, lng],
+                                    [deliveryLat, deliveryLng]
+                                ),
+                                {
+                                    padding: [60, 60],
+                                    maxZoom: 16
+                                }
+                            );
+
+                            window._deliveryMap.firstFitDone =
+                                true;
+
+                            updateRoadRoute(
+                                lat,
+                                lng,
+                                true
+                            );
+                        } else {
+                            const previousPosition =
+                                window._deliveryMap.lastRiderPosition;
+
+                            if (previousPosition) {
+                                animateRiderMarker(
+                                    previousPosition,
+                                    [lat, lng],
+                                    heading
+                                );
+                            } else {
+                                window._deliveryMap.riderMarker
+                                    .setLatLng([lat, lng]);
+
+                                updateBikeRotation(
+                                    heading
+                                );
+                            }
+
+                            setStatus(
+                                '<span style="color:#22c55e">🟢 GPS Live</span>'
+                            );
+
+                            if (!window._deliveryMap.firstFitDone) {
+                                map.fitBounds(
+                                    L.latLngBounds(
+                                        [lat, lng],
+                                        [deliveryLat, deliveryLng]
+                                    ),
+                                    {
+                                        padding: [60, 60],
+                                        maxZoom: 16
+                                    }
+                                );
+
+                                window._deliveryMap.firstFitDone =
+                                    true;
+                            }
+                        }
+
+                        window._deliveryMap.lastRiderPosition =
+                            [lat, lng];
+
+                        updateRoadRoute(
+                            lat,
+                            lng,
+                            false
+                        );
+                    };
+
+                    const handleGpsError = (error) => {
+                        console.error(
+                            'Rider map GPS error:',
+                            error
+                        );
+
+                        if (!statusEl) return;
+
+                        if (error.code === 1) {
+                            statusEl.textContent =
+                                '⚠️ GPS permission denied';
+                        } else {
+                            statusEl.textContent =
+                                '📡 Waiting for GPS';
+                        }
+                    };
+
+                    if (deliveryMapWatchId !== null) {
+                        navigator.geolocation.clearWatch(
+                            deliveryMapWatchId
+                        );
+                    }
+
+                    deliveryMapWatchId =
+                        navigator.geolocation.watchPosition(
+                            handleGpsUpdate,
+                            handleGpsError,
+                            {
+                                enableHighAccuracy: true,
+                                timeout: 10000,
+                                maximumAge: 0
+                            }
+                        );
+                } else {
+                    setStatus('⚠️ GPS unavailable');
+                }
+
+                setTimeout(() => {
+                    if (window._deliveryMap) {
+                        map.invalidateSize();
+                    }
+                }, 300);
             })
-            .catch(err => {
-                console.error('Delivery map error:', err);
-                const statusEl = document.getElementById('delivMapStatus');
-                if (statusEl) statusEl.textContent = '❌ Error';
+            .catch(error => {
+                console.error(
+                    'Delivery map error:',
+                    error
+                );
+
+                setStatus('❌ Failed to load delivery location');
             });
     }, 100);
 }
@@ -2545,7 +3106,12 @@ updateOrderStatus = async function(orderId, status) {
     }
 };
 
-// Initialize when rider logs in
+// Initialize app only after ALL rider/tracking functions are defined.
+init();
+
+if (rider && isOnline) {
+    startRiderAutoRefresh();
+}
 </script>
 </body>
 </html>
