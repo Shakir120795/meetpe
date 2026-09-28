@@ -9474,9 +9474,92 @@ let _trackMap = null;
 let _trackMarker = null;
 let _trackInterval = null;
 
+// Ensure Leaflet is available before initializing live tracking.
+let _leafletLoadPromise = null;
+
+function ensureLeafletLoaded() {
+  if (window.L) return Promise.resolve(window.L);
+  if (_leafletLoadPromise) return _leafletLoadPromise;
+
+  _leafletLoadPromise = new Promise((resolve, reject) => {
+    const cssUrls = [
+      'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css',
+      'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+    ];
+
+    const jsUrls = [
+      'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',
+      'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+    ];
+
+    if (!document.querySelector('link[data-live-leaflet-css]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = cssUrls[0];
+      link.dataset.liveLeafletCss = '1';
+      document.head.appendChild(link);
+    }
+
+    const loadScript = (index) => {
+      if (window.L) return resolve(window.L);
+      if (index >= jsUrls.length) {
+        _leafletLoadPromise = null;
+        return reject(new Error('Leaflet failed to load from all CDN sources'));
+      }
+
+      const existing = document.querySelector(
+        'script[src="' + jsUrls[index] + '"]'
+      );
+
+      if (existing) {
+        existing.addEventListener('load', () => resolve(window.L), { once: true });
+        existing.addEventListener(
+          'error',
+          () => loadScript(index + 1),
+          { once: true }
+        );
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = jsUrls[index];
+      script.async = true;
+
+      script.onload = () => {
+        if (window.L) {
+          resolve(window.L);
+        } else {
+          loadScript(index + 1);
+        }
+      };
+
+      script.onerror = () => loadScript(index + 1);
+      document.head.appendChild(script);
+    };
+
+    loadScript(0);
+  });
+
+  return _leafletLoadPromise;
+}
+
 function initLiveTrackMap(order) {
   const mapEl = document.getElementById('liveTrackMap');
   if (!mapEl) return;
+
+  if (!window.L) {
+    ensureLeafletLoaded()
+      .then(() => initLiveTrackMap(order))
+      .catch((err) => {
+        console.error('Live tracking Leaflet load failed:', err);
+        const statusEl = document.getElementById('liveTrackingStatus');
+        if (statusEl) {
+          statusEl.innerHTML =
+            '<span style="color:#888">📡 Map loading unavailable</span>';
+        }
+      });
+    return;
+  }
 
   // Clean up previous tracking instance
   if (_trackMap) {
