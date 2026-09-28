@@ -1003,24 +1003,71 @@ function riderAuthHeaders() {
 
 // ============ INIT ============
 function init() {
-    // Apply theme
     initRiderTheme();
-    
-    const stored = localStorage.getItem('rider_session');
-    const token = localStorage.getItem('rider_token');
-    if (stored && token) {
-        try {
-            rider = JSON.parse(stored);
-            isOnline = rider.status === 'available';
-            // Hide login, show app
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('loginScreen').classList.remove('active');
-            showApp();
-        } catch (e) {
-            localStorage.removeItem('rider_session');
-            localStorage.removeItem('rider_token');
+
+    const loginScreen = document.getElementById('loginScreen');
+
+    const showLogin = () => {
+        if (!rider && loginScreen) {
+            loginScreen.style.display = 'block';
+            loginScreen.classList.add('active');
         }
-    }
+    };
+
+    const restoreSession = () => {
+        const stored =
+            localStorage.getItem('rider_session') ||
+            sessionStorage.getItem('rider_session_backup');
+
+        const token =
+            localStorage.getItem('rider_token') ||
+            sessionStorage.getItem('rider_token_backup');
+
+        if (!stored || !token) return false;
+
+        try {
+            const parsed = JSON.parse(stored);
+
+            if (!parsed || !parsed.id) {
+                console.warn('⚠️ Rider session data incomplete');
+                return false;
+            }
+
+            rider = parsed;
+            isOnline = rider.status === 'available';
+
+            // Restore persistent storage from backup if needed
+            localStorage.setItem('rider_session', JSON.stringify(rider));
+            localStorage.setItem('rider_token', token);
+
+            if (loginScreen) {
+                loginScreen.style.display = 'none';
+                loginScreen.classList.remove('active');
+            }
+
+            showApp();
+            console.log('✅ Rider session restored');
+            return true;
+
+        } catch (e) {
+            // IMPORTANT: Never delete auth data just because parsing failed once.
+            console.warn('⚠️ Rider session restore retry:', e);
+            return false;
+        }
+    };
+
+    // First attempt
+    if (restoreSession()) return;
+
+    // Retry in case browser storage/page initialization is temporarily not ready
+    setTimeout(() => {
+        if (!rider && restoreSession()) return;
+        showLogin();
+    }, 300);
+
+    setTimeout(() => {
+        if (!rider) restoreSession();
+    }, 1000);
 }
 
 // ============ NAVIGATION ============
@@ -1185,6 +1232,8 @@ async function handleVerifyOtp() {
                     rider = loginData.rider;
                     localStorage.setItem('rider_token', loginData.token);
                     localStorage.setItem('rider_session', JSON.stringify(rider));
+                    sessionStorage.setItem('rider_token_backup', loginData.token);
+                    sessionStorage.setItem('rider_session_backup', JSON.stringify(rider));
                     isOnline = rider.status === 'available';
                     showApp();
                     showToast('Welcome, ' + rider.name + '! 🛵', 'success');
@@ -1218,6 +1267,8 @@ async function handleVerifyOtp() {
             rider = data.rider;
             localStorage.setItem('rider_token', data.token);
             localStorage.setItem('rider_session', JSON.stringify(rider));
+            sessionStorage.setItem('rider_token_backup', data.token);
+            sessionStorage.setItem('rider_session_backup', JSON.stringify(rider));
             isOnline = rider.status === 'available';
             showApp();
             showToast('Welcome, ' + rider.name + '! 🛵', 'success');
@@ -1996,6 +2047,10 @@ function handleLogout() {
     isOnline = false;
     localStorage.removeItem('rider_session');
     localStorage.removeItem('rider_token');
+
+    sessionStorage.removeItem('rider_session_backup');
+    sessionStorage.removeItem('rider_token_backup');
+
     // Reload page to reinitialize MSG91 widget cleanly
     window.location.reload();
 }
