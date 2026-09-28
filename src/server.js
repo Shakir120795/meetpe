@@ -4684,7 +4684,15 @@ function parseDeliveryAddress(rawAddress) {
 }
 
 function hasValidCoordinates(lat, lng) {
-  return Number.isFinite(Number(lat)) && Number.isFinite(Number(lng));
+  const nLat = Number(lat);
+  const nLng = Number(lng);
+
+  if (!Number.isFinite(nLat) || !Number.isFinite(nLng)) return false;
+
+  // 0,0 is a common placeholder when a delivery address has no real GPS.
+  if (nLat === 0 && nLng === 0) return false;
+
+  return true;
 }
 
 async function geocodeDeliveryAddress(addressText) {
