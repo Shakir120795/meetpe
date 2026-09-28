@@ -4660,36 +4660,229 @@ app.listen(PORT, () => {
 });
 
 
+
 // ===== LOCATION TRACKING ENDPOINTS =====
+
+// Delivery-location resolver:
+// 1) Uses saved lat/lng when available.
+// 2) Otherwise geocodes the saved address once and persists lat/lng back
+//    into the order address JSON so rider + customer can use it afterwards.
+const deliveryGeocodeCache = new Map();
+
+function parseDeliveryAddress(rawAddress) {
+  if (rawAddress && typeof rawAddress === 'object') return { ...rawAddress };
+
+  const raw = String(rawAddress || '').trim();
+  if (!raw) return {};
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') return parsed;
+  } catch (e) {}
+
+  return { address: raw };
+}
+
+function hasValidCoordinates(lat, lng) {
+  return Number.isFinite(Number(lat)) && Number.isFinite(Number(lng));
+}
+
+async function geocodeDeliveryAddress(addressText) {
+  const original = String(addressText || '').trim();
+  if (!original) return null;
+
+  const cacheKey = original.toLowerCase();
+  if (deliveryGeocodeCache.has(cacheKey)) {
+    return deliveryGeocodeCache.get(cacheKey);
+  }
+
+  let query = original;
+  if (!/agra|uttar pradesh|india/i.test(query)) {
+    query += ', Agra, Uttar Pradesh, India';
+  }
+
+  try {
+    const lKey = process.env.LOCATIONIQ_KEY;
+    const gKey = process.env.GOOGLE_MAPS_KEY;
+
+    // Existing configured LocationIQ provider
+    if (lKey) {
+      const r = await axios.get('https://us1.locationiq.com/v1/search', {
+        params: {
+          key: lKey,
+          q: query,
+          format: 'json',
+          addressdetails: 1,
+          limit: 1,
+          countrycodes: 'in',
+          normalizecity: 1
+        },
+        timeout: 8000
+      });
+
+      const hit = (r.data || [])[0];
+      if (hit && hit.lat && hit.lon) {
+        const result = {
+          lat: Number(hit.lat),
+          lng: Number(hit.lon),
+          label: hit.display_name || original,
+          address: original
+        };
+        deliveryGeocodeCache.set(cacheKey, result);
+        return result;
+      }
+    }
+
+    // Existing configured Google provider
+    if (gKey) {
+      const r = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
+        params: {
+          address: query,
+          region: 'in',
+          language: 'en',
+          key: gKey
+        },
+        timeout: 8000
+      });
+
+      const result = (r.data.results || [])[0];
+      if (result?.geometry?.location) {
+        const geo = result.geometry.location;
+        const resolved = {
+          lat: Number(geo.lat),
+          lng: Number(geo.lng),
+          label: result.formatted_address || original,
+          address: original
+        };
+        deliveryGeocodeCache.set(cacheKey, resolved);
+        return resolved;
+      }
+    }
+
+    // Free fallback — OpenStreetMap Nominatim
+    const r = await axios.get('https://nominatim.openstreetmap.org/search', {
+      params: {
+        format: 'jsonv2',
+        q: query,
+        limit: 1,
+        countrycodes: 'in',
+        addressdetails: 1
+      },
+      headers: {
+        'User-Agent': 'NOW-MeatPe-LiveTracking/1.0'
+      },
+      timeout: 8000
+    });
+
+    const hit = (r.data || [])[0];
+    if (hit && hit.lat && hit.lon) {
+      const result = {
+        lat: Number(hit.lat),
+        lng: Number(hit.lon),
+        label: hit.display_name || original,
+        address: original
+      };
+      deliveryGeocodeCache.set(cacheKey, result);
+      return result;
+    }
+  } catch (e) {
+    console.warn('Delivery address geocode failed:', e.message);
+  }
+
+  deliveryGeocodeCache.set(cacheKey, null);
+  return null;
+}
+
+async function resolveOrderDeliveryLocation(order) {
+  if (!order) return null;
+
+  const parsed = parseDeliveryAddress(order.address);
+
+  if (hasValidCoordinates(parsed.lat, parsed.lng)) {
+    return {
+      lat: Number(parsed.lat),
+      lng: Number(parsed.lng),
+      label: parsed.label || parsed.address || 'Delivery Location',
+      address: parsed.address || ''
+    };
+  }
+
+  const addressText = parsed.address || parsed.label || String(order.address || '').trim();
+  if (!addressText) return null;
+
+  const geo = await geocodeDeliveryAddress(addressText);
+  if (!geo) return null;
+
+  const merged = {
+    ...parsed,
+    address: parsed.address || addressText,
+    label: parsed.label || geo.label || addressText,
+    lat: geo.lat,
+    lng: geo.lng
+  };
+
+  try {
+    db.prepare('UPDATE orders SET address = ? WHERE id = ?')
+      .run(JSON.stringify(merged), order.id);
+  } catch (e) {
+    console.warn('Could not persist geocoded delivery coordinates:', e.message);
+  }
+
+  return {
+    lat: geo.lat,
+    lng: geo.lng,
+    label: merged.label,
+    address: merged.address
+  };
+}
 
 // POST /api/rider/location/update - Rider updates their location
 app.post('/api/rider/location/update', requireRiderAuth, (req, res) => {
   const { orderId, riderId, riderName, riderPhone, latitude, longitude, accuracy, heading, speed } = req.body || {};
-  
-  if (!orderId || !latitude || !longitude) {
-    return res.status(400).json({ ok: false, error: 'Missing required fields: orderId, latitude, longitude' });
+
+  if (!orderId || latitude === undefined || longitude === undefined) {
+    return res.status(400).json({
+      ok: false,
+      error: 'Missing required fields: orderId, latitude, longitude'
+    });
   }
-  
+
   try {
-    // Verify order exists and belongs to rider
-    const order = db.prepare('SELECT * FROM orders WHERE id = ? AND (rider_id = ? OR delivery_boy = ?)').get(orderId, riderId, riderId);
+    const order = db.prepare(
+      'SELECT * FROM orders WHERE id = ? AND (rider_id = ? OR delivery_boy = ?)'
+    ).get(orderId, riderId, riderId);
+
     if (!order) {
-      return res.status(404).json({ ok: false, error: 'Order not found or not assigned to you' });
+      return res.status(404).json({
+        ok: false,
+        error: 'Order not found or not assigned to you'
+      });
     }
-    
-    // Insert or update location
+
     db.prepare(`
-      INSERT INTO rider_locations (order_id, rider_name, rider_phone, latitude, longitude, accuracy, heading, speed, updated_at)
+      INSERT INTO rider_locations
+        (order_id, rider_name, rider_phone, latitude, longitude, accuracy, heading, speed, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       ON CONFLICT(order_id) DO UPDATE SET
+        rider_name = excluded.rider_name,
+        rider_phone = excluded.rider_phone,
         latitude = excluded.latitude,
         longitude = excluded.longitude,
         accuracy = excluded.accuracy,
         heading = excluded.heading,
         speed = excluded.speed,
         updated_at = datetime('now')
-    `).run(orderId, riderName || 'Rider', riderPhone || '', latitude, longitude, accuracy || 0, heading || 0, speed || 0);
-    
+    `).run(
+      orderId,
+      riderName || 'Rider',
+      riderPhone || '',
+      Number(latitude),
+      Number(longitude),
+      Number(accuracy) || 0,
+      Number(heading) || 0,
+      Number(speed) || 0
+    );
+
     res.json({ ok: true, message: 'Location updated' });
   } catch (err) {
     console.error('❌ Location update error:', err);
@@ -4698,43 +4891,51 @@ app.post('/api/rider/location/update', requireRiderAuth, (req, res) => {
 });
 
 // GET /api/customer/rider/location/:orderId - Customer gets rider location
-app.get('/api/customer/rider/location/:orderId', (req, res) => {
+app.get('/api/customer/rider/location/:orderId', async (req, res) => {
   const { orderId } = req.params;
-  const { phone } = req.query;
-  
-  if (!orderId || !phone) {
-    return res.status(400).json({ ok: false, error: 'Missing orderId or phone' });
+  const cleanPhone = String(req.query.phone || '').replace(/\D/g, '').slice(-10);
+
+  if (!orderId || cleanPhone.length !== 10) {
+    return res.status(400).json({
+      ok: false,
+      error: 'Missing orderId or valid phone'
+    });
   }
-  
+
   try {
-    // Verify customer owns this order
-    const order = db.prepare('SELECT * FROM orders WHERE id = ? AND phone = ?').get(orderId, phone);
+    // Accept all phone storage formats used by the app.
+    const phoneVariants = [
+      'web:+91' + cleanPhone,
+      'whatsapp:+91' + cleanPhone,
+      'app:+91' + cleanPhone
+    ];
+
+    const order = db.prepare(`
+      SELECT *
+      FROM orders
+      WHERE id = ?
+        AND phone IN (?, ?, ?)
+    `).get(orderId, ...phoneVariants);
+
     if (!order) {
       return res.status(404).json({ ok: false, error: 'Order not found' });
     }
-    
-    // Get rider location
-    const location = db.prepare('SELECT * FROM rider_locations WHERE order_id = ?').get(orderId);
-    
+
+    const deliveryAddress = await resolveOrderDeliveryLocation(order);
+    const location = db.prepare(
+      'SELECT * FROM rider_locations WHERE order_id = ?'
+    ).get(orderId);
+
     if (!location) {
-      return res.json({ ok: true, hasLocation: false, message: 'Rider location not available yet' });
+      return res.json({
+        ok: true,
+        hasLocation: false,
+        message: 'Rider location not available yet',
+        delivery: deliveryAddress,
+        orderStatus: order.status
+      });
     }
-    
-    // Parse delivery address to get customer location
-    let deliveryAddress = null;
-    try {
-      const parsed = JSON.parse(order.address);
-      if (parsed && parsed.lat && parsed.lng) {
-        deliveryAddress = {
-          lat: parsed.lat,
-          lng: parsed.lng,
-          label: parsed.label || parsed.address || 'Delivery Location'
-        };
-      }
-    } catch (e) {
-      // address might be plain string
-    }
-    
+
     res.json({
       ok: true,
       hasLocation: true,
@@ -4758,41 +4959,31 @@ app.get('/api/customer/rider/location/:orderId', (req, res) => {
 });
 
 // GET /api/rider/order/:orderId/delivery-location - Rider gets delivery location
-app.get('/api/rider/order/:orderId/delivery-location', requireRiderAuth, (req, res) => {
+app.get('/api/rider/order/:orderId/delivery-location', requireRiderAuth, async (req, res) => {
   const { orderId } = req.params;
   const { riderId } = req.query;
-  
+
   if (!orderId || !riderId) {
-    return res.status(400).json({ ok: false, error: 'Missing orderId or riderId' });
+    return res.status(400).json({
+      ok: false,
+      error: 'Missing orderId or riderId'
+    });
   }
-  
+
   try {
-    // Verify order belongs to rider
-    const order = db.prepare('SELECT * FROM orders WHERE id = ? AND (rider_id = ? OR delivery_boy = ?)').get(orderId, riderId, riderId);
+    const order = db.prepare(
+      'SELECT * FROM orders WHERE id = ? AND (rider_id = ? OR delivery_boy = ?)'
+    ).get(orderId, riderId, riderId);
+
     if (!order) {
-      return res.status(404).json({ ok: false, error: 'Order not found or not assigned to you' });
+      return res.status(404).json({
+        ok: false,
+        error: 'Order not found or not assigned to you'
+      });
     }
-    
-    // Parse delivery address
-    let deliveryLocation = null;
-    try {
-      const parsed = JSON.parse(order.address);
-      if (parsed && parsed.lat && parsed.lng) {
-        deliveryLocation = {
-          lat: parsed.lat,
-          lng: parsed.lng,
-          label: parsed.label || parsed.address || 'Delivery Address',
-          address: parsed.address || 'N/A'
-        };
-      }
-    } catch (e) {
-      // If plain string, send as is
-      deliveryLocation = {
-        address: order.address,
-        label: 'Delivery Address'
-      };
-    }
-    
+
+    const deliveryLocation = await resolveOrderDeliveryLocation(order);
+
     res.json({
       ok: true,
       delivery: deliveryLocation,
@@ -4807,8 +4998,5 @@ app.get('/api/rider/order/:orderId/delivery-location', requireRiderAuth, (req, r
     res.status(500).json({ ok: false, error: 'Server error' });
   }
 });
-
-
-
 
 
