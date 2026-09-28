@@ -39,9 +39,9 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Allow inline scripts for existing HTML
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://unpkg.com", "https://cdn.jsdelivr.net"], // Leaflet + existing inline scripts
       scriptSrcAttr: ["'unsafe-inline'"], // Allow inline event handlers (onclick, onload, etc.)
-      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles
+      styleSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com", "https://cdn.jsdelivr.net"], // Leaflet styles + inline styles
       imgSrc: ["'self'", "data:", "https:", "blob:"], // Allow images from various sources
       connectSrc: ["'self'", "https://api.cashfree.com", "https://unpkg.com", "https://verify.msg91.com"], // API connections + CDNs
       fontSrc: ["'self'", "data:"],
